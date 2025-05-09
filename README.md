@@ -2,7 +2,7 @@
 
 Hello! I'm a solo software developer with a deep passion for Artificial Intelligence, aerospace, and intricate game development. I thrive on exploring complex systems, emergent behavior, and pushing the boundaries of what's possible with code, particularly in resource-constrained environments. My work is driven by a fascination with hard sci-fi, futurism (I'm a fan of Isaac Arthur!), realistic space travel, history, politics, and science. I also have a creative side, enjoying digital art with tools like PaintToolSai.
 
-I value truth and kindness, and I'm constantly learning and experimenting, often using AI assistants to augment my development process. My ultimate goal is to build impactful AI-driven applications and immersive game experiences, potentially growing these projects into a startup.
+I value truth and kindness, and I'm constantly learning and experimenting.
 
 You can find my work on GitHub under the handle [d0tTino](https://github.com/d0tTino).
 
