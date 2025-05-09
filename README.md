@@ -2,7 +2,7 @@
 
 Hello! I'm a solo software developer with a deep passion for Artificial Intelligence, aerospace, and intricate game development. I thrive on exploring complex systems, emergent behavior, and pushing the boundaries of what's possible with code, particularly in resource-constrained environments. My work is driven by a fascination with hard sci-fi, futurism (I'm a fan of Isaac Arthur!), realistic space travel, history, politics, and science. I also have a creative side, enjoying digital art with tools like PaintToolSai.
 
-I value truth and kindness, and I'm constantly learning and experimenting.
+I'm at home constantly learning and experimenting.
 
 You can find my work on GitHub under the handle [d0tTino](https://github.com/d0tTino).
 
@@ -15,7 +15,7 @@ My interests lie at the intersection of AI, simulation, and interactive experien
 * **Artificial Intelligence Development:**
     * **Focus Areas:** Multi-agent systems, emergent AI evolution, cognitive architectures, resource-efficient LLMs, Knowledge Graphs, and Event-Driven Architectures (EDA).
     * **Technologies:** Python, LangChain/LangGraph, Ollama, NATS/JetStream, PyTorch, Hugging Face Ecosystem (Transformers, PEFT, TRL, Datasets, Accelerate), bitsandbytes, ChromaDB, and open-source graph databases (e.g., Memgraph, ArangoDB, Neo4j).
-    * **Techniques:** QLoRA, quantization, adaptive code generation (exploratory), prompt engineering, and developing sophisticated memory systems for AI agents.
+    * **Techniques:** QLoRA, quantization, adaptive code generation (exploratory), and developing sophisticated memory systems for AI agents.
 
 * **Game Development:**
     * **Passion:** Hard science fiction simulation games, focusing on realistic space travel, complex management systems, and narratives that span generations, allowing players to shape humanity's future.
