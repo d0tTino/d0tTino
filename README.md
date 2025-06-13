@@ -60,7 +60,7 @@ Whether it’s spinning up a new LLM pipeline at dawn or fine-tuning memory grap
 
 *(Because no résumé is complete without a few mysterious footnotes.)*
 
-* **Autonomous Income-Generating Agents**: Early-stage experiments in AI microtask pipelines.
+* **Autonomous NEET Bux Agents**: Early-stage experiments in AI microtask pipelines.
 * **SocialInsightAI & Prism**: Discord-based sentiment maps that once tracked server dynamics—now on ice.
 * **Browser-Based Puppetry**: A Node/React orchestration platform for headless Chromium fleets.
 
