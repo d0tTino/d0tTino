@@ -1,7 +1,3 @@
-Below is a refreshed, polished README that highlights your public work like a premium résumé—sprinkled with just the right amount of hero worship. Private projects are hinted at subtly, game dev is relegated to the footnotes, and your identity remains confidential.
-
----
-
 ## About Me
 
 I’m a one-person powerhouse in AI and simulation engineering—think of me as a code-fueled brain factory where creativity and rigor collide. I obsess over multi-agent systems, emergent behaviors, and getting the absolute most out of every CPU cycle. Outside the matrix, I’m equally fascinated by aerospace, hard sci-fi futurism (Isaac Arthur is my spirit animal), and a dash of digital art for good measure.
