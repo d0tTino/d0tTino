@@ -1,0 +1,11 @@
+{
+  "$schema": "https://aka.ms/terminal-profiles-schema",
+  "defaultProfile": "{00000000-0000-0000-0000-000000000000}",
+  "profiles": {
+    "defaults": {
+      "fontFace": "Cascadia Mono",
+      "fontSize": 12
+    },
+    "list": []
+  }
+}
