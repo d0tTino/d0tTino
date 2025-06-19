@@ -21,7 +21,7 @@ See [docs/installation](docs/installation.md) for full setup details.
 - [Terminal Setup](docs/terminal.md)
 - [Navigation](docs/navigation.md)
 - [Desktop Environment](docs/desktop.md)
-- [AI Automation](docs/ai-automation.
+- [AI Automation](docs/ai-automation.md)
 
 ## License
 
