@@ -1,3 +1,3 @@
 # Desktop Environment
 
-The `desktop` stow package contains settings for window managers and theming. Apply it if you plan to use these dotfiles on a graphical desktop.
+These dotfiles currently do not ship a `desktop` stow package. If you create one, it could hold window manager and theming settings for use on a graphical desktop.
