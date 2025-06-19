@@ -12,6 +12,7 @@ alias dot='git --git-dir=$HOME/.dots/ --work-tree=$HOME'
 cd ~/d0tTino
 stow windows-terminal
 stow powertoys
+
 ```
 
 See [docs/installation](docs/installation.md) for full setup details.
