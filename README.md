@@ -78,3 +78,7 @@ Whether it’s spinning up a new LLM pipeline at dawn or fine-tuning memory grap
 
    * Simple rules + iterative feedback = mind-blowing behaviors. That’s where the magic lives.
 
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
