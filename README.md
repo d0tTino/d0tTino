@@ -148,4 +148,4 @@ Place custom prompts under `llm/prompts/` and organize subfolders as needed.
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [Apache License 2.0](LICENSE).
