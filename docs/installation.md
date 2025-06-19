@@ -13,8 +13,9 @@ Follow these steps to set up the dotfiles on a new machine.
 
    ```bash
    cd ~/d0tTino
-   stow powertoys
    stow windows-terminal
+   stow powertoys
+
    ```
 
    Stow cleanly manages symlinks, letting you enable or disable packages with `stow -D <name>`.

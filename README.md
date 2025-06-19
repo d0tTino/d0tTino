@@ -10,8 +10,9 @@ Clone the repository as a bare repo and stow the desired packages:
 git clone --bare https://github.com/d0tTino/d0tTino.git "$HOME/.dots"
 alias dot='git --git-dir=$HOME/.dots/ --work-tree=$HOME'
 cd ~/d0tTino
-stow powertoys
 stow windows-terminal
+stow powertoys
+
 ```
 
 See [docs/installation](docs/installation.md) for full setup details.
