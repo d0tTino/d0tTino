@@ -95,9 +95,14 @@ Whether it’s spinning up a new LLM pipeline at dawn or fine-tuning memory grap
    cd ~/d0tTino
    stow shell
    stow vim
+   # Windows examples
+   stow windows-terminal
+   stow powertoys
    ```
 
    Stow cleanly manages symlinks, letting you enable or disable packages with `stow -D <name>`.
+
+   Example Windows configurations live under `windows-terminal/` and `powertoys/`. Use Stow to symlink these files into `%USERPROFILE%` when working on Windows.
 
 3. **Host-specific overrides** live under `hosts/<hostname>` and can be applied with:
 

@@ -1,0 +1,19 @@
+# Windows specific ignores
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# PowerShell history and state
+Microsoft.PowerShell_*/*.txt
+PowerShell/ConsoleHost_history.txt
+
+# Editor and OS generated files
+*.log
+*.tmp
+*.swp
+.DS_Store
+
+# Node and Python artifacts
+node_modules/
+__pycache__/

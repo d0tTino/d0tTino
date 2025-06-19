@@ -1,0 +1,11 @@
+{
+  "powertoys": [
+    {
+      "name": "FancyZones",
+      "properties": {
+        "zoneCount": 3,
+        "spacing": 10
+      }
+    }
+  ]
+}
