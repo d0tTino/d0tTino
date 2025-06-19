@@ -78,3 +78,32 @@ Whether it’s spinning up a new LLM pipeline at dawn or fine-tuning memory grap
 
    * Simple rules + iterative feedback = mind-blowing behaviors. That’s where the magic lives.
 
+---
+
+## Cloning & Managing Dotfiles
+
+1. **Clone as a bare repository** so your `$HOME` stays clean:
+
+   ```bash
+   git clone --bare https://github.com/d0tTino/d0tTino.git "$HOME/.dots"
+   alias dot='git --git-dir=$HOME/.dots/ --work-tree=$HOME'
+   ```
+
+2. **Symlink configs using GNU Stow**:
+
+   ```bash
+   cd ~/d0tTino
+   stow shell
+   stow vim
+   ```
+
+   Stow cleanly manages symlinks, letting you enable or disable packages with `stow -D <name>`.
+
+3. **Host-specific overrides** live under `hosts/<hostname>` and can be applied with:
+
+   ```bash
+   stow --target="$HOME" hosts/$(hostname)
+   ```
+
+   This keeps machine-specific settings separate while sharing a common core.
+
