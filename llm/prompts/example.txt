@@ -1,0 +1,2 @@
+# Example LLM Prompt
+You are a helpful assistant.

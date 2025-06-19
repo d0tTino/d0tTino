@@ -78,3 +78,41 @@ Whether it’s spinning up a new LLM pipeline at dawn or fine-tuning memory grap
 
    * Simple rules + iterative feedback = mind-blowing behaviors. That’s where the magic lives.
 
+
+---
+
+## Dotfiles & Configuration
+
+This repository includes example setups for various tools:
+
+- `dotfiles/common` – shell settings shared across machines.
+- `dotfiles/desktop` – configs unique to a desktop environment.
+- `dotfiles/work_laptop` – configs for a work laptop.
+- `windows-terminal` – starter `settings.json` for Windows Terminal.
+- `oh-my-posh` – a sample `theme.omp.json` theme file.
+- `vscode` – basic VS Code user settings.
+
+### Linking on macOS/Linux
+
+```bash
+# inside your home directory
+ln -s /path/to/repo/dotfiles/common/.bashrc ~/.bashrc
+ln -s /path/to/repo/vscode/settings.json ~/.config/Code/User/settings.json
+```
+
+### Linking on Windows (PowerShell)
+
+```powershell
+New-Item -ItemType SymbolicLink -Path $Env:USERPROFILE\\.config\\oh-my-posh \
+  -Target C:\\path\\to\\repo\\oh-my-posh
+New-Item -ItemType SymbolicLink -Path $Env:USERPROFILE\\AppData\\Local\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json \
+  -Target C:\\path\\to\\repo\\windows-terminal\\settings.json
+```
+
+These examples assume the repository is cloned in a convenient location. Adjust the paths to match your setup.
+
+
+## LLM Assets
+
+The `llm` directory collects prompts and other files related to language models.
+Place custom prompts under `llm/prompts/` and organize subfolders as needed.
