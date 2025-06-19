@@ -106,4 +106,9 @@ Whether it’s spinning up a new LLM pipeline at dawn or fine-tuning memory grap
    ```
 
    This keeps machine-specific settings separate while sharing a common core.
+   
+---
 
+## License
+
+This project is licensed under the [MIT License](LICENSE).
