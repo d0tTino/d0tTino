@@ -1,4 +1,4 @@
-WindowsTerminal/state.json
+windows-terminal/state.json
 # VS Code
 .vscode/
 # PowerShell cache
@@ -10,3 +10,8 @@ WindowsTerminal/state.json
 # OS generated
 Thumbs.db
 .DS_Store
+
+# Temporary editor files
+*.swp
+*~
+winget-packages.lock.json
