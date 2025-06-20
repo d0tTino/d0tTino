@@ -2,6 +2,7 @@
   "name": "d0tTino",
   "version": "1.0.0",
   "scripts": {
-    "test": "echo \"No tests specified\" && exit 0"
+    "test": "echo \"No JS tests\""
+
   }
 }
