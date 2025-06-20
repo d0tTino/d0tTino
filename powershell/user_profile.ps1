@@ -1,4 +1,4 @@
-﻿# === dev-setup profile ==================================================
+# === dev-setup profile ==================================================
 # Starship prompt
 if (Get-Command starship -ErrorAction SilentlyContinue) {
     Invoke-Expression ((& starship init powershell) -join "`n")
