@@ -1,3 +1,14 @@
 {
-    "profiles": []
+    "defaultProfile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+    "profiles": {
+        "defaults": {
+            "font": {
+                "face": "CascaydiaCove Nerd Font",
+                "size": 11
+            }
+        },
+        "list": [
+            // Add profile objects here
+        ]
+    }
 }
