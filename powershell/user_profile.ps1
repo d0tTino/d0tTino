@@ -1,7 +1,8 @@
 # === dev-setup profile ==================================================
 # Starship prompt
 if (Get-Command starship -ErrorAction SilentlyContinue) {
-    Invoke-Expression ((& starship init powershell) -join "`n")
+    $starshipConfig = Join-Path (Split-Path $PSScriptRoot -Parent) 'starship.toml'
+    Invoke-Expression ((& starship init powershell --config $starshipConfig) -join "`n")
 }
 
 # posh-git (branch + status decorations)
