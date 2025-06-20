@@ -15,3 +15,6 @@ Thumbs.db
 *.swp
 *~
 winget-packages.lock.json
+
+# Python cache
+__pycache__/
