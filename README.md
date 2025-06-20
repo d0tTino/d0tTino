@@ -8,7 +8,6 @@ Key directories:
 - `powershell/` – PowerShell profile scripts
 - `windows-terminal/` – starter Windows Terminal settings
 - `tablet-config/` – full example configuration for a tablet, including Windows Terminal
-- `oh-my-posh/` – a sample theme for [Oh My Posh](https://ohmyposh.dev)
 - `starship.toml` – minimal Starship prompt configuration
 - `vscode/` – VS Code user settings
 - `llm/` – prompts and other LLM-related files
