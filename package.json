@@ -2,7 +2,10 @@
   "name": "d0tTino",
   "version": "1.0.0",
   "scripts": {
-    "test": "echo \"No JS tests\""
-
+    "test": "echo \"No JS tests\"",
+    "lint": "eslint . --ext .js"
+  },
+  "devDependencies": {
+    "eslint": "^9.29.0"
   }
 }
