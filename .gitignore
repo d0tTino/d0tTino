@@ -1,0 +1,12 @@
+WindowsTerminal/state.json
+# VS Code
+.vscode/
+# PowerShell cache
+*.psd1
+
+# Logs
+*.log
+
+# OS generated
+Thumbs.db
+.DS_Store
