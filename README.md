@@ -16,4 +16,15 @@ Key directories:
 See the [installation guide](docs/installation.md) for setup instructions.
 For a more detailed overview, see [docs/terminal.md](docs/terminal.md).
 
+## Git hooks
+
+Run the following to enable the local hooks:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Once enabled, the `pre-commit` hook automatically exports your current
+`winget` package list.
+
 Licensed under the [Apache 2.0](LICENSE) license.
