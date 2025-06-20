@@ -87,7 +87,8 @@ This repository includes example setups for various tools:
 - `dotfiles/common` – shell settings shared across machines.
 - `dotfiles/desktop` – configs unique to a desktop environment.
 - `dotfiles/work_laptop` – configs for a work laptop.
-- `windows-terminal` – starter `settings.json` for Windows Terminal.
+- `windows-terminal` – minimal starter `settings.json` for Windows Terminal.
+- `tablet-config/windows-terminal` – full example configuration for a tablet.
 - `oh-my-posh` – a sample `theme.omp.json` theme file.
 - `vscode` – basic VS Code user settings.
 
