@@ -89,7 +89,6 @@ This repository includes example setups for various tools:
 - `dotfiles/work_laptop` – configs for a work laptop.
 - `windows-terminal` – minimal starter `settings.json` for Windows Terminal.
 - `tablet-config/windows-terminal` – full example configuration for a tablet.
-- `oh-my-posh` – a sample `theme.omp.json` theme file.
 - `starship.toml` – minimal Starship prompt configuration.
 - `vscode` – basic VS Code user settings.
 
@@ -105,8 +104,6 @@ ln -s /path/to/repo/starship.toml ~/.config/starship.toml
 ### Linking on Windows (PowerShell)
 
 ```powershell
-New-Item -ItemType SymbolicLink -Path $Env:USERPROFILE\\.config\\oh-my-posh \
-  -Target C:\\path\\to\\repo\\oh-my-posh
 New-Item -ItemType SymbolicLink -Path $Env:USERPROFILE\\.config\\starship.toml \
   -Target C:\\path\\to\\repo\\starship.toml
 New-Item -ItemType SymbolicLink -Path $Env:USERPROFILE\\AppData\\Local\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json \
