@@ -11,6 +11,15 @@ Follow these steps to set up the configuration files on a new system.
 2. Copy or symlink the files from this repository to your profile directory.
 3. Restart the terminal to load the new settings.
 
+## WSL
+
+Run the provided script to install the basic tools on a fresh Ubuntu/WSL
+instance:
+
+```bash
+bash scripts/setup-wsl.sh
+```
+
 ## Linux / macOS
 
 1. Clone the repository:
