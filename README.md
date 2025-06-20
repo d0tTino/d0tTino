@@ -14,6 +14,8 @@ Key directories:
 - `llm/` – prompts and other LLM-related files
 
 See the [installation guide](docs/installation.md) for setup instructions.
+If your PATH isn't updating correctly on Windows, run
+`scripts/fix-path.ps1` from an elevated PowerShell prompt.
 For a more detailed overview, see [docs/terminal.md](docs/terminal.md).
 
 ## Git hooks
