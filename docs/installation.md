@@ -10,10 +10,11 @@ Follow these steps to set up the configuration files on a new system.
    ```
 2. Copy or symlink the files from this repository to your profile directory.
 3. Restart the terminal to load the new settings.
-4. If your PATH is missing entries, run the following from an elevated PowerShell prompt:
+4. If your PATH looks incorrect, run the following from an elevated PowerShell prompt:
    ```powershell
    scripts/fix-path.ps1
    ```
+   The script cleans up duplicate entries and ensures `%USERPROFILE%\bin` is included.
 
 ## WSL
 

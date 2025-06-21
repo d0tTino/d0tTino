@@ -46,3 +46,4 @@ fi
     assert os.readlink(bat_link) == str(bin_dir / "batcat")
     assert fd_link.is_symlink()
     assert os.readlink(fd_link) == str(bin_dir / "fdfind")
+   
