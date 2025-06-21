@@ -14,9 +14,15 @@ if ($unique -notcontains $userBin) {
     $unique += $userBin
 }
 
-$newPath = $unique -join ';'
+$joinedPath = $unique -join ';'
+$newPath = $joinedPath
+$originalCount = $unique.Count
 if ($newPath.Length -gt 1023) {
     $newPath = $newPath.Substring(0, 1023)
+}
+$finalCount = ($newPath -split ';').Count
+if ($finalCount -lt $originalCount) {
+    Write-Warning 'Some PATH entries were dropped due to size limitations.'
 }
 
 [Environment]::SetEnvironmentVariable('Path', $newPath, 'User')
