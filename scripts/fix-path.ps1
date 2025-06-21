@@ -1,22 +1,23 @@
 # Clean up and persist the user's PATH value
 $paths = $Env:Path -split ';'
-$unique = @()
-
+$list = [System.Collections.Generic.List[string]]::new()
 foreach ($p in $paths) {
     $trim = $p.Trim()
-    if ($trim -and $unique -notcontains $trim) {
-        $unique += $trim
+    if ($trim -and -not $list.Contains($trim)) {
+        $list.Add($trim) | Out-Null
     }
 }
 
 $userBin = Join-Path $Env:USERPROFILE 'bin'
-if ($unique -notcontains $userBin) {
-    $unique += $userBin
+if (-not $list.Contains($userBin)) {
+    $list.Add($userBin) | Out-Null
 }
 
-$newPath = $unique -join ';'
-if ($newPath.Length -gt 1023) {
-    $newPath = $newPath.Substring(0, 1023)
+$newPath = [string]::Join(';', $list)
+$maxLength = 1023
+while ($newPath.Length -gt $maxLength -and $list.Count -gt 0) {
+    $list.RemoveAt(0)
+    $newPath = [string]::Join(';', $list)
 }
 
 [Environment]::SetEnvironmentVariable('Path', $newPath, 'User')
