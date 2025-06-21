@@ -13,11 +13,16 @@ if (-not $list.Contains($userBin)) {
     $list.Add($userBin) | Out-Null
 }
 
-$newPath = [string]::Join(';', $list)
-$maxLength = 1023
-while ($newPath.Length -gt $maxLength -and $list.Count -gt 0) {
-    $list.RemoveAt(0)
-    $newPath = [string]::Join(';', $list)
+$joinedPath = $unique -join ';'
+$newPath = $joinedPath
+$originalCount = $unique.Count
+if ($newPath.Length -gt 1023) {
+    $newPath = $newPath.Substring(0, 1023)
+
+}
+$finalCount = ($newPath -split ';').Count
+if ($finalCount -lt $originalCount) {
+    Write-Warning 'Some PATH entries were dropped due to size limitations.'
 }
 
 [Environment]::SetEnvironmentVariable('Path', $newPath, 'User')
