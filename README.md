@@ -26,6 +26,7 @@ git config core.hooksPath .githooks
 ```
 
 Once enabled, the `pre-commit` hook automatically exports your current
-`winget` package list.
+`winget` package list when commits run on Windows. On Linux or WSL the
+export is skipped unless `winget` is available.
 
 Licensed under the [Apache 2.0](LICENSE) license.
