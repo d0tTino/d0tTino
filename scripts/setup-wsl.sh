@@ -12,6 +12,23 @@ sudo apt-get install -y \
     starship \
     zoxide
 
+# Ensure starship is available; install from the official script if apt didn't
+# provide it.
+if ! command -v starship >/dev/null; then
+    curl -sS https://starship.rs/install.sh | sh -s -- -y
+fi
+
+# Ensure zoxide is available; prefer Cargo for installation with a curl-based
+# fallback when Cargo is missing.
+if ! command -v zoxide >/dev/null; then
+    if command -v cargo >/dev/null; then
+        cargo install --locked zoxide
+    else
+        curl -sS https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh \
+            | bash -s -- --yes
+    fi
+fi
+
 # Provide helpful symlinks for batcat and fdfind if they exist
 if command -v batcat >/dev/null && ! command -v bat >/dev/null; then
     sudo ln -sf $(command -v batcat) /usr/local/bin/bat
