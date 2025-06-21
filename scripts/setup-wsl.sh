@@ -10,7 +10,15 @@ sudo apt-get install -y \
     fzf \
     build-essential \
     starship \
-    zoxide
+    zoxide \
+    curl
+
+# Verify that curl is available; exit with a helpful message if not.
+if ! command -v curl >/dev/null; then
+    echo "Error: curl is required but could not be installed." >&2
+    echo "Please install curl using your package manager and re-run this script." >&2
+    exit 1
+fi
 
 # Ensure starship is available; install from the official script if apt didn't
 # provide it.
