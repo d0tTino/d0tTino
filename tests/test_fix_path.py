@@ -43,3 +43,4 @@ def test_run_fix_path_falls_back_to_powershell(monkeypatch):
 def test_fix_path_script_content():
     text = SCRIPT.read_text(encoding='utf-8')
     assert "SetEnvironmentVariable('Path'" in text
+    assert '.ToLower()' in text

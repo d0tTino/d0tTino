@@ -5,10 +5,8 @@ $uniqueLower = @()
 
 foreach ($p in $paths) {
     $trim = $p.Trim()
-    if (-not $trim) { continue }
-
     $lower = $trim.ToLower()
-    if ($uniqueLower -notcontains $lower) {
+    if ($trim -and $uniqueLower -notcontains $lower) {
         $unique += $trim
         $uniqueLower += $lower
 
