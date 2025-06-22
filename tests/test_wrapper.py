@@ -40,3 +40,41 @@ def test_multiple_recompilations(tmp_path):
     wrapper.recompile_from_fewshot()
     assert len(wrapper._trainset) == 1
     assert id(wrapper.compiled) != second_compiled_id
+
+
+def test_snapshot_appends_and_recompiles(tmp_path):
+    log_dir = tmp_path / "logs"
+    fewshot_dir = tmp_path / "fewshot"
+    wrapper = LoggedFewShotWrapper(
+        EchoModule(),
+        log_dir=log_dir,
+        fewshot_dir=fewshot_dir,
+    )
+
+    # Log two examples and snapshot them
+    wrapper(text="foo")
+    wrapper(text="bar")
+    wrapper.snapshot_log_to_fewshot(replace=True)
+    initial_lines = (
+        (fewshot_dir / "EchoModule_fewshot.jsonl").read_text(encoding="utf-8")
+    ).splitlines()
+    assert len(initial_lines) == 2
+    wrapper.recompile_from_fewshot()
+    first_compiled_id = id(wrapper.compiled)
+    assert len(wrapper._trainset) == 2
+
+    # Clear the log file and log two more examples
+    wrapper._log_file.write_text("")
+    wrapper(text="baz")
+    wrapper(text="qux")
+    wrapper.snapshot_log_to_fewshot()
+
+    fewshot_lines = (
+        (fewshot_dir / "EchoModule_fewshot.jsonl").read_text(encoding="utf-8")
+    ).splitlines()
+    assert len(fewshot_lines) == 4
+    assert fewshot_lines[:2] == initial_lines
+
+    wrapper.recompile_from_fewshot()
+    assert len(wrapper._trainset) == 4
+    assert id(wrapper.compiled) != first_compiled_id

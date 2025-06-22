@@ -3,7 +3,10 @@ import pytest  # noqa: F401
 import subprocess
 from pathlib import Path
 
-from llm.universal_dspy_wrapper_v2 import LoggedFewShotWrapper, is_repo_data_path
+from llm.universal_dspy_wrapper_v2 import (
+    LoggedFewShotWrapper,
+    is_repo_data_path,
+)
 
 
 
