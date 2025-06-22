@@ -2,6 +2,17 @@
 
 Follow these steps to set up the configuration files on a new system.
 
+## Node.js
+
+The repository's lint script requires Node.js. You can install it with [nvm](https://github.com/nvm-sh/nvm):
+
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+nvm install --lts
+```
+
+Alternatively, download the official installer from [nodejs.org](https://nodejs.org).
+
 ## Windows
 
 1. Install packages using `winget`:

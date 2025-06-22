@@ -2,6 +2,7 @@ import subprocess
 import shutil
 from pathlib import Path
 from unittest import mock
+import re
 
 SCRIPT = Path('scripts/fix-path.ps1')
 
@@ -44,3 +45,26 @@ def test_fix_path_script_content():
     text = SCRIPT.read_text(encoding='utf-8')
     assert "SetEnvironmentVariable('Path'" in text
     assert '.ToLower()' in text
+
+
+def _dedupe_paths(paths):
+    unique = []
+    seen = set()
+    for p in paths:
+        trimmed = p.strip()
+        collapsed = re.sub(r'[\\/]+', r'\\', trimmed).rstrip('\\/')
+        lower = collapsed.lower()
+        if collapsed and lower not in seen:
+            unique.append(collapsed)
+            seen.add(lower)
+    return unique
+
+
+def test_dedupe_trailing_slashes():
+    paths = [r'C:\Tools', r'C:\Tools\\']
+    assert _dedupe_paths(paths) == [r'C:\Tools']
+
+
+def test_case_insensitive_after_trimming():
+    paths = [r'C:\Tools\\', r'c:\tools']
+    assert _dedupe_paths(paths) == [r'C:\Tools']

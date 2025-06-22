@@ -27,10 +27,13 @@ You can then run the test suite to verify the configuration:
 pytest
 ```
 
+
 See the [installation guide](docs/installation.md) for setup instructions.
 If your PATH isn't updating correctly on Windows, run
 `scripts/fix-path.ps1` from an elevated PowerShell prompt.
 For a more detailed overview, see [docs/terminal.md](docs/terminal.md).
+For details on fastfetch, btm and Nushell/Starship setup, see the [Terminal Tools section](docs/terminal.md#terminal-tools-fastfetch-btm--nushellstarship).
+
 
 ## Git hooks
 
