@@ -5,9 +5,11 @@ $uniqueLower = @()
 
 foreach ($p in $paths) {
     $trim = $p.Trim()
-    $lower = $trim.ToLower()
-    if ($trim -and $uniqueLower -notcontains $lower) {
-        $unique += $trim
+    $norm = $trim -replace '[\\/]+', '\\'
+    $norm = $norm.TrimEnd('\', '/')
+    $lower = $norm.ToLower()
+    if ($norm -and $uniqueLower -notcontains $lower) {
+        $unique += $norm
         $uniqueLower += $lower
 
     }

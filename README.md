@@ -26,6 +26,7 @@ If your PATH isn't updating correctly on Windows, run
 For a more detailed overview, see [docs/terminal.md](docs/terminal.md).
 For details on fastfetch, btm and Nushell/Starship setup, see the [Terminal Tools section](docs/terminal.md#terminal-tools-fastfetch-btm--nushellstarship).
 
+
 ## Git hooks
 
 Run `scripts/setup-hooks.sh` to enable the local hooks automatically

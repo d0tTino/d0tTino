@@ -196,7 +196,44 @@ Place custom prompts under `llm/prompts/` and organize subfolders as needed.
    ```
 
    This keeps machine-specific settings separate while sharing a common core.
-   
+
+---
+
+## Replicating the Screenshot Environment
+
+The screenshots in this repository showcase a terminal running
+[fastfetch](https://github.com/fastfetch-cli/fastfetch),
+[bottom](https://github.com/ClementTsang/bottom) (the `btm` command),
+[Nushell](https://www.nushell.sh/), and the [Zed editor](https://zed.dev/).
+To set up a similar environment:
+
+### Install the tools
+
+On Debian-based systems:
+
+```bash
+sudo apt install fastfetch btm nushell
+wget https://zed.dev/api/releases/zed_latest_amd64.deb
+sudo dpkg -i zed_latest_amd64.deb
+```
+
+### Example profile entries
+
+Add the following to your PowerShell profile
+`$PROFILE` so the tools launch automatically in a new session:
+
+```powershell
+fastfetch
+btm
+```
+
+For Nushell, place similar commands in `~/.config/nushell/env.nu`:
+
+```nu
+fastfetch
+btm
+```
+
 ---
 
 ## License

@@ -7,14 +7,34 @@ from __future__ import annotations
 
 import inspect
 import json
-import logging
+import re
+
 import shutil
+import subprocess
 from pathlib import Path
 from typing import Callable, List, Type
 import warnings
 
 import dspy
 from dspy.teleprompt import LabeledFewShot
+
+_REPO_ROOT = Path(
+    subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+)
+
+_PATH_REGEX = re.compile(
+    rf"^(?P<root>{re.escape(str(_REPO_ROOT))})/.+(?P<data>[^/]+\.(?:ya?ml|json))$"
+)
+
+
+def is_repo_data_path(path: str | Path) -> bool:
+    """Return True if ``path`` is within the repo and ends with an allowed extension."""
+    return bool(_PATH_REGEX.match(str(path)))
 
 
 class LoggedFewShotWrapper(dspy.Module):
@@ -43,24 +63,18 @@ class LoggedFewShotWrapper(dspy.Module):
         self.fewshot_dir = Path(fewshot_dir)
         self.fewshot_dir.mkdir(parents=True, exist_ok=True)
         self._log_file = self.log_dir / f"{wrapped.__class__.__name__}_io.jsonl"
-        self._fewshot_file = self.fewshot_dir / f"{wrapped.__class__.__name__}_fewshot.jsonl"
+        self._fewshot_file = (
+            self.fewshot_dir / f"{wrapped.__class__.__name__}_fewshot.jsonl"
+        )
 
         trainset: List[dspy.Example] = []
         if self._fewshot_file.exists():
             with self._fewshot_file.open(encoding="utf-8") as fh:
                 for line in fh:
-                    try:
-                        obj = json.loads(line)
-                    except json.JSONDecodeError as exc:
-                        logging.warning(
-                            "Skipping invalid JSON line in %s: %s",
-                            self._fewshot_file,
-                            exc,
-                        )
-                        continue
+                    obj = json.loads(line)
                     ex = dspy.Example(
-                        **obj.get("inputs", obj),
-                        **obj.get("outputs", {}),
+                        **obj.get("inputs", obj), **obj.get("outputs", {})
+
                     )
                     ex = ex.with_inputs(*obj.get("inputs", obj).keys())
                     trainset.append(ex)
@@ -115,9 +129,8 @@ class LoggedFewShotWrapper(dspy.Module):
 
         record = {"inputs": inputs, "outputs": serialisable_output}
 
-        try:
-            with self._log_file.open("a", encoding="utf-8") as fh:
-                fh.write(json.dumps(record, ensure_ascii=False) + "\n")
-        except OSError as exc:
-            warnings.warn(f"Failed to write log data: {exc}")
+        with self._log_file.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+        # Return the prediction object without any modification
+
         return prediction

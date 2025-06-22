@@ -31,3 +31,5 @@ jobs:
         run: pytest -q
       - name: Run lint
         run: npm run lint
+      - name: Validate winget packages
+        run: python scripts/validate_winget.py
