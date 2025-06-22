@@ -18,7 +18,7 @@ Install the required Python packages (including test utilities such as
 `pytest` and `json5`):
 
 ```bash
-pip install -r requirements.txt
+pip install -e . -r requirements.txt
 ```
 
 You can then run the test suite to verify the configuration:

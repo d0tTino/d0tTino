@@ -14,7 +14,7 @@ This document outlines how the repository manages tasks related to local AI work
 2. Install the required Python packages:
 
    ```bash
-   pip install -r requirements.txt
+   pip install -e . -r requirements.txt
    ```
 
 `dspy` powers the local LLM wrapper found in `llm/`, while `pytest` runs the test suite.

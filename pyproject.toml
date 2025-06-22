@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm"
+version = "0.1.0"
+description = "Local LLM utilities"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["dspy"]
+
+[project.optional-dependencies]
+test = ["pytest", "json5"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["llm*"]
