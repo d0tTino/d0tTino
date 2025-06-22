@@ -1,11 +1,9 @@
-import dspy
+=import dspy
 import pytest  # noqa: F401
 from pathlib import Path
 import subprocess
 
 from llm.universal_dspy_wrapper_v2 import LoggedFewShotWrapper, is_repo_data_path, _REPO_ROOT
-
-
 
 class DummyModule(dspy.Module):
     def forward(self, value):

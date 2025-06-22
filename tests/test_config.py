@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
-import json5
+import pytest
+
+json5 = pytest.importorskip("json5")
 
 
 def load_json(path: Path):
