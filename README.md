@@ -8,7 +8,7 @@ Key directories:
 - `powershell/` – PowerShell profile scripts
 - `windows-terminal/` – starter Windows Terminal settings
 - `tablet-config/` – full example configuration for a tablet, including Windows Terminal
-- `starship.toml` – minimal Starship prompt configuration
+- `starship.toml` – example Starship prompt configuration
 - `vscode/` – VS Code user settings
 - `llm/` – prompts and other LLM-related files
 
