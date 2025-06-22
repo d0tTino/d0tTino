@@ -1,8 +1,10 @@
+import os
 import subprocess
 import shutil
 from pathlib import Path
 from unittest import mock
 import re
+import pytest
 
 SCRIPT = Path('scripts/fix-path.ps1')
 
@@ -18,6 +20,22 @@ def run_fix_path():
             '-ExecutionPolicy', 'Bypass',
             '-File', str(SCRIPT)
         ], check=True)
+
+
+def run_fix_path_capture(env):
+    pwsh = shutil.which("pwsh") or shutil.which("powershell")
+    if not pwsh:
+        pytest.skip("PowerShell not available")
+    command = f"& '{SCRIPT}' ; [Environment]::GetEnvironmentVariable('Path','User')"
+    result = subprocess.run(
+        [pwsh, "-NoLogo", "-NoProfile", "-Command", command],
+        capture_output=True,
+        text=True,
+        env=env,
+        check=True,
+    )
+    lines = result.stdout.strip().splitlines()
+    return lines[-1] if lines else ""
 
 
 def test_run_fix_path_uses_pwsh_if_available(monkeypatch):
@@ -68,3 +86,14 @@ def test_dedupe_trailing_slashes():
 def test_case_insensitive_after_trimming():
     paths = [r'C:\Tools\\', r'c:\tools']
     assert _dedupe_paths(paths) == [r'C:\Tools']
+
+
+def test_fix_path_script_deduplicates(tmp_path):
+    env = os.environ.copy()
+    env.update({
+        'Path': r'C:\Tools;C:\Tools\\;c:\tools;C:\Other\\;C:\Other',
+        'USERPROFILE': str(tmp_path),
+    })
+    expected = r'C:\Tools;C:\Other;' + str(Path(tmp_path) / 'bin')
+    output = run_fix_path_capture(env)
+    assert output == expected
