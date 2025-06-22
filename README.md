@@ -12,6 +12,14 @@ Key directories:
 - `vscode/` – VS Code user settings
 - `llm/` – prompts and other LLM-related files
 
+## Quickstart
+
+Install the required Python packages:
+
+```bash
+pip install -r requirements.txt
+```
+
 See the [installation guide](docs/installation.md) for setup instructions.
 If your PATH isn't updating correctly on Windows, run
 `scripts/fix-path.ps1` from an elevated PowerShell prompt.

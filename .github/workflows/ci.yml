@@ -17,6 +17,16 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+      - name: Verify Python packages
+        run: |
+          python - <<'PY'
+          import importlib, sys
+          required = ["dspy", "pytest", "json5"]
+          missing = [p for p in required if importlib.util.find_spec(p) is None]
+          if missing:
+              print("Missing packages:", ", ".join(missing))
+              sys.exit(1)
+          PY
       - name: Run tests
         run: pytest -q
       - name: Run lint
