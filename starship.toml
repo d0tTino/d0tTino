@@ -1,11 +1,9 @@
-# Example Starship prompt configuration
-format = "$time$directory$git_branch$git_status$character"
+format = "$directory$git_branch$character"
 
 [time]
 disabled = false
-style = "dimmed cyan"
-time_format = "%R "
+format = "[$time]($style) "
 
 [git_status]
 disabled = false
-style = "bold green"
+

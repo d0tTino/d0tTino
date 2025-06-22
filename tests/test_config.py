@@ -14,8 +14,10 @@ def load_json(path: Path):
 def test_windows_terminal_settings():
     data = load_json(Path('windows-terminal') / 'settings.json')
     assert 'profiles' in data
-    assert 'actions' in data
-    assert data['profiles']['list']
+    profiles = data['profiles'].get('list', [])
+    assert len(profiles) > 0, "no profiles configured"
+    assert 'actions' in data and data['actions'], "action bindings missing"
+
 
 
 def test_tablet_windows_terminal():

@@ -1,7 +1,9 @@
+import tomllib
 from pathlib import Path
 
 
-def test_starship_has_time_and_git_status():
-    text = Path('starship.toml').read_text(encoding='utf-8')
-    assert '[time]' in text
-    assert '[git_status]' in text
+def test_starship_time_and_git_status_sections():
+    data = tomllib.loads(Path('starship.toml').read_text())
+    assert 'time' in data, '[time] section missing'
+    assert 'git_status' in data, '[git_status] section missing'
+
