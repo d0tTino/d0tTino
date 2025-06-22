@@ -20,6 +20,15 @@ Install the required Python packages:
 pip install -r requirements.txt
 ```
 
+Node.js is required for running the lint script. The easiest way to install it is via [nvm](https://github.com/nvm-sh/nvm):
+
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+nvm install --lts
+```
+
+Alternatively, download the official installer from [nodejs.org](https://nodejs.org).
+
 See the [installation guide](docs/installation.md) for setup instructions.
 If your PATH isn't updating correctly on Windows, run
 `scripts/fix-path.ps1` from an elevated PowerShell prompt.
