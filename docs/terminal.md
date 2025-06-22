@@ -112,6 +112,57 @@ New-Item -ItemType SymbolicLink -Path $Env:USERPROFILE\\AppData\\Local\\Packages
 
 These examples assume the repository is cloned in a convenient location. Adjust the paths to match your setup.
 
+## Terminal Tools: fastfetch, btm & Nushell/Starship
+
+### fastfetch
+Display system information each time a shell starts.
+
+Install on Debian/Ubuntu:
+```bash
+sudo apt install fastfetch
+```
+macOS via Homebrew:
+```bash
+brew install fastfetch
+```
+Add `fastfetch` to your shell's startup file or `~/.config/nushell/config.nu` if you use Nushell.
+
+Example configuration:
+```bash
+# ~/.config/fastfetch/config.conf
+ascii_logo = "ubuntu"
+show_battery = true
+```
+
+### btm (bottom)
+A terminal-based resource monitor.
+
+Install with Cargo:
+```bash
+cargo install bottom --locked
+```
+Configuration file `~/.config/bottom/bottom.toml`:
+```toml
+update_rate = 1000
+mem_as_value = true
+```
+
+### Nushell & Starship
+Install Nushell and the Starship prompt for structured commands and a colorful prompt.
+
+```bash
+cargo install nu        # or brew install nushell
+curl -sS https://starship.rs/install.sh | sh -s -- -y
+```
+Add to `~/.config/nushell/config.nu`:
+```nu
+$env.STARSHIP_CONFIG = '~/.config/starship.toml'
+mkdir ~/.cache/starship
+starship init nu | save --force ~/.cache/starship/init.nu
+source ~/.cache/starship/init.nu
+```
+Customize the prompt by editing [`starship.toml`](../starship.toml) in this repository.
+
 
 ## LLM Assets
 
