@@ -18,11 +18,12 @@ Follow these steps to set up the configuration files on a new system.
 
 ## WSL
 
-Run the provided script to install the basic tools on a fresh Ubuntu/WSL
-instance:
+Run the provided script from the repository root to install the basic tools on
+a fresh Ubuntu/WSL instance. The script uses `apt-get` and may prompt for your
+password:
 
 ```bash
-bash scripts/setup-wsl.sh
+sudo bash scripts/setup-wsl.sh
 ```
 
 ## Linux / macOS
