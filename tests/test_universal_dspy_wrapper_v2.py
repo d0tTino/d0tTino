@@ -36,3 +36,4 @@ def test_is_repo_data_path_valid(tmp_path):
     assert is_repo_data_path(valid)
     assert not is_repo_data_path(invalid_root)
     assert not is_repo_data_path(invalid_ext)
+

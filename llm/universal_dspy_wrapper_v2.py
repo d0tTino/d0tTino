@@ -8,10 +8,12 @@ from __future__ import annotations
 import inspect
 import json
 import re
+
 import shutil
 import subprocess
 from pathlib import Path
 from typing import Callable, List, Type
+import warnings
 
 import dspy
 from dspy.teleprompt import LabeledFewShot
@@ -67,11 +69,12 @@ class LoggedFewShotWrapper(dspy.Module):
 
         trainset: List[dspy.Example] = []
         if self._fewshot_file.exists():
-            with self._fewshot_file.open() as fh:
+            with self._fewshot_file.open(encoding="utf-8") as fh:
                 for line in fh:
                     obj = json.loads(line)
                     ex = dspy.Example(
                         **obj.get("inputs", obj), **obj.get("outputs", {})
+
                     )
                     ex = ex.with_inputs(*obj.get("inputs", obj).keys())
                     trainset.append(ex)
@@ -104,7 +107,9 @@ class LoggedFewShotWrapper(dspy.Module):
 
     def recompile_from_fewshot(self) -> None:
         """Reload few-shot data from file and recompile."""
-        self.__init__(
+        # Recreate a fresh instance to avoid duplicating initialization
+        # side effects such as optimizer state or file handles.
+        new_instance = self.__class__(
             self.wrapped,
             optimiser_cls=self.optimiser_cls,
             optimiser_kwargs=self.optimiser_kwargs,
@@ -112,6 +117,9 @@ class LoggedFewShotWrapper(dspy.Module):
             log_dir=self.log_dir,
             fewshot_dir=self.fewshot_dir,
         )
+        # Replace all internal state with the freshly created instance.
+        self.__dict__.clear()
+        self.__dict__.update(new_instance.__dict__)
 
     def forward(self, **inputs):
         prediction = self.compiled(**inputs)
@@ -124,4 +132,5 @@ class LoggedFewShotWrapper(dspy.Module):
         with self._log_file.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(record, ensure_ascii=False) + "\n")
         # Return the prediction object without any modification
+
         return prediction

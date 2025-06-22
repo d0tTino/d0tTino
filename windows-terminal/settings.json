@@ -6,6 +6,14 @@
             "command": { "action": "paste" },
             "keys": "ctrl+v"
 
+        },
+        {
+            "command": { "action": "splitPane", "split": "vertical" },
+            "keys": "alt+v"
+        },
+        {
+            "command": { "action": "splitPane", "split": "horizontal" },
+            "keys": "alt+h"
         }
     ],
     "profiles": {
