@@ -14,10 +14,17 @@ Key directories:
 
 ## Quickstart
 
-Install the required Python packages:
+Install the required Python packages (including test utilities such as
+`pytest` and `json5`):
 
 ```bash
 pip install -r requirements.txt
+```
+
+You can then run the test suite to verify the configuration:
+
+```bash
+pytest
 ```
 
 See the [installation guide](docs/installation.md) for setup instructions.
