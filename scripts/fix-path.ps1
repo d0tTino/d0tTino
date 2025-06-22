@@ -13,12 +13,25 @@ foreach ($p in $paths) {
     }
 }
 
-$userBin = Join-Path $Env:USERPROFILE 'bin'
-$userBinLower = $userBin.ToLower()
-if ($uniqueLower -notcontains $userBinLower) {
-    $unique += $userBin
-    $uniqueLower += $userBinLower
+$userProfile = $Env:USERPROFILE
+if (-not $userProfile) {
+    $userProfile = $Env:HOME
+}
+if (-not $userProfile) {
+    try {
+        $userProfile = [Environment]::GetFolderPath('UserProfile')
+    } catch {
+        $userProfile = $null
+    }
+}
+if ($userProfile) {
+    $userBin = Join-Path $userProfile 'bin'
+    $userBinLower = $userBin.ToLower()
+    if ($uniqueLower -notcontains $userBinLower) {
+        $unique += $userBin
+        $uniqueLower += $userBinLower
 
+    }
 }
 
 $joinedPath = $unique -join ';'
