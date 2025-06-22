@@ -17,26 +17,20 @@
     "copyFormatting": "none",
     "copyOnSelect": false,
     "defaultProfile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
-    "keybindings": 
-    [
+    "actions": [
         {
-            "id": "User.globalSummon.90584B03",
-            "keys": "ctrl+;"
+            "command": { "action": "splitPane", "split": "vertical" },
+            "keys": "alt+v"
+        },
+        {
+            "command": { "action": "splitPane", "split": "horizontal" },
+            "keys": "alt+h"
         }
     ],
-    "newTabMenu": 
-    [
-        {
-            "type": "remainingProfiles"
-        }
-    ],
-    "profiles": 
-    {
-        "defaults": 
-        {
-            "compatibility.input.forceVT": true,
-            "font": 
-            {
+    "profiles": {
+        "defaults": {
+            "font": {
+
                 "face": "CascaydiaCove Nerd Font",
                 "weight": "normal"
             },
