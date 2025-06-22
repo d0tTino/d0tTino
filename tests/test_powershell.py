@@ -13,3 +13,18 @@ def test_user_profile_contains_required_commands():
     assert any("starship" in line.lower() for line in lines), "starship invocation missing"
     assert any("posh-git" in line.lower() for line in lines), "posh-git invocation missing"
     assert any("zoxide" in line.lower() for line in lines), "zoxide invocation missing"
+
+
+def test_zoxide_after_fzf_block():
+    """Ensure zoxide initialization occurs after the fzf setup."""
+    lines = USER_PROFILE_PATH.read_text().splitlines()
+    fzf_index = None
+    zoxide_index = None
+    for idx, line in enumerate(lines):
+        if "Set-PSReadLineKeyHandler" in line:
+            fzf_index = idx
+        if "zoxide init powershell" in line:
+            zoxide_index = idx
+    assert fzf_index is not None, "fzf block not found"
+    assert zoxide_index is not None, "zoxide init not found"
+    assert zoxide_index > fzf_index, "zoxide initialization should follow fzf block"
