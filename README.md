@@ -18,7 +18,7 @@ Install the required Python packages (including test utilities such as
 `pytest` and `json5`):
 
 ```bash
-pip install -r requirements.txt
+pip install -e . -r requirements.txt
 ```
 
 You can then run the test suite to verify the configuration:
@@ -47,5 +47,19 @@ Run `scripts/setup-hooks.sh` to enable the local hooks automatically
 Once enabled, the `pre-commit` hook automatically exports your current
 `winget` package list when commits run on Windows. On Linux or WSL the
 export is skipped unless `winget` is available.
+
+## Testing
+
+Before running the Python tests locally, install the required packages:
+
+```bash
+pip install -r requirements.txt
+```
+
+Then invoke `pytest`:
+
+```bash
+pytest
+```
 
 Licensed under the [Apache 2.0](LICENSE) license.
