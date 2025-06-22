@@ -1,17 +1,22 @@
 # Clean up and persist the user's PATH value
 $paths = $Env:Path -split ';'
 $unique = @()
+$uniqueLower = @()
 
 foreach ($p in $paths) {
     $trim = $p.Trim()
-    if ($trim -and $unique -notcontains $trim) {
+    $lower = $trim.ToLower()
+    if ($trim -and $uniqueLower -notcontains $lower) {
         $unique += $trim
+        $uniqueLower += $lower
     }
 }
 
 $userBin = Join-Path $Env:USERPROFILE 'bin'
-if ($unique -notcontains $userBin) {
+$userBinLower = $userBin.ToLower()
+if ($uniqueLower -notcontains $userBinLower) {
     $unique += $userBin
+    $uniqueLower += $userBinLower
 }
 
 $newPath = $unique -join ';'
