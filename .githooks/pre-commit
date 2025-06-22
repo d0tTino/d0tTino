@@ -26,3 +26,6 @@ case "$OS" in
         echo "Skipping winget export on unsupported OS: $OS"
         ;;
 esac
+
+# Validate winget-packages.json after export
+python scripts/validate_winget.py
