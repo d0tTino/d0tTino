@@ -19,6 +19,28 @@ def test_windows_terminal_settings():
     assert 'actions' in data and data['actions'], "action bindings missing"
 
 
+def test_windows_terminal_split_bindings():
+    """The starter settings should bind Alt+V and Alt+H for pane splitting."""
+    data = load_json(Path('windows-terminal') / 'settings.json')
+    actions = data.get('actions', [])
+
+    def find_binding(key):
+        for action in actions:
+            if action.get('keys') == key:
+                return action
+        return None
+
+    binding_v = find_binding('alt+v')
+    assert binding_v, 'Alt+V binding missing'
+    assert binding_v.get('command', {}).get('action') == 'splitPane'
+    assert binding_v.get('command', {}).get('split') == 'vertical'
+
+    binding_h = find_binding('alt+h')
+    assert binding_h, 'Alt+H binding missing'
+    assert binding_h.get('command', {}).get('action') == 'splitPane'
+    assert binding_h.get('command', {}).get('split') == 'horizontal'
+
+
 
 def test_tablet_windows_terminal():
     data = load_json(Path('tablet-config/windows-terminal') / 'settings.json')
