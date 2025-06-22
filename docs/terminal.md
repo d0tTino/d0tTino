@@ -209,12 +209,16 @@ To set up a similar environment:
 
 ### Install the tools
 
-On Debian-based systems:
+Run the helper script from the repository root. On Windows use the PowerShell
+version, while Linux and macOS users can run the shell script. The script
+detects Debian/Ubuntu, Arch and macOS automatically:
+
+```powershell
+./scripts/setup-screenshot-env.ps1
+```
 
 ```bash
-sudo apt install fastfetch btm nushell
-wget https://zed.dev/api/releases/zed_latest_amd64.deb
-sudo dpkg -i zed_latest_amd64.deb
+./scripts/setup-screenshot-env.sh
 ```
 
 ### Example profile entries
@@ -233,6 +237,21 @@ For Nushell, place similar commands in `~/.config/nushell/env.nu`:
 fastfetch
 btm
 ```
+
+### Apply the theme
+
+Copy the sample configs from this repository to match the palette shown in the
+screenshot:
+
+```bash
+mkdir -p ~/.config/fastfetch ~/.config/bottom
+cp dotfiles/fastfetch/config.conf ~/.config/fastfetch/
+cp dotfiles/btm/config.toml ~/.config/bottom/bottom.toml
+cp starship.toml ~/.config/starship.toml
+```
+
+Zed's preferences include several built-in color themes. Select the dark theme
+that most closely matches the screenshot from **Settings → Appearance**.
 
 ---
 
