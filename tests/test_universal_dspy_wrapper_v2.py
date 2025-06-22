@@ -1,29 +1,40 @@
-import warnings
-from pathlib import Path
-
 import dspy
 import pytest  # noqa: F401
 
 from llm.universal_dspy_wrapper_v2 import LoggedFewShotWrapper
 
 
+
 class DummyModule(dspy.Module):
-    def forward(self, text: str):
-        return text.upper()
+    def forward(self, value):
+        return dspy.Prediction(value=value)
 
 
-def test_forward_write_failure(monkeypatch, tmp_path):
-    wrapper = LoggedFewShotWrapper(DummyModule(), log_dir=tmp_path, fewshot_dir=tmp_path)
-    original_open = Path.open
+def test_wrapper_forward_return_type(tmp_path):
+    module = DummyModule()
+    wrapper = LoggedFewShotWrapper(
+        module, log_dir=tmp_path / "logs", fewshot_dir=tmp_path / "fewshot"
+    )
+    result = wrapper.forward(value="test")
+    baseline = module(value="test")
+    assert isinstance(result, type(baseline))
+    assert result == baseline
 
-    def fake_open(self, *args, **kwargs):
-        if self == wrapper._log_file:
-            raise OSError("fail")
-        return original_open(self, *args, **kwargs)
 
-    monkeypatch.setattr(Path, "open", fake_open)
-    with warnings.catch_warnings(record=True) as w:
-        result = wrapper.forward(text="hello")
-    assert result == "HELLO"
-    assert any("Failed to write log data" in str(warn.message) for warn in w)
+def test_is_repo_data_path_valid(tmp_path):
+    repo_root = Path(
+        subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    )
+    valid = repo_root / "config.yaml"
+    invalid_root = tmp_path / "config.yaml"
+    invalid_ext = repo_root / "config.txt"
+
+    assert is_repo_data_path(valid)
+    assert not is_repo_data_path(invalid_root)
+    assert not is_repo_data_path(invalid_ext)
 

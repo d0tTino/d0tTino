@@ -14,7 +14,7 @@ def test_setup_wsl_symlinks(tmp_path):
     usr_local_bin.mkdir(parents=True)
 
     # Stub commands
-    create_exe(bin_dir / "apt-get", "#!/usr/bin/env bash\nexit 0\n")
+    create_exe(bin_dir / "apt-get", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "sudo", "#!/usr/bin/env bash\n\"$@\"\n")
     create_exe(bin_dir / "batcat")
     create_exe(bin_dir / "fdfind")
@@ -45,4 +45,51 @@ fi
     assert os.readlink(bat_link) == str(bin_dir / "batcat")
     assert fd_link.is_symlink()
     assert os.readlink(fd_link) == str(bin_dir / "fdfind")
+
+
+def test_setup_wsl_requires_sudo(tmp_path):
+    fake_root = tmp_path
+    bin_dir = fake_root / "bin"
+    bin_dir.mkdir(parents=True)
+
+    # Stub commands so the script doesn't try to run the real ones
+    create_exe(bin_dir / "apt-get", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "curl", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "starship", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "zoxide", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "id", "#!/bin/sh\necho 1000\n")
+
+    env = os.environ.copy()
+    env.update({
+        "PATH": str(bin_dir),
+    })
+
+    result = subprocess.run(
+        ["/bin/bash", "scripts/setup-wsl.sh"],
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    assert "sudo is required" in result.stderr
+
+
+def test_setup_wsl_root_without_sudo(tmp_path):
+    fake_root = tmp_path
+    bin_dir = fake_root / "bin"
+    bin_dir.mkdir(parents=True)
+
+    create_exe(bin_dir / "apt-get", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "curl", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "starship", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "zoxide", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "id", "#!/bin/sh\necho 0\n")
+
+    env = os.environ.copy()
+    env.update({
+        "PATH": str(bin_dir),
+    })
+
+    subprocess.run(["/bin/bash", "scripts/setup-wsl.sh"], check=True, env=env)
    

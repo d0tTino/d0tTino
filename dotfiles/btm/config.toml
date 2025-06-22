@@ -1,0 +1,3 @@
+# Default configuration for bottom (btm)
+# update_rate: refresh interval in milliseconds
+update_rate = 1000
