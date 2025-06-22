@@ -12,7 +12,12 @@ def has_non_comment_line(path: str) -> bool:
 
 
 def test_dotfiles_have_non_comment_lines():
-    for folder in ("dotfiles/desktop", "dotfiles/work_laptop"):
+    for folder in (
+        "dotfiles/desktop",
+        "dotfiles/work_laptop",
+        "dotfiles/fastfetch",
+        "dotfiles/btm",
+    ):
         for file_path in glob.glob(os.path.join(folder, "*")):
             assert os.path.isfile(file_path), f"{file_path} should exist"
             assert has_non_comment_line(
