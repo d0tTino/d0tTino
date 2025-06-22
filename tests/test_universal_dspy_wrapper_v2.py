@@ -1,7 +1,8 @@
 import dspy
-from llm.universal_dspy_wrapper_v2 import LoggedFewShotWrapper, is_repo_data_path
-import subprocess
-from pathlib import Path
+import pytest  # noqa: F401
+
+from llm.universal_dspy_wrapper_v2 import LoggedFewShotWrapper
+
 
 
 class DummyModule(dspy.Module):

@@ -1,6 +1,5 @@
 import os
 import subprocess
-from pathlib import Path
 
 def create_exe(path, contents="#!/usr/bin/env bash\n"):
     path.write_text(contents)
