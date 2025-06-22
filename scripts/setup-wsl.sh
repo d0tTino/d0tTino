@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Ensure sudo is available before attempting any privileged commands
+if ! command -v sudo >/dev/null; then
+    if [ "$(id -u)" -eq 0 ]; then
+        sudo() { "$@"; }
+    else
+        echo "Error: sudo is required but not installed." >&2
+        echo "Please install sudo using your package manager and re-run this script." >&2
+        exit 1
+    fi
+fi
+
 sudo apt-get update
 sudo apt-get install -y \
     git \
