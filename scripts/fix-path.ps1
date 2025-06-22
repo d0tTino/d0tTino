@@ -9,6 +9,7 @@ foreach ($p in $paths) {
     if ($trim -and $uniqueLower -notcontains $lower) {
         $unique += $trim
         $uniqueLower += $lower
+
     }
 }
 
@@ -17,11 +18,22 @@ $userBinLower = $userBin.ToLower()
 if ($uniqueLower -notcontains $userBinLower) {
     $unique += $userBin
     $uniqueLower += $userBinLower
+
 }
 
-$newPath = $unique -join ';'
+$joinedPath = $unique -join ';'
+$newPath = $joinedPath
+$originalCount = $unique.Count
 if ($newPath.Length -gt 1023) {
+    Write-Warning "PATH length exceeds 1023 characters and will be truncated."
+    $removed = $newPath.Substring(1023)
+    Write-Verbose "Removed portion: $removed" -Verbose
     $newPath = $newPath.Substring(0, 1023)
+
+}
+$finalCount = ($newPath -split ';').Count
+if ($finalCount -lt $originalCount) {
+    Write-Warning 'Some PATH entries were dropped due to size limitations.'
 }
 
 [Environment]::SetEnvironmentVariable('Path', $newPath, 'User')

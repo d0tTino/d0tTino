@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import json5
 
 
 def load_json(path: Path):
@@ -7,9 +8,7 @@ def load_json(path: Path):
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        lines = [line.split("//", 1)[0] for line in text.splitlines()]
-        cleaned = "\n".join(lines)
-        return json.loads(cleaned)
+        return json5.loads(text)
 
 
 def test_windows_terminal_settings():
@@ -20,3 +19,17 @@ def test_windows_terminal_settings():
 def test_tablet_windows_terminal():
     data = load_json(Path('tablet-config/windows-terminal') / 'settings.json')
     assert '$schema' in data
+
+
+def test_load_json5(tmp_path):
+    json_with_comments = (
+        '{\n'
+        '  "url": "https://example.com", // comment after value\n'
+        '  "answer": 42\n'
+        '}'
+    )
+    file = tmp_path / "data.json"
+    file.write_text(json_with_comments)
+    data = load_json(file)
+    assert data["url"] == "https://example.com"
+    assert data["answer"] == 42
