@@ -27,6 +27,9 @@ $joinedPath = $unique -join ';'
 $newPath = $joinedPath
 $originalCount = $unique.Count
 if ($newPath.Length -gt 1023) {
+    Write-Warning "PATH length exceeds 1023 characters and will be truncated."
+    $removed = $newPath.Substring(1023)
+    Write-Verbose "Removed portion: $removed" -Verbose
     $newPath = $newPath.Substring(0, 1023)
 
 }
