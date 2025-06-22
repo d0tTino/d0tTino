@@ -11,6 +11,7 @@ import logging
 import shutil
 from pathlib import Path
 from typing import Callable, List, Type
+import warnings
 
 import dspy
 from dspy.teleprompt import LabeledFewShot
@@ -109,6 +110,9 @@ class LoggedFewShotWrapper(dspy.Module):
 
         record = {"inputs": inputs, "outputs": serialisable_output}
 
-        with self._log_file.open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+        try:
+            with self._log_file.open("a", encoding="utf-8") as fh:
+                fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+        except OSError as exc:
+            warnings.warn(f"Failed to write log data: {exc}")
         return prediction
