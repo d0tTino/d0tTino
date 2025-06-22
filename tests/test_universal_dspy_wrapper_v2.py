@@ -2,7 +2,7 @@ import warnings
 from pathlib import Path
 
 import dspy
-import pytest
+import pytest  # noqa: F401
 
 from llm.universal_dspy_wrapper_v2 import LoggedFewShotWrapper
 
