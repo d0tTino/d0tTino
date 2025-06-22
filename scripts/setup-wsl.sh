@@ -10,7 +10,15 @@ sudo apt-get install -y \
     fzf \
     build-essential \
     starship \
-    zoxide
+    zoxide \
+    curl
+
+# Verify that curl is available; exit with a helpful message if not.
+if ! command -v curl >/dev/null; then
+    echo "Error: curl is required but could not be installed." >&2
+    echo "Please install curl using your package manager and re-run this script." >&2
+    exit 1
+fi
 
 # Ensure starship is available; install from the official script if apt didn't
 # provide it.
@@ -31,8 +39,8 @@ fi
 
 # Provide helpful symlinks for batcat and fdfind if they exist
 if command -v batcat >/dev/null && ! command -v bat >/dev/null; then
-    sudo ln -sf $(command -v batcat) /usr/local/bin/bat
+    sudo ln -sf "$(command -v batcat)" /usr/local/bin/bat
 fi
 if command -v fdfind >/dev/null && ! command -v fd >/dev/null; then
-    sudo ln -sf $(command -v fdfind) /usr/local/bin/fd
+    sudo ln -sf "$(command -v fdfind)" /usr/local/bin/fd
 fi
