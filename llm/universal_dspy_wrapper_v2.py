@@ -93,7 +93,9 @@ class LoggedFewShotWrapper(dspy.Module):
 
     def recompile_from_fewshot(self) -> None:
         """Reload few-shot data from file and recompile."""
-        self.__init__(
+        # Recreate a fresh instance to avoid duplicating initialization
+        # side effects such as optimizer state or file handles.
+        new_instance = self.__class__(
             self.wrapped,
             optimiser_cls=self.optimiser_cls,
             optimiser_kwargs=self.optimiser_kwargs,
@@ -101,6 +103,9 @@ class LoggedFewShotWrapper(dspy.Module):
             log_dir=self.log_dir,
             fewshot_dir=self.fewshot_dir,
         )
+        # Replace all internal state with the freshly created instance.
+        self.__dict__.clear()
+        self.__dict__.update(new_instance.__dict__)
 
     def forward(self, **inputs):
         prediction = self.compiled(**inputs)
