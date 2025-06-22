@@ -1,5 +1,15 @@
 {
     "defaultProfile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+    "actions": [
+        {
+            "command": { "action": "splitPane", "split": "vertical" },
+            "keys": "alt+v"
+        },
+        {
+            "command": { "action": "splitPane", "split": "horizontal" },
+            "keys": "alt+h"
+        }
+    ],
     "profiles": {
         "defaults": {
             "font": {
