@@ -6,6 +6,7 @@ sudo apt-get install -y \
     git \
     ripgrep \
     fd-find \
+    git-delta \
     bat \
     fzf \
     build-essential \

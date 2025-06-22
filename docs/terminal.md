@@ -89,7 +89,7 @@ This repository includes example setups for various tools:
 - `dotfiles/work_laptop` – configs for a work laptop.
 - `windows-terminal` – minimal starter `settings.json` for Windows Terminal.
 - `tablet-config/windows-terminal` – full example configuration for a tablet.
-- `starship.toml` – minimal Starship prompt configuration.
+- `starship.toml` – example Starship prompt configuration.
 - `vscode` – basic VS Code user settings.
 
 ### Linking on macOS/Linux

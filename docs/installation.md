@@ -10,19 +10,21 @@ Follow these steps to set up the configuration files on a new system.
    ```
 2. Copy or symlink the files from this repository to your profile directory.
 3. Restart the terminal to load the new settings.
-4. If your PATH looks incorrect, run the following from an elevated PowerShell prompt:
+4. After installing everything, or whenever you notice duplicate or missing entries in your PATH, run the following from an elevated PowerShell prompt:
    ```powershell
    scripts/fix-path.ps1
    ```
-   The script cleans up duplicate entries and ensures `%USERPROFILE%\bin` is included.
+   The script cleans up duplicate entries and ensures your `bin` directory is included.
+   If `$Env:USERPROFILE` isn't defined (e.g. on Linux), it falls back to `$HOME`.
 
 ## WSL
 
-Run the provided script to install the basic tools on a fresh Ubuntu/WSL
-instance:
+Run the provided script from the repository root to install the basic tools on
+a fresh Ubuntu/WSL instance. The script uses `apt-get` and may prompt for your
+password:
 
 ```bash
-bash scripts/setup-wsl.sh
+sudo bash scripts/setup-wsl.sh
 ```
 
 ## Linux / macOS
