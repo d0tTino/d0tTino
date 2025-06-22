@@ -1,1 +1,8 @@
 format = "$directory$git_branch$character"
+
+[time]
+disabled = false
+format = "[$time]($style) "
+
+[git_status]
+disabled = false
