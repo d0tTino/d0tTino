@@ -16,7 +16,7 @@ def test_setup_wsl_symlinks(tmp_path):
 
     # Stub commands
     create_exe(bin_dir / "apt-get", "#!/usr/bin/env bash\nexit 0\n")
-    create_exe(bin_dir / "sudo", "#!/usr/bin/env bash\n$@\n")
+    create_exe(bin_dir / "sudo", "#!/usr/bin/env bash\n\"$@\"\n")
     create_exe(bin_dir / "batcat")
     create_exe(bin_dir / "fdfind")
     # ln wrapper that redirects /usr/local/bin to FAKE_ROOT
