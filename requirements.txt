@@ -1,2 +1,3 @@
 dspy
 pytest
+json5
