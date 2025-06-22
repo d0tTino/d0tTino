@@ -37,7 +37,7 @@
             "compatibility.input.forceVT": true,
             "font": 
             {
-                "face": "CaskaydiaCove NF",
+                "face": "CascaydiaCove Nerd Font",
                 "weight": "normal"
             },
             "intenseTextStyle": "bold",

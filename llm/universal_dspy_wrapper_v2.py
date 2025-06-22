@@ -70,6 +70,8 @@ class LoggedFewShotWrapper(dspy.Module):
 
     def snapshot_log_to_fewshot(self, replace: bool = False) -> None:
         """Copy logged data into the few-shot file."""
+        if not self._log_file.exists():
+            return
         mode = "w" if replace else "a"
         with self._fewshot_file.open(mode, encoding="utf-8") as out:
             with self._log_file.open(encoding="utf-8") as fh:
@@ -88,10 +90,12 @@ class LoggedFewShotWrapper(dspy.Module):
 
     def forward(self, **inputs):
         prediction = self.compiled(**inputs)
-        record = {
-            "inputs": inputs,
-            "outputs": getattr(prediction, "as_dict", lambda: prediction)(),
-        }
+        serialisable_output = (
+            prediction.as_dict() if hasattr(prediction, "as_dict") else str(prediction)
+        )
+
+        record = {"inputs": inputs, "outputs": serialisable_output}
+
         with self._log_file.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(record, ensure_ascii=False) + "\n")
         return prediction
