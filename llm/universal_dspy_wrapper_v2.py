@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import inspect
 import json
+import logging
 import shutil
 from pathlib import Path
 from typing import Callable, List, Type
@@ -47,8 +48,19 @@ class LoggedFewShotWrapper(dspy.Module):
         if self._fewshot_file.exists():
             with self._fewshot_file.open() as fh:
                 for line in fh:
-                    obj = json.loads(line)
-                    ex = dspy.Example(**obj.get("inputs", obj), **obj.get("outputs", {}))
+                    try:
+                        obj = json.loads(line)
+                    except json.JSONDecodeError as exc:
+                        logging.warning(
+                            "Skipping invalid JSON line in %s: %s",
+                            self._fewshot_file,
+                            exc,
+                        )
+                        continue
+                    ex = dspy.Example(
+                        **obj.get("inputs", obj),
+                        **obj.get("outputs", {}),
+                    )
                     ex = ex.with_inputs(*obj.get("inputs", obj).keys())
                     trainset.append(ex)
 
