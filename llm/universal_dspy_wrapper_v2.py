@@ -46,7 +46,7 @@ class LoggedFewShotWrapper(dspy.Module):
 
         trainset: List[dspy.Example] = []
         if self._fewshot_file.exists():
-            with self._fewshot_file.open() as fh:
+            with self._fewshot_file.open(encoding="utf-8") as fh:
                 for line in fh:
                     try:
                         obj = json.loads(line)
