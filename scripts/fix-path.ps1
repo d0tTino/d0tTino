@@ -1,16 +1,26 @@
 # Clean up and persist the user's PATH value
 $paths = $Env:Path -split ';'
-$list = [System.Collections.Generic.List[string]]::new()
+$unique = @()
+$uniqueLower = @()
+
 foreach ($p in $paths) {
     $trim = $p.Trim()
-    if ($trim -and -not $list.Contains($trim)) {
-        $list.Add($trim) | Out-Null
+    if (-not $trim) { continue }
+
+    $lower = $trim.ToLower()
+    if ($uniqueLower -notcontains $lower) {
+        $unique += $trim
+        $uniqueLower += $lower
+
     }
 }
 
 $userBin = Join-Path $Env:USERPROFILE 'bin'
-if (-not $list.Contains($userBin)) {
-    $list.Add($userBin) | Out-Null
+$userBinLower = $userBin.ToLower()
+if ($uniqueLower -notcontains $userBinLower) {
+    $unique += $userBin
+    $uniqueLower += $userBinLower
+
 }
 
 $joinedPath = $unique -join ';'
