@@ -70,6 +70,8 @@ class LoggedFewShotWrapper(dspy.Module):
 
     def snapshot_log_to_fewshot(self, replace: bool = False) -> None:
         """Copy logged data into the few-shot file."""
+        if not self._log_file.exists():
+            raise FileNotFoundError(f"No log data present at {self._log_file}")
         mode = "w" if replace else "a"
         with self._fewshot_file.open(mode, encoding="utf-8") as out:
             with self._log_file.open(encoding="utf-8") as fh:
