@@ -8,7 +8,7 @@ Key directories:
 - `powershell/` – PowerShell profile scripts
 - `windows-terminal/` – starter Windows Terminal settings
 - `tablet-config/` – full example configuration for a tablet, including Windows Terminal
-- `starship.toml` – minimal Starship prompt configuration
+- `starship.toml` – example Starship prompt configuration
 - `vscode/` – VS Code user settings
 - `llm/` – prompts and other LLM-related files
 
@@ -19,10 +19,11 @@ For a more detailed overview, see [docs/terminal.md](docs/terminal.md).
 
 ## Git hooks
 
-Run the following to enable the local hooks:
+Run `scripts/setup-hooks.sh` to enable the local hooks automatically
+(equivalent to running `git config core.hooksPath .githooks`):
 
 ```bash
-git config core.hooksPath .githooks
+./scripts/setup-hooks.sh
 ```
 
 Once enabled, the `pre-commit` hook automatically exports your current

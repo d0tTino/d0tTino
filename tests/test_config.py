@@ -19,9 +19,12 @@ def test_windows_terminal_settings():
     assert 'actions' in data and data['actions'], "action bindings missing"
 
 
+
 def test_tablet_windows_terminal():
     data = load_json(Path('tablet-config/windows-terminal') / 'settings.json')
     assert '$schema' in data
+    assert 'profiles' in data
+    assert 'actions' in data
 
 
 def test_load_json5(tmp_path):

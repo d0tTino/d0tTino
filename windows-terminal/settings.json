@@ -5,14 +5,20 @@
         {
             "command": { "action": "paste" },
             "keys": "ctrl+v"
+
         }
     ],
     "profiles": {
         "defaults": {
             "font": {
+
                 "face": "CascaydiaCove Nerd Font",
-                "size": 11
-            }
+                "weight": "normal"
+            },
+            "intenseTextStyle": "bold",
+            "opacity": 20,
+            "useAcrylic": true,
+            "textAntialiasing": "grayscale"
         },
         "list": [
             {
@@ -22,4 +28,5 @@
             }
         ]
     }
+
 }

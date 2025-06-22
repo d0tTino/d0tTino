@@ -6,3 +6,4 @@ format = "[$time]($style) "
 
 [git_status]
 disabled = false
+
