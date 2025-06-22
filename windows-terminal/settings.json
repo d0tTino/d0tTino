@@ -1,12 +1,32 @@
 {
+    "$schema": "https://aka.ms/terminal-profiles-schema",
     "defaultProfile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+    "actions": [
+        {
+            "command": { "action": "paste" },
+            "keys": "ctrl+v"
+
+        }
+    ],
     "profiles": {
         "defaults": {
             "font": {
+
                 "face": "CascaydiaCove Nerd Font",
-                "size": 11
-            }
+                "weight": "normal"
+            },
+            "intenseTextStyle": "bold",
+            "opacity": 20,
+            "useAcrylic": true,
+            "textAntialiasing": "grayscale"
         },
-        "list": []
+        "list": [
+            {
+                "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+                "name": "PowerShell",
+                "source": "Windows.Terminal.PowershellCore"
+            }
+        ]
     }
+
 }

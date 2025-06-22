@@ -6,3 +6,6 @@ To install these settings automatically, run
 `scripts/install-windows-terminal.ps1` from the repository root. The script
 creates `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState`
 if needed and copies `settings.json` there.
+
+The settings define `Alt+V` to split the active pane vertically and `Alt+H` to
+split it horizontally.
