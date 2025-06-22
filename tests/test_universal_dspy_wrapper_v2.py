@@ -1,12 +1,9 @@
-import pytest
-import subprocess
+=import dspy
+import pytest  # noqa: F401
 from pathlib import Path
+import subprocess
 
-dspy = pytest.importorskip("dspy")
-
-from llm.universal_dspy_wrapper_v2 import LoggedFewShotWrapper, is_repo_data_path
-
-
+from llm.universal_dspy_wrapper_v2 import LoggedFewShotWrapper, is_repo_data_path, _REPO_ROOT
 
 class DummyModule(dspy.Module):
     def forward(self, value):
@@ -40,4 +37,12 @@ def test_is_repo_data_path_valid(tmp_path):
     assert is_repo_data_path(valid)
     assert not is_repo_data_path(invalid_root)
     assert not is_repo_data_path(invalid_ext)
+
+
+def test_is_repo_data_path_windows_and_posix():
+    posix_path = Path(f"{_REPO_ROOT.as_posix()}/file.json")
+    windows_path = Path(str(_REPO_ROOT).replace("/", "\\") + "\\file.json")
+
+    assert is_repo_data_path(posix_path)
+    assert is_repo_data_path(windows_path)
 

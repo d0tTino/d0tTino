@@ -28,13 +28,14 @@ _REPO_ROOT = Path(
 )
 
 _PATH_REGEX = re.compile(
-    rf"^(?P<root>{re.escape(str(_REPO_ROOT))})/.+(?P<data>[^/]+\.(?:ya?ml|json))$"
+    rf"^(?P<root>{re.escape(_REPO_ROOT.as_posix())})/.+(?P<data>[^/]+\.(?:ya?ml|json))$"
 )
 
 
 def is_repo_data_path(path: str | Path) -> bool:
     """Return True if ``path`` is within the repo and ends with an allowed extension."""
-    return bool(_PATH_REGEX.match(str(path)))
+    normalised = Path(path).as_posix().replace("\\", "/")
+    return bool(_PATH_REGEX.match(normalised))
 
 
 class LoggedFewShotWrapper(dspy.Module):
