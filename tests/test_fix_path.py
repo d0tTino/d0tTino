@@ -23,7 +23,7 @@ def run_fix_path():
         ], check=True)
 
 
-def run_fix_path_capture(env):
+def run_fix_path_capture(env, *, capture_stderr: bool = False):
     pwsh = shutil.which("pwsh") or shutil.which("powershell")
     if not pwsh:
         pytest.skip("PowerShell not available")
@@ -36,7 +36,12 @@ def run_fix_path_capture(env):
         check=True,
     )
     lines = result.stdout.strip().splitlines()
-    return lines[-1] if lines else ""
+    output = lines[-1] if lines else ""
+    if capture_stderr:
+        return output, result.stderr
+    return output
+
+
 
 
 def test_run_fix_path_uses_pwsh_if_available(monkeypatch):
@@ -99,3 +104,20 @@ def test_fix_path_script_deduplicates(tmp_path):
     expected = r'C:\Tools;C:\Other;' + str(Path(tmp_path) / 'bin')
     output = run_fix_path_capture(env)
     assert output == expected
+
+
+@pytest.mark.skipif(not shutil.which("pwsh") and not shutil.which("powershell"), reason="PowerShell not available")
+def test_fix_path_warns_and_truncates(tmp_path):
+    paths = [fr"C:\\Path{i}" for i in range(300)]
+    long_path = ";".join(paths)
+    assert len(long_path) > 1023
+    env = os.environ.copy()
+    env.update({
+        "Path": long_path,
+        "USERPROFILE": str(tmp_path),
+    })
+    output, stderr = run_fix_path_capture(env, capture_stderr=True)
+    assert len(output) == 1023
+    assert output == long_path[:1023]
+    assert "PATH length exceeds 1023 characters" in stderr
+    assert "Some PATH entries were dropped" in stderr
