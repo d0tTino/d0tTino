@@ -21,6 +21,12 @@ Install the required Python packages (including test utilities such as
 pip install -e . -r requirements.txt
 ```
 
+Run `ruff` to lint the Python code:
+
+```bash
+ruff check .
+```
+
 Next, install the Git hooks so `pre-commit` runs automatically:
 
 ```bash

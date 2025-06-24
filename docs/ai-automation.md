@@ -17,4 +17,10 @@ This document outlines how the repository manages tasks related to local AI work
    pip install -e . -r requirements.txt
    ```
 
+Lint the codebase with `ruff`:
+
+```bash
+ruff check .
+```
+
 `dspy` powers the local LLM wrapper found in `llm/`, while `pytest` runs the test suite.
