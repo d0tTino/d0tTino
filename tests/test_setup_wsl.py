@@ -91,6 +91,7 @@ def test_setup_wsl_requires_sudo(tmp_path):
 
     (bin_dir / "grep").symlink_to("/usr/bin/grep")
     (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+    (bin_dir / "cat").symlink_to("/bin/cat")
     env = os.environ.copy()
     env.update({
         "PATH": str(bin_dir),
@@ -120,6 +121,7 @@ def test_setup_wsl_root_without_sudo(tmp_path):
 
     (bin_dir / "grep").symlink_to("/usr/bin/grep")
     (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+    (bin_dir / "cat").symlink_to("/bin/cat")
     env = os.environ.copy()
     env.update({
         "PATH": str(bin_dir),
