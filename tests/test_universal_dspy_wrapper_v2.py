@@ -5,10 +5,9 @@ from pathlib import Path
 
 from llm.universal_dspy_wrapper_v2 import (
     LoggedFewShotWrapper,
+    _REPO_ROOT,
     is_repo_data_path,
 )
-
-
 
 class DummyModule(dspy.Module):
     def forward(self, value):
