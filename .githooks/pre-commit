@@ -28,4 +28,4 @@ case "$OS" in
 esac
 
 # Validate winget-packages.json after export
-python scripts/validate_winget.py
+python3 scripts/validate_winget.py
