@@ -74,4 +74,5 @@ if ! grep -Fq 'starship init bash' "$bashrc" 2>/dev/null; then
         printf '    eval "$(zoxide init bash)"\n'
         printf 'fi\n'
     } >>"$bashrc"
+
 fi
