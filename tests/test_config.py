@@ -15,9 +15,20 @@ def load_json(path: Path):
 
 def test_windows_terminal_settings():
     data = load_json(Path('windows-terminal') / 'settings.json')
+    assert data.get('defaultProfile'), 'default profile missing'
     assert 'profiles' in data
     profiles = data['profiles'].get('list', [])
     assert len(profiles) > 0, "no profiles configured"
+    defaults = data['profiles'].get('defaults', {})
+    assert defaults.get('useAcrylic') is True, 'acrylic not enabled'
+    assert 'opacity' in defaults, 'acrylic opacity missing'
+    color = defaults.get('colorScheme')
+    if not color:
+        for p in profiles:
+            if 'colorScheme' in p:
+                color = p['colorScheme']
+                break
+    assert color, 'color scheme missing'
     assert 'actions' in data and data['actions'], "action bindings missing"
 
 
