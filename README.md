@@ -21,11 +21,14 @@ Install the required Python packages (including test utilities such as
 pip install -e . -r requirements.txt
 ```
 
-Next, install the Git hooks so `pre-commit` runs automatically:
+Next, run the bootstrap script to enable the Git hooks and clean up your PATH:
 
-```bash
-./scripts/setup-hooks.sh
+```powershell
+./bootstrap.ps1
 ```
+
+`bootstrap.ps1` calls `scripts/setup-hooks.sh` automatically so `pre-commit`
+runs on each commit.
 
 You can then run the test suite to verify the configuration:
 
@@ -41,9 +44,9 @@ pwsh -File scripts/smoke_test.ps1
 
 
 See the [installation guide](docs/installation.md) for setup instructions.
-After cloning the repository, run `./scripts/setup-hooks.sh` to enable the
-local Git hooks.  Then execute `scripts/fix-path.ps1` from an elevated
-PowerShell prompt to ensure your PATH is configured correctly.
+After cloning the repository, run `./bootstrap.ps1` from an elevated
+PowerShell prompt. This script cleans up your PATH and enables the local Git
+hooks automatically.
 For a more detailed overview, see [docs/terminal.md](docs/terminal.md).
 For details on fastfetch, btm and Nushell/Starship setup, see the [Terminal Tools section](docs/terminal.md#terminal-tools-fastfetch-btm--nushellstarship).
 
@@ -51,7 +54,9 @@ For details on fastfetch, btm and Nushell/Starship setup, see the [Terminal Tool
 ## Git hooks
 
 Run `scripts/setup-hooks.sh` to enable the local hooks automatically
-(equivalent to running `git config core.hooksPath .githooks`):
+(equivalent to running `git config core.hooksPath .githooks`). The
+`bootstrap.ps1` script invokes this for you, so you usually don't need to
+run it manually:
 
 ```bash
 ./scripts/setup-hooks.sh
