@@ -33,6 +33,12 @@ You can then run the test suite to verify the configuration:
 pytest
 ```
 
+Finally, run the smoke test script to verify the basic commands:
+
+```bash
+pwsh -File scripts/smoke_test.ps1
+```
+
 
 See the [installation guide](docs/installation.md) for setup instructions.
 After cloning the repository, run `./scripts/setup-hooks.sh` to enable the
