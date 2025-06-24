@@ -66,7 +66,6 @@ fi
 if ! grep -Fq 'starship init bash' "$bashrc" 2>/dev/null; then
     starship_config_path="$repo_root/starship.toml"
 
-    # Use an explicit cat path so PATH doesn't affect the script
     /bin/cat <<EOF >>"$bashrc"
 starship_config="$starship_config_path"
 if command -v starship >/dev/null; then
