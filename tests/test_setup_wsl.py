@@ -14,7 +14,14 @@ def test_setup_wsl_symlinks(tmp_path):
     usr_local_bin.mkdir(parents=True)
 
     # Stub commands
-    create_exe(bin_dir / "apt-get", "#!/bin/sh\nexit 0\n")
+    apt_log = fake_root / "apt_history"
+    apt_stub = f"#!/usr/bin/env bash\n" \
+               f"echo \"$@\" >> \"{apt_log}\"\n" \
+               "if [[ $1 == install ]]; then\n" \
+               f"  touch {bin_dir}/starship {bin_dir}/zoxide\n" \
+               f"  chmod 755 {bin_dir}/starship {bin_dir}/zoxide\n" \
+               "fi\n"
+    create_exe(bin_dir / "apt-get", apt_stub)
     create_exe(bin_dir / "sudo", "#!/usr/bin/env bash\n\"$@\"\n")
     create_exe(bin_dir / "batcat")
     create_exe(bin_dir / "fdfind")
@@ -35,6 +42,7 @@ fi
     env.update({
         "PATH": f"{bin_dir}:{env['PATH']}",
         "FAKE_ROOT": str(fake_root),
+        "HOME": str(fake_root),
     })
 
     subprocess.run(["bash", "scripts/setup-wsl.sh"], check=True, env=env)
@@ -45,6 +53,28 @@ fi
     assert os.readlink(bat_link) == str(bin_dir / "batcat")
     assert fd_link.is_symlink()
     assert os.readlink(fd_link) == str(bin_dir / "fdfind")
+
+    lines = apt_log.read_text().splitlines()
+    assert lines[0] == "update"
+    install_args = lines[1].split()
+    assert install_args[:2] == ["install", "-y"]
+    required = [
+        "git",
+        "ripgrep",
+        "fd-find",
+        "bat",
+        "fzf",
+        "build-essential",
+        "starship",
+        "zoxide",
+    ]
+    for pkg in required:
+        assert pkg in install_args
+
+    bashrc = fake_root / ".bashrc"
+    bash_text = bashrc.read_text()
+    assert "starship init bash" in bash_text
+    assert "zoxide init bash" in bash_text
 
 
 def test_setup_wsl_requires_sudo(tmp_path):
@@ -59,6 +89,8 @@ def test_setup_wsl_requires_sudo(tmp_path):
     create_exe(bin_dir / "zoxide", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "id", "#!/bin/sh\necho 1000\n")
 
+    (bin_dir / "grep").symlink_to("/usr/bin/grep")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
     env = os.environ.copy()
     env.update({
         "PATH": str(bin_dir),
@@ -86,6 +118,8 @@ def test_setup_wsl_root_without_sudo(tmp_path):
     create_exe(bin_dir / "zoxide", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "id", "#!/bin/sh\necho 0\n")
 
+    (bin_dir / "grep").symlink_to("/usr/bin/grep")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
     env = os.environ.copy()
     env.update({
         "PATH": str(bin_dir),
