@@ -56,3 +56,22 @@ fi
 if command -v fdfind >/dev/null && ! command -v fd >/dev/null; then
     sudo ln -sf "$(command -v fdfind)" /usr/local/bin/fd
 fi
+
+# Add starship and zoxide initialization to ~/.bashrc if missing
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+bashrc="$HOME/.bashrc"
+if [ ! -f "$bashrc" ]; then
+    touch "$bashrc"
+fi
+if ! grep -Fq 'starship init bash' "$bashrc" 2>/dev/null; then
+    starship_config_path="$repo_root/starship.toml"
+    cat <<EOF >>"$bashrc"
+starship_config="$starship_config_path"
+if command -v starship >/dev/null; then
+    eval "\$(starship init bash --config \"\$starship_config\")"
+fi
+if command -v zoxide >/dev/null; then
+    eval "\$(zoxide init bash)"
+fi
+EOF
+fi
