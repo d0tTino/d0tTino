@@ -27,6 +27,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e . -r requirements.txt
           npm ci
+      - name: Run ruff
+        run: ruff check .
 
       - name: Run tests
         run: pytest -q

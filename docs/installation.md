@@ -13,6 +13,20 @@ nvm install --lts
 
 Alternatively, download the official installer from [nodejs.org](https://nodejs.org).
 
+## Python linting
+
+Install the Python development tools including `ruff`:
+
+```bash
+pip install -e . -r requirements.txt
+```
+
+Run `ruff` to check the code style:
+
+```bash
+ruff check .
+```
+
 ## Windows
 
 1. Install packages using `winget`. You can either import the full package list

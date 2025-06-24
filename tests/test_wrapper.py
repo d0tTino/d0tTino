@@ -1,5 +1,4 @@
 import pytest
-
 from llm.universal_dspy_wrapper_v2 import LoggedFewShotWrapper
 
 dspy = pytest.importorskip("dspy")

@@ -1,3 +1,4 @@
 dspy
 pytest
 json5
+ruff

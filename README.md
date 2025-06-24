@@ -21,7 +21,13 @@ Install the required Python packages (including test utilities such as
 pip install -e . -r requirements.txt
 ```
 
-Next, run the bootstrap script to enable the Git hooks and clean up your PATH:
+Run `ruff` to lint the Python code:
+
+```bash
+ruff check .
+```
+
+Next, install the Git hooks so `pre-commit` runs automatically:
 
 ```powershell
 ./bootstrap.ps1
