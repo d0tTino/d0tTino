@@ -21,7 +21,8 @@ def test_windows_terminal_settings():
     assert len(profiles) > 0, "no profiles configured"
     defaults = data['profiles'].get('defaults', {})
     assert defaults.get('useAcrylic') is True, 'acrylic not enabled'
-    assert 'opacity' in defaults, 'acrylic opacity missing'
+    assert 'acrylicOpacity' in defaults, 'acrylic opacity missing'
+    assert defaults.get('acrylicOpacity') == 0.85
     color = defaults.get('colorScheme')
     if not color:
         for p in profiles:
@@ -47,11 +48,13 @@ def test_windows_terminal_split_bindings():
     assert binding_v, 'Alt+V binding missing'
     assert binding_v.get('command', {}).get('action') == 'splitPane'
     assert binding_v.get('command', {}).get('split') == 'vertical'
+    assert binding_v.get('command', {}).get('profile') == '{1857054d-df21-5f4a-bd44-865a14a14d59}'
 
     binding_h = find_binding('alt+h')
     assert binding_h, 'Alt+H binding missing'
     assert binding_h.get('command', {}).get('action') == 'splitPane'
     assert binding_h.get('command', {}).get('split') == 'horizontal'
+    assert binding_h.get('command', {}).get('profile') == '{574e775e-4f2a-5b96-ac1e-a2962a402336}'
 
 
 
