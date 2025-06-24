@@ -1,8 +1,14 @@
 format = """
-$directory$git_status$fill$time
+$directory$git_branch$git_state$git_status$fill$time
 $character"""
 
 [git_status]
+disabled = false
+
+[git_branch]
+disabled = false
+
+[git_state]
 disabled = false
 
 [time]
