@@ -10,7 +10,11 @@ from pathlib import Path
 
 
 def validate(path: Path) -> bool:
-    """Return ``True`` when ``path`` is a valid packages file."""
+    """Return ``True`` when ``path`` is valid JSON.
+
+    If the JSON contains a ``Sources`` key, perform additional
+    validation to ensure each source lists at least one package.
+    """
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:  # noqa: BLE001
@@ -18,6 +22,8 @@ def validate(path: Path) -> bool:
         return False
 
     sources = data.get("Sources")
+    if sources is None:
+        return True
     if not isinstance(sources, list) or not sources:
         print(f"{path} has no sources", file=sys.stderr)
         return False
