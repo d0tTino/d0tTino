@@ -1,5 +1,5 @@
-import dspy
-import pytest  # noqa: F401
+import pytest
+dspy = pytest.importorskip("dspy")
 import subprocess
 from pathlib import Path
 
