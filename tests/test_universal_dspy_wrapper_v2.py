@@ -6,6 +6,7 @@ from pathlib import Path
 from llm.universal_dspy_wrapper_v2 import (
     LoggedFewShotWrapper,
     is_repo_data_path,
+    _REPO_ROOT,
 )
 
 
@@ -50,4 +51,21 @@ def test_is_repo_data_path_windows_and_posix():
 
     assert is_repo_data_path(posix_path)
     assert is_repo_data_path(windows_path)
+
+
+def test_repo_root_fallback(monkeypatch):
+    """Ensure repo root falls back to cwd when git command fails."""
+
+    def raise_error(*args, **kwargs):
+        raise subprocess.CalledProcessError(1, args[0])
+
+    monkeypatch.setattr(subprocess, "run", raise_error)
+    import importlib, sys, warnings
+
+    with warnings.catch_warnings(record=True) as records:
+        sys.modules.pop("llm.universal_dspy_wrapper_v2", None)
+        module = importlib.import_module("llm.universal_dspy_wrapper_v2")
+
+    assert module._REPO_ROOT == Path.cwd()
+    assert any("falling back" in str(w.message).lower() for w in records)
 
