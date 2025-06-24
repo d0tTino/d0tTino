@@ -1,9 +1,10 @@
-format = "$time$directory$git_branch$fill$character"
-
-[time]
-disabled = false
-format = "[$time]($style) "
+format = """
+$directory$git_status$fill$time
+$character"""
 
 [git_status]
 disabled = false
 
+[time]
+disabled = false
+format = "[$time]($style) "
