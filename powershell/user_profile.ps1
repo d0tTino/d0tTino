@@ -13,8 +13,8 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
     Import-Module PSReadLine
     Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
 }
+# ========================================================================
 # zoxide smart cd (if installed)
 if (Get-Command zoxide -ErrorAction SilentlyContinue) {
     Invoke-Expression ((& zoxide init powershell) -join "`n")
 }
-# ========================================================================
