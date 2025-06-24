@@ -21,6 +21,12 @@ Install the required Python packages (including test utilities such as
 pip install -e . -r requirements.txt
 ```
 
+Next, install the Git hooks so `pre-commit` runs automatically:
+
+```bash
+./scripts/setup-hooks.sh
+```
+
 You can then run the test suite to verify the configuration:
 
 ```bash
@@ -45,8 +51,10 @@ Run `scripts/setup-hooks.sh` to enable the local hooks automatically
 ```
 
 Once enabled, the `pre-commit` hook automatically exports your current
-`winget` package list when commits run on Windows. On Linux or WSL the
-export is skipped unless `winget` is available.
+`winget` package list to `winget-packages.json` whenever you commit on
+Windows. Be sure to commit the updated file so your package list stays
+in sync. On Linux or WSL the export is skipped unless `winget` is
+available.
 
 ## Testing
 
