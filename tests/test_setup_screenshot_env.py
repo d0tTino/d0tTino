@@ -1,7 +1,6 @@
 import os
-import subprocess
-import sys
 import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
