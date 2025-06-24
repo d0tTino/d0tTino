@@ -29,14 +29,18 @@ ruff check .
 
 ## Windows
 
-1. Install packages using `winget`:
+1. Install packages using `winget`. You can either import the full package list
+   or run the provided helper script for the essentials:
    ```powershell
    winget import winget-packages.json
+   # Or install just the core tools
+   ./scripts/setup-winget.ps1
    ```
 2. Copy or symlink the files from this repository to your profile directory.
-3. From an elevated PowerShell prompt, run `bootstrap.ps1` to set up your PATH:
+3. From an elevated PowerShell prompt, run `bootstrap.ps1` to set up your PATH.
+   Pass `-InstallWinget` to install the core tools automatically:
    ```powershell
-   ./bootstrap.ps1
+   ./bootstrap.ps1 -InstallWinget
    ```
    The script calls `scripts/fix-path.ps1` to clean up duplicate entries and ensure your `bin` directory is included.
    If `$Env:USERPROFILE` isn't defined (e.g. on Linux), it falls back to `$HOME`.

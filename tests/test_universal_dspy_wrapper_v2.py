@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 from llm.universal_dspy_wrapper_v2 import (
-    LoggedFewShotWrapper,
     _REPO_ROOT,
+    LoggedFewShotWrapper,
     is_repo_data_path,
 )
 

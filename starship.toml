@@ -1,9 +1,12 @@
+add_newline = false
 format = """
-$directory$git_branch$git_state$git_status$fill$time
-$character"""
+[┌─](bold purple)$directory$git_branch$git_state$git_status$fill$time
+[└─](bold purple)$character
+"""
 
 [git_status]
 disabled = false
+stashed = "📦"
 
 [git_branch]
 disabled = false

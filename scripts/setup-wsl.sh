@@ -12,6 +12,13 @@ if ! command -v sudo >/dev/null; then
     fi
 fi
 
+# Fail fast if the expected package manager is missing
+if ! command -v apt-get >/dev/null; then
+    echo "Error: apt-get is required but not installed." >&2
+    echo "Please run this script on a Debian/Ubuntu system with apt-get available." >&2
+    exit 1
+fi
+
 sudo apt-get update
 sudo apt-get install -y \
     git \
@@ -36,6 +43,10 @@ fi
 # provide it.
 if ! command -v starship >/dev/null; then
     curl -sS https://starship.rs/install.sh | sh -s -- -y
+    if ! command -v starship >/dev/null; then
+        echo "Error: starship installation failed." >&2
+        exit 1
+    fi
 fi
 
 # Ensure zoxide is available; prefer Cargo for installation with a curl-based
@@ -46,6 +57,10 @@ if ! command -v zoxide >/dev/null; then
     else
         curl -sS https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh \
             | bash -s -- --yes
+    fi
+    if ! command -v zoxide >/dev/null; then
+        echo "Error: zoxide installation failed." >&2
+        exit 1
     fi
 fi
 
