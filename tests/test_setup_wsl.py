@@ -22,7 +22,7 @@ def test_setup_wsl_symlinks(tmp_path):
                f"  chmod 755 {bin_dir}/starship {bin_dir}/zoxide\n" \
                "fi\n"
     create_exe(bin_dir / "apt-get", apt_stub)
-    create_exe(bin_dir / "sudo", "#!/usr/bin/env bash\n\"$@\"\n")
+    create_exe(bin_dir / "sudo", "#!/bin/sh\n\"$@\"\n")
     create_exe(bin_dir / "batcat")
     create_exe(bin_dir / "fdfind")
     # ln wrapper that redirects /usr/local/bin to FAKE_ROOT
@@ -128,4 +128,91 @@ def test_setup_wsl_root_without_sudo(tmp_path):
     })
 
     subprocess.run(["/bin/bash", "scripts/setup-wsl.sh"], check=True, env=env)
+
+
+def test_setup_wsl_requires_apt_get(tmp_path):
+    fake_root = tmp_path
+    bin_dir = fake_root / "bin"
+    bin_dir.mkdir(parents=True)
+
+    create_exe(bin_dir / "curl", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "starship", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "zoxide", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "id", "#!/bin/sh\necho 0\n")
+
+    (bin_dir / "grep").symlink_to("/usr/bin/grep")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+    (bin_dir / "cat").symlink_to("/bin/cat")
+
+    env = os.environ.copy()
+    env.update({
+        "PATH": str(bin_dir),
+    })
+
+    result = subprocess.run([
+        "/bin/bash",
+        "scripts/setup-wsl.sh",
+    ], env=env, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert "apt-get is required" in result.stderr
+
+
+def test_setup_wsl_starship_install_failure(tmp_path):
+    fake_root = tmp_path
+    bin_dir = fake_root / "bin"
+    bin_dir.mkdir(parents=True)
+
+    create_exe(bin_dir / "apt-get", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "sudo", "#!/bin/sh\n\"$@\"\n")
+    create_exe(bin_dir / "curl", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "id", "#!/bin/sh\necho 0\n")
+
+    (bin_dir / "grep").symlink_to("/usr/bin/grep")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+    (bin_dir / "cat").symlink_to("/bin/cat")
+
+    env = os.environ.copy()
+    env.update({
+        "PATH": f"{bin_dir}:/bin",
+        "HOME": str(fake_root),
+    })
+
+    result = subprocess.run([
+        "/bin/bash",
+        "scripts/setup-wsl.sh",
+    ], env=env, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert "starship installation failed" in result.stderr
+
+
+def test_setup_wsl_zoxide_install_failure(tmp_path):
+    fake_root = tmp_path
+    bin_dir = fake_root / "bin"
+    bin_dir.mkdir(parents=True)
+
+    create_exe(bin_dir / "apt-get", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "sudo", "#!/bin/sh\n\"$@\"\n")
+    create_exe(bin_dir / "curl", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "starship", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "id", "#!/bin/sh\necho 0\n")
+
+    (bin_dir / "grep").symlink_to("/usr/bin/grep")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+    (bin_dir / "cat").symlink_to("/bin/cat")
+
+    env = os.environ.copy()
+    env.update({
+        "PATH": f"{bin_dir}:/bin",
+        "HOME": str(fake_root),
+    })
+
+    result = subprocess.run([
+        "/bin/bash",
+        "scripts/setup-wsl.sh",
+    ], env=env, capture_output=True, text=True)
+
+    assert result.returncode != 0
+    assert "zoxide installation failed" in result.stderr
    
