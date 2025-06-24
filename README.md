@@ -29,8 +29,8 @@ pytest
 
 
 See the [installation guide](docs/installation.md) for setup instructions.
-If your PATH isn't updating correctly on Windows, run
-`scripts/fix-path.ps1` from an elevated PowerShell prompt.
+After cloning the repository, run `scripts/fix-path.ps1` from an elevated
+PowerShell prompt to ensure your PATH is configured correctly.
 For a more detailed overview, see [docs/terminal.md](docs/terminal.md).
 For details on fastfetch, btm and Nushell/Starship setup, see the [Terminal Tools section](docs/terminal.md#terminal-tools-fastfetch-btm--nushellstarship).
 
