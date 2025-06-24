@@ -4,6 +4,7 @@ import shutil
 from pathlib import Path
 from unittest import mock
 import re
+import sys
 import pytest
 
 SCRIPT = Path('scripts/fix-path.ps1')
@@ -88,6 +89,7 @@ def test_case_insensitive_after_trimming():
     assert _dedupe_paths(paths) == [r'C:\Tools']
 
 
+@pytest.mark.skipif(sys.platform != 'win32', reason='requires Windows PATH mechanics')
 def test_fix_path_script_deduplicates(tmp_path):
     env = os.environ.copy()
     env.update({
