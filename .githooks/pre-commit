@@ -1,5 +1,6 @@
 #!/bin/sh
 set -e
+ruff check .
 SCRIPT="scripts/export-winget.ps1"
 OS=$(uname -s)
 case "$OS" in
