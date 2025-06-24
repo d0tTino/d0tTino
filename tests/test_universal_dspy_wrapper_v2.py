@@ -58,7 +58,9 @@ def test_repo_root_fallback(monkeypatch):
         raise subprocess.CalledProcessError(1, args[0])
 
     monkeypatch.setattr(subprocess, "run", raise_error)
-    import importlib, sys, warnings
+    import importlib
+    import sys
+    import warnings
 
     with warnings.catch_warnings(record=True) as records:
         sys.modules.pop("llm.universal_dspy_wrapper_v2", None)

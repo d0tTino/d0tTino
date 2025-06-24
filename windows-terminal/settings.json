@@ -34,7 +34,7 @@
   ],
   "copyFormatting": "none",
   "copyOnSelect": false,
-  "defaultProfile": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+  "defaultProfile": "{1857054d-df21-5f4a-bd44-865a14a14d59}",
   "keybindings": [
     {
       "id": "User.globalSummon.90584B03",
@@ -58,6 +58,7 @@
       "useAcrylic": true,
       "textAntialiasing": "grayscale",
       "colorScheme": "One Half Dark"
+
     },
     "list": [
       {
@@ -70,11 +71,36 @@
         "guid": "{1857054d-df21-5f4a-bd44-865a14a14d59}",
         "hidden": false,
         "name": "Ubuntu",
-        "source": "Microsoft.WSL"
+        "source": "Microsoft.WSL",
+        "colorScheme": "Campbell"
       }
     ]
   },
-  "schemes": [],
+  "schemes": [
+    {
+      "name": "One Half Dark",
+      "black": "#282c34",
+      "red": "#e06c75",
+      "green": "#98c379",
+      "yellow": "#e5c07b",
+      "blue": "#61afef",
+      "purple": "#c678dd",
+      "cyan": "#56b6c2",
+      "white": "#dcdfe4",
+      "brightBlack": "#282c34",
+      "brightRed": "#e06c75",
+      "brightGreen": "#98c379",
+      "brightYellow": "#e5c07b",
+      "brightBlue": "#61afef",
+      "brightPurple": "#c678dd",
+      "brightCyan": "#56b6c2",
+      "brightWhite": "#dcdfe4",
+      "background": "#282c34",
+      "foreground": "#dcdfe4",
+      "cursorColor": "#a3b3cc",
+      "selectionBackground": "#474e5d"
+    }
+  ],
   "themes": [],
   "useAcrylicInTabRow": true
 }

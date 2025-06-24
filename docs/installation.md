@@ -20,16 +20,12 @@ Alternatively, download the official installer from [nodejs.org](https://nodejs.
    winget import winget-packages.json
    ```
 2. Copy or symlink the files from this repository to your profile directory.
-3. Run the PATH cleanup script from an elevated PowerShell prompt:
+3. From an elevated PowerShell prompt, run `bootstrap.ps1` to set up your PATH:
    ```powershell
-   scripts/fix-path.ps1
+   ./bootstrap.ps1
    ```
-   The script cleans up duplicate entries and ensures your `bin` directory is included.
+   The script calls `scripts/fix-path.ps1` to clean up duplicate entries and ensure your `bin` directory is included.
    If `$Env:USERPROFILE` isn't defined (e.g. on Linux), it falls back to `$HOME`.
-   You can also call this automatically from a `bootstrap.ps1` script:
-   ```powershell
-   & "$PSScriptRoot/scripts/fix-path.ps1"
-   ```
 4. Restart the terminal to load the new settings.
 
 ## WSL
@@ -49,8 +45,8 @@ sudo bash scripts/setup-wsl.sh
    git clone https://github.com/d0tTino/d0tTino.git
    ```
 2. Use `stow` or your preferred method to symlink the dotfiles into place.
-3. Run the PATH cleanup script:
+3. Run `bootstrap.ps1` to clean up your PATH:
    ```powershell
-   scripts/fix-path.ps1
+   ./bootstrap.ps1
    ```
 4. Launch a new shell to pick up the configuration.

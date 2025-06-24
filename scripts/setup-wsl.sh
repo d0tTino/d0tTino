@@ -65,13 +65,14 @@ if [ ! -f "$bashrc" ]; then
 fi
 if ! grep -Fq 'starship init bash' "$bashrc" 2>/dev/null; then
     starship_config_path="$repo_root/starship.toml"
-    cat <<EOF >>"$bashrc"
-starship_config="$starship_config_path"
-if command -v starship >/dev/null; then
-    eval "\$(starship init bash --config \"\$starship_config\")"
-fi
-if command -v zoxide >/dev/null; then
-    eval "\$(zoxide init bash)"
-fi
-EOF
+    {
+        printf 'starship_config="%s"\n' "$starship_config_path"
+        printf 'if command -v starship >/dev/null; then\n'
+        printf '    eval "$(starship init bash --config \"$starship_config\")"\n'
+        printf 'fi\n'
+        printf 'if command -v zoxide >/dev/null; then\n'
+        printf '    eval "$(zoxide init bash)"\n'
+        printf 'fi\n'
+    } >>"$bashrc"
+
 fi
