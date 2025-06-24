@@ -26,6 +26,7 @@
             "intenseTextStyle": "bold",
             "opacity": 20,
             "useAcrylic": true,
+            "colorScheme": "Campbell",
             "textAntialiasing": "grayscale"
         },
         "list": [
