@@ -18,14 +18,21 @@ import warnings
 import dspy
 from dspy.teleprompt import LabeledFewShot
 
-_REPO_ROOT = Path(
-    subprocess.run(
-        ["git", "rev-parse", "--show-toplevel"],
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.strip()
-)
+try:
+    _REPO_ROOT = Path(
+        subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    )
+except (subprocess.CalledProcessError, FileNotFoundError) as exc:
+    warnings.warn(
+        f"Git repo root detection failed: {exc}. Falling back to current working directory.",
+        RuntimeWarning,
+    )
+    _REPO_ROOT = Path.cwd()
 
 _PATH_REGEX = re.compile(
     rf"^(?P<root>{re.escape(_REPO_ROOT.as_posix())})/.+(?P<data>[^/]+\.(?:ya?ml|json))$"
