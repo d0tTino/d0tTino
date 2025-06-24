@@ -1,8 +1,10 @@
 import json
+
 import pytest
 
-dspy = pytest.importorskip("dspy")
 from llm.universal_dspy_wrapper_v2 import LoggedFewShotWrapper
+
+dspy = pytest.importorskip("dspy")
 
 def test_logged_fewshot_wrapper_reads_utf8(tmp_path):
     data = {"inputs": {"x": "café"}, "outputs": {"y": "naïve"}}

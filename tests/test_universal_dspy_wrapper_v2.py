@@ -1,13 +1,15 @@
-import pytest
-dspy = pytest.importorskip("dspy")
 import subprocess
 from pathlib import Path
 
+import pytest
+
 from llm.universal_dspy_wrapper_v2 import (
-    LoggedFewShotWrapper,
     _REPO_ROOT,
+    LoggedFewShotWrapper,
     is_repo_data_path,
 )
+
+dspy = pytest.importorskip("dspy")
 
 class DummyModule(dspy.Module):
     def forward(self, value):

@@ -1,7 +1,8 @@
 import pytest
 
-dspy = pytest.importorskip("dspy")
 from llm.universal_dspy_wrapper_v2 import LoggedFewShotWrapper
+
+dspy = pytest.importorskip("dspy")
 
 class EchoPrediction:
     def __init__(self, text: str) -> None:
