@@ -35,9 +35,9 @@ pytest
 
 
 See the [installation guide](docs/installation.md) for setup instructions.
-After cloning the repository, run `bootstrap.ps1` from an elevated
-PowerShell prompt. The script calls `scripts/fix-path.ps1` to ensure your
-`PATH` is configured correctly.
+After cloning the repository, run `./scripts/setup-hooks.sh` to enable the
+local Git hooks.  Then execute `scripts/fix-path.ps1` from an elevated
+PowerShell prompt to ensure your PATH is configured correctly.
 For a more detailed overview, see [docs/terminal.md](docs/terminal.md).
 For details on fastfetch, btm and Nushell/Starship setup, see the [Terminal Tools section](docs/terminal.md#terminal-tools-fastfetch-btm--nushellstarship).
 

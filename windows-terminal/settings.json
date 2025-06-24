@@ -56,8 +56,8 @@
       "intenseTextStyle": "bold",
       "opacity": 20,
       "useAcrylic": true,
-      "textAntialiasing": "grayscale",
-      "colorScheme": "One Half Dark"
+      "colorScheme": "One Half Dark",
+      "textAntialiasing": "grayscale"
 
     },
     "list": [
