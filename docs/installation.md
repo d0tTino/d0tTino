@@ -37,7 +37,9 @@ ruff check .
    ./scripts/setup-winget.ps1
    ```
 2. Copy or symlink the files from this repository to your profile directory.
-3. From an elevated PowerShell prompt, run `bootstrap.ps1` to set up your PATH.
+3. From an elevated PowerShell window, run `bootstrap.ps1` to set up your PATH.
+   You must run the script from an **elevated** window so that
+   `scripts/fix-path.ps1` can modify the user PATH.
    Pass `-InstallWinget` to install the core tools automatically. You can also
    add `-InstallWindowsTerminal` to copy the default Windows Terminal settings
    and `-InstallWSL` to enable WSL:
