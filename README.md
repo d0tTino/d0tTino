@@ -43,10 +43,10 @@ You can then run the test suite to verify the configuration:
 pytest
 ```
 
-Finally, run the smoke test script to verify the basic commands:
+Finally, run the smoke test to verify the basic commands:
 
 ```bash
-pwsh -File scripts/smoke_test.ps1
+npm run smoke
 ```
 
 
