@@ -29,6 +29,7 @@ def test_setup_screenshot_env_apt(tmp_path: Path) -> None:
     lines = apt_log.read_text().splitlines()
     assert lines and lines[0] == "update"
     assert any("install" in line for line in lines)
+    assert any("nushell" in line for line in lines)
 
 
 @pytest.mark.skipif(shutil.which("bash") is None, reason="requires bash")
@@ -48,6 +49,7 @@ def test_setup_screenshot_env_pacman(tmp_path: Path) -> None:
     subprocess.run(["/bin/bash", "scripts/setup-screenshot-env.sh"], check=True, env=env)
     lines = pac_log.read_text().splitlines()
     assert lines and lines[0].startswith("-Sy")
+    assert any("nushell" in line for line in lines)
 
 
 @pytest.mark.skipif(shutil.which("bash") is None, reason="requires bash")
@@ -65,6 +67,8 @@ def test_setup_screenshot_env_brew(tmp_path: Path) -> None:
     subprocess.run(["/bin/bash", "scripts/setup-screenshot-env.sh"], check=True, env=env)
     lines = brew_log.read_text().splitlines()
     assert any("install" in line for line in lines)
+    assert any("nushell" in line for line in lines)
+    assert any("zed" in line.lower() for line in lines)
 
 
 @pytest.mark.skipif(
@@ -87,4 +91,7 @@ def test_setup_screenshot_env_ps1(tmp_path: Path) -> None:
         check=True,
         env=env,
     )
-    assert winget_log.read_text().strip(), "winget should be invoked"
+    content = winget_log.read_text().splitlines()
+    assert content, "winget should be invoked"
+    assert any("NushellTeam.Nushell" in line for line in content)
+    assert any("ZedIndustries.Zed" in line for line in content)
