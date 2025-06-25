@@ -28,3 +28,19 @@ def test_zoxide_after_fzf_block():
     assert fzf_index is not None, "fzf block not found"
     assert zoxide_index is not None, "zoxide init not found"
     assert zoxide_index > fzf_index, "zoxide initialization should follow fzf block"
+
+
+def test_profile_handles_missing_tools_gracefully():
+    """Starship, posh-git and zoxide should be optional."""
+    lines = [line.lower() for line in USER_PROFILE_PATH.read_text().splitlines()]
+
+    starship_line = next((line for line in lines if "get-command starship" in line), "")
+    assert "if (get-command starship" in starship_line
+    assert "-erroraction silentlycontinue" in starship_line
+
+    posh_git_line = next((line for line in lines if "import-module posh-git" in line), "")
+    assert "-erroraction silentlycontinue" in posh_git_line
+
+    zoxide_line = next((line for line in lines if "get-command zoxide" in line), "")
+    assert "if (get-command zoxide" in zoxide_line
+    assert "-erroraction silentlycontinue" in zoxide_line
