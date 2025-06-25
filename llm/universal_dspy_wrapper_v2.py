@@ -15,8 +15,14 @@ from pathlib import Path
 from typing import Callable, List, Type
 import warnings
 
-import dspy
-from dspy.teleprompt import LabeledFewShot
+try:
+    import dspy
+    from dspy.teleprompt import LabeledFewShot
+except ImportError as exc:  # pragma: no cover - import guard
+    raise ImportError(
+        "The 'dspy' package is required to use LoggedFewShotWrapper; install it "
+        "via 'pip install dspy-ai'"
+    ) from exc
 
 try:
     _REPO_ROOT = Path(
