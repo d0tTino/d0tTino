@@ -68,12 +68,20 @@ run it manually:
 ./scripts/setup-hooks.sh
 ```
 
-Once enabled, the `pre-commit` hook first upgrades all installed
-packages using `winget upgrade --all` and then exports your current
-`winget` package list to `winget-packages.json` whenever you commit on
-Windows or Linux. Be sure to commit the updated file so your package
-list stays in sync. If `winget` isn't available the upgrade and export
-are skipped.
+Once enabled, the `pre-commit` hook first runs `winget upgrade --all` and then
+automatically exports your current `winget` package list to
+`winget-packages.json` whenever you commit on Windows. Be sure to commit the
+updated file so your package list stays in sync. On Linux or WSL the export is
+skipped unless `winget` is available.
+
+If the hook is disabled, run the following commands manually to upgrade and
+export your package list:
+
+```powershell
+winget upgrade --all
+pwsh -File scripts/export-winget.ps1
+```
+
 
 ## Testing
 
