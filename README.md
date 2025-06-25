@@ -52,7 +52,8 @@ npm run smoke
 
 See the [installation guide](docs/installation.md) for setup instructions.
 After cloning the repository, run `./bootstrap.ps1` from an elevated
-PowerShell prompt. This script cleans up your PATH and enables the local Git
+PowerShell window. Running it with elevation allows
+`scripts/fix-path.ps1` to modify your user PATH and enables the local Git
 hooks automatically. On Windows it invokes `scripts/setup-hooks.ps1` while on
 other platforms it runs `scripts/setup-hooks.sh`.
 For a more detailed overview, see [docs/terminal.md](docs/terminal.md).
