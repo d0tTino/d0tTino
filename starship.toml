@@ -1,6 +1,6 @@
 add_newline = false
 format = """
-[┌─](bold purple)$directory$git_branch$git_state$git_status$fill$time
+[┌─](bold purple)$directory$git_branch$git_state$git_status$status$fill$time
 [└─](bold purple)$character
 """
 
@@ -17,3 +17,6 @@ disabled = false
 [time]
 disabled = false
 format = "[$time]($style) "
+
+[status]
+disabled = false
