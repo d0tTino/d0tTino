@@ -17,7 +17,7 @@ $packages = @(
     @{ Id = 'dandavison.delta' },
     @{ Id = 'Starship.Starship' },
     @{ Id = 'Microsoft.WindowsTerminal' },
-    @{ Id = 'Microsoft.OpenSSH.Preview' }
+    @{ Id = 'OpenSSH.Client' }
 )
 
 foreach ($pkg in $packages) {
