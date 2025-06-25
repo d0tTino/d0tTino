@@ -10,7 +10,37 @@ permissions:
 
 jobs:
   test:
+    name: Test (Ubuntu)
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        # Install Python packages for tests and JS packages for linting
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . -r requirements.txt
+          npm ci
+      - name: Run ruff
+        run: ruff check .
+
+      - name: Run tests
+        run: pytest -q
+      - name: Run lint
+        run: npm run lint
+      - name: Validate winget packages
+        run: python scripts/validate_winget.py
+
+  test-windows:
+    name: Test (Windows)
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
