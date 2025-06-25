@@ -23,4 +23,4 @@ Lint the codebase with `ruff`:
 ruff check .
 ```
 
-`dspy` powers the local LLM wrapper found in `llm/`, while `pytest` runs the test suite.
+`dspy` (version 2.6.27) powers the local LLM wrapper found in `llm/`, while `pytest` runs the test suite.
