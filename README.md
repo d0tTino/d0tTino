@@ -85,9 +85,11 @@ pwsh -File scripts/export-winget.ps1
 
 ## Testing
 
-Before running the Python tests locally, install the required packages:
+Before running the Python tests locally, install this repository in editable
+mode first and then install the rest of the dependencies:
 
 ```bash
+pip install -e .
 pip install -r requirements.txt
 ```
 

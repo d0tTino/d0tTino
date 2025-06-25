@@ -19,3 +19,4 @@ winget-packages.lock.json
 # Python cache
 __pycache__/
 node_modules/
+*.egg-info/
