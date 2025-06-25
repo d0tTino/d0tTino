@@ -33,6 +33,8 @@ jobs:
 
       - name: Run tests
         run: pytest -q
+      - name: Run smoke test
+        run: pytest -q tests/test_smoke_test.py
       - name: Run lint
         run: npm run lint
       - name: Validate winget packages
@@ -62,6 +64,8 @@ jobs:
 
       - name: Run tests
         run: pytest -q
+      - name: Run smoke test
+        run: pytest -q tests/test_smoke_test.py
       - name: Run lint
         run: npm run lint
       - name: Validate winget packages
