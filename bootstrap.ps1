@@ -3,10 +3,10 @@ param(
 )
 
 & "$PSScriptRoot/scripts/fix-path.ps1"
-if (Get-Command bash -ErrorAction SilentlyContinue) {
-    & bash "$PSScriptRoot/scripts/setup-hooks.sh"
-} else {
+if ($IsWindows) {
     & "$PSScriptRoot/scripts/setup-hooks.ps1"
+} else {
+    & bash "$PSScriptRoot/scripts/setup-hooks.sh"
 }
 
 if ($InstallWinget -and $IsWindows) {

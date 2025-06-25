@@ -33,8 +33,9 @@ Next, install the Git hooks so `pre-commit` runs automatically:
 ./bootstrap.ps1
 ```
 
-`bootstrap.ps1` calls `scripts/setup-hooks.sh` automatically so `pre-commit`
-runs on each commit.
+`bootstrap.ps1` sets up the hooks for you. It runs
+`scripts/setup-hooks.ps1` on Windows and `scripts/setup-hooks.sh` on other
+platforms so `pre-commit` runs on each commit.
 
 You can then run the test suite to verify the configuration:
 
@@ -52,7 +53,8 @@ pwsh -File scripts/smoke_test.ps1
 See the [installation guide](docs/installation.md) for setup instructions.
 After cloning the repository, run `./bootstrap.ps1` from an elevated
 PowerShell prompt. This script cleans up your PATH and enables the local Git
-hooks automatically.
+hooks automatically. On Windows it invokes `scripts/setup-hooks.ps1` while on
+other platforms it runs `scripts/setup-hooks.sh`.
 For a more detailed overview, see [docs/terminal.md](docs/terminal.md).
 For details on fastfetch, btm and Nushell/Starship setup, see the [Terminal Tools section](docs/terminal.md#terminal-tools-fastfetch-btm--nushellstarship).
 
@@ -60,9 +62,10 @@ For details on fastfetch, btm and Nushell/Starship setup, see the [Terminal Tool
 ## Git hooks
 
 Run `scripts/setup-hooks.sh` to enable the local hooks automatically
-(equivalent to running `git config core.hooksPath .githooks`). The
-`bootstrap.ps1` script invokes this for you, so you usually don't need to
-run it manually:
+(equivalent to running `git config core.hooksPath .githooks`). `bootstrap.ps1`
+invokes the appropriate script for you (`scripts/setup-hooks.ps1` on Windows and
+`scripts/setup-hooks.sh` elsewhere), so you usually don't need to run it
+manually:
 
 ```bash
 ./scripts/setup-hooks.sh
