@@ -38,9 +38,10 @@ ruff check .
    ```
 2. Copy or symlink the files from this repository to your profile directory.
 3. From an elevated PowerShell prompt, run `bootstrap.ps1` to set up your PATH.
-   Pass `-InstallWinget` to install the core tools automatically:
+   Pass `-InstallWinget` to install the core tools automatically. You can also
+   add `-InstallWindowsTerminal` to copy the default Windows Terminal settings:
    ```powershell
-   ./bootstrap.ps1 -InstallWinget
+   ./bootstrap.ps1 -InstallWinget -InstallWindowsTerminal
    ```
    The script calls `scripts/fix-path.ps1` to clean up duplicate entries and ensure your `bin` directory is included.
    If `$Env:USERPROFILE` isn't defined (e.g. on Linux), it falls back to `$HOME`.
@@ -50,10 +51,14 @@ ruff check .
 
 Run the provided script from the repository root to install the basic tools on
 a fresh Ubuntu/WSL instance. The script uses `apt-get` and may prompt for your
-password:
+password. You can call it directly or pass `-SetupWSL` to `bootstrap.ps1`:
 
 ```bash
 sudo bash scripts/setup-wsl.sh
+```
+
+```powershell
+./bootstrap.ps1 -SetupWSL
 ```
 
 ## Linux / macOS
