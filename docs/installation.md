@@ -41,15 +41,25 @@ ruff check .
    You must run the script from an **elevated** window so that
    `scripts/fix-path.ps1` can modify the user PATH.
    Pass `-InstallWinget` to install the core tools automatically. You can also
-   add `-InstallWindowsTerminal` to copy the default Windows Terminal settings:
+   add `-InstallWindowsTerminal` to copy the default Windows Terminal settings
+   and `-InstallWSL` to enable WSL:
    ```powershell
-   ./bootstrap.ps1 -InstallWinget -InstallWindowsTerminal
+   ./bootstrap.ps1 -InstallWinget -InstallWindowsTerminal -InstallWSL
    ```
    The script calls `scripts/fix-path.ps1` to clean up duplicate entries and ensure your `bin` directory is included.
    If `$Env:USERPROFILE` isn't defined (e.g. on Linux), it falls back to `$HOME`.
 4. Restart the terminal to load the new settings.
 
 ## WSL
+
+Before installing packages in Ubuntu, enable the required Windows features and
+install WSL:
+
+```powershell
+./scripts/install-wsl.ps1
+```
+
+You can also pass `-InstallWSL` to `bootstrap.ps1` to run the same command.
 
 Run the provided script from the repository root to install the basic tools on
 a fresh Ubuntu/WSL instance. The script uses `apt-get` and may prompt for your

@@ -56,6 +56,7 @@ PowerShell window. Running it with elevation allows
 `scripts/fix-path.ps1` to modify your user PATH and enables the local Git
 hooks automatically. On Windows it invokes `scripts/setup-hooks.ps1` while on
 other platforms it runs `scripts/setup-hooks.sh`.
+
 For a more detailed overview, see [docs/terminal.md](docs/terminal.md).
 For details on fastfetch, btm and Nushell/Starship setup, see the [Terminal Tools section](docs/terminal.md#terminal-tools-fastfetch-btm--nushellstarship).
 
