@@ -5,6 +5,11 @@ SCRIPT="scripts/export-winget.ps1"
 OS=$(uname -s)
 case "$OS" in
     CYGWIN*|MINGW*|MSYS*|Windows_NT)
+        if command -v winget >/dev/null 2>&1; then
+            winget upgrade --all
+        else
+            echo "Skipping winget upgrade on Windows"
+        fi
         if command -v pwsh >/dev/null 2>&1; then
             pwsh -NoLogo -NoProfile -File "$SCRIPT"
         elif command -v powershell >/dev/null 2>&1; then
@@ -17,6 +22,7 @@ case "$OS" in
         ;;
     Linux*)
         if command -v winget >/dev/null 2>&1; then
+            winget upgrade --all
             winget export -o winget-packages.json --accept-source-agreements
             git add winget-packages.json
         else

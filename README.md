@@ -82,6 +82,7 @@ winget upgrade --all
 pwsh -File scripts/export-winget.ps1
 ```
 
+
 ## Testing
 
 Before running the Python tests locally, install the required packages:
