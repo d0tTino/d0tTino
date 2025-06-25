@@ -28,10 +28,6 @@
   ],
   "profiles": {
     "defaults": {
-      "compatibility.input.forceVT": true,
-      "intenseTextStyle": "bold",
-      "useAcrylic": true,
-      "textAntialiasing": "grayscale",
       "font": {
         "face": "CascaydiaCove Nerd Font",
         "weight": "normal"
@@ -39,18 +35,6 @@
       "opacity": 20
     },
     "list": [
-      {
-        "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
-        "hidden": false,
-        "name": "PowerShell",
-        "source": "Windows.Terminal.PowershellCore"
-      },
-      {
-        "guid": "{1857054d-df21-5f4a-bd44-865a14a14d59}",
-        "hidden": false,
-        "name": "Ubuntu",
-        "source": "Microsoft.WSL"
-      },
       {
         "commandline": "%SystemRoot%\\System32\\cmd.exe",
         "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
