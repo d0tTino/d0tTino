@@ -1,6 +1,7 @@
 param(
     [switch] $InstallWinget,
     [switch] $InstallWindowsTerminal,
+    [switch] $InstallWSL,
     [switch] $SetupWSL
 )
 
@@ -17,6 +18,10 @@ if ($InstallWinget -and $IsWindows) {
 
 if ($InstallWindowsTerminal -and $IsWindows) {
     & "$PSScriptRoot/scripts/install-windows-terminal.ps1"
+}
+
+if ($InstallWSL -and $IsWindows) {
+    & "$PSScriptRoot/scripts/install-wsl.ps1"
 }
 
 if ($SetupWSL -and (Get-Command bash -ErrorAction SilentlyContinue)) {
