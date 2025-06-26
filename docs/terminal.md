@@ -254,6 +254,37 @@ cp starship.toml ~/.config/starship.toml
 Zed's preferences include several built-in color themes. Select the dark theme
 that most closely matches the screenshot from **Settings → Appearance**.
 
+### Color scheme installation & Starship setup
+
+1. **Install the Windows Terminal settings** to apply the `One Half Dark` and
+   `Campbell` palettes:
+   ```powershell
+   ./scripts/install-windows-terminal.ps1
+   ```
+   The script copies the preconfigured `settings.json` containing both palettes
+   into the Windows Terminal LocalState folder.
+2. **Link the Starship configuration** so the prompt matches the screenshot:
+   ```bash
+   cp starship.toml ~/.config/starship.toml
+   ```
+   Make sure `~/.config/nushell/config.nu` sets `\$env.STARSHIP_CONFIG` to this
+   path so Starship loads the file automatically.
+
+### Metrics pane binding
+
+Add the following key binding to your Windows Terminal `settings.json` to toggle
+a vertical metrics pane running `btm` with `Alt+M`:
+
+```json
+{
+  "command": { "action": "splitPane", "split": "vertical", "commandline": "btm" },
+  "keys": "alt+m"
+}
+```
+
+Now pressing `Alt+M` opens bottom in a split so you can monitor system metrics
+beside your shell.
+
 ---
 
 ## License
