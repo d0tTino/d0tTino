@@ -10,4 +10,4 @@ creates `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalSt
 if needed and copies `settings.json` there.
 
 The settings define `Alt+V` to split the active pane vertically and `Alt+H` to
-split it horizontally.
+split it horizontally. Press `Ctrl+Shift+W` to close the active pane.

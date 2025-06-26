@@ -2,6 +2,14 @@ import json
 from pathlib import Path
 import pytest
 
+
+def find_binding(actions: list[dict], key: str):
+    """Return the first binding in ``actions`` matching ``key``."""
+    for action in actions:
+        if action.get("keys") == key:
+            return action
+    return None
+
 json5 = pytest.importorskip("json5")
 
 
@@ -38,23 +46,30 @@ def test_windows_terminal_split_bindings():
     data = load_json(Path('windows-terminal') / 'settings.json')
     actions = data.get('actions', [])
 
-    def find_binding(key):
-        for action in actions:
-            if action.get('keys') == key:
-                return action
-        return None
-
-    binding_v = find_binding('alt+v')
+    binding_v = find_binding(actions, 'alt+v')
     assert binding_v, 'Alt+V binding missing'
     assert binding_v.get('command', {}).get('action') == 'splitPane'
     assert binding_v.get('command', {}).get('split') == 'vertical'
     assert binding_v.get('command', {}).get('profile') == '{1857054d-df21-5f4a-bd44-865a14a14d59}'
 
-    binding_h = find_binding('alt+h')
+    binding_h = find_binding(actions, 'alt+h')
     assert binding_h, 'Alt+H binding missing'
     assert binding_h.get('command', {}).get('action') == 'splitPane'
     assert binding_h.get('command', {}).get('split') == 'horizontal'
     assert binding_h.get('command', {}).get('profile') == '{574e775e-4f2a-5b96-ac1e-a2962a402336}'
+
+
+def test_windows_terminal_close_pane_binding():
+    data = load_json(Path('windows-terminal') / 'settings.json')
+    actions = data.get('actions', [])
+
+    binding = find_binding(actions, 'ctrl+shift+w')
+    assert binding, 'Ctrl+Shift+W binding missing'
+    command = binding.get('command')
+    if isinstance(command, dict):
+        assert command.get('action') == 'closePane'
+    else:
+        assert command == 'closePane'
 
 
 
