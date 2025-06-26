@@ -4,7 +4,7 @@ Follow these steps to set up the configuration files on a new system.
 
 ## Node.js
 
-The repository's lint script requires Node.js. You can install it with [nvm](https://github.com/nvm-sh/nvm):
+The repository's lint script (`npx eslint`) requires Node.js. You can install it with [nvm](https://github.com/nvm-sh/nvm):
 
 ```bash
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
