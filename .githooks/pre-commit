@@ -1,6 +1,11 @@
 #!/bin/sh
 set -e
 ruff check .
+python3 windows-terminal/generate_settings.py \
+  windows-terminal/settings.base.json \
+  windows-terminal/settings.json \
+  --common windows-terminal/common-profiles.json
+git add windows-terminal/settings.json
 SCRIPT="scripts/export-winget.ps1"
 OS=$(uname -s)
 case "$OS" in
