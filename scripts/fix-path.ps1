@@ -38,17 +38,9 @@ if ($userProfile) {
 
 $joinedPath = $unique -join ';'
 $newPath = $joinedPath
-$originalCount = $unique.Count
-if ($newPath.Length -gt 1023) {
-    Write-Warning "PATH length exceeds 1023 characters and will be truncated."
-    $removed = $newPath.Substring(1023)
-    Write-Verbose "Removed portion: $removed" -Verbose
-    $newPath = $newPath.Substring(0, 1023)
 
-}
-$finalCount = ($newPath -split ';').Count
-if ($finalCount -lt $originalCount) {
-    Write-Warning 'Some PATH entries were dropped due to size limitations.'
+if ($newPath.Length -gt 32000) {
+    Write-Warning "PATH length exceeds 32k characters and may not be fully persisted on Windows."
 }
 
 [Environment]::SetEnvironmentVariable('Path', $newPath, 'User')

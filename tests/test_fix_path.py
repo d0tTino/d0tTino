@@ -117,7 +117,22 @@ def test_fix_path_warns_and_truncates(tmp_path):
         "USERPROFILE": str(tmp_path),
     })
     output, stderr = run_fix_path_capture(env, capture_stderr=True)
-    assert len(output) == 1023
-    assert output == long_path[:1023]
-    assert "PATH length exceeds 1023 characters" in stderr
-    assert "Some PATH entries were dropped" in stderr
+    expected = long_path + ";" + str(Path(tmp_path) / "bin")
+    assert output == expected
+    assert stderr.strip() == ""
+
+
+@pytest.mark.skipif(not shutil.which("pwsh") and not shutil.which("powershell"), reason="PowerShell not available")
+def test_fix_path_preserves_long_values(tmp_path):
+    paths = [fr"C:\\Path{i}" for i in range(4000)]
+    long_path = ";".join(paths)
+    assert len(long_path) > 32000
+    env = os.environ.copy()
+    env.update({
+        "Path": long_path,
+        "USERPROFILE": str(tmp_path),
+    })
+    output, stderr = run_fix_path_capture(env, capture_stderr=True)
+    expected = long_path + ";" + str(Path(tmp_path) / "bin")
+    assert output == expected
+    assert "exceeds 32k characters" in stderr
