@@ -15,6 +15,15 @@ def test_user_profile_contains_required_commands():
     assert any("zoxide" in line.lower() for line in lines), "zoxide invocation missing"
 
 
+def test_starship_config_env_is_set_before_init():
+    lines = USER_PROFILE_PATH.read_text().splitlines()
+    env_line_index = next((i for i, line in enumerate(lines) if "$Env:STARSHIP_CONFIG" in line), None)
+    init_index = next((i for i, line in enumerate(lines) if "starship init powershell" in line), None)
+    assert env_line_index is not None, "STARSHIP_CONFIG env var not set"
+    assert init_index is not None, "starship init not found"
+    assert env_line_index < init_index, "STARSHIP_CONFIG should be set before starship init"
+
+
 def test_zoxide_after_fzf_block():
     """Ensure zoxide initialization occurs after the fzf setup."""
     lines = USER_PROFILE_PATH.read_text().splitlines()

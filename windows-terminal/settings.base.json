@@ -35,6 +35,7 @@
       "keys": "alt+h"
     },
     { "command": "closePane", "keys": "ctrl+shift+w" }
+
   ],
   "copyFormatting": "none",
   "copyOnSelect": false,
