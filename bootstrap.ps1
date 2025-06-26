@@ -24,7 +24,11 @@ if ($InstallWSL -and $IsWindows) {
     & "$PSScriptRoot/scripts/install-wsl.ps1"
 }
 
-if ($SetupWSL -and (Get-Command bash -ErrorAction SilentlyContinue)) {
-    & bash "$PSScriptRoot/scripts/setup-wsl.sh"
+if ($SetupWSL) {
+    if ($IsWindows) {
+        & "$PSScriptRoot/scripts/setup-wsl.ps1"
+    } elseif (Get-Command bash -ErrorAction SilentlyContinue) {
+        & bash "$PSScriptRoot/scripts/setup-wsl.sh"
+    }
 }
 
