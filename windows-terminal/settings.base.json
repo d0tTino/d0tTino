@@ -36,6 +36,13 @@
     },
     {
       "command": {
+        "action": "newTab",
+        "commandline": "btm"
+      },
+      "keys": "alt+m"
+    },
+    {
+      "command": {
         "action": "closePane"
       },
       "keys": "ctrl+shift+w"

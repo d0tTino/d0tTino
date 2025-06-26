@@ -13,6 +13,14 @@ def load_json(path: Path):
         return json5.loads(text)
 
 
+def find_binding(actions: list[dict], key: str) -> dict | None:
+    """Return the binding dict matching ``key`` if present."""
+    for action in actions:
+        if action.get("keys") == key:
+            return action
+    return None
+
+
 def test_windows_terminal_settings():
     data = load_json(Path('windows-terminal') / 'settings.json')
     assert data.get('defaultProfile'), 'default profile missing'
@@ -39,27 +47,33 @@ def test_windows_terminal_split_bindings():
     data = load_json(Path('windows-terminal') / 'settings.json')
     actions = data.get('actions', [])
 
-    def find_binding(key):
-        for action in actions:
-            if action.get('keys') == key:
-                return action
-        return None
-
-    binding_v = find_binding('alt+v')
+    binding_v = find_binding(actions, 'alt+v')
     assert binding_v, 'Alt+V binding missing'
     assert binding_v.get('command', {}).get('action') == 'splitPane'
     assert binding_v.get('command', {}).get('split') == 'vertical'
     assert binding_v.get('command', {}).get('profile') == '{1857054d-df21-5f4a-bd44-865a14a14d59}'
 
-    binding_h = find_binding('alt+h')
+    binding_h = find_binding(actions, 'alt+h')
     assert binding_h, 'Alt+H binding missing'
     assert binding_h.get('command', {}).get('action') == 'splitPane'
     assert binding_h.get('command', {}).get('split') == 'horizontal'
     assert binding_h.get('command', {}).get('profile') == '{574e775e-4f2a-5b96-ac1e-a2962a402336}'
 
-    binding_close = find_binding('ctrl+shift+w')
+    binding_close = find_binding(actions, 'ctrl+shift+w')
     assert binding_close, 'Ctrl+Shift+W binding missing'
     assert binding_close.get('command', {}).get('action') == 'closePane'
+
+
+def test_windows_terminal_btm_binding():
+    """Alt+M should open btm in a new tab."""
+    data = load_json(Path('windows-terminal') / 'settings.json')
+    actions = data.get('actions', [])
+
+    binding = find_binding(actions, 'alt+m')
+    assert binding, 'Alt+M binding missing'
+    cmd = binding.get('command', {})
+    assert cmd.get('action') == 'newTab'
+    assert cmd.get('commandline') == 'btm'
 
 
 
