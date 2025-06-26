@@ -59,7 +59,7 @@
         "weight": "normal"
       },
       "acrylicOpacity": 0.85,
-      "colorScheme": "One Half Dark"
+      "colorScheme": "Blacklight"
     },
     "list": [
       {
@@ -73,11 +73,34 @@
         "hidden": false,
         "name": "Ubuntu",
         "source": "Microsoft.WSL",
-        "colorScheme": "Campbell"
+        "colorScheme": "Blacklight"
       }
     ]
   },
   "schemes": [
+    {
+      "name": "Blacklight",
+      "black": "#000000",
+      "red": "#ff66c4",
+      "green": "#b2ff59",
+      "yellow": "#ffff66",
+      "blue": "#66b2ff",
+      "purple": "#d066ff",
+      "cyan": "#66fff2",
+      "white": "#f2f2f2",
+      "brightBlack": "#666666",
+      "brightRed": "#ff66c4",
+      "brightGreen": "#b2ff59",
+      "brightYellow": "#ffff66",
+      "brightBlue": "#66b2ff",
+      "brightPurple": "#d066ff",
+      "brightCyan": "#66fff2",
+      "brightWhite": "#ffffff",
+      "background": "#0d001a",
+      "foreground": "#d0b3ff",
+      "cursorColor": "#ffffff",
+      "selectionBackground": "#301050"
+    },
     {
       "name": "One Half Dark",
       "black": "#282c34",

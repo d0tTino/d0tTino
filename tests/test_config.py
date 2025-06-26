@@ -32,13 +32,15 @@ def test_windows_terminal_settings():
     assert defaults.get('useAcrylic') is True, 'acrylic not enabled'
     assert 'acrylicOpacity' in defaults, 'acrylic opacity missing'
     assert defaults.get('acrylicOpacity') == 0.85
-    color = defaults.get('colorScheme')
-    if not color:
-        for p in profiles:
-            if 'colorScheme' in p:
-                color = p['colorScheme']
-                break
-    assert color, 'color scheme missing'
+    expected_scheme = 'Blacklight'
+    assert defaults.get('colorScheme') == expected_scheme, 'default color scheme missing'
+
+    for profile in profiles:
+        scheme = profile.get('colorScheme', expected_scheme)
+        assert scheme == expected_scheme, f"profile {profile.get('name')} missing Blacklight scheme"
+
+    schemes = data.get('schemes', [])
+    assert any(s.get('name') == expected_scheme for s in schemes), 'Blacklight scheme not found'
     assert 'actions' in data and data['actions'], "action bindings missing"
 
 
