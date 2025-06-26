@@ -2,3 +2,4 @@ dspy==2.6.27
 pytest
 json5
 ruff
+tomli; python_version < '3.11'
