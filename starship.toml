@@ -4,12 +4,37 @@ format = """
 [└─](bold purple)$character
 """
 
-[git_status]
-disabled = false
-stashed = "📦"
+palette = "blacklight"
+
+[palettes.blacklight]
+black = "#282c34"
+red = "#e06c75"
+green = "#98c379"
+yellow = "#e5c07b"
+blue = "#61afef"
+purple = "#c678dd"
+cyan = "#56b6c2"
+white = "#dcdfe4"
+bright_black = "#282c34"
+bright_red = "#e06c75"
+bright_green = "#98c379"
+bright_yellow = "#e5c07b"
+bright_blue = "#61afef"
+bright_purple = "#c678dd"
+bright_cyan = "#56b6c2"
+bright_white = "#dcdfe4"
+
+[directory]
+style = "fg:blue"
 
 [git_branch]
 disabled = false
+style = "fg:purple"
+
+[git_status]
+disabled = false
+stashed = "📦"
+style = "fg:red"
 
 [git_state]
 disabled = false
@@ -17,6 +42,7 @@ disabled = false
 [time]
 disabled = false
 format = "[$time]($style) "
+style = "fg:yellow"
 
 [status]
 disabled = false
