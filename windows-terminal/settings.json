@@ -45,7 +45,6 @@
       "command": {
         "action": "closePane"
       },
-
       "keys": "ctrl+shift+w"
     }
   ],
