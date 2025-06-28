@@ -1,0 +1,15 @@
+# Running the Tests
+
+The suite relies on `pytest` and `json5`. Some tests also require the optional
+[`dspy`](https://pypi.org/project/dspy-ai/) package. Those tests will be skipped
+if `dspy` isn't installed.
+
+Install dependencies and run the tests with:
+
+```bash
+pip install -e .
+pip install -r requirements.txt
+# optional: install dspy for the full suite
+pip install dspy-ai
+pytest
+```
