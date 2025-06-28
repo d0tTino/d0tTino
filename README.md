@@ -15,7 +15,9 @@ Key directories:
 ## Quickstart
 
 Install the required Python packages (including test utilities such as
-`pytest` and `json5`):
+`pytest` and `json5`). The optional `dspy` dependency enables the full
+test suite but tests that rely on it will be skipped if the package is
+missing:
 
 ```bash
 pip install -e . -r requirements.txt
@@ -62,7 +64,7 @@ more details.
 
 For a more detailed overview, see [docs/terminal.md](docs/terminal.md).
 For details on fastfetch, btm and Nushell/Starship setup, see the [Terminal Tools section](docs/terminal.md#terminal-tools-fastfetch-btm--nushellstarship).
-For the **One Half Dark** and **Campbell** palettes and the `Alt+M` metrics pane binding used in the screenshots, see [Replicating the Screenshot Environment](docs/terminal.md#replicating-the-screenshot-environment).
+For the **One Half Dark** and **Campbell** palettes and the `Alt+M` metrics pane binding used in the screenshots, see [Replicating the Screenshot Environment](docs/terminal.md#replicating-the-screenshot-environment). For a brief overview of the unified palette and pane shortcuts, check [Blacklight Palette & Shortcuts](docs/terminal.md#blacklight-palette--shortcuts).
 
 
 ## Git hooks
@@ -100,6 +102,8 @@ mode first and then install the rest of the dependencies:
 ```bash
 pip install -e .
 pip install -r requirements.txt
+# Optional: install `dspy` to run the complete suite
+pip install dspy-ai
 ```
 
 Then invoke `pytest`:

@@ -1,11 +1,7 @@
-try:
-    import tomllib
-except ModuleNotFoundError:  # Python < 3.11
-    import tomli as tomllib
-from pathlib import Path
+from test_starship_palette import EXPECTED_COLORS, load_starship
 
 def test_starship_time_and_git_status_sections():
-    data = tomllib.loads(Path('starship.toml').read_text())
+    data = load_starship()
     assert 'time' in data, '[time] section missing'
     assert 'git_status' in data, '[git_status] section missing'
     assert data['git_status'].get('stashed') == "📦", 'stashed icon mismatch'
@@ -21,13 +17,13 @@ def test_starship_time_and_git_status_sections():
     assert data['time'].get('style') == 'fg:purple', 'time style mismatch'
 
 def test_starship_multiline_format():
-    data = tomllib.loads(Path('starship.toml').read_text())
+    data = load_starship()
     expected = "[┌─](bold purple)$directory$git_branch$git_state$git_status$status$fill$time\n[└─](bold purple)$character\n"
     assert data.get('format') == expected, 'prompt format mismatch'
     assert data.get('add_newline') is False, 'add_newline should be false'
 
 def test_starship_palette():
-    data = tomllib.loads(Path('starship.toml').read_text())
+    data = load_starship()
     assert data.get('palette') == 'blacklight', 'palette not set to blacklight'
     palette = data.get('palettes', {}).get('blacklight', {})
     expected_colors = {
@@ -49,5 +45,6 @@ def test_starship_palette():
         'bright_white': '#ffffff',
     }
     for name, value in expected_colors.items():
+
         assert palette.get(name) == value, f'{name} color mismatch'
 

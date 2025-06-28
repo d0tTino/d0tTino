@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 import pytest
 
-
 json5 = pytest.importorskip("json5")
 
 
@@ -20,6 +19,7 @@ def find_binding(actions: list[dict], key: str) -> dict | None:
         if action.get("keys") == key:
             return action
     return None
+
 
 
 def test_windows_terminal_settings():

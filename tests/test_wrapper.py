@@ -5,6 +5,8 @@ from llm.universal_dspy_wrapper_v2 import (  # noqa: E402 - imported after impor
     LoggedFewShotWrapper,
 )
 
+from llm.universal_dspy_wrapper_v2 import LoggedFewShotWrapper  # noqa: E402
+
 class EchoPrediction:
     def __init__(self, text: str) -> None:
         self.out = text
