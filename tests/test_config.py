@@ -13,6 +13,13 @@ def load_json(path: Path):
         return json5.loads(text)
 
 
+def find_binding(actions: list[dict], key: str) -> dict | None:
+    """Return the first binding in ``actions`` matching ``key`` if present."""
+    for action in actions:
+        if action.get("keys") == key:
+            return action
+    return None
+
 
 
 def test_windows_terminal_settings():

@@ -1,6 +1,9 @@
 import pytest
 
 dspy = pytest.importorskip("dspy")
+from llm.universal_dspy_wrapper_v2 import (  # noqa: E402 - imported after importorskip
+    LoggedFewShotWrapper,
+)
 
 from llm.universal_dspy_wrapper_v2 import LoggedFewShotWrapper  # noqa: E402
 
