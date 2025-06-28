@@ -164,6 +164,18 @@ source ~/.cache/starship/init.nu
 ```
 Customize the prompt by editing [`starship.toml`](../starship.toml) in this repository.
 
+## Blacklight Palette & Shortcuts
+
+The repository ships a unified **Blacklight** color scheme used by Windows Terminal and the Starship prompt. Run [`install-windows-terminal.ps1`](../scripts/install-windows-terminal.ps1) to copy `windows-terminal/settings.json` into the Windows Terminal *LocalState* folder. Then place [`starship.toml`](../starship.toml) in `~/.config/starship.toml` (or `%USERPROFILE%\.config\starship.toml` on Windows) so both tools share the same colors.
+
+After applying the palette, Windows Terminal defines these shortcuts:
+
+- `Alt+V` – split the current pane vertically.
+- `Alt+H` – split the current pane horizontally.
+- `Alt+M` – open a metrics pane running [`btm`](https://github.com/ClementTsang/bottom).
+
+Use [`setup-screenshot-env.sh`](../scripts/setup-screenshot-env.sh) (or its PowerShell equivalent) to install the helper tools automatically.
+
 
 ## LLM Assets
 
