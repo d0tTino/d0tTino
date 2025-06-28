@@ -3,13 +3,6 @@ from pathlib import Path
 import pytest
 
 
-def find_binding(actions: list[dict], key: str):
-    """Return the first binding in ``actions`` matching ``key``."""
-    for action in actions:
-        if action.get("keys") == key:
-            return action
-    return None
-
 json5 = pytest.importorskip("json5")
 
 
@@ -22,7 +15,7 @@ def load_json(path: Path):
 
 
 def find_binding(actions: list[dict], key: str) -> dict | None:
-    """Return the binding dict matching ``key`` if present."""
+    """Return the first binding in ``actions`` matching ``key`` if present."""
     for action in actions:
         if action.get("keys") == key:
             return action
