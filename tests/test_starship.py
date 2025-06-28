@@ -1,4 +1,4 @@
-from test_starship_palette import EXPECTED_COLORS, load_starship
+from test_starship_palette import load_starship
 
 def test_starship_time_and_git_status_sections():
     data = load_starship()

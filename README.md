@@ -11,6 +11,7 @@ Key directories:
 - `starship.toml` – example Starship prompt configuration
 - `vscode/` – VS Code user settings
 - `llm/` – prompts and other LLM-related files
+- `scripts/thm.py` – Terminal Harmony Manager for palette and profile sync
 
 ## Quickstart
 
@@ -63,6 +64,7 @@ To enable and set up WSL in one step, pass `-InstallWSL -SetupWSL` to
 more details.
 
 For a more detailed overview, see [docs/terminal.md](docs/terminal.md).
+For THM usage instructions, see [docs/thm.md](docs/thm.md).
 For details on fastfetch, btm and Nushell/Starship setup, see the [Terminal Tools section](docs/terminal.md#terminal-tools-fastfetch-btm--nushellstarship).
 For the **One Half Dark** and **Campbell** palettes and the `Alt+M` metrics pane binding used in the screenshots, see [Replicating the Screenshot Environment](docs/terminal.md#replicating-the-screenshot-environment). For a brief overview of the unified palette and pane shortcuts, check [Blacklight Palette & Shortcuts](docs/terminal.md#blacklight-palette--shortcuts).
 
