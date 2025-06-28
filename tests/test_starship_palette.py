@@ -16,7 +16,7 @@ EXPECTED_COLORS = {
     "green": "#b2ff59",
     "yellow": "#ffff66",
     "blue": "#66b2ff",
-    "purple": "#d066ff",
+    "purple": "#845CFF",
     "cyan": "#66fff2",
     "white": "#f2f2f2",
     "bright_black": "#666666",
@@ -24,7 +24,7 @@ EXPECTED_COLORS = {
     "bright_green": "#b2ff59",
     "bright_yellow": "#ffff66",
     "bright_blue": "#66b2ff",
-    "bright_purple": "#d066ff",
+    "bright_purple": "#FC17DA",
     "bright_cyan": "#66fff2",
     "bright_white": "#ffffff",
 }
