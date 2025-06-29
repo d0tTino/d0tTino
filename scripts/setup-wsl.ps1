@@ -11,4 +11,4 @@ if (-not (Get-Command wsl -ErrorAction SilentlyContinue)) {
 }
 
 $script = Join-Path $PSScriptRoot 'setup-wsl.sh'
-& wsl.exe bash $script
+& wsl.exe bash "`"$script`""
