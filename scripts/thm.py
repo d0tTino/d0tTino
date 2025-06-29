@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import json
+import os
 from pathlib import Path
 
 try:
@@ -12,7 +14,7 @@ except ModuleNotFoundError:  # Python < 3.11
     import tomli as tomllib
 
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(os.environ.get("THM_REPO_ROOT", Path(__file__).resolve().parent.parent))
 PALETTES_DIR = REPO_ROOT / "palettes"
 
 
@@ -23,16 +25,71 @@ def load_palette(palette_path: Path) -> dict:
 
 
 def apply_palette(palette_name: str, repo_root: Path) -> None:
-    """Apply ``palette_name`` to Starship and Windows Terminal.
+    """Apply ``palette_name`` to Starship and Windows Terminal."""
+    try:
+        import tomli_w
+    except ModuleNotFoundError as e:
+        raise ModuleNotFoundError(
+            "tomli_w is required; install with 'pip install -e .[cli]'"
+        ) from e
 
-    This is currently a placeholder that prints out which palette would be
-    applied. Future implementations will update ``starship.toml`` and the
-    Windows Terminal ``settings.json`` file.
-    """
     palette_file = repo_root / "palettes" / f"{palette_name}.toml"
+    if not palette_file.exists():
+        raise FileNotFoundError(f"Palette '{palette_name}' not found")
+
     colors = load_palette(palette_file)[palette_name]
-    print(f"Applying palette {palette_name} with {len(colors)} colors")
-    # TODO: Update starship.toml and windows-terminal/settings.json
+
+    # Update starship.toml
+    starship = repo_root / "starship.toml"
+    data = tomllib.loads(starship.read_text(encoding="utf-8"))
+    data["palette"] = palette_name
+    palettes = data.setdefault("palettes", {})
+    palettes[palette_name] = colors
+    starship.write_text(tomli_w.dumps(data) + "\n", encoding="utf-8")
+
+    # Update Windows Terminal settings
+    wt_settings = repo_root / "windows-terminal" / "settings.json"
+    wt_data = json.loads(wt_settings.read_text(encoding="utf-8"))
+    scheme_name = palette_name.replace("-", " ").title()
+    mapping = {
+        "black": "black",
+        "red": "red",
+        "green": "green",
+        "yellow": "yellow",
+        "blue": "blue",
+        "purple": "purple",
+        "cyan": "cyan",
+        "white": "white",
+        "bright_black": "brightBlack",
+        "bright_red": "brightRed",
+        "bright_green": "brightGreen",
+        "bright_yellow": "brightYellow",
+        "bright_blue": "brightBlue",
+        "bright_purple": "brightPurple",
+        "bright_cyan": "brightCyan",
+        "bright_white": "brightWhite",
+    }
+
+    schemes = wt_data.setdefault("schemes", [])
+    for scheme in schemes:
+        if scheme.get("name") == scheme_name:
+            target = scheme
+            break
+    else:
+        target = {"name": scheme_name}
+        schemes.append(target)
+
+    for k, v in colors.items():
+        target[mapping[k]] = v
+
+    wt_profiles = wt_data.get("profiles", {})
+    defaults = wt_profiles.setdefault("defaults", {})
+    defaults["colorScheme"] = scheme_name
+
+    for prof in wt_profiles.get("list", []):
+        prof["colorScheme"] = scheme_name
+
+    wt_settings.write_text(json.dumps(wt_data, indent=2) + "\n", encoding="utf-8")
 
 
 def list_palettes(repo_root: Path) -> None:

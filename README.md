@@ -11,7 +11,7 @@ Key directories:
 - `starship.toml` – example Starship prompt configuration
 - `vscode/` – VS Code user settings
 - `llm/` – prompts and other LLM-related files
-- `scripts/thm.py` – Terminal Harmony Manager for palette and profile sync
+- `scripts/thm.py` – Terminal Harmony Manager for palette and profile sync (installs as `thm` when using `pip install -e .[cli]`)
 
 ## Quickstart
 
@@ -21,7 +21,7 @@ test suite but tests that rely on it will be skipped if the package is
 missing:
 
 ```bash
-pip install -e . -r requirements.txt
+pip install -e .[cli] -r requirements.txt
 ```
 
 Run `ruff` to lint the Python code:
@@ -64,7 +64,9 @@ To enable and set up WSL in one step, pass `-InstallWSL -SetupWSL` to
 more details.
 
 For a more detailed overview, see [docs/terminal.md](docs/terminal.md).
-For THM usage instructions, see [docs/thm.md](docs/thm.md).
+For THM usage instructions, see [docs/thm.md](docs/thm.md). The tool ships with
+`blacklight`, `dracula` and `solarized-dark` palettes and can update your
+configuration via `thm apply <name>`.
 For details on fastfetch, btm and Nushell/Starship setup, see the [Terminal Tools section](docs/terminal.md#terminal-tools-fastfetch-btm--nushellstarship).
 For the **One Half Dark** and **Campbell** palettes and the `Alt+M` metrics pane binding used in the screenshots, see [Replicating the Screenshot Environment](docs/terminal.md#replicating-the-screenshot-environment). For a brief overview of the unified palette and pane shortcuts, check [Blacklight Palette & Shortcuts](docs/terminal.md#blacklight-palette--shortcuts).
 
@@ -102,7 +104,7 @@ Before running the Python tests locally, install this repository in editable
 mode first and then install the rest of the dependencies:
 
 ```bash
-pip install -e .
+pip install -e .[cli]
 pip install -r requirements.txt
 # Optional: install `dspy` to run the complete suite
 pip install dspy-ai
