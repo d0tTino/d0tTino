@@ -17,7 +17,10 @@ def validate(path: Path) -> bool:
     """
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
-    except Exception as exc:  # noqa: BLE001
+    except FileNotFoundError:
+        print(f"{path} not found", file=sys.stderr)
+        return False
+    except json.JSONDecodeError as exc:
         print(f"Failed to parse {path}: {exc}", file=sys.stderr)
         return False
 
