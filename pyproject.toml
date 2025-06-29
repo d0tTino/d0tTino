@@ -12,7 +12,12 @@ dependencies = ["dspy==2.6.27"]
 
 [project.optional-dependencies]
 test = ["pytest", "json5"]
+cli = ["tomli_w"]
+
+[project.scripts]
+thm = "scripts.thm:main"
+
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["llm*"]
+include = ["llm*", "scripts*"]
