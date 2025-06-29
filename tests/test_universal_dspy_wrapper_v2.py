@@ -1,5 +1,6 @@
 import subprocess
 from pathlib import Path
+import os
 
 import pytest
 
@@ -51,6 +52,24 @@ def test_is_repo_data_path_windows_and_posix():
 
     assert is_repo_data_path(posix_path)
     assert is_repo_data_path(windows_path)
+
+
+def test_is_repo_data_path_mixed_case(monkeypatch):
+    """Paths should be case-insensitive on Windows."""
+    mixed = Path(f"{_REPO_ROOT.as_posix().upper()}/FiLe.JsOn")
+
+    if os.name == "nt":
+        assert is_repo_data_path(mixed)
+    else:
+        assert not is_repo_data_path(mixed)
+
+        import importlib
+        import sys
+
+        monkeypatch.setattr("os.name", "nt", raising=False)
+        sys.modules.pop("llm.universal_dspy_wrapper_v2", None)
+        module = importlib.import_module("llm.universal_dspy_wrapper_v2")
+        assert module.is_repo_data_path(mixed)
 
 
 def test_repo_root_fallback(monkeypatch):
