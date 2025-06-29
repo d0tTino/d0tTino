@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import inspect
 import json
+import os
 import re
 
 import shutil
@@ -41,7 +42,8 @@ except (subprocess.CalledProcessError, FileNotFoundError) as exc:
     _REPO_ROOT = Path.cwd()
 
 _PATH_REGEX = re.compile(
-    rf"^(?P<root>{re.escape(_REPO_ROOT.as_posix())})/.+(?P<data>[^/]+\.(?:ya?ml|json))$"
+    rf"^(?P<root>{re.escape(_REPO_ROOT.as_posix())})/.+(?P<data>[^/]+\.(?:ya?ml|json))$",
+    re.IGNORECASE if os.name == "nt" else 0,
 )
 
 
