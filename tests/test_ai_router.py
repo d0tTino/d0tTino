@@ -2,6 +2,7 @@ import io
 import json
 import contextlib
 import subprocess
+import sys
 
 from scripts import ai_router
 
@@ -95,4 +96,5 @@ def test_config_selects_backend(monkeypatch, tmp_path):
 
     out = ai_router.send_prompt("cfg", model="test")
     assert out == "ollama:cfg:test"
+
 

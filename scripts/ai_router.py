@@ -77,7 +77,7 @@ def send_prompt(prompt: str, *, local: bool = False, model: str = DEFAULT_MODEL)
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("prompt", help="Prompt to send to the model")
+    parser.add_argument("prompt", nargs="?", help="Prompt to send to the model")
     parser.add_argument(
         "--local",
         action="store_true",
@@ -88,8 +88,15 @@ def main(argv: list[str] | None = None) -> int:
         default=DEFAULT_MODEL,
         help="Model name to pass to the backend (default: %(default)s)",
 
+
     )
     args = parser.parse_args(argv)
+
+    if args.prompt is None:
+        if args.stdin:
+            args.prompt = sys.stdin.read()
+        else:
+            parser.error("the following arguments are required: prompt (or --stdin)")
 
     try:
         output = send_prompt(args.prompt, local=args.local, model=args.model)

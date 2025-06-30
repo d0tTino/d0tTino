@@ -26,3 +26,6 @@ ai = "scripts.ai_router:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["llm*", "scripts*"]
+
+[tool.ruff]
+src = ["llm", "scripts"]
