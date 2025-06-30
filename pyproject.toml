@@ -11,7 +11,11 @@ requires-python = ">=3.10"
 dependencies = ["dspy==2.6.27"]
 
 [project.optional-dependencies]
-test = ["pytest", "json5"]
+test = [
+    "pytest",
+    "pytest-xdist",
+    "json5",
+]
 cli = ["tomli_w"]
 
 [project.scripts]
