@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Route prompts to Gemini or Ollama."""
 
+
 from __future__ import annotations
 
 import argparse
@@ -61,6 +62,7 @@ def main(argv: list[str] | None = None) -> int:
         "--model",
         default=DEFAULT_MODEL,
         help="Model name for Ollama (default: %(default)s)",
+
     )
     args = parser.parse_args(argv)
 
@@ -77,4 +79,5 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+
     raise SystemExit(main())

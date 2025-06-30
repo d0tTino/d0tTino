@@ -60,3 +60,4 @@ def test_cli_invokes_send_prompt(monkeypatch):
         rc = ai_router.main(["--local", "--model", "m", "cli"])
     assert rc == 0
     assert out.getvalue().strip() == "ok"
+

@@ -23,4 +23,20 @@ Lint the codebase with `ruff`:
 ruff check .
 ```
 
-`dspy` (version 2.6.27) powers the local LLM wrapper found in `llm/`, while `pytest` runs the test suite.
+
+`dspy` (version 2.6.27) powers the local LLM wrapper found in `llm/`, while
+`pytest` runs the test suite.
+
+## LLM Routing CLI
+
+Use the `ai` command to route prompts to your configured language model. By
+default the tool sends the request to your remote provider, but passing
+`--local` forces evaluation with the local LLM instead.
+
+```bash
+# Send the prompt to the provider configured in your environment
+ai "Write a Python script"
+
+# Run the prompt against the locally installed model
+ai --local "Translate text"
+```

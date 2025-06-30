@@ -10,7 +10,7 @@ Key directories:
 - `tablet-config/` – full example configuration for a tablet, including Windows Terminal
 - `starship.toml` – example Starship prompt configuration
 - `vscode/` – VS Code user settings
-- `llm/` – prompts and other LLM-related files
+- `llm/` – prompts and other LLM-related files. The optional `llm/llm_config.json` file stores preferred model names used by `llm.ai_router`. Set the `LLM_CONFIG_PATH` environment variable to override the location.
 - `scripts/thm.py` – Terminal Harmony Manager for palette and profile sync (installs as `thm` when using `pip install -e .[cli]`)
 
 ## Quickstart
@@ -28,6 +28,17 @@ Run `ruff` to lint the Python code:
 
 ```bash
 ruff check .
+```
+
+The installation also provides an `ai` command for routing prompts to your chosen
+model:
+
+```bash
+# Send the prompt to the remote provider
+ai "Write a Python script"
+
+# Force evaluation with your local model
+ai --local "Translate text"
 ```
 
 Next, install the Git hooks so `pre-commit` runs automatically:
@@ -62,6 +73,8 @@ other platforms it runs `scripts/setup-hooks.sh`.
 To enable and set up WSL in one step, pass `-InstallWSL -SetupWSL` to
 `bootstrap.ps1`; see the [installation guide](docs/installation.md#WSL) for
 more details.
+
+After running the script, reload your profile with `. $PROFILE` or restart the terminal to pick up the new configuration. The profile defines an `ai` helper that forwards prompts to `python -m ai_router`.
 
 For a more detailed overview, see [docs/terminal.md](docs/terminal.md).
 For THM usage instructions, see [docs/thm.md](docs/thm.md). The tool ships with
