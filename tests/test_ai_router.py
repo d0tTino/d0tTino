@@ -2,7 +2,7 @@ import io
 import contextlib
 import subprocess
 
-from scripts import ai_router
+from llm import ai_router
 
 
 def test_send_prompt_calls_gemini(monkeypatch):
