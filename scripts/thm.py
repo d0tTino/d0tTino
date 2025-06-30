@@ -37,7 +37,12 @@ def apply_palette(palette_name: str, repo_root: Path) -> None:
     if not palette_file.exists():
         raise FileNotFoundError(f"Palette '{palette_name}' not found")
 
-    colors = load_palette(palette_file)[palette_name]
+    palettes = load_palette(palette_file)
+    if palette_name not in palettes:
+        raise ValueError(
+            f"Palette file '{palette_file}' does not contain key '{palette_name}'"
+        )
+    colors = palettes[palette_name]
 
     # Update starship.toml
     starship = repo_root / "starship.toml"

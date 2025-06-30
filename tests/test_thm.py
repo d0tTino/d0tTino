@@ -74,3 +74,27 @@ def test_apply_unknown_palette_errors(tmp_path):
             check=True,
             env=env,
         )
+
+
+def test_apply_missing_key_errors(tmp_path):
+    repo_root = Path(__file__).resolve().parents[1]
+    script = repo_root / "scripts" / "thm.py"
+
+    dest = tmp_path / "repo"
+    (dest / "windows-terminal").mkdir(parents=True)
+    (dest / "palettes").mkdir()
+    shutil.copy(repo_root / "starship.toml", dest / "starship.toml")
+    shutil.copy(
+        repo_root / "windows-terminal" / "settings.json",
+        dest / "windows-terminal" / "settings.json",
+    )
+    (dest / "palettes" / "missing.toml").write_text("[wrong]\nfoo='bar'\n")
+
+    env = os.environ.copy()
+    env["THM_REPO_ROOT"] = str(dest)
+    with pytest.raises(subprocess.CalledProcessError):
+        subprocess.run(
+            [sys.executable, str(script), "apply", "missing"],
+            check=True,
+            env=env,
+        )
