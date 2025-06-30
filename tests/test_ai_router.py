@@ -1,11 +1,22 @@
 import io
+import json
 import contextlib
 import subprocess
 
 from scripts import ai_router
 
 
+def _set_env(monkeypatch, primary="gemini", fallback="ollama"):
+    monkeypatch.setenv("LLM_PRIMARY_BACKEND", primary)
+    if fallback is not None:
+        monkeypatch.setenv("LLM_FALLBACK_BACKEND", fallback)
+    else:
+        monkeypatch.delenv("LLM_FALLBACK_BACKEND", raising=False)
+
+
 def test_send_prompt_calls_gemini(monkeypatch):
+    _set_env(monkeypatch, "gemini", "ollama")
+
     def mock_run_gemini(prompt, model=None):
         return f"gemini:{prompt}:{model}"
 
@@ -20,6 +31,8 @@ def test_send_prompt_calls_gemini(monkeypatch):
 
 
 def test_send_prompt_falls_back_to_ollama(monkeypatch):
+    _set_env(monkeypatch, "gemini", "ollama")
+
     def mock_run_gemini(prompt, model=None):
         raise subprocess.CalledProcessError(1, ["gemini"])
 
@@ -34,6 +47,8 @@ def test_send_prompt_falls_back_to_ollama(monkeypatch):
 
 
 def test_send_prompt_local(monkeypatch):
+    _set_env(monkeypatch, "gemini", "ollama")
+
     def fail_run_gemini(prompt, model=None):
         raise AssertionError("gemini should not be called")
 
@@ -60,4 +75,24 @@ def test_cli_invokes_send_prompt(monkeypatch):
         rc = ai_router.main(["--local", "--model", "m", "cli"])
     assert rc == 0
     assert out.getvalue().strip() == "ok"
+
+
+def test_config_selects_backend(monkeypatch, tmp_path):
+    cfg = tmp_path / "cfg.json"
+    cfg.write_text(json.dumps({"primary_model": "ollama"}))
+    monkeypatch.setenv("LLM_CONFIG_PATH", str(cfg))
+    monkeypatch.delenv("LLM_PRIMARY_BACKEND", raising=False)
+    monkeypatch.delenv("LLM_FALLBACK_BACKEND", raising=False)
+
+    def fail_run_gemini(prompt, model=None):
+        raise AssertionError("gemini should not run")
+
+    def mock_run_ollama(prompt, model):
+        return f"ollama:{prompt}:{model}"
+
+    monkeypatch.setattr(ai_router, "run_gemini", fail_run_gemini)
+    monkeypatch.setattr(ai_router, "run_ollama", mock_run_ollama)
+
+    out = ai_router.send_prompt("cfg", model="test")
+    assert out == "ollama:cfg:test"
 
