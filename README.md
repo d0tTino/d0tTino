@@ -39,6 +39,9 @@ ai "Write a Python script"
 
 # Force evaluation with your local model
 ai --local "Translate text"
+
+# Read the prompt from standard input
+echo "Summarize" | ai --stdin
 ```
 
 Next, install the Git hooks so `pre-commit` runs automatically:
