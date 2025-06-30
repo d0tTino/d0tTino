@@ -63,6 +63,8 @@ To enable and set up WSL in one step, pass `-InstallWSL -SetupWSL` to
 `bootstrap.ps1`; see the [installation guide](docs/installation.md#WSL) for
 more details.
 
+After running the script, reload your profile with `. $PROFILE` or restart the terminal to pick up the new configuration.
+
 For a more detailed overview, see [docs/terminal.md](docs/terminal.md).
 For THM usage instructions, see [docs/thm.md](docs/thm.md). The tool ships with
 `blacklight`, `dracula` and `solarized-dark` palettes and can update your
