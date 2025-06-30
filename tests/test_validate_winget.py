@@ -1,4 +1,3 @@
-import json  # noqa: F401
 
 import subprocess
 from pathlib import Path

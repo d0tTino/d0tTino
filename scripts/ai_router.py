@@ -1,56 +1,83 @@
 #!/usr/bin/env python3
-"""Route prompts to Gemini CLI or Ollama models."""
+"""Route prompts to Gemini or Ollama."""
+
 
 from __future__ import annotations
 
 import argparse
 import subprocess
-from typing import Sequence
+import sys
+
+DEFAULT_MODEL = "llama3"
 
 
-def run_gemini(prompt: str) -> subprocess.CompletedProcess:
-    """Invoke the Gemini CLI with ``prompt``."""
-    return subprocess.run(["gemini", prompt], check=True)
+def run_gemini(prompt: str, model: str | None = None) -> str:
+    """Return Gemini response for ``prompt``."""
+    cmd = ["gemini"]
+    if model:
+        cmd += ["--model", model]
+    result = subprocess.run(
+        cmd,
+        input=prompt,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return result.stdout
 
 
-def run_ollama(prompt: str, model: str) -> subprocess.CompletedProcess:
-    """Invoke Ollama to run ``model`` with ``prompt``."""
-    return subprocess.run(["ollama", "run", model, prompt], check=True)
+def run_ollama(prompt: str, model: str) -> str:
+    """Return Ollama response for ``prompt`` using ``model``."""
+    cmd = ["ollama", "run", model, prompt]
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return result.stdout
 
 
-def main(argv: Sequence[str] | None = None) -> int:
-    """Entry point for the :mod:`ai_router` script."""
+def send_prompt(prompt: str, *, local: bool = False, model: str = DEFAULT_MODEL) -> str:
+    """Send ``prompt`` to Gemini or Ollama and return the response text."""
+    if not local:
+        try:
+            return run_gemini(prompt, model)
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            local = True
+    if local:
+        return run_ollama(prompt, model)
+    raise RuntimeError("Unable to process prompt")
+
+
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("prompt")
+    parser.add_argument("prompt", help="Prompt to send to the model")
     parser.add_argument(
-        "--backend",
-        choices=["gemini", "ollama", "auto"],
-        default="auto",
-        help="Which backend to use (default: auto)",
+        "--local",
+        action="store_true",
+        help="Use local model via Ollama instead of Gemini",
     )
     parser.add_argument(
         "--model",
-        default="llama3",
-        help="Model to use with Ollama when applicable",
+        default=DEFAULT_MODEL,
+        help="Model name for Ollama (default: %(default)s)",
+
     )
     args = parser.parse_args(argv)
 
     try:
-        if args.backend == "gemini":
-            run_gemini(args.prompt)
-        elif args.backend == "ollama":
-            run_ollama(args.prompt, args.model)
-        else:  # auto
-            try:
-                run_gemini(args.prompt)
-            except (subprocess.CalledProcessError, FileNotFoundError):
-                run_ollama(args.prompt, args.model)
-    except subprocess.CalledProcessError as exc:
-        return exc.returncode
-    except FileNotFoundError:
+        output = send_prompt(args.prompt, local=args.local, model=args.model)
+    except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+        print(exc, file=sys.stderr)
         return 1
+
+    sys.stdout.write(output)
+    if not output.endswith("\n"):
+        sys.stdout.write("\n")
     return 0
 
 
-if __name__ == "__main__":  # pragma: no cover - CLI entrypoint
+if __name__ == "__main__":
+
     raise SystemExit(main())

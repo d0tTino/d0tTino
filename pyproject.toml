@@ -20,6 +20,7 @@ cli = ["tomli_w"]
 
 [project.scripts]
 thm = "scripts.thm:main"
+ai = "scripts.ai_router:main"
 
 
 [tool.setuptools.packages.find]
