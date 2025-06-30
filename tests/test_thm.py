@@ -22,6 +22,7 @@ def test_list_palettes_outputs_available_palettes(tmp_path):
 
 
 def test_apply_updates_configs(tmp_path):
+    pytest.importorskip("tomli_w")
     repo_root = Path(__file__).resolve().parents[1]
     script = repo_root / "scripts" / "thm.py"
 
@@ -77,6 +78,7 @@ def test_apply_unknown_palette_errors(tmp_path):
 
 
 def test_apply_missing_starship_errors(tmp_path):
+
     repo_root = Path(__file__).resolve().parents[1]
     script = repo_root / "scripts" / "thm.py"
 
@@ -85,6 +87,7 @@ def test_apply_missing_starship_errors(tmp_path):
     (dest / "palettes").mkdir()
 
     # Only copy windows-terminal settings
+
     shutil.copy(
         repo_root / "windows-terminal" / "settings.json",
         dest / "windows-terminal" / "settings.json",
@@ -126,3 +129,4 @@ def test_apply_missing_wt_settings_errors(tmp_path):
     )
     assert result.returncode == 1
     assert "windows-terminal" in result.stderr or "settings.json" in result.stderr
+
