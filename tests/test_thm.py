@@ -74,3 +74,55 @@ def test_apply_unknown_palette_errors(tmp_path):
             check=True,
             env=env,
         )
+
+
+def test_apply_missing_starship_errors(tmp_path):
+    repo_root = Path(__file__).resolve().parents[1]
+    script = repo_root / "scripts" / "thm.py"
+
+    dest = tmp_path / "repo"
+    (dest / "windows-terminal").mkdir(parents=True)
+    (dest / "palettes").mkdir()
+
+    # Only copy windows-terminal settings
+    shutil.copy(
+        repo_root / "windows-terminal" / "settings.json",
+        dest / "windows-terminal" / "settings.json",
+    )
+    for p in (repo_root / "palettes").glob("*.toml"):
+        shutil.copy(p, dest / "palettes" / p.name)
+
+    env = os.environ.copy()
+    env["THM_REPO_ROOT"] = str(dest)
+    result = subprocess.run(
+        [sys.executable, str(script), "apply", "dracula"],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert result.returncode == 1
+    assert "starship.toml" in result.stderr
+
+
+def test_apply_missing_wt_settings_errors(tmp_path):
+    repo_root = Path(__file__).resolve().parents[1]
+    script = repo_root / "scripts" / "thm.py"
+
+    dest = tmp_path / "repo"
+    (dest / "windows-terminal").mkdir(parents=True)
+    (dest / "palettes").mkdir()
+
+    shutil.copy(repo_root / "starship.toml", dest / "starship.toml")
+    for p in (repo_root / "palettes").glob("*.toml"):
+        shutil.copy(p, dest / "palettes" / p.name)
+
+    env = os.environ.copy()
+    env["THM_REPO_ROOT"] = str(dest)
+    result = subprocess.run(
+        [sys.executable, str(script), "apply", "dracula"],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert result.returncode == 1
+    assert "windows-terminal" in result.stderr or "settings.json" in result.stderr
