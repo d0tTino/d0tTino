@@ -49,6 +49,9 @@ def apply_palette(palette_name: str, repo_root: Path) -> None:
 
     # Update starship.toml
     starship = repo_root / "starship.toml"
+    if not starship.exists():
+        print(f"Error: {starship} not found", file=sys.stderr)
+        raise SystemExit(1)
     data = tomllib.loads(starship.read_text(encoding="utf-8"))
     data["palette"] = palette_name
     palettes = data.setdefault("palettes", {})
@@ -57,6 +60,9 @@ def apply_palette(palette_name: str, repo_root: Path) -> None:
 
     # Update Windows Terminal settings
     wt_settings = repo_root / "windows-terminal" / "settings.json"
+    if not wt_settings.exists():
+        print(f"Error: {wt_settings} not found", file=sys.stderr)
+        raise SystemExit(1)
     wt_data = json.loads(wt_settings.read_text(encoding="utf-8"))
     scheme_name = palette_name.replace("-", " ").title()
     mapping = {
