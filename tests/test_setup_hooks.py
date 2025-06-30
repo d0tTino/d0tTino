@@ -82,6 +82,7 @@ def test_setup_hooks_sh_verification_failure(tmp_path):
         ["bash", "scripts/setup-hooks.sh"],
         cwd=repo,
         env=env,
+
         capture_output=True,
         text=True,
     )
@@ -110,8 +111,10 @@ def test_setup_hooks_ps1_verification_failure(tmp_path):
         [pwsh, "-NoLogo", "-NoProfile", "-File", "scripts/setup-hooks.ps1"],
         cwd=repo,
         env=env,
+
         capture_output=True,
         text=True,
     )
     assert result.returncode != 0
     assert "core.hooksPath" in result.stderr
+

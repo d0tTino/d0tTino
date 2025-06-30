@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """Generate Windows Terminal settings from a base file and common profiles."""
 import json
+import sys
 from pathlib import Path
 import argparse
 
 
 def load_json(path: Path) -> dict:
-    return json.loads(path.read_text(encoding="utf-8"))
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as ex:
+        print(f"Failed to parse JSON from {path}: {ex}", file=sys.stderr)
+        sys.exit(1)
 
 
 def merge_profiles(common: dict, override: dict) -> dict:

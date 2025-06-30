@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 
 try:
@@ -28,19 +29,29 @@ def apply_palette(palette_name: str, repo_root: Path) -> None:
     """Apply ``palette_name`` to Starship and Windows Terminal."""
     try:
         import tomli_w
-    except ModuleNotFoundError as e:
-        raise ModuleNotFoundError(
-            "tomli_w is required; install with 'pip install -e .[cli]'"
-        ) from e
+    except ModuleNotFoundError:
+        print(
+            "tomli_w is required; install with 'pip install -e .[cli]'",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
 
     palette_file = repo_root / "palettes" / f"{palette_name}.toml"
     if not palette_file.exists():
         raise FileNotFoundError(f"Palette '{palette_name}' not found")
 
-    colors = load_palette(palette_file)[palette_name]
+    palettes = load_palette(palette_file)
+    if palette_name not in palettes:
+        raise ValueError(
+            f"Palette file '{palette_file}' does not contain key '{palette_name}'"
+        )
+    colors = palettes[palette_name]
 
     # Update starship.toml
     starship = repo_root / "starship.toml"
+    if not starship.exists():
+        print(f"Error: {starship} not found", file=sys.stderr)
+        raise SystemExit(1)
     data = tomllib.loads(starship.read_text(encoding="utf-8"))
     data["palette"] = palette_name
     palettes = data.setdefault("palettes", {})
@@ -49,6 +60,9 @@ def apply_palette(palette_name: str, repo_root: Path) -> None:
 
     # Update Windows Terminal settings
     wt_settings = repo_root / "windows-terminal" / "settings.json"
+    if not wt_settings.exists():
+        print(f"Error: {wt_settings} not found", file=sys.stderr)
+        raise SystemExit(1)
     wt_data = json.loads(wt_settings.read_text(encoding="utf-8"))
     scheme_name = palette_name.replace("-", " ").title()
     mapping = {

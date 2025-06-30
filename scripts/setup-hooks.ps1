@@ -1,6 +1,22 @@
 # Configure Git to use local hooks directory if not already set.
 $ErrorActionPreference = 'Stop'
 
+if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+    Write-Error 'git is required'
+    exit 1
+}
+
+try {
+    $insideRepo = git rev-parse --is-inside-work-tree 2>$null
+} catch {
+    $insideRepo = $null
+}
+
+if ($insideRepo -ne 'true') {
+    Write-Error 'This script must be run inside a Git repository.'
+    exit 1
+}
+
 try {
     $currentPath = git config --get core.hooksPath 2>$null
 } catch {
