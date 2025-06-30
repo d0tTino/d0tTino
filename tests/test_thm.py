@@ -77,7 +77,8 @@ def test_apply_unknown_palette_errors(tmp_path):
         )
 
 
-def test_apply_missing_tomli_w_exits_with_error(tmp_path):
+def test_apply_missing_key_errors(tmp_path):
+
     repo_root = Path(__file__).resolve().parents[1]
     script = repo_root / "scripts" / "thm.py"
 
@@ -89,16 +90,14 @@ def test_apply_missing_tomli_w_exits_with_error(tmp_path):
         repo_root / "windows-terminal" / "settings.json",
         dest / "windows-terminal" / "settings.json",
     )
-    for p in (repo_root / "palettes").glob("*.toml"):
-        shutil.copy(p, dest / "palettes" / p.name)
+    (dest / "palettes" / "missing.toml").write_text("[wrong]\nfoo='bar'\n")
 
     env = os.environ.copy()
     env["THM_REPO_ROOT"] = str(dest)
-    result = subprocess.run(
-        [sys.executable, "-S", str(script), "apply", "dracula"],
-        capture_output=True,
-        text=True,
-        env=env,
-    )
-    assert result.returncode == 1
-    assert "tomli_w is required" in result.stderr
+    with pytest.raises(subprocess.CalledProcessError):
+        subprocess.run(
+            [sys.executable, str(script), "apply", "missing"],
+            check=True,
+            env=env,
+        )
+
