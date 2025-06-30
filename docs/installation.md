@@ -48,7 +48,7 @@ ruff check .
    ```
    The script calls `scripts/fix-path.ps1` to clean up duplicate entries and ensure your `bin` directory is included.
    If `$Env:USERPROFILE` isn't defined (e.g. on Linux), it falls back to `$HOME`.
-4. Restart the terminal to load the new settings.
+4. Restart the terminal or run `. $PROFILE` to reload the profile and load the new settings.
 
 ## WSL
 
