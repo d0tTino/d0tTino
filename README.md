@@ -30,6 +30,17 @@ Run `ruff` to lint the Python code:
 ruff check .
 ```
 
+The installation also provides an `ai` command for routing prompts to your chosen
+model:
+
+```bash
+# Send the prompt to the remote provider
+ai "Write a Python script"
+
+# Force evaluation with your local model
+ai --local "Translate text"
+```
+
 Next, install the Git hooks so `pre-commit` runs automatically:
 
 ```powershell
