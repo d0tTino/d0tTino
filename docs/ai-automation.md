@@ -39,4 +39,7 @@ ai "Write a Python script"
 
 # Run the prompt against the locally installed model
 ai --local "Translate text"
+
+# Read a prompt from standard input
+echo "Summarize" | ai --stdin
 ```

@@ -1,6 +1,7 @@
 import io
 import contextlib
 import subprocess
+import sys
 
 from scripts import ai_router
 
@@ -60,4 +61,21 @@ def test_cli_invokes_send_prompt(monkeypatch):
         rc = ai_router.main(["--local", "--model", "m", "cli"])
     assert rc == 0
     assert out.getvalue().strip() == "ok"
+
+
+def test_cli_reads_prompt_from_stdin(monkeypatch):
+    def mock_send_prompt(prompt, *, local=False, model=ai_router.DEFAULT_MODEL):
+        assert prompt == "from stdin"
+        assert local is False
+        assert model == ai_router.DEFAULT_MODEL
+        return "stdin-ok"
+
+    monkeypatch.setattr(ai_router, "send_prompt", mock_send_prompt)
+    out = io.StringIO()
+    stdin = io.StringIO("from stdin")
+    monkeypatch.setattr(sys, "stdin", stdin)
+    with contextlib.redirect_stdout(out):
+        rc = ai_router.main(["--stdin"])
+    assert rc == 0
+    assert out.getvalue().strip() == "stdin-ok"
 
