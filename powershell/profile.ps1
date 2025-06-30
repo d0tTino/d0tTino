@@ -2,6 +2,7 @@
 
 function ai {
     param([string]$Prompt)
-    python -m ai_router $Prompt
+    python -m ai_router "$Prompt"
+
 }
 
