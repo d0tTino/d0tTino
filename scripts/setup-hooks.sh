@@ -7,6 +7,12 @@ if ! command -v git >/dev/null 2>&1; then
     exit 1
 fi
 
+# Verify that we are inside a Git repository
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "Error: this script must be run inside a Git repository" >&2
+    exit 1
+fi
+
 # Configure Git to use local hooks directory if not already set
 current_path=$(git config --get core.hooksPath || true)
 if [[ -z "$current_path" ]]; then
