@@ -26,3 +26,4 @@ def test_get_preferred_models_env_override(tmp_path: Path, monkeypatch) -> None:
     primary, fallback = get_preferred_models("default", "alt")
     assert primary == "env"
     assert fallback == "alt"
+
