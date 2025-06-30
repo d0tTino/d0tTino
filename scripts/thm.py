@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 from pathlib import Path
 
 try:
@@ -28,10 +29,12 @@ def apply_palette(palette_name: str, repo_root: Path) -> None:
     """Apply ``palette_name`` to Starship and Windows Terminal."""
     try:
         import tomli_w
-    except ModuleNotFoundError as e:
-        raise ModuleNotFoundError(
-            "tomli_w is required; install with 'pip install -e .[cli]'"
-        ) from e
+    except ModuleNotFoundError:
+        print(
+            "tomli_w is required; install with 'pip install -e .[cli]'",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
 
     palette_file = repo_root / "palettes" / f"{palette_name}.toml"
     if not palette_file.exists():

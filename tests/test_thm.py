@@ -22,6 +22,7 @@ def test_list_palettes_outputs_available_palettes(tmp_path):
 
 
 def test_apply_updates_configs(tmp_path):
+    pytest.importorskip("tomli_w")
     repo_root = Path(__file__).resolve().parents[1]
     script = repo_root / "scripts" / "thm.py"
 
@@ -74,3 +75,30 @@ def test_apply_unknown_palette_errors(tmp_path):
             check=True,
             env=env,
         )
+
+
+def test_apply_missing_tomli_w_exits_with_error(tmp_path):
+    repo_root = Path(__file__).resolve().parents[1]
+    script = repo_root / "scripts" / "thm.py"
+
+    dest = tmp_path / "repo"
+    (dest / "windows-terminal").mkdir(parents=True)
+    (dest / "palettes").mkdir()
+    shutil.copy(repo_root / "starship.toml", dest / "starship.toml")
+    shutil.copy(
+        repo_root / "windows-terminal" / "settings.json",
+        dest / "windows-terminal" / "settings.json",
+    )
+    for p in (repo_root / "palettes").glob("*.toml"):
+        shutil.copy(p, dest / "palettes" / p.name)
+
+    env = os.environ.copy()
+    env["THM_REPO_ROOT"] = str(dest)
+    result = subprocess.run(
+        [sys.executable, "-S", str(script), "apply", "dracula"],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert result.returncode == 1
+    assert "tomli_w is required" in result.stderr
