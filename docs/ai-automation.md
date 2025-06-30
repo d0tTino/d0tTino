@@ -43,3 +43,19 @@ ai --local "Translate text"
 # Read a prompt from standard input
 echo "Summarize" | ai --stdin
 ```
+
+## LLM Configuration
+
+`get_preferred_models()` reads model names from a JSON file. By default the
+project looks for `llm/llm_config.json` in the repository root, but you can set
+`LLM_CONFIG_PATH` to specify another location or pass a path when calling the
+function.
+
+Example configuration:
+
+```json
+{
+  "primary_model": "gpt-4",
+  "fallback_model": "gpt-3.5-turbo"
+}
+```
