@@ -86,3 +86,11 @@ sudo bash scripts/setup-wsl.sh
    ./bootstrap.ps1
    ```
 4. Launch a new shell to pick up the configuration.
+
+## Local LLM tools
+
+Install the Gemini CLI and pull the default Ollama model:
+
+```powershell
+./scripts/install-llm-tools.ps1
+```
