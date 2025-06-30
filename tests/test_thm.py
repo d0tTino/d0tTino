@@ -22,6 +22,7 @@ def test_list_palettes_outputs_available_palettes(tmp_path):
 
 
 def test_apply_updates_configs(tmp_path):
+    pytest.importorskip("tomli_w")
     repo_root = Path(__file__).resolve().parents[1]
     script = repo_root / "scripts" / "thm.py"
 
@@ -77,6 +78,7 @@ def test_apply_unknown_palette_errors(tmp_path):
 
 
 def test_apply_missing_key_errors(tmp_path):
+
     repo_root = Path(__file__).resolve().parents[1]
     script = repo_root / "scripts" / "thm.py"
 
@@ -98,3 +100,4 @@ def test_apply_missing_key_errors(tmp_path):
             check=True,
             env=env,
         )
+
