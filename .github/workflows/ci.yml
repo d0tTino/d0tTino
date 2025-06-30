@@ -35,9 +35,9 @@ jobs:
         run: ruff check .
 
       - name: Run tests
-        run: pytest -q
+        run: pytest -n auto
       - name: Run smoke test
-        run: pytest -q tests/test_smoke_test.py
+        run: pytest -n auto tests/test_smoke_test.py
       - name: Run lint
         run: npm run lint
       - name: Validate winget packages
@@ -69,9 +69,9 @@ jobs:
         run: ruff check .
 
       - name: Run tests
-        run: pytest -q
+        run: pytest -n auto
       - name: Run smoke test
-        run: pytest -q tests/test_smoke_test.py
+        run: pytest -n auto tests/test_smoke_test.py
       - name: Run lint
         run: npm run lint
       - name: Validate winget packages

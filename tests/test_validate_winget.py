@@ -1,3 +1,4 @@
+import json
 import subprocess
 from pathlib import Path
 import sys
@@ -27,3 +28,4 @@ def test_validate_winget_success(tmp_path: Path) -> None:
         text=True,
     )
     assert result.returncode == 0
+
