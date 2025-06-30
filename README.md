@@ -10,7 +10,7 @@ Key directories:
 - `tablet-config/` – full example configuration for a tablet, including Windows Terminal
 - `starship.toml` – example Starship prompt configuration
 - `vscode/` – VS Code user settings
-- `llm/` – prompts and other LLM-related files
+- `llm/` – prompts and other LLM-related files. The optional `llm/llm_config.json` file stores preferred model names used by `llm.ai_router`. Set the `LLM_CONFIG_PATH` environment variable to override the location.
 - `scripts/thm.py` – Terminal Harmony Manager for palette and profile sync (installs as `thm` when using `pip install -e .[cli]`)
 
 ## Quickstart
