@@ -74,6 +74,16 @@ def _run_backend(name: str, prompt: str, model: str) -> str:
     raise ValueError(f"Unknown backend: {name}")
 
 
+def _get_threshold(env_val: str | None) -> int:
+    """Return the complexity threshold parsed from ``env_val``."""
+    if env_val is None:
+        return DEFAULT_COMPLEXITY_THRESHOLD
+    try:
+        return int(env_val)
+    except ValueError:
+        return DEFAULT_COMPLEXITY_THRESHOLD
+
+
 def send_prompt(prompt: str, *, local: bool = False, model: str = DEFAULT_MODEL) -> str:
     """Send ``prompt`` using the configured backends."""
     primary, fallback = _preferred_backends()
@@ -94,6 +104,7 @@ def send_prompt(prompt: str, *, local: bool = False, model: str = DEFAULT_MODEL)
                 threshold = int(raw_threshold) if raw_threshold is not None else DEFAULT_COMPLEXITY_THRESHOLD
             except ValueError:
                 threshold = DEFAULT_COMPLEXITY_THRESHOLD
+
             complexity = estimate_prompt_complexity(prompt)
             if complexity > threshold:
                 order.append(primary)
