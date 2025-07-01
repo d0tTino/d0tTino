@@ -100,6 +100,25 @@ def test_env_complexity_threshold(monkeypatch):
     assert out == "gemini:two words:g1"
 
 
+def test_env_complexity_threshold_invalid(monkeypatch):
+    _set_env(monkeypatch, "gemini", "ollama")
+    monkeypatch.setenv("LLM_COMPLEXITY_THRESHOLD", "x")
+
+    long_prompt = " ".join(["word"] * (ai_router.DEFAULT_COMPLEXITY_THRESHOLD + 1))
+
+    def mock_run_gemini(prompt, model=None):
+        return f"gemini:{prompt}:{model}"
+
+    def fail_run_ollama(prompt, model):
+        raise AssertionError("ollama should not be called")
+
+    monkeypatch.setattr(ai_router, "run_gemini", mock_run_gemini)
+    monkeypatch.setattr(ai_router, "run_ollama", fail_run_ollama)
+
+    out = ai_router.send_prompt(long_prompt, model="g1")
+    assert out.startswith("gemini:")
+
+
 def test_cli_invokes_send_prompt(monkeypatch):
     def mock_send_prompt(prompt, *, local=False, model=ai_router.DEFAULT_MODEL):
         assert prompt == "cli"
