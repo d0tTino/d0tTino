@@ -2,6 +2,7 @@ from .base import Backend
 from .gemini import GeminiBackend
 from .ollama import OllamaBackend
 from .openrouter import OpenRouterBackend
+from ..langchain_backend import LangChainBackend
 
 GeminiDSPyBackendType: type[Backend] | None
 OllamaDSPyBackendType: type[Backend] | None
@@ -27,6 +28,7 @@ __all__ = [
     "GeminiBackend",
     "OllamaBackend",
     "OpenRouterBackend",
+    "LangChainBackend",
     "GeminiDSPyBackend",
     "OllamaDSPyBackend",
     "OpenRouterDSPyBackend",
