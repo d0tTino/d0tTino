@@ -133,4 +133,15 @@ Then invoke `pytest`:
 pytest
 ```
 
+## Contributing
+
+Run `ruff` before committing to ensure the Python code is lint-free:
+
+```bash
+ruff check .
+```
+
+After fixing any lint errors, rerun the command and verify that it reports zero
+issues. The `pre-commit` hook runs the same command automatically.
+
 Licensed under the [Apache 2.0](LICENSE) license.
