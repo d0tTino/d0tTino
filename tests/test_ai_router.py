@@ -2,7 +2,6 @@ import io
 import json
 import contextlib
 import subprocess
-import json
 
 import sys
 
