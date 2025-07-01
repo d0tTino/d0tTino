@@ -2,7 +2,9 @@ param(
     [switch] $InstallWinget,
     [switch] $InstallWindowsTerminal,
     [switch] $InstallWSL,
-    [switch] $SetupWSL
+    [switch] $SetupWSL,
+    [switch] $SetupDocker,
+    [string] $DockerImageName
 )
 
 & "$PSScriptRoot/scripts/fix-path.ps1"
@@ -29,6 +31,18 @@ if ($SetupWSL) {
         & "$PSScriptRoot/scripts/setup-wsl.ps1"
     } elseif (Get-Command bash -ErrorAction SilentlyContinue) {
         & bash "$PSScriptRoot/scripts/setup-wsl.sh"
+    }
+}
+
+if ($SetupDocker) {
+    if ($IsWindows) {
+        $argsList = @()
+        if ($DockerImageName) { $argsList += @('-ImageName', $DockerImageName) }
+        & "$PSScriptRoot/scripts/setup-docker.ps1" @argsList
+    } elseif (Get-Command bash -ErrorAction SilentlyContinue) {
+        $bashArgs = @()
+        if ($DockerImageName) { $bashArgs += @('--image', $DockerImageName) }
+        & bash "$PSScriptRoot/scripts/setup-docker.sh" @bashArgs
     }
 }
 
