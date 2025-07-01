@@ -4,31 +4,15 @@ from __future__ import annotations
 
 import json
 import os
-import subprocess
 import warnings
 from pathlib import Path
 from typing import Any, Optional, Tuple
 
-
-def _repo_root() -> Path:
-    try:
-        return Path(
-            subprocess.run(
-                ["git", "rev-parse", "--show-toplevel"],
-                check=True,
-                capture_output=True,
-                text=True,
-            ).stdout.strip()
-        )
-    except (subprocess.CalledProcessError, FileNotFoundError) as exc:  # pragma: no cover
-        warnings.warn(
-            f"Git repo root detection failed: {exc}. Falling back to current working directory.",
-            RuntimeWarning,
-        )
-        return Path.cwd()
+from .utils import get_repo_root
 
 
-_DEFAULT_CONFIG = _repo_root() / "llm" / "llm_config.json"
+
+_DEFAULT_CONFIG = get_repo_root() / "llm" / "llm_config.json"
 
 
 def _load_config(path: Path) -> dict[str, Any]:
