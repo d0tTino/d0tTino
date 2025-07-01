@@ -1,14 +1,26 @@
 import io
+import json
 import contextlib
 import subprocess
 import json
+
 import sys
 
 from scripts import ai_router
 from llm import ai_router as llm_router
 
 
+def _set_env(monkeypatch, primary="gemini", fallback="ollama"):
+    monkeypatch.setenv("LLM_PRIMARY_BACKEND", primary)
+    if fallback is not None:
+        monkeypatch.setenv("LLM_FALLBACK_BACKEND", fallback)
+    else:
+        monkeypatch.delenv("LLM_FALLBACK_BACKEND", raising=False)
+
+
 def test_send_prompt_calls_gemini(monkeypatch):
+    _set_env(monkeypatch, "gemini", "ollama")
+
     def mock_run_gemini(prompt, model=None):
         return f"gemini:{prompt}:{model}"
 
@@ -23,6 +35,8 @@ def test_send_prompt_calls_gemini(monkeypatch):
 
 
 def test_send_prompt_falls_back_to_ollama(monkeypatch):
+    _set_env(monkeypatch, "gemini", "ollama")
+
     def mock_run_gemini(prompt, model=None):
         raise subprocess.CalledProcessError(1, ["gemini"])
 
@@ -37,6 +51,8 @@ def test_send_prompt_falls_back_to_ollama(monkeypatch):
 
 
 def test_send_prompt_local(monkeypatch):
+    _set_env(monkeypatch, "gemini", "ollama")
+
     def fail_run_gemini(prompt, model=None):
         raise AssertionError("gemini should not be called")
 
@@ -94,3 +110,4 @@ def test_get_preferred_models_config_override(tmp_path, monkeypatch):
     monkeypatch.setenv("LLM_CONFIG_PATH", str(config_file2))
     primary2, fallback2 = llm_router.get_preferred_models("d3", "fb")
     assert (primary2, fallback2) == ("envp", "fb")
+

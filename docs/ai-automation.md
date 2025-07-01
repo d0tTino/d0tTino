@@ -39,4 +39,43 @@ ai "Write a Python script"
 
 # Run the prompt against the locally installed model
 ai --local "Translate text"
+
+# Read a prompt from standard input
+echo "Summarize" | ai --stdin
 ```
+
+## LLM Configuration
+
+`get_preferred_models()` reads model names from a JSON file. By default the
+project looks for `llm/llm_config.json` in the repository root, but you can set
+`LLM_CONFIG_PATH` to specify another location or pass a path when calling the
+function.
+
+Example configuration:
+
+```json
+{
+  "primary_model": "gpt-4",
+  "fallback_model": "gpt-3.5-turbo"
+}
+```
+
+## Shell Command Planning
+
+`scripts/ai_exec.py` converts high level requests into shell commands using the
+same backend as the `ai` helper. Each command is printed before execution and
+requires an explicit `y` confirmation; pressing `Enter` or `n` skips that
+command.
+
+Examples:
+
+```bash
+# Build and install dependencies
+python scripts/ai_exec.py "create a venv and install requirements"
+
+# Commit and push changes using the local model
+python scripts/ai_exec.py "git add . && git commit -m 'update' && git push" --local
+```
+
+This interactive review makes the workflow safer by ensuring you see and approve
+every command before it runs.

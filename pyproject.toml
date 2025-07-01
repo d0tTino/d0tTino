@@ -27,3 +27,6 @@ ai-plan = "scripts.ai_exec:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["llm*", "scripts*"]
+
+[tool.ruff]
+src = ["llm", "scripts"]

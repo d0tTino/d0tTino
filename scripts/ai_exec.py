@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Simple AI execution planner using ``ai_router``."""
 
+
 from __future__ import annotations
 
 import argparse
@@ -32,6 +33,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     for step in steps:
         print(step)
     return 0
+
 
 
 if __name__ == "__main__":

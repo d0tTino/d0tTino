@@ -1,4 +1,5 @@
 import subprocess
+
 import io
 import contextlib
 
@@ -59,3 +60,4 @@ def test_main_invokes_plan(monkeypatch):
         rc = ai_exec.main(["goal", "--config", "cfg.json"])
     assert rc == 0
     assert out.getvalue().splitlines() == ["one", "two"]
+
