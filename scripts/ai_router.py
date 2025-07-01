@@ -89,9 +89,11 @@ def send_prompt(prompt: str, *, local: bool = False, model: str = DEFAULT_MODEL)
             if fallback:
                 order.append(fallback)
         else:  # auto
-            threshold = int(
-                os.environ.get("LLM_COMPLEXITY_THRESHOLD", DEFAULT_COMPLEXITY_THRESHOLD)
-            )
+            raw_threshold = os.environ.get("LLM_COMPLEXITY_THRESHOLD")
+            try:
+                threshold = int(raw_threshold) if raw_threshold is not None else DEFAULT_COMPLEXITY_THRESHOLD
+            except ValueError:
+                threshold = DEFAULT_COMPLEXITY_THRESHOLD
             complexity = estimate_prompt_complexity(prompt)
             if complexity > threshold:
                 order.append(primary)
