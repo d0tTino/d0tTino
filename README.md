@@ -43,7 +43,13 @@ ai --local "Translate text"
 # Generate a step-by-step plan
 ai-plan "Refactor the codebase"
 
+# Execute the plan interactively
+ai-do "Refactor the codebase"
+
 ```
+
+`ai-do` exits with the code of the first failing command, making it suitable for
+automation scripts.
 
 Next, install the Git hooks so `pre-commit` runs automatically:
 

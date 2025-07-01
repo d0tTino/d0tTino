@@ -22,6 +22,7 @@ cli = ["tomli_w"]
 thm = "scripts.thm:main"
 ai = "scripts.ai_router:main"
 ai-plan = "scripts.ai_exec:main"
+ai-do = "scripts.ai_do:main"
 
 
 [tool.setuptools.packages.find]
