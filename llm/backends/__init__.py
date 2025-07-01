@@ -2,6 +2,7 @@ from .base import Backend
 from .gemini import GeminiBackend
 from .ollama import OllamaBackend
 from .openrouter import OpenRouterBackend
+from ..langchain_backend import LangChainBackend
 
 try:  # pragma: no cover - optional dependency
     from .dspy_backends import (
@@ -19,6 +20,7 @@ __all__ = [
     "GeminiBackend",
     "OllamaBackend",
     "OpenRouterBackend",
+    "LangChainBackend",
     "GeminiDSPyBackend",
     "OllamaDSPyBackend",
     "OpenRouterDSPyBackend",

@@ -15,6 +15,7 @@ from llm.backends import (
     GeminiDSPyBackend,
     OllamaDSPyBackend,
     OpenRouterDSPyBackend,
+    LangChainBackend,
 )
 from llm.ai_router import get_preferred_models
 
@@ -53,6 +54,25 @@ def run_openrouter(prompt: str, model: str) -> str:
     return backend.run(prompt)
 
 
+def create_default_chain() -> object:
+    """Return a simple LangChain chain."""
+    try:  # pragma: no cover - optional dependency
+        from langchain_openai import ChatOpenAI
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.output_parsers import StrOutputParser
+    except Exception as exc:  # pragma: no cover - optional dependency
+        raise RuntimeError("langchain is required for the langchain backend") from exc
+
+    prompt = ChatPromptTemplate.from_messages([("human", "{input}")])
+    return prompt | ChatOpenAI() | StrOutputParser()
+
+
+def run_langchain(prompt: str) -> str:
+    """Return response using a LangChain chain."""
+    backend = LangChainBackend(create_default_chain())
+    return backend.run(prompt)
+
+
 def _preferred_backends() -> tuple[str, str | None]:
     env_primary = os.environ.get("LLM_PRIMARY_BACKEND")
     env_fallback = os.environ.get("LLM_FALLBACK_BACKEND")
@@ -71,6 +91,8 @@ def _run_backend(name: str, prompt: str, model: str) -> str:
         return run_ollama(prompt, model)
     if name == "openrouter":
         return run_openrouter(prompt, model)
+    if name == "langchain":
+        return run_langchain(prompt)
     raise ValueError(f"Unknown backend: {name}")
 
 
@@ -126,6 +148,11 @@ def main(argv: list[str] | None = None) -> int:
         default=DEFAULT_MODEL,
         help="Model name for Ollama (default: %(default)s)",
     )
+    parser.add_argument(
+        "--backend",
+        choices=["gemini", "ollama", "openrouter", "langchain"],
+        help="Explicit backend to use",
+    )
     args = parser.parse_args(argv)
 
     prompt = args.prompt
@@ -134,7 +161,10 @@ def main(argv: list[str] | None = None) -> int:
 
 
     try:
-        output = send_prompt(prompt, local=args.local, model=args.model)
+        if args.backend:
+            output = _run_backend(args.backend, prompt, args.model)
+        else:
+            output = send_prompt(prompt, local=args.local, model=args.model)
     except (FileNotFoundError, subprocess.CalledProcessError) as exc:
         print(exc, file=sys.stderr)
         return 1
