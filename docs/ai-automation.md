@@ -44,6 +44,10 @@ ai --local "Translate text"
 echo "Summarize" | ai --stdin
 ```
 
+By default the tool picks the backend automatically based on the prompt length.
+Set `LLM_ROUTING_MODE` to `remote` or `local` to force the behavior, or tweak
+`LLM_COMPLEXITY_THRESHOLD` to adjust when the prompt is considered complex.
+
 ## LLM Configuration
 
 `get_preferred_models()` reads model names from a JSON file. By default the
@@ -62,20 +66,24 @@ Example configuration:
 
 ## Shell Command Planning
 
-`scripts/ai_exec.py` converts high level requests into shell commands using the
-same backend as the `ai` helper. Each command is printed before execution and
-requires an explicit `y` confirmation; pressing `Enter` or `n` skips that
-command.
-
-Examples:
+`scripts/ai_exec.py` converts a high level goal into individual shell commands
+without executing them. The `ai-plan` entry point simply prints the generated
+steps so you can review the plan:
 
 ```bash
-# Build and install dependencies
-python scripts/ai_exec.py "create a venv and install requirements"
-
-# Commit and push changes using the local model
-python scripts/ai_exec.py "git add . && git commit -m 'update' && git push" --local
+ai-plan "create a venv and install requirements"
 ```
 
+To run those commands interactively use `ai-do`. Each command is numbered and
+requires a `y` confirmation; pressing `Enter` or `n` skips that command. Output
+is appended to `ai_do.log` by default.
+
+```bash
+ai-do "git add . && git commit -m 'update' && git push" --log my.log
+```
+
+`ai-do` returns the exit status of the first failing command so it can be used
+in scripts.
+
 This interactive review makes the workflow safer by ensuring you see and approve
-every command before it runs.
+every step before it runs.

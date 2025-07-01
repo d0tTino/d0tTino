@@ -43,7 +43,16 @@ ai --local "Translate text"
 # Generate a step-by-step plan
 ai-plan "Refactor the codebase"
 
+# Execute the plan interactively
+ai-do "Refactor the codebase"
+
 ```
+Set `LLM_ROUTING_MODE` to `remote` or `local` to override the automatic
+selection logic, or adjust `LLM_COMPLEXITY_THRESHOLD` to change when the prompt
+is considered complex.
+
+`ai-do` exits with the code of the first failing command, making it suitable for
+automation scripts.
 
 Next, install the Git hooks so `pre-commit` runs automatically:
 
@@ -132,5 +141,16 @@ Then invoke `pytest`:
 ```bash
 pytest
 ```
+
+## Contributing
+
+Run `ruff` before committing to ensure the Python code is lint-free:
+
+```bash
+ruff check .
+```
+
+After fixing any lint errors, rerun the command and verify that it reports zero
+issues. The `pre-commit` hook runs the same command automatically.
 
 Licensed under the [Apache 2.0](LICENSE) license.
