@@ -181,6 +181,19 @@ Use [`setup-screenshot-env.sh`](../scripts/setup-screenshot-env.sh) (or its Powe
 
 The `llm` directory collects prompts and other files related to language models.
 Place custom prompts under `llm/prompts/` and organize subfolders as needed.
+
+## Textual UI Prototype
+
+A lightweight interface using [Textual](https://textual.textualize.io/) lives
+under `ui/textual_app.py`. Launch it with:
+
+```bash
+python -m ui.textual_app
+```
+
+Use **Send** to route prompts via `ai_router.send_prompt` and **Apply** to call
+`thm.apply_palette`. Palette names are loaded from the `palettes/` directory and
+responses or status messages show directly in the terminal window.
 ---
 
 ## Cloning & Managing Dotfiles

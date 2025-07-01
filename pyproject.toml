@@ -15,6 +15,7 @@ test = [
     "pytest",
     "pytest-xdist",
     "json5",
+    "mypy",
 ]
 cli = ["tomli_w"]
 

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import subprocess
+from pathlib import Path
 from typing import List, Optional
 
 from llm import router
@@ -16,11 +17,13 @@ def plan(goal: str, *, config_path: Optional[str] = None) -> List[str]:
     """Return planning steps for ``goal`` using preferred models."""
     primary, fallback = get_preferred_models(
         router.DEFAULT_MODEL, router.DEFAULT_MODEL, config_path=config_path
+
     )
     try:
         text = router.run_gemini(goal, model=primary)
     except (FileNotFoundError, subprocess.CalledProcessError):
         text = router.run_ollama(goal, model=fallback)
+
     return [line.strip() for line in text.splitlines() if line.strip()]
 
 

@@ -28,6 +28,11 @@ def main(argv: list[str] | None = None) -> int:
         default=DEFAULT_MODEL,
         help="Model name for Ollama (default: %(default)s)",
     )
+    parser.add_argument(
+        "--backend",
+        choices=["gemini", "ollama", "openrouter", "langchain"],
+        help="Explicit backend to use",
+    )
     args = parser.parse_args(argv)
 
     prompt = args.prompt
@@ -36,6 +41,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         output = router.send_prompt(prompt, local=args.local, model=args.model)
+
     except (FileNotFoundError, subprocess.CalledProcessError) as exc:
         print(exc, file=sys.stderr)
         return 1
