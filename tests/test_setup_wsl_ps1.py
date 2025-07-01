@@ -42,3 +42,59 @@ def test_setup_wsl_ps1_invokes_wsl(tmp_path: Path) -> None:
     args = log_file.read_text().strip().split()
     assert args and args[0] == "bash"
     assert args[1].replace('\\', '/').endswith('scripts/setup-wsl.sh')
+
+
+@pytest.mark.skipif(
+    shutil.which("pwsh") is None and shutil.which("powershell") is None,
+    reason="requires PowerShell",
+)
+def test_setup_wsl_ps1_falls_back_to_bash(tmp_path: Path) -> None:
+    pwsh = shutil.which("pwsh") or shutil.which("powershell")
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    log_file = tmp_path / "bash.log"
+    create_exe(
+        bin_dir / "bash",
+        f"#!/usr/bin/env bash\necho \"$@\" > '{log_file}'\n",
+    )
+
+    env = os.environ.copy()
+    env["PATH"] = str(bin_dir)
+    subprocess.run(
+        [pwsh, "-NoLogo", "-NoProfile", "-File", "scripts/setup-wsl.ps1"],
+        check=True,
+        env=env,
+    )
+
+    args = log_file.read_text().strip().split()
+    assert args and args[0].endswith("bash")
+    assert args[1].replace('\\', '/').endswith('scripts/setup-wsl.sh')
+
+
+@pytest.mark.skipif(
+    shutil.which("pwsh") is None and shutil.which("powershell") is None,
+    reason="requires PowerShell",
+)
+def test_setup_wsl_ps1_requires_wsl(tmp_path: Path) -> None:
+    pwsh = shutil.which("pwsh") or shutil.which("powershell")
+    env = os.environ.copy()
+    env["PATH"] = str(tmp_path)
+
+    result = subprocess.run(
+        [
+            pwsh,
+            "-NoLogo",
+            "-NoProfile",
+            "-Command",
+            (
+                "Set-Variable -Name IsWindows -Value $true -Force; "
+                f"& '{Path('scripts/setup-wsl.ps1')}'"
+            ),
+        ],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode != 0
+    assert "wsl.exe is required" in result.stderr
