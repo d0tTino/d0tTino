@@ -87,3 +87,44 @@ in scripts.
 
 This interactive review makes the workflow safer by ensuring you see and approve
 every step before it runs.
+
+## Few-Shot Logging with DSPy
+
+DSPy's `LoggedFewShotWrapper` lets you record a module's inputs and outputs and
+then compile from those examples. Because `dspy` is optional, install it
+separately when you need this feature:
+
+```bash
+pip install dspy-ai
+```
+
+### Example module
+
+```python
+import dspy
+from llm import LoggedFewShotWrapper
+
+
+class Echo(dspy.Module):
+    def forward(self, text: str) -> dspy.Prediction:
+        return dspy.Prediction(out=text)
+
+
+# Save logs under logs/ and few-shot data under fewshot/
+mod = LoggedFewShotWrapper(Echo(), log_dir="logs", fewshot_dir="fewshot")
+print(mod(text="hello").out)
+```
+
+### Snapshot and recompile
+
+Each call to `mod` appends a JSON line to `logs/Echo_io.jsonl`. Move the logged
+lines into the few-shot file and recompile:
+
+```python
+mod.snapshot_log_to_fewshot(replace=True)
+mod.recompile_from_fewshot()
+```
+
+The wrapper automatically uses the compiled module on the next call. Whenever
+you log new examples, run `snapshot_log_to_fewshot()` and recompile again to
+extend the training set.
