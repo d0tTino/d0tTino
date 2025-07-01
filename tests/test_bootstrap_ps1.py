@@ -28,12 +28,14 @@ if [[ $base == bootstrap.ps1 ]]; then
   install_windows_terminal=false
   install_wsl=false
   setup_wsl=false
+  setup_docker=false
   for arg in "${{args[@]}}"; do
     case $arg in
       -InstallWinget) install_winget=true ;;
       -InstallWindowsTerminal) install_windows_terminal=true ;;
       -InstallWSL) install_wsl=true ;;
       -SetupWSL) setup_wsl=true ;;
+      -SetupDocker) setup_docker=true ;;
     esac
   done
   echo fix-path.ps1 >> "$log_file"
@@ -45,6 +47,7 @@ if [[ $base == bootstrap.ps1 ]]; then
   $install_windows_terminal && echo install-windows-terminal.ps1 >> "$log_file"
   $install_wsl && echo install-wsl.ps1 >> "$log_file"
   $setup_wsl && echo setup-wsl.ps1 >> "$log_file"
+  $setup_docker && echo setup-docker.ps1 >> "$log_file"
   exit 0
 else
   echo "$base" >> "$log_file"
@@ -125,3 +128,40 @@ def test_bootstrap_invokes_optional_scripts(tmp_path: Path) -> None:
         assert "fix-path.ps1" in lines
         assert "setup-hooks.ps1" in lines
         assert expected in lines
+
+
+def test_bootstrap_setup_docker(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    shutil.copy(repo_root / "bootstrap.ps1", repo / "bootstrap.ps1")
+
+    stub_dir = tmp_path / "bin"
+    stub_dir.mkdir()
+    log_file = tmp_path / "pwsh.log"
+    create_stub_pwsh(stub_dir / "pwsh", log_file)
+
+    env = os.environ.copy()
+    env.update({
+        "PATH": f"{stub_dir}:{env['PATH']}",
+        "PWSH_LOG": str(log_file),
+    })
+
+    subprocess.run(
+        [
+            "pwsh",
+            "-NoLogo",
+            "-NoProfile",
+            "-File",
+            str(repo / "bootstrap.ps1"),
+            "-SetupDocker",
+            "-DockerImageName",
+            "custom:latest",
+        ],
+        cwd=repo,
+        env=env,
+        check=True,
+    )
+
+    lines = log_file.read_text().splitlines()
+    assert "setup-docker.ps1" in lines

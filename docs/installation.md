@@ -94,3 +94,34 @@ Install the Gemini CLI and pull the default Ollama model:
 ```powershell
 ./scripts/install-llm-tools.ps1
 ```
+
+## Docker environment
+
+The repository includes helper scripts to build a Docker image and start an
+interactive shell inside it. Ensure a `Dockerfile` exists in the project root
+and run:
+
+```bash
+bash scripts/setup-docker.sh
+```
+
+Set a custom image name using `--image` or the `IMAGE_NAME` environment variable:
+
+```bash
+bash scripts/setup-docker.sh --image myimage
+# or
+IMAGE_NAME=myimage bash scripts/setup-docker.sh
+```
+
+On Windows you can call the PowerShell wrapper or use `bootstrap.ps1` with the
+`-SetupDocker` switch:
+
+```powershell
+./scripts/setup-docker.ps1
+# or specify an image name
+./scripts/setup-docker.ps1 -ImageName myimage
+# or
+./bootstrap.ps1 -SetupDocker
+# with image name forwarding
+./bootstrap.ps1 -SetupDocker -DockerImageName myimage
+```
