@@ -1,4 +1,3 @@
-import subprocess
 from pathlib import Path
 import os
 
@@ -11,6 +10,7 @@ from llm.universal_dspy_wrapper_v2 import (  # noqa: E402 - imported after impor
     LoggedFewShotWrapper,
     is_repo_data_path,
 )
+from llm.utils import get_repo_root  # noqa: E402 - imported after importorskip
 
 class DummyModule(dspy.Module):
     def forward(self, value):
@@ -29,14 +29,7 @@ def test_wrapper_forward_return_type(tmp_path):
 
 
 def test_is_repo_data_path_valid(tmp_path):
-    repo_root = Path(
-        subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-    )
+    repo_root = get_repo_root()
     valid = repo_root / "config.yaml"
     invalid_root = tmp_path / "config.yaml"
     invalid_ext = repo_root / "config.txt"
@@ -75,10 +68,14 @@ def test_is_repo_data_path_mixed_case(monkeypatch):
 def test_repo_root_fallback(monkeypatch):
     """Ensure repo root falls back to cwd when git command fails."""
 
-    def raise_error(*args, **kwargs):
-        raise subprocess.CalledProcessError(1, args[0])
+    def fake_get_repo_root():
+        warnings.warn(
+            "Git repo root detection failed: boom. Falling back to current working directory.",
+            RuntimeWarning,
+        )
+        return Path.cwd()
 
-    monkeypatch.setattr(subprocess, "run", raise_error)
+    monkeypatch.setattr("llm.utils.get_repo_root", fake_get_repo_root)
     import importlib
     import sys
     import warnings

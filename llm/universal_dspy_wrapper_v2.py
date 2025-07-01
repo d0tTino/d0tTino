@@ -11,10 +11,10 @@ import os
 import re
 
 import shutil
-import subprocess
 from pathlib import Path
 from typing import Callable, List, Type
-import warnings
+
+from .utils import get_repo_root
 
 try:
     import dspy
@@ -25,21 +25,7 @@ except ImportError as exc:  # pragma: no cover - import guard
         "via 'pip install dspy-ai'"
     ) from exc
 
-try:
-    _REPO_ROOT = Path(
-        subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-    )
-except (subprocess.CalledProcessError, FileNotFoundError) as exc:
-    warnings.warn(
-        f"Git repo root detection failed: {exc}. Falling back to current working directory.",
-        RuntimeWarning,
-    )
-    _REPO_ROOT = Path.cwd()
+_REPO_ROOT = get_repo_root()
 
 _PATH_REGEX = re.compile(
     rf"^(?P<root>{re.escape(_REPO_ROOT.as_posix())})/.+(?P<data>[^/]+\.(?:ya?ml|json))$",
