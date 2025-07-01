@@ -78,4 +78,3 @@ def test_main_returns_failure(monkeypatch, tmp_path):
 
     assert rc == 1
     assert "(exit 1)" in log.read_text()
-
