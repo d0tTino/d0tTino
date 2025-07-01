@@ -16,8 +16,8 @@ def test_plan_uses_primary(monkeypatch):
     def fail_ollama(prompt, model):
         raise AssertionError("ollama should not be called")
 
-    monkeypatch.setattr(ai_exec.ai_router, "run_gemini", fake_gemini)
-    monkeypatch.setattr(ai_exec.ai_router, "run_ollama", fail_ollama)
+    monkeypatch.setattr(ai_exec.router, "run_gemini", fake_gemini)
+    monkeypatch.setattr(ai_exec.router, "run_ollama", fail_ollama)
     monkeypatch.setattr(ai_exec, "get_preferred_models", lambda *a, **k: ("g", "o"))
 
     steps = ai_exec.plan("goal")
@@ -36,8 +36,8 @@ def test_plan_falls_back(monkeypatch):
         calls.append(("ollama", prompt, model))
         return "fallback"
 
-    monkeypatch.setattr(ai_exec.ai_router, "run_gemini", failing_gemini)
-    monkeypatch.setattr(ai_exec.ai_router, "run_ollama", fake_ollama)
+    monkeypatch.setattr(ai_exec.router, "run_gemini", failing_gemini)
+    monkeypatch.setattr(ai_exec.router, "run_ollama", fake_ollama)
     monkeypatch.setattr(ai_exec, "get_preferred_models", lambda *a, **k: ("g", "o"))
 
     steps = ai_exec.plan("goal")
