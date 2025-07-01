@@ -9,6 +9,7 @@ import subprocess
 import sys
 
 from llm.backends import (
+    Backend,
     GeminiBackend,
     OllamaBackend,
     OpenRouterBackend,
@@ -32,24 +33,34 @@ def estimate_prompt_complexity(prompt: str) -> int:
 
 def run_gemini(prompt: str, model: str | None = None) -> str:
     """Return Gemini response for ``prompt``."""
-    backend_cls = GeminiDSPyBackend if GeminiDSPyBackend is not None else GeminiBackend
-    backend = backend_cls(model)  # type: ignore[arg-type]
+    backend_cls: type[Backend]
+    if GeminiDSPyBackend is not None:
+        backend_cls = GeminiDSPyBackend
+    else:
+        backend_cls = GeminiBackend
+    backend = backend_cls(model)  # type: ignore[call-arg]
     return backend.run(prompt)
 
 
 def run_ollama(prompt: str, model: str) -> str:
     """Return Ollama response for ``prompt`` using ``model``."""
-    backend_cls = OllamaDSPyBackend if OllamaDSPyBackend is not None else OllamaBackend
-    backend = backend_cls(model)  # type: ignore[arg-type]
+    backend_cls: type[Backend]
+    if OllamaDSPyBackend is not None:
+        backend_cls = OllamaDSPyBackend
+    else:
+        backend_cls = OllamaBackend
+    backend = backend_cls(model)  # type: ignore[call-arg]
     return backend.run(prompt)
 
 
 def run_openrouter(prompt: str, model: str) -> str:
     """Return OpenRouter response for ``prompt`` using ``model``."""
-    backend_cls = (
-        OpenRouterDSPyBackend if OpenRouterDSPyBackend is not None else OpenRouterBackend
-    )
-    backend = backend_cls(model)  # type: ignore[arg-type]
+    backend_cls: type[Backend]
+    if OpenRouterDSPyBackend is not None:
+        backend_cls = OpenRouterDSPyBackend
+    else:
+        backend_cls = OpenRouterBackend
+    backend = backend_cls(model)  # type: ignore[call-arg]
     return backend.run(prompt)
 
 
