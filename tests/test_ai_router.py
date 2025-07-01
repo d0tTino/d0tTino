@@ -1,10 +1,8 @@
 import io
 import json
 import contextlib
-import subprocess
-
-
 import sys
+import pytest
 
 from scripts import ai_router
 from llm import ai_router as llm_router
@@ -146,4 +144,56 @@ def test_get_preferred_models_config_override(tmp_path, monkeypatch):
     monkeypatch.setenv("LLM_CONFIG_PATH", str(config_file2))
     primary2, fallback2 = llm_router.get_preferred_models("d3", "fb")
     assert (primary2, fallback2) == ("envp", "fb")
+
+
+def test_run_gemini_uses_dspy_backend(monkeypatch):
+    dspy = pytest.importorskip("dspy")  # noqa: F841 - ensure dependency present
+
+    calls = []
+
+    class Dummy:
+        def __init__(self, model=None):
+            calls.append(("init", model))
+
+        def run(self, prompt: str) -> str:
+            calls.append(("run", prompt))
+            return "dspy"
+
+    class Fail:
+        def __init__(self, *a, **k):
+            raise AssertionError("GeminiBackend should not be used")
+
+    monkeypatch.setattr(ai_router, "GeminiDSPyBackend", Dummy)
+    monkeypatch.setattr(ai_router, "GeminiBackend", Fail)
+
+    out = ai_router.run_gemini("hi", model="m")
+    assert out == "dspy"
+    assert calls == [("init", "m"), ("run", "hi")]
+
+
+def test_send_prompt_prefers_dspy(monkeypatch):
+    dspy = pytest.importorskip("dspy")  # noqa: F841
+    _set_env(monkeypatch, "gemini", "ollama")
+    monkeypatch.setenv("LLM_ROUTING_MODE", "remote")
+
+    class Dummy:
+        def __init__(self, model=None):
+            self.model = model
+
+        def run(self, prompt: str) -> str:
+            return f"dspy:{prompt}:{self.model}"
+
+    class FailBackend:
+        def __init__(self, *a, **k):
+            raise AssertionError("GeminiBackend should not be used")
+
+    def fail_ollama(prompt: str, model: str):  # pragma: no cover - ensure unused
+        raise AssertionError("ollama should not be called")
+
+    monkeypatch.setattr(ai_router, "GeminiDSPyBackend", Dummy)
+    monkeypatch.setattr(ai_router, "GeminiBackend", FailBackend)
+    monkeypatch.setattr(ai_router, "run_ollama", fail_ollama)
+
+    out = ai_router.send_prompt("msg", model="m")
+    assert out == "dspy:msg:m"
 

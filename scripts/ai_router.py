@@ -8,7 +8,14 @@ import os
 import subprocess
 import sys
 
-from llm.backends import GeminiBackend, OllamaBackend, OpenRouterBackend
+from llm.backends import (
+    GeminiBackend,
+    OllamaBackend,
+    OpenRouterBackend,
+    GeminiDSPyBackend,
+    OllamaDSPyBackend,
+    OpenRouterDSPyBackend,
+)
 from llm.ai_router import get_preferred_models
 
 DEFAULT_MODEL = "llama3"
@@ -25,19 +32,24 @@ def estimate_prompt_complexity(prompt: str) -> int:
 
 def run_gemini(prompt: str, model: str | None = None) -> str:
     """Return Gemini response for ``prompt``."""
-    backend = GeminiBackend(model)
+    backend_cls = GeminiDSPyBackend if GeminiDSPyBackend is not None else GeminiBackend
+    backend = backend_cls(model)  # type: ignore[arg-type]
     return backend.run(prompt)
 
 
 def run_ollama(prompt: str, model: str) -> str:
     """Return Ollama response for ``prompt`` using ``model``."""
-    backend = OllamaBackend(model)
+    backend_cls = OllamaDSPyBackend if OllamaDSPyBackend is not None else OllamaBackend
+    backend = backend_cls(model)  # type: ignore[arg-type]
     return backend.run(prompt)
 
 
 def run_openrouter(prompt: str, model: str) -> str:
     """Return OpenRouter response for ``prompt`` using ``model``."""
-    backend = OpenRouterBackend(model)
+    backend_cls = (
+        OpenRouterDSPyBackend if OpenRouterDSPyBackend is not None else OpenRouterBackend
+    )
+    backend = backend_cls(model)  # type: ignore[arg-type]
     return backend.run(prompt)
 
 
