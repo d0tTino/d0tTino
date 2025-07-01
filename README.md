@@ -11,6 +11,7 @@ Key directories:
 - `starship.toml` – example Starship prompt configuration
 - `vscode/` – VS Code user settings
 - `llm/` – prompts and other LLM-related files. The optional `llm/llm_config.json` file stores preferred model names used by `llm.ai_router`. Set the `LLM_CONFIG_PATH` environment variable to override the location.
+  This local `llm` package is separate from [Simon Willison's project of the same name](https://github.com/simonw/llm).
 - `scripts/thm.py` – Terminal Harmony Manager for palette and profile sync (installs as `thm` when using `pip install -e .[cli]`)
 
 ## Quickstart
