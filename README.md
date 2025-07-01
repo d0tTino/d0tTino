@@ -44,6 +44,9 @@ ai --local "Translate text"
 ai-plan "Refactor the codebase"
 
 ```
+Set `LLM_ROUTING_MODE` to `remote` or `local` to override the automatic
+selection logic, or adjust `LLM_COMPLEXITY_THRESHOLD` to change when the prompt
+is considered complex.
 
 Next, install the Git hooks so `pre-commit` runs automatically:
 

@@ -15,6 +15,13 @@ DEFAULT_MODEL = "llama3"
 DEFAULT_PRIMARY_BACKEND = "gemini"
 DEFAULT_FALLBACK_BACKEND = "ollama"
 
+DEFAULT_COMPLEXITY_THRESHOLD = 50
+
+
+def estimate_prompt_complexity(prompt: str) -> int:
+    """Return a basic complexity score for ``prompt``."""
+    return len(prompt.split())
+
 
 def run_gemini(prompt: str, model: str | None = None) -> str:
     """Return Gemini response for ``prompt``."""
@@ -58,14 +65,30 @@ def _run_backend(name: str, prompt: str, model: str) -> str:
 def send_prompt(prompt: str, *, local: bool = False, model: str = DEFAULT_MODEL) -> str:
     """Send ``prompt`` using the configured backends."""
     primary, fallback = _preferred_backends()
-    order = []
-    if local:
+    order: list[str] = []
+
+    env_mode = os.environ.get("LLM_ROUTING_MODE", "auto").lower()
+    if local or env_mode == "local":
         if fallback:
             order.append(fallback)
     else:
-        order.append(primary)
-        if fallback:
-            order.append(fallback)
+        if env_mode == "remote":
+            order.append(primary)
+            if fallback:
+                order.append(fallback)
+        else:  # auto
+            threshold = int(
+                os.environ.get("LLM_COMPLEXITY_THRESHOLD", DEFAULT_COMPLEXITY_THRESHOLD)
+            )
+            complexity = estimate_prompt_complexity(prompt)
+            if complexity > threshold:
+                order.append(primary)
+                if fallback:
+                    order.append(fallback)
+            else:
+                if fallback:
+                    order.append(fallback)
+                order.append(primary)
     for backend_name in order:
         try:
             return _run_backend(backend_name, prompt, model)

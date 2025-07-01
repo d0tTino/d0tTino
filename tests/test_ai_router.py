@@ -1,8 +1,6 @@
 import io
 import json
 import contextlib
-import subprocess
-import json
 
 import sys
 
@@ -18,8 +16,26 @@ def _set_env(monkeypatch, primary="gemini", fallback="ollama"):
         monkeypatch.delenv("LLM_FALLBACK_BACKEND", raising=False)
 
 
-def test_send_prompt_calls_gemini(monkeypatch):
+def test_send_prompt_uses_local_for_simple_prompt(monkeypatch):
     _set_env(monkeypatch, "gemini", "ollama")
+
+    def fail_run_gemini(prompt, model=None):
+        raise AssertionError("gemini should not be called")
+
+    def mock_run_ollama(prompt, model):
+        return f"ollama:{prompt}:{model}"
+
+    monkeypatch.setattr(ai_router, "run_gemini", fail_run_gemini)
+    monkeypatch.setattr(ai_router, "run_ollama", mock_run_ollama)
+
+    out = ai_router.send_prompt("hello", model="g1")
+    assert out == "ollama:hello:g1"
+
+
+def test_send_prompt_uses_primary_for_complex_prompt(monkeypatch):
+    _set_env(monkeypatch, "gemini", "ollama")
+
+    long_prompt = " ".join(["word"] * (ai_router.DEFAULT_COMPLEXITY_THRESHOLD + 1))
 
     def mock_run_gemini(prompt, model=None):
         return f"gemini:{prompt}:{model}"
@@ -30,24 +46,8 @@ def test_send_prompt_calls_gemini(monkeypatch):
     monkeypatch.setattr(ai_router, "run_gemini", mock_run_gemini)
     monkeypatch.setattr(ai_router, "run_ollama", fail_run_ollama)
 
-    out = ai_router.send_prompt("hello", model="g1")
-    assert out == "gemini:hello:g1"
-
-
-def test_send_prompt_falls_back_to_ollama(monkeypatch):
-    _set_env(monkeypatch, "gemini", "ollama")
-
-    def mock_run_gemini(prompt, model=None):
-        raise subprocess.CalledProcessError(1, ["gemini"])
-
-    def mock_run_ollama(prompt, model):
-        return f"ollama:{prompt}:{model}"
-
-    monkeypatch.setattr(ai_router, "run_gemini", mock_run_gemini)
-    monkeypatch.setattr(ai_router, "run_ollama", mock_run_ollama)
-
-    out = ai_router.send_prompt("hi", model="o1")
-    assert out == "ollama:hi:o1"
+    out = ai_router.send_prompt(long_prompt, model="g1")
+    assert out.startswith("gemini:")
 
 
 def test_send_prompt_local(monkeypatch):
@@ -64,6 +64,40 @@ def test_send_prompt_local(monkeypatch):
 
     out = ai_router.send_prompt("yo", local=True, model="o2")
     assert out == "ollama:yo:o2"
+
+
+def test_env_forces_remote(monkeypatch):
+    _set_env(monkeypatch, "gemini", "ollama")
+    monkeypatch.setenv("LLM_ROUTING_MODE", "remote")
+
+    def mock_run_gemini(prompt, model=None):
+        return f"gemini:{prompt}:{model}"
+
+    def fail_run_ollama(prompt, model):
+        raise AssertionError("ollama should not be called")
+
+    monkeypatch.setattr(ai_router, "run_gemini", mock_run_gemini)
+    monkeypatch.setattr(ai_router, "run_ollama", fail_run_ollama)
+
+    out = ai_router.send_prompt("short", model="g1")
+    assert out == "gemini:short:g1"
+
+
+def test_env_complexity_threshold(monkeypatch):
+    _set_env(monkeypatch, "gemini", "ollama")
+    monkeypatch.setenv("LLM_COMPLEXITY_THRESHOLD", "1")
+
+    def mock_run_gemini(prompt, model=None):
+        return f"gemini:{prompt}:{model}"
+
+    def fail_run_ollama(prompt, model):
+        raise AssertionError("ollama should not be called")
+
+    monkeypatch.setattr(ai_router, "run_gemini", mock_run_gemini)
+    monkeypatch.setattr(ai_router, "run_ollama", fail_run_ollama)
+
+    out = ai_router.send_prompt("two words", model="g1")
+    assert out == "gemini:two words:g1"
 
 
 def test_cli_invokes_send_prompt(monkeypatch):

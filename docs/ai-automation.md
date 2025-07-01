@@ -44,6 +44,10 @@ ai --local "Translate text"
 echo "Summarize" | ai --stdin
 ```
 
+By default the tool picks the backend automatically based on the prompt length.
+Set `LLM_ROUTING_MODE` to `remote` or `local` to force the behavior, or tweak
+`LLM_COMPLEXITY_THRESHOLD` to adjust when the prompt is considered complex.
+
 ## LLM Configuration
 
 `get_preferred_models()` reads model names from a JSON file. By default the
