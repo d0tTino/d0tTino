@@ -4,155 +4,12 @@
 from __future__ import annotations
 
 import argparse
-import os
 import subprocess
 import sys
 
-from llm.backends import (
-    Backend,
-    GeminiBackend,
-    OllamaBackend,
-    OpenRouterBackend,
-    GeminiDSPyBackend,
-    OllamaDSPyBackend,
-    OpenRouterDSPyBackend,
-    LangChainBackend,
-)
-from llm.ai_router import get_preferred_models
+from llm import router
 
-DEFAULT_MODEL = "llama3"
-DEFAULT_PRIMARY_BACKEND = "gemini"
-DEFAULT_FALLBACK_BACKEND = "ollama"
-
-DEFAULT_COMPLEXITY_THRESHOLD = 50
-
-
-def estimate_prompt_complexity(prompt: str) -> int:
-    """Return a basic complexity score for ``prompt``."""
-    return len(prompt.split())
-
-
-def run_gemini(prompt: str, model: str | None = None) -> str:
-    """Return Gemini response for ``prompt``."""
-    backend_cls: type[Backend]
-    if GeminiDSPyBackend is not None:
-        backend_cls = GeminiDSPyBackend
-    else:
-        backend_cls = GeminiBackend
-    backend = backend_cls(model)  # type: ignore[call-arg]
-    return backend.run(prompt)
-
-
-def run_ollama(prompt: str, model: str) -> str:
-    """Return Ollama response for ``prompt`` using ``model``."""
-    backend_cls: type[Backend]
-    if OllamaDSPyBackend is not None:
-        backend_cls = OllamaDSPyBackend
-    else:
-        backend_cls = OllamaBackend
-    backend = backend_cls(model)  # type: ignore[call-arg]
-    return backend.run(prompt)
-
-
-def run_openrouter(prompt: str, model: str) -> str:
-    """Return OpenRouter response for ``prompt`` using ``model``."""
-    backend_cls: type[Backend]
-    if OpenRouterDSPyBackend is not None:
-        backend_cls = OpenRouterDSPyBackend
-    else:
-        backend_cls = OpenRouterBackend
-    backend = backend_cls(model)  # type: ignore[call-arg]
-    return backend.run(prompt)
-
-
-def create_default_chain() -> object:
-    """Return a simple LangChain chain."""
-    try:  # pragma: no cover - optional dependency
-        from langchain_openai import ChatOpenAI
-        from langchain_core.prompts import ChatPromptTemplate
-        from langchain_core.output_parsers import StrOutputParser
-    except Exception as exc:  # pragma: no cover - optional dependency
-        raise RuntimeError("langchain is required for the langchain backend") from exc
-
-    prompt = ChatPromptTemplate.from_messages([("human", "{input}")])
-    return prompt | ChatOpenAI() | StrOutputParser()
-
-
-def run_langchain(prompt: str) -> str:
-    """Return response using a LangChain chain."""
-    backend = LangChainBackend(create_default_chain())
-    return backend.run(prompt)
-
-
-def _preferred_backends() -> tuple[str, str | None]:
-    env_primary = os.environ.get("LLM_PRIMARY_BACKEND")
-    env_fallback = os.environ.get("LLM_FALLBACK_BACKEND")
-    if env_primary:
-        return env_primary, env_fallback
-    return get_preferred_models(
-        DEFAULT_PRIMARY_BACKEND, DEFAULT_FALLBACK_BACKEND
-    )
-
-
-def _run_backend(name: str, prompt: str, model: str) -> str:
-    name = name.lower()
-    if name == "gemini":
-        return run_gemini(prompt, model)
-    if name == "ollama":
-        return run_ollama(prompt, model)
-    if name == "openrouter":
-        return run_openrouter(prompt, model)
-    if name == "langchain":
-        return run_langchain(prompt)
-    raise ValueError(f"Unknown backend: {name}")
-
-
-def _get_threshold(env_val: str | None) -> int:
-    """Return the complexity threshold parsed from ``env_val``."""
-    if env_val is None:
-        return DEFAULT_COMPLEXITY_THRESHOLD
-    try:
-        return int(env_val)
-    except ValueError:
-        return DEFAULT_COMPLEXITY_THRESHOLD
-
-
-def send_prompt(prompt: str, *, local: bool = False, model: str = DEFAULT_MODEL) -> str:
-    """Send ``prompt`` using the configured backends."""
-    primary, fallback = _preferred_backends()
-    order: list[str] = []
-
-    env_mode = os.environ.get("LLM_ROUTING_MODE", "auto").lower()
-    if local or env_mode == "local":
-        if fallback:
-            order.append(fallback)
-    else:
-        if env_mode == "remote":
-            order.append(primary)
-            if fallback:
-                order.append(fallback)
-        else:  # auto
-            raw_threshold = os.environ.get("LLM_COMPLEXITY_THRESHOLD")
-            try:
-                threshold = int(raw_threshold) if raw_threshold is not None else DEFAULT_COMPLEXITY_THRESHOLD
-            except ValueError:
-                threshold = DEFAULT_COMPLEXITY_THRESHOLD
-
-            complexity = estimate_prompt_complexity(prompt)
-            if complexity > threshold:
-                order.append(primary)
-                if fallback:
-                    order.append(fallback)
-            else:
-                if fallback:
-                    order.append(fallback)
-                order.append(primary)
-    for backend_name in order:
-        try:
-            return _run_backend(backend_name, prompt, model)
-        except (FileNotFoundError, subprocess.CalledProcessError):
-            continue
-    raise RuntimeError("Unable to process prompt")
+DEFAULT_MODEL = router.DEFAULT_MODEL
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -161,7 +18,6 @@ def main(argv: list[str] | None = None) -> int:
         "prompt",
         help="Prompt to send to the model or '-' to read from STDIN",
     )
-
     parser.add_argument(
         "--local",
         action="store_true",
@@ -183,12 +39,9 @@ def main(argv: list[str] | None = None) -> int:
     if prompt == "-":
         prompt = sys.stdin.read()
 
-
     try:
-        if args.backend:
-            output = _run_backend(args.backend, prompt, args.model)
-        else:
-            output = send_prompt(prompt, local=args.local, model=args.model)
+        output = router.send_prompt(prompt, local=args.local, model=args.model)
+
     except (FileNotFoundError, subprocess.CalledProcessError) as exc:
         print(exc, file=sys.stderr)
         return 1

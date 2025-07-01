@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Simple AI execution planner using ``ai_router``."""
+"""Simple AI execution planner using the router utilities."""
 
 
 from __future__ import annotations
@@ -9,21 +9,21 @@ import subprocess
 from pathlib import Path
 from typing import List, Optional
 
-from scripts import ai_router
+from llm import router
 from llm.ai_router import get_preferred_models
 
 
 def plan(goal: str, *, config_path: Optional[str] = None) -> List[str]:
     """Return planning steps for ``goal`` using preferred models."""
     primary, fallback = get_preferred_models(
-        ai_router.DEFAULT_MODEL,
-        ai_router.DEFAULT_MODEL,
-        config_path=Path(config_path) if config_path else None,
+        router.DEFAULT_MODEL, router.DEFAULT_MODEL, config_path=config_path
+
     )
     try:
-        text = ai_router.run_gemini(goal, model=primary)
+        text = router.run_gemini(goal, model=primary)
     except (FileNotFoundError, subprocess.CalledProcessError):
-        text = ai_router.run_ollama(goal, model=fallback or ai_router.DEFAULT_MODEL)
+        text = router.run_ollama(goal, model=fallback)
+
     return [line.strip() for line in text.splitlines() if line.strip()]
 
 
