@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any, Callable, Mapping
+
 from .base import Backend
 
 try:  # pragma: no cover - optional dependency
@@ -9,20 +11,22 @@ except ImportError as exc:  # pragma: no cover - optional dependency
         "The 'dspy' package is required for DSPy-backed backends"
     ) from exc
 
-_LM = getattr(dspy, "LLM", getattr(dspy, "LM", None))
+_LM: Callable[..., Any] | None = getattr(dspy, "LLM", getattr(dspy, "LM", None))
 if _LM is None:  # pragma: no cover - sanity check
     raise ImportError("dspy does not expose an LLM wrapper")
+assert _LM is not None
+LM: Callable[..., Any] = _LM
 
 
-def _extract_text(result: object) -> str:
+def _extract_text(result: Mapping[str, Any]) -> str:
     """Return the assistant text from a LiteLLM-style result."""
     try:
-        choices = result["choices"]  # type: ignore[index]
+        choices = result["choices"]
         first = choices[0]
         if isinstance(first, dict):
             if "message" in first:
-                return first["message"].get("content", "")  # type: ignore[index]
-            return first.get("text", "")  # type: ignore[return-value]
+                return first["message"].get("content", "")
+            return first.get("text", "")
     except Exception:  # pragma: no cover - fall back to str()
         pass
     return str(result)
@@ -32,7 +36,7 @@ class GeminiDSPyBackend(Backend):
     """Gemini backend implemented via ``dspy``."""
 
     def __init__(self, model: str | None = None) -> None:
-        self.lm = _LM(model=model or "google/gemini-pro")
+        self.lm = LM(model=model or "google/gemini-pro")
 
     def run(self, prompt: str) -> str:
         result = self.lm.forward(prompt=prompt)
@@ -43,7 +47,7 @@ class OllamaDSPyBackend(Backend):
     """Ollama backend implemented via ``dspy``."""
 
     def __init__(self, model: str) -> None:
-        self.lm = _LM(model=model)
+        self.lm = LM(model=model)
 
     def run(self, prompt: str) -> str:
         result = self.lm.forward(prompt=prompt)
@@ -54,7 +58,7 @@ class OpenRouterDSPyBackend(Backend):
     """OpenRouter backend implemented via ``dspy``."""
 
     def __init__(self, model: str) -> None:
-        self.lm = _LM(model=model)
+        self.lm = LM(model=model)
 
     def run(self, prompt: str) -> str:
         result = self.lm.forward(prompt=prompt)

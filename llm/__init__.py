@@ -21,6 +21,7 @@ except ImportError as exc:  # dspy not installed
     def is_repo_data_path(path: str | Path) -> bool:  # type: ignore[assignment]
         _missing("is_repo_data_path")
 
+
 if TYPE_CHECKING:  # pragma: no cover - for type checkers only
     from .ai_router import get_preferred_models as _get_preferred_models  # noqa: F401
 
