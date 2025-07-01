@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Route prompts to the configured LLM backend."""
 
-
 from __future__ import annotations
 
 import argparse
@@ -77,7 +76,11 @@ def send_prompt(prompt: str, *, local: bool = False, model: str = DEFAULT_MODEL)
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("prompt", nargs="?", help="Prompt to send to the model")
+    parser.add_argument(
+        "prompt",
+        help="Prompt to send to the model or '-' to read from STDIN",
+    )
+
     parser.add_argument(
         "--local",
         action="store_true",
@@ -86,20 +89,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--model",
         default=DEFAULT_MODEL,
-        help="Model name to pass to the backend (default: %(default)s)",
-
-
+        help="Model name for Ollama (default: %(default)s)",
     )
     args = parser.parse_args(argv)
 
-    if args.prompt is None:
-        if args.stdin:
-            args.prompt = sys.stdin.read()
-        else:
-            parser.error("the following arguments are required: prompt (or --stdin)")
+    prompt = args.prompt
+    if prompt == "-":
+        prompt = sys.stdin.read()
+
 
     try:
-        output = send_prompt(args.prompt, local=args.local, model=args.model)
+        output = send_prompt(prompt, local=args.local, model=args.model)
     except (FileNotFoundError, subprocess.CalledProcessError) as exc:
         print(exc, file=sys.stderr)
         return 1
@@ -111,5 +111,4 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-
     raise SystemExit(main())

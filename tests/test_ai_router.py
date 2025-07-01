@@ -2,9 +2,12 @@ import io
 import json
 import contextlib
 import subprocess
+import json
+
 import sys
 
 from scripts import ai_router
+from llm import ai_router as llm_router
 
 
 def _set_env(monkeypatch, primary="gemini", fallback="ollama"):
@@ -78,23 +81,33 @@ def test_cli_invokes_send_prompt(monkeypatch):
     assert out.getvalue().strip() == "ok"
 
 
-def test_config_selects_backend(monkeypatch, tmp_path):
-    cfg = tmp_path / "cfg.json"
-    cfg.write_text(json.dumps({"primary_model": "ollama"}))
-    monkeypatch.setenv("LLM_CONFIG_PATH", str(cfg))
-    monkeypatch.delenv("LLM_PRIMARY_BACKEND", raising=False)
-    monkeypatch.delenv("LLM_FALLBACK_BACKEND", raising=False)
+def test_cli_reads_stdin(monkeypatch):
+    def mock_send_prompt(prompt, *, local=False, model=ai_router.DEFAULT_MODEL):
+        assert prompt == "from-stdin"
+        assert local is False
+        assert model == ai_router.DEFAULT_MODEL
+        return "done"
 
-    def fail_run_gemini(prompt, model=None):
-        raise AssertionError("gemini should not run")
+    monkeypatch.setattr(ai_router, "send_prompt", mock_send_prompt)
+    out = io.StringIO()
+    stdin = io.StringIO("from-stdin")
+    monkeypatch.setattr(sys, "stdin", stdin)
+    with contextlib.redirect_stdout(out):
+        rc = ai_router.main(["-"])
+    assert rc == 0
+    assert out.getvalue() == "done\n"
 
-    def mock_run_ollama(prompt, model):
-        return f"ollama:{prompt}:{model}"
 
-    monkeypatch.setattr(ai_router, "run_gemini", fail_run_gemini)
-    monkeypatch.setattr(ai_router, "run_ollama", mock_run_ollama)
+def test_get_preferred_models_config_override(tmp_path, monkeypatch):
+    cfg = {"primary_model": "p", "fallback_model": "f"}
+    config_file = tmp_path / "cfg.json"
+    config_file.write_text(json.dumps(cfg))
+    primary, fallback = llm_router.get_preferred_models("d1", "d2", config_path=config_file)
+    assert (primary, fallback) == ("p", "f")
 
-    out = ai_router.send_prompt("cfg", model="test")
-    assert out == "ollama:cfg:test"
-
+    config_file2 = tmp_path / "env.json"
+    config_file2.write_text(json.dumps({"primary_model": "envp"}))
+    monkeypatch.setenv("LLM_CONFIG_PATH", str(config_file2))
+    primary2, fallback2 = llm_router.get_preferred_models("d3", "fb")
+    assert (primary2, fallback2) == ("envp", "fb")
 

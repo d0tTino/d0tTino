@@ -40,8 +40,9 @@ ai "Write a Python script"
 # Force evaluation with your local model
 ai --local "Translate text"
 
-# Read the prompt from standard input
-echo "Summarize" | ai --stdin
+# Generate a step-by-step plan
+ai-plan "Refactor the codebase"
+
 ```
 
 Next, install the Git hooks so `pre-commit` runs automatically:
