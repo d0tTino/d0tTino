@@ -1,5 +1,6 @@
 import pytest
-from textual.widgets import Static, Input, Select
+pytest.importorskip("textual")
+from textual.widgets import Static, Input, Select  # noqa: E402 - imported after importorskip
 
 from ui.textual_app import TerminalUI
 

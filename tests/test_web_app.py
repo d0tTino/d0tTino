@@ -3,6 +3,8 @@ import sys
 import time
 from pathlib import Path
 
+import pytest
+pytest.importorskip("streamlit")
 
 def test_streamlit_app_starts(tmp_path):
     script = Path('ui/web_app.py')
