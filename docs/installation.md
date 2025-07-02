@@ -135,40 +135,46 @@ On Windows you can call the PowerShell wrapper or use `bootstrap.ps1` with the
 
 ## Ghostty terminal
 
-[Ghostty](https://github.com/mitchellh/ghostty) is a GPU-accelerated terminal emulator. Grab the latest release for your platform or build from source:
+[Ghostty](https://github.com/mitchellh/ghostty) is a GPU-accelerated terminal emulator. To try it out:
 
-```bash
-cargo install ghostty
-```
-
-Configuration lives in `~/.config/ghostty/ghostty.toml`. A minimal example enables ligatures and sets the window title:
-
-```toml
-use_ligatures = true
-window_title = "Ghostty"
-```
-
-Launch `ghostty` instead of your default terminal to try it out.
+1. Install the Rust toolchain if you do not already have it:
+   ```bash
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   ```
+2. Use `cargo` to install Ghostty:
+   ```bash
+   cargo install ghostty
+   ```
+3. Create the configuration directory and a basic config file at `~/.config/ghostty/ghostty.toml`:
+   ```toml
+   use_ligatures = true
+   window_title = "Ghostty"
+   ```
+4. Launch `ghostty` from your shell. The terminal picks up changes to the config file on restart.
 
 ## Nextcloud server
 
-[Nextcloud](https://nextcloud.com/) provides private file sync and collaborative editing. The quickest way to test it locally is with Docker:
+[Nextcloud](https://nextcloud.com/) provides private file sync and collaborative editing.
+To spin up a test instance:
 
-```bash
-docker run -d --name nextcloud -p 8080:80 nextcloud
-```
-
-Visit `http://localhost:8080` to finish the setup. Customize trusted domains with the `NEXTCLOUD_TRUSTED_DOMAINS` environment variable if you expose it to the network.
+1. Start the container and map port `8080` to `80`:
+   ```bash
+   docker run -d --name nextcloud -p 8080:80 nextcloud
+   ```
+2. Open `http://localhost:8080` in your browser and create the admin account.
+3. (Optional) Persist data by mounting a volume to `/var/www/html`.
+4. If exposing the instance to the network, set `NEXTCLOUD_TRUSTED_DOMAINS` to your host name.
 
 ## Mattermost chat
 
-Run an open-source team chat server using Mattermost's Docker image:
+Run an open-source team chat server using Mattermost's Docker image.
 
-```bash
-docker run -d --name mattermost -p 8065:8065 mattermost/mattermost-team-edition
-```
-
-The initial configuration is stored under `~/mattermost/config`. Edit `config.json` to set the site URL and enable integrations.
+1. Launch the container on port `8065`:
+   ```bash
+   docker run -d --name mattermost -p 8065:8065 mattermost/mattermost-team-edition
+   ```
+2. Browse to `http://localhost:8065` and create the initial admin user.
+3. Configuration files live under `~/mattermost/config`. Edit `config.json` to set the site URL and enable integrations.
 
 ## Hyper-V support
 
@@ -182,11 +188,13 @@ Create virtual machines via the **Quick Create** wizard or `New-VM` in PowerShel
 
 ## ETL automation with n8n
 
-[n8n](https://n8n.io/) is a workflow automation tool suited for lightweight ETL tasks. Spin up the community edition with Docker:
+[n8n](https://n8n.io/) is a workflow automation tool suited for lightweight ETL tasks.
 
-```bash
-docker run -it --name n8n -p 5678:5678 n8nio/n8n
-```
-
-Open `http://localhost:5678` to build flows. A simple example watches a folder and sends new files to Nextcloud using the built-in nodes. Persist workflows by mounting a volume at `/home/node/.n8n`.
+1. Start the container interactively on port `5678`:
+   ```bash
+   docker run -it --name n8n -p 5678:5678 n8nio/n8n
+   ```
+2. Navigate to `http://localhost:5678` and create your first workflow.
+3. Mount a local directory to `/home/node/.n8n` to persist workflows between runs.
+4. A simple test flow watches a folder and sends new files to Nextcloud using the built-in nodes.
 
