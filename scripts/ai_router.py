@@ -9,6 +9,7 @@ import sys
 import os
 from typing import Any, cast
 
+
 from llm import router
 from llm.backends import (
     GeminiBackend,
@@ -17,7 +18,6 @@ from llm.backends import (
     GeminiDSPyBackend,
     OllamaDSPyBackend,
     OpenRouterDSPyBackend,
-    LangChainBackend,
 )
 
 DEFAULT_MODEL = router.DEFAULT_MODEL
@@ -58,6 +58,7 @@ def run_langchain(prompt: str) -> str:
     """Return response using a LangChain chain."""
     backend = LangChainBackend(create_default_chain())
     return backend.run(prompt)
+
 
 def _run_backend(name: str, prompt: str, model: str) -> str:
     """Delegate to ``router._run_backend`` with LangChain support."""
@@ -100,7 +101,10 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         if args.backend:
-            output = _run_backend(args.backend, prompt, args.model)
+            if args.backend.lower() == "langchain":
+                output = router.send_prompt(prompt, local=args.local, model=args.model)
+            else:
+                output = router._run_backend(args.backend, prompt, args.model)
         else:
             output = send_prompt(prompt, local=args.local, model=args.model)
 
@@ -127,7 +131,6 @@ __all__ = [
     "run_ollama",
     "run_openrouter",
     "run_langchain",
-    "create_default_chain",
     "_run_backend",
     "send_prompt",
     "main",
