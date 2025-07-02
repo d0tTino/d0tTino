@@ -149,3 +149,14 @@ mod.recompile_from_fewshot()
 The wrapper automatically uses the compiled module on the next call. Whenever
 you log new examples, run `snapshot_log_to_fewshot()` and recompile again to
 extend the training set.
+
+## n8n Integration
+
+An example workflow for the [n8n](https://n8n.io/) automation platform lives in `n8n/flows/`. Start the service with Docker Compose:
+
+```bash
+docker-compose up -d
+```
+
+Open <http://localhost:5678> in your browser and choose **Import from File** to load `n8n/flows/mcp-ai_exec.json`. The workflow contains a single **Execute Command** node that calls `scripts/ai_exec.py`.
+

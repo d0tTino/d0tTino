@@ -1,0 +1,30 @@
+{
+  "name": "MCP ai_exec",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1",
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "command": "python scripts/ai_exec.py \"echo hello\""
+      },
+      "id": "2",
+      "name": "ai_exec",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [ { "node": "ai_exec", "type": "main", "index": 0 } ]
+      ]
+    }
+  }
+}

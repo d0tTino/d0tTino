@@ -75,6 +75,13 @@ def _preferred_backends() -> tuple[str, str | None]:
 
 
 def _run_backend(name: str, prompt: str, model: str) -> str:
+    """Return response for ``prompt`` using backend ``name``."""
+    if name.lower() == "gemini":
+        return run_gemini(prompt, model)
+    if name.lower() == "ollama":
+        return run_ollama(prompt, model)
+    if name.lower() == "openrouter":
+        return run_openrouter(prompt, model)
     func = get_backend(name)
     return func(prompt, model)
 
