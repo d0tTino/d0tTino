@@ -61,6 +61,8 @@ def _send_prompt(prompt: str, *, local: bool = False, model: str = router.DEFAUL
 
 llm_router.send_prompt = _send_prompt
 
+ai_router = cli_ai_router
+
 
 def _set_env(monkeypatch, primary="gemini", fallback="ollama"):
     monkeypatch.setenv("LLM_PRIMARY_BACKEND", primary)

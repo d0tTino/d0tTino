@@ -6,9 +6,15 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+import os
 
 from llm import router
 from llm.backends import (
+    GeminiBackend,
+    GeminiDSPyBackend,
+    OllamaBackend,
+    OllamaDSPyBackend,
+
     OpenRouterBackend,
     OpenRouterDSPyBackend,
 )
@@ -16,88 +22,22 @@ from llm.backends import (
 DEFAULT_MODEL = router.DEFAULT_MODEL
 DEFAULT_COMPLEXITY_THRESHOLD = router.DEFAULT_COMPLEXITY_THRESHOLD
 
-# Backend helpers (overridable in tests)
-GeminiDSPyBackend = router.GeminiDSPyBackend
-GeminiBackend = router.GeminiBackend
-OllamaDSPyBackend = router.OllamaDSPyBackend
-OllamaBackend = router.OllamaBackend
-OpenRouterDSPyBackend = router.OpenRouterDSPyBackend
-OpenRouterBackend = router.OpenRouterBackend
-
 
 def run_gemini(prompt: str, model: str | None = None) -> str:
-    backend_cls = (
-        GeminiDSPyBackend if GeminiDSPyBackend is not None else GeminiBackend
-    )
-    backend = cast(Any, backend_cls)(model)
+    backend_cls = GeminiDSPyBackend if GeminiDSPyBackend is not None else GeminiBackend
+    backend = backend_cls(model)  # type: ignore[arg-type]
+    
     return backend.run(prompt)
 
 
 def run_ollama(prompt: str, model: str) -> str:
-    backend_cls = (
-        OllamaDSPyBackend if OllamaDSPyBackend is not None else OllamaBackend
-    )
-    backend = cast(Any, backend_cls)(model)
+    backend_cls = OllamaDSPyBackend if OllamaDSPyBackend is not None else OllamaBackend
+    backend = backend_cls(model)  # type: ignore[arg-type]
+
     return backend.run(prompt)
 
 
 def run_openrouter(prompt: str, model: str) -> str:
-    backend_cls = (
-        OpenRouterDSPyBackend if OpenRouterDSPyBackend is not None else OpenRouterBackend
-    )
-    backend = cast(Any, backend_cls)(model)
-    return backend.run(prompt)
-
-def _run_backend(name: str, prompt: str, model: str) -> str:
-    if name == "langchain":
-        return run_langchain(prompt)
-    return router._run_backend(name, prompt, model)
-
-
-class _EchoChain:
-    def invoke(self, data):
-        return data.get("input", data)
-
-
-def run_langchain(prompt: str) -> str:
-    """Return response using a basic LangChain chain."""
-    backend = LangChainBackend(_EchoChain())
-    return backend.run(prompt)
-
-
-def create_default_chain() -> object:
-    """Return a simple LangChain chain."""
-    try:  # pragma: no cover - optional dependency
-        from langchain_openai import ChatOpenAI
-        from langchain_core.prompts import ChatPromptTemplate
-        from langchain_core.output_parsers import StrOutputParser
-    except Exception as exc:  # pragma: no cover - optional dependency
-        raise RuntimeError("langchain is required for the langchain backend") from exc
-
-    prompt = ChatPromptTemplate.from_messages([("human", "{input}")])
-    return prompt | ChatOpenAI() | StrOutputParser()
-
-
-def run_langchain(prompt: str) -> str:
-    """Return response using a LangChain chain."""
-    backend = LangChainBackend(create_default_chain())
-    return backend.run(prompt)
-
-
-def _run_backend(name: str, prompt: str, model: str) -> str:
-    name = name.lower()
-    if name == "gemini":
-        return router.run_gemini(prompt, model)
-    if name == "ollama":
-        return router.run_ollama(prompt, model)
-    if name == "openrouter":
-        return router.run_openrouter(prompt, model)
-    if name == "langchain":
-        return run_langchain(prompt)
-    raise ValueError(f"Unknown backend: {name}")
-
-def run_openrouter(prompt: str, model: str) -> str:
-    """Return OpenRouter response for ``prompt`` using ``model``."""
     backend_cls = (
         OpenRouterDSPyBackend if OpenRouterDSPyBackend is not None else OpenRouterBackend
     )
@@ -105,26 +45,61 @@ def run_openrouter(prompt: str, model: str) -> str:
     return backend.run(prompt)
 
 
-def run_langchain(prompt: str) -> str:
-    """Process ``prompt`` using a configured LangChain chain."""
-    raise RuntimeError("LangChain backend is not configured")
+def run_langchain(prompt: str) -> str:  # pragma: no cover - placeholder
+    return f"langchain:{prompt}"
+
 
 
 def _run_backend(name: str, prompt: str, model: str) -> str:
-    if name.lower() == "langchain":
+    name = name.lower()
+    if name == "gemini":
+        return run_gemini(prompt, model)
+    if name == "ollama":
+        return run_ollama(prompt, model)
+    if name == "openrouter":
+        return run_openrouter(prompt, model)
+
+    if name == "langchain":
         return run_langchain(prompt)
-    return router._run_backend(name, prompt, model)
+    raise ValueError(f"Unknown backend: {name}")
 
 
-__all__ = [
-    "DEFAULT_MODEL",
-    "run_openrouter",
-    "run_langchain",
-    "_run_backend",
-    "OpenRouterBackend",
-    "OpenRouterDSPyBackend",
-    "main",
-]
+def send_prompt(prompt: str, *, local: bool = False, model: str = DEFAULT_MODEL) -> str:
+    primary, fallback = router._preferred_backends()
+    order: list[str] = []
+
+    env_mode = os.environ.get("LLM_ROUTING_MODE", "auto").lower()
+    if local or env_mode == "local":
+        if fallback:
+            order.append(fallback)
+    else:
+        if env_mode == "remote":
+            order.append(primary)
+            if fallback:
+                order.append(fallback)
+        else:  # auto
+            try:
+                threshold = int(
+                    os.environ.get("LLM_COMPLEXITY_THRESHOLD", DEFAULT_COMPLEXITY_THRESHOLD)
+                )
+            except ValueError:
+                threshold = DEFAULT_COMPLEXITY_THRESHOLD
+            complexity = router.estimate_prompt_complexity(prompt)
+            if complexity > threshold:
+                order.append(primary)
+                if fallback:
+                    order.append(fallback)
+            else:
+                if fallback:
+                    order.append(fallback)
+                order.append(primary)
+
+    for backend_name in order:
+        try:
+            return _run_backend(backend_name, prompt, model)
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            continue
+    raise RuntimeError("Unable to process prompt")
 
 
 def main(argv: list[str] | None = None) -> int:
