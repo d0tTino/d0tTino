@@ -8,8 +8,6 @@ import argparse
 from pathlib import Path
 from typing import List, Optional
 
-import subprocess
-
 from scripts import ai_exec
 from scripts.cli_common import execute_steps
 

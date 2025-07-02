@@ -135,20 +135,22 @@ On Windows you can call the PowerShell wrapper or use `bootstrap.ps1` with the
 
 ## Ghostty terminal
 
-[Ghostty](https://github.com/mitchellh/ghostty) is a GPU-accelerated terminal emulator. Grab the latest release for your platform or build from source:
+[Ghostty](https://github.com/mitchellh/ghostty) is a GPU-accelerated terminal emulator. To try it out:
 
-```bash
-cargo install ghostty
-```
-
-Configuration lives in `~/.config/ghostty/ghostty.toml`. A minimal example enables ligatures and sets the window title:
-
-```toml
-use_ligatures = true
-window_title = "Ghostty"
-```
-
-Launch `ghostty` instead of your default terminal to try it out.
+1. Install the Rust toolchain if you do not already have it:
+   ```bash
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   ```
+2. Use `cargo` to install Ghostty:
+   ```bash
+   cargo install ghostty
+   ```
+3. Create the configuration directory and a basic config file at `~/.config/ghostty/ghostty.toml`:
+   ```toml
+   use_ligatures = true
+   window_title = "Ghostty"
+   ```
+4. Launch `ghostty` from your shell. The terminal picks up changes to the config file on restart.
 
 ## Nextcloud server
 
@@ -177,6 +179,7 @@ The initial configuration is stored under `./mattermost`. Edit `config.json` to
 set the site URL and enable integrations. The server listens on port `8065` by
 default.
 
+
 ## Hyper-V support
 
 On Windows Pro editions you can enable Microsoft's virtualization stack:
@@ -189,11 +192,13 @@ Create virtual machines via the **Quick Create** wizard or `New-VM` in PowerShel
 
 ## ETL automation with n8n
 
-[n8n](https://n8n.io/) is a workflow automation tool suited for lightweight ETL tasks. Spin up the community edition with Docker:
+[n8n](https://n8n.io/) is a workflow automation tool suited for lightweight ETL tasks.
 
-```bash
-docker run -it --name n8n -p 5678:5678 n8nio/n8n
-```
-
-Open `http://localhost:5678` to build flows. A simple example watches a folder and sends new files to Nextcloud using the built-in nodes. Persist workflows by mounting a volume at `/home/node/.n8n`.
+1. Start the container interactively on port `5678`:
+   ```bash
+   docker run -it --name n8n -p 5678:5678 n8nio/n8n
+   ```
+2. Navigate to `http://localhost:5678` and create your first workflow.
+3. Mount a local directory to `/home/node/.n8n` to persist workflows between runs.
+4. A simple test flow watches a folder and sends new files to Nextcloud using the built-in nodes.
 
