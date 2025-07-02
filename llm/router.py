@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import subprocess
-from typing import List
+from typing import Any, List, cast
 
 from .backends import (
     GeminiBackend,
@@ -30,15 +30,19 @@ def estimate_prompt_complexity(prompt: str) -> int:
 
 def run_gemini(prompt: str, model: str | None = None) -> str:
     """Return Gemini response for ``prompt``."""
-    backend_cls = GeminiDSPyBackend if GeminiDSPyBackend is not None else GeminiBackend
-    backend = backend_cls(model)  # type: ignore[arg-type]
+    backend_cls = (
+        GeminiDSPyBackend if GeminiDSPyBackend is not None else GeminiBackend
+    )
+    backend = cast(Any, backend_cls)(model)
     return backend.run(prompt)
 
 
 def run_ollama(prompt: str, model: str) -> str:
     """Return Ollama response for ``prompt`` using ``model``."""
-    backend_cls = OllamaDSPyBackend if OllamaDSPyBackend is not None else OllamaBackend
-    backend = backend_cls(model)  # type: ignore[arg-type]
+    backend_cls = (
+        OllamaDSPyBackend if OllamaDSPyBackend is not None else OllamaBackend
+    )
+    backend = cast(Any, backend_cls)(model)
     return backend.run(prompt)
 
 
@@ -47,7 +51,7 @@ def run_openrouter(prompt: str, model: str) -> str:
     backend_cls = (
         OpenRouterDSPyBackend if OpenRouterDSPyBackend is not None else OpenRouterBackend
     )
-    backend = backend_cls(model)  # type: ignore[arg-type]
+    backend = cast(Any, backend_cls)(model)
     return backend.run(prompt)
 
 
@@ -85,9 +89,14 @@ def send_prompt(prompt: str, *, local: bool = False, model: str = DEFAULT_MODEL)
             if fallback:
                 order.append(fallback)
         else:  # auto
-            threshold = int(
-                os.environ.get("LLM_COMPLEXITY_THRESHOLD", DEFAULT_COMPLEXITY_THRESHOLD)
-            )
+            try:
+                threshold = int(
+                    os.environ.get(
+                        "LLM_COMPLEXITY_THRESHOLD", DEFAULT_COMPLEXITY_THRESHOLD
+                    )
+                )
+            except ValueError:
+                threshold = DEFAULT_COMPLEXITY_THRESHOLD
             complexity = estimate_prompt_complexity(prompt)
             if complexity > threshold:
                 order.append(primary)
