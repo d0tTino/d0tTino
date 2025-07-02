@@ -18,6 +18,7 @@ from llm.backends import (
     OllamaDSPyBackend,
     OpenRouterDSPyBackend,
 )
+from llm.langchain_backend import LangChainBackend
 
 DEFAULT_MODEL = router.DEFAULT_MODEL
 DEFAULT_PRIMARY_BACKEND = router.DEFAULT_PRIMARY_BACKEND
