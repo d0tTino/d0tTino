@@ -8,6 +8,7 @@ import pytest
 
 from scripts import ai_router as cli_ai_router
 from llm import router, ai_router as llm_router
+from llm.backends import register_backend
 
 # Mirror routing helpers from ``llm.router`` onto ``llm_router`` so they can be
 # patched independently for tests.
@@ -79,7 +80,9 @@ def test_send_prompt_uses_local_for_simple_prompt(monkeypatch):
         return f"ollama:{prompt}:{model}"
 
     monkeypatch.setattr(router, "run_gemini", fail_run_gemini)
+    register_backend("gemini", router.run_gemini)
     monkeypatch.setattr(router, "run_ollama", mock_run_ollama)
+    register_backend("ollama", router.run_ollama)
 
     out = router.send_prompt("hello", model="g1")
     assert out == "ollama:hello:g1"
@@ -97,7 +100,9 @@ def test_send_prompt_uses_primary_for_complex_prompt(monkeypatch):
         raise AssertionError("ollama should not be called")
 
     monkeypatch.setattr(router, "run_gemini", mock_run_gemini)
+    register_backend("gemini", router.run_gemini)
     monkeypatch.setattr(router, "run_ollama", fail_run_ollama)
+    register_backend("ollama", router.run_ollama)
 
     out = router.send_prompt(long_prompt, model="g1")
     assert out.startswith("gemini:")
@@ -113,7 +118,9 @@ def test_send_prompt_local(monkeypatch):
         return f"ollama:{prompt}:{model}"
 
     monkeypatch.setattr(router, "run_gemini", fail_run_gemini)
+    register_backend("gemini", router.run_gemini)
     monkeypatch.setattr(router, "run_ollama", mock_run_ollama)
+    register_backend("ollama", router.run_ollama)
 
     out = router.send_prompt("yo", local=True, model="o2")
     assert out == "ollama:yo:o2"
@@ -130,7 +137,9 @@ def test_env_forces_remote(monkeypatch):
         raise AssertionError("ollama should not be called")
 
     monkeypatch.setattr(router, "run_gemini", mock_run_gemini)
+    register_backend("gemini", router.run_gemini)
     monkeypatch.setattr(router, "run_ollama", fail_run_ollama)
+    register_backend("ollama", router.run_ollama)
 
     out = router.send_prompt("short", model="g1")
     assert out == "gemini:short:g1"
@@ -147,7 +156,9 @@ def test_env_complexity_threshold(monkeypatch):
         raise AssertionError("ollama should not be called")
 
     monkeypatch.setattr(router, "run_gemini", mock_run_gemini)
+    register_backend("gemini", router.run_gemini)
     monkeypatch.setattr(router, "run_ollama", fail_run_ollama)
+    register_backend("ollama", router.run_ollama)
 
     out = router.send_prompt("two words", model="g1")
     assert out == "gemini:two words:g1"
@@ -171,6 +182,7 @@ def test_invalid_complexity_threshold(monkeypatch):
     monkeypatch.setattr(llm_router, "run_ollama", fail_run_ollama)
 
     out = llm_router.send_prompt(long_prompt, model="g1")
+
     assert out.startswith("gemini:")
 
 
@@ -267,6 +279,7 @@ def test_send_prompt_prefers_dspy(monkeypatch):
     monkeypatch.setattr(router, "GeminiDSPyBackend", Dummy)
     monkeypatch.setattr(router, "GeminiBackend", FailBackend)
     monkeypatch.setattr(router, "run_ollama", fail_ollama)
+    register_backend("ollama", router.run_ollama)
 
     out = router.send_prompt("msg", model="m")
     assert out == "dspy:msg:m"
