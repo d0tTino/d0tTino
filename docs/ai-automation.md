@@ -149,3 +149,16 @@ mod.recompile_from_fewshot()
 The wrapper automatically uses the compiled module on the next call. Whenever
 you log new examples, run `snapshot_log_to_fewshot()` and recompile again to
 extend the training set.
+
+## Document Ingestion
+
+`llm.etl` provides helpers to load documents into a ChromaDB persistent store.
+Use the `etl.py` script to process a file or directory in one step:
+
+```bash
+python scripts/etl.py docs/ai-automation.md --persist chroma_db
+python scripts/etl.py ./docs --persist chroma_db
+```
+
+The resulting collection can be registered on a LangGraph with
+`llm.etl.register_retrieval_nodes` for retrieval-augmented generation.
