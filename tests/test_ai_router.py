@@ -120,6 +120,7 @@ def test_invalid_complexity_threshold(monkeypatch):
         "word",
     ] * (router.DEFAULT_COMPLEXITY_THRESHOLD + 1))
 
+
     def mock_run_gemini(prompt, model=None):
         return f"gemini:{prompt}:{model}"
 
@@ -131,6 +132,7 @@ def test_invalid_complexity_threshold(monkeypatch):
     register_backend("gemini", router.run_gemini)
     monkeypatch.setattr(router, "run_ollama", fail_run_ollama)
     register_backend("ollama", router.run_ollama)
+
     out = router.send_prompt(long_prompt, model="g1")
     assert out.startswith("gemini:")
 
