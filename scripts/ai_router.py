@@ -6,6 +6,9 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+import os
+from typing import Any, cast
+
 
 from llm import router
 from llm.backends import (
@@ -32,18 +35,35 @@ def run_openrouter(prompt: str, model: str) -> str:
     backend_cls = (
         OpenRouterDSPyBackend if OpenRouterDSPyBackend is not None else OpenRouterBackend
     )
-    backend = backend_cls(model)  # type: ignore[arg-type]
+    backend = cast(Any, backend_cls)(model)
     return backend.run(prompt)
 
 
-def run_langchain(prompt: str) -> str:  # pragma: no cover - placeholder
-    """Return response using a placeholder LangChain backend."""
-    return f"langchain:{prompt}"
+def create_default_chain() -> object:
+    """Return a simple LangChain chain."""
+    try:  # pragma: no cover - optional dependency
+        from langchain_openai import ChatOpenAI
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.output_parsers import StrOutputParser
+        from pydantic import SecretStr
+    except Exception as exc:  # pragma: no cover - optional dependency
+        raise RuntimeError("langchain is required for the langchain backend") from exc
+
+    prompt = ChatPromptTemplate.from_messages([("human", "{input}")])
+    api_key = SecretStr(os.environ.get("OPENAI_API_KEY", "sk-dummy"))
+    return prompt | ChatOpenAI(api_key=api_key) | StrOutputParser()
+
+
+def run_langchain(prompt: str) -> str:
+    """Return response using a LangChain chain."""
+    backend = LangChainBackend(create_default_chain())
+    return backend.run(prompt)
+
 
 def _run_backend(name: str, prompt: str, model: str) -> str:
     """Delegate to ``router._run_backend`` with LangChain support."""
     if name.lower() == "langchain":
-        return run_langchain(prompt)
+        return send_prompt(prompt, model=model)
     return router._run_backend(name, prompt, model)
 
 def send_prompt(prompt: str, *, local: bool = False, model: str = DEFAULT_MODEL) -> str:
