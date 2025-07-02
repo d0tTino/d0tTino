@@ -110,7 +110,21 @@ def _preferred_backends() -> tuple[str, str | None]:
 
 
 def _run_backend(name: str, prompt: str, model: str) -> str:
-    func = get_backend(name)
+    """Invoke the backend ``name`` with ``prompt`` and ``model``."""
+    attr_name = f"run_{name.lower()}"
+    attr_func = globals().get(attr_name)
+    try:
+        reg_func = get_backend(name)
+    except ValueError:
+        reg_func = None
+
+    func = None
+    if attr_func is not None and attr_func is not reg_func:
+        func = attr_func
+    elif reg_func is not None:
+        func = reg_func
+    if func is None:
+        raise ValueError(f"Unknown backend: {name}")
     return func(prompt, model)
 
 
