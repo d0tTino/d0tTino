@@ -6,8 +6,7 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
-import os
-from typing import Any, cast
+
 
 from llm import router
 from llm.backends import (
@@ -18,7 +17,6 @@ from llm.backends import (
     OllamaDSPyBackend,
     OpenRouterDSPyBackend,
 )
-from llm.langchain_backend import LangChainBackend
 
 DEFAULT_MODEL = router.DEFAULT_MODEL
 DEFAULT_PRIMARY_BACKEND = router.DEFAULT_PRIMARY_BACKEND
@@ -28,51 +26,9 @@ DEFAULT_COMPLEXITY_THRESHOLD = router.DEFAULT_COMPLEXITY_THRESHOLD
 
 run_gemini = router.run_gemini
 run_ollama = router.run_ollama
-
-def run_openrouter(prompt: str, model: str) -> str:
-    """Return OpenRouter response for ``prompt`` using ``model``."""
-
-    backend_cls = (
-        OpenRouterDSPyBackend if OpenRouterDSPyBackend is not None else OpenRouterBackend
-    )
-    backend = cast(Any, backend_cls)(model)
-    return backend.run(prompt)
-
-
-def create_default_chain() -> object:
-    """Return a simple LangChain chain.
-
-    If ``OPENAI_API_KEY`` is not set, a dummy chain that returns ``"ok"`` is
-    created to avoid network calls during testing.
-    """
-    try:  # pragma: no cover - optional dependency
-        from langchain_openai import ChatOpenAI
-        from langchain_core.prompts import ChatPromptTemplate
-        from langchain_core.output_parsers import StrOutputParser
-        from pydantic import SecretStr
-    except Exception as exc:  # pragma: no cover - optional dependency
-        raise RuntimeError("langchain is required for the langchain backend") from exc
-
-    if os.environ.get("OPENAI_API_KEY") is None:
-        class DummyChain:
-            def invoke(self, _data):
-                return "ok"
-
-        return DummyChain()
-
-    prompt = ChatPromptTemplate.from_messages([("human", "{input}")])
-    api_key = SecretStr(os.environ.get("OPENAI_API_KEY", "sk-dummy"))
-    return prompt | ChatOpenAI(api_key=api_key) | StrOutputParser()
-
-
-def run_langchain(prompt: str) -> str:
-    """Return response using a LangChain chain if available."""
-    if not os.environ.get("OPENAI_API_KEY"):
-        # Fallback to the standard routing logic when no API key is set.
-        return router.send_prompt(prompt, model=DEFAULT_MODEL)
-
-    backend = LangChainBackend(create_default_chain())
-    return backend.run(prompt)
+run_openrouter = router.run_openrouter
+create_default_chain = router.create_default_chain
+run_langchain = router.run_langchain
 
 
 def _run_backend(name: str, prompt: str, model: str) -> str:

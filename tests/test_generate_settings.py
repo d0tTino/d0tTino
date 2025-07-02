@@ -1,3 +1,4 @@
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -105,4 +106,27 @@ def test_merge_profiles_override_duplicates() -> None:
         {"guid": "{2222}", "name": "second"},
         {"name": "no-guid"},
     ]
+
+
+
+def test_generate_with_temp_files(tmp_path: Path) -> None:
+    module = _load_generate_settings()
+    base = tmp_path / "base.json"
+    common = tmp_path / "common.json"
+    output = tmp_path / "out.json"
+    base.write_text(
+        json.dumps({"foo": 1, "profiles": {"defaults": {"a": 1}, "list": [{"guid": "{1}", "name": "base"}]}}),
+        encoding="utf-8",
+    )
+    common.write_text(
+        json.dumps({"defaults": {"b": 2}, "list": [{"guid": "{1}", "name": "override"}, {"name": "extra"}]}),
+        encoding="utf-8",
+    )
+
+    module.generate(base, common, output)
+
+    data = json.loads(output.read_text())
+    assert data["foo"] == 1
+    assert data["profiles"]["defaults"] == {"b": 2, "a": 1}
+    assert data["profiles"]["list"] == [{"guid": "{1}", "name": "base"}, {"name": "extra"}]
 

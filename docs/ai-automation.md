@@ -91,6 +91,9 @@ To run those commands interactively use `ai-do`. Each command is numbered and
 requires a `y` confirmation; pressing `Enter` or `n` skips that command. Output
 is appended to `ai_do.log` by default.
 
+Both `ai-plan` and `ai-do` accept a `--notify` flag to send a notification via
+[`ntfy`](https://ntfy.sh) when the command completes.
+
 ```bash
 ai-do "git add . && git commit -m 'update' && git push" --log my.log
 ```
@@ -159,4 +162,5 @@ docker-compose up -d
 ```
 
 Open <http://localhost:5678> in your browser and choose **Import from File** to load `n8n/flows/mcp-ai_exec.json`. The workflow contains a single **Execute Command** node that calls `scripts/ai_exec.py`.
+
 

@@ -14,12 +14,14 @@ dependencies = ["dspy==2.6.27"]
 test = [
     "pytest",
     "pytest-xdist",
+    "pytest-asyncio",
     "json5",
     "mypy",
 ]
 cli = ["tomli_w"]
 lmql = ["lmql"]
 guidance = ["guidance"]
+etl = ["unstructured", "chromadb"]
 
 [project.scripts]
 thm = "scripts.thm:main"
@@ -27,6 +29,7 @@ ai = "scripts.ai_cli:send_main"
 ai-plan = "scripts.ai_cli:plan_main"
 ai-do = "scripts.ai_cli:do_main"
 ai-cli = "scripts.ai_cli:main"
+etl = "scripts.etl:main"
 
 
 [tool.setuptools.packages.find]

@@ -132,3 +132,61 @@ On Windows you can call the PowerShell wrapper or use `bootstrap.ps1` with the
 # with image name forwarding
 ./bootstrap.ps1 -SetupDocker -DockerImageName myimage
 ```
+
+## Ghostty terminal
+
+[Ghostty](https://github.com/mitchellh/ghostty) is a GPU-accelerated terminal emulator. Grab the latest release for your platform or build from source:
+
+```bash
+cargo install ghostty
+```
+
+Configuration lives in `~/.config/ghostty/ghostty.toml`. A minimal example enables ligatures and sets the window title:
+
+```toml
+use_ligatures = true
+window_title = "Ghostty"
+```
+
+Launch `ghostty` instead of your default terminal to try it out.
+
+## Nextcloud server
+
+[Nextcloud](https://nextcloud.com/) provides private file sync and collaborative editing. The quickest way to test it locally is with Docker:
+
+```bash
+docker run -d --name nextcloud -p 8080:80 nextcloud
+```
+
+Visit `http://localhost:8080` to finish the setup. Customize trusted domains with the `NEXTCLOUD_TRUSTED_DOMAINS` environment variable if you expose it to the network.
+
+## Mattermost chat
+
+Run an open-source team chat server using Mattermost's Docker image:
+
+```bash
+docker run -d --name mattermost -p 8065:8065 mattermost/mattermost-team-edition
+```
+
+The initial configuration is stored under `~/mattermost/config`. Edit `config.json` to set the site URL and enable integrations.
+
+## Hyper-V support
+
+On Windows Pro editions you can enable Microsoft's virtualization stack:
+
+```powershell
+Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All
+```
+
+Create virtual machines via the **Quick Create** wizard or `New-VM` in PowerShell. Hyper-V is useful for testing scripts in clean environments.
+
+## ETL automation with n8n
+
+[n8n](https://n8n.io/) is a workflow automation tool suited for lightweight ETL tasks. Spin up the community edition with Docker:
+
+```bash
+docker run -it --name n8n -p 5678:5678 n8nio/n8n
+```
+
+Open `http://localhost:5678` to build flows. A simple example watches a folder and sends new files to Nextcloud using the built-in nodes. Persist workflows by mounting a volume at `/home/node/.n8n`.
+

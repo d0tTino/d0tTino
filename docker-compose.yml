@@ -10,3 +10,4 @@ services:
     environment:
       - GENERIC_TIMEZONE=UTC
       - N8N_PERSONALIZATION_ENABLED=false
+
