@@ -2,12 +2,18 @@ import os
 import subprocess
 import shutil
 from pathlib import Path
+import ntpath
 from unittest import mock
 import re
 import sys
 import pytest
 
 SCRIPT = Path('scripts/fix-path.ps1')
+
+
+def win(path: str) -> str:
+    """Return a sanitized Windows path string."""
+    return ntpath.normpath(path)
 
 def run_fix_path():
     pwsh = shutil.which('pwsh')
@@ -85,30 +91,40 @@ def _dedupe_paths(paths):
 
 
 def test_dedupe_trailing_slashes():
-    paths = [r'C:\Tools', r'C:\Tools\\']
-    assert _dedupe_paths(paths) == [r'C:\Tools']
+    paths = [win(r'C:\Tools'), win(r'C:\Tools\\')]
+    assert _dedupe_paths(paths) == [win(r'C:\Tools')]
 
 
 def test_case_insensitive_after_trimming():
-    paths = [r'C:\Tools\\', r'c:\tools']
-    assert _dedupe_paths(paths) == [r'C:\Tools']
+    paths = [win(r'C:\Tools\\'), win(r'c:\tools')]
+    assert _dedupe_paths(paths) == [win(r'C:\Tools')]
 
 
 @pytest.mark.skipif(sys.platform != 'win32', reason='requires Windows PATH mechanics')
 def test_fix_path_script_deduplicates(tmp_path):
     env = os.environ.copy()
     env.update({
-        'Path': r'C:\Tools;C:\Tools\\;c:\tools;C:\Other\\;C:\Other',
+        'Path': ';'.join([
+            win(r'C:\Tools'),
+            win(r'C:\Tools\\'),
+            win(r'c:\tools'),
+            win(r'C:\Other\\'),
+            win(r'C:\Other'),
+        ]),
         'USERPROFILE': str(tmp_path),
     })
-    expected = r'C:\Tools;C:\Other;' + str(Path(tmp_path) / 'bin')
+    expected = ';'.join([
+        win(r'C:\Tools'),
+        win(r'C:\Other'),
+        str(Path(tmp_path) / 'bin'),
+    ])
     output = run_fix_path_capture(env)
     assert output == expected
 
 
 @pytest.mark.skipif(not shutil.which("pwsh") and not shutil.which("powershell"), reason="PowerShell not available")
 def test_fix_path_warns_and_truncates(tmp_path):
-    paths = [fr"C:\\Path{i}" for i in range(300)]
+    paths = [win(fr"C:\\Path{i}") for i in range(300)]
     long_path = ";".join(paths)
     assert len(long_path) > 1023
     env = os.environ.copy()
@@ -124,7 +140,7 @@ def test_fix_path_warns_and_truncates(tmp_path):
 
 @pytest.mark.skipif(not shutil.which("pwsh") and not shutil.which("powershell"), reason="PowerShell not available")
 def test_fix_path_preserves_long_values(tmp_path):
-    paths = [fr"C:\\Path{i}" for i in range(4000)]
+    paths = [win(fr"C:\\Path{i}") for i in range(4000)]
     long_path = ";".join(paths)
     assert len(long_path) > 32000
     env = os.environ.copy()
