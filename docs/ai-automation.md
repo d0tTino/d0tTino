@@ -41,7 +41,7 @@ ai "Write a Python script"
 ai --local "Translate text"
 
 # Read a prompt from standard input
-echo "Summarize" | ai --stdin
+echo "Summarize" | ai -
 ```
 
 By default the tool picks the backend automatically based on the prompt length.
