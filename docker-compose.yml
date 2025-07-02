@@ -1,0 +1,20 @@
+version: '3.8'
+services:
+  romm:
+    image: ghcr.io/rommapp/romm:latest
+    container_name: romm
+    ports:
+      - "8080:80"
+    volumes:
+      - ./romm:/romm
+    restart: unless-stopped
+
+  neko:
+    image: m1k1o/neko:firefox
+    container_name: neko
+    ports:
+      - "8081:8080"
+    environment:
+      - NEKO_SCREEN=1920x1080@30
+    shm_size: "2gb"
+    restart: unless-stopped
