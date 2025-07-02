@@ -34,7 +34,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     steps = ai_exec.plan(args.goal, config_path=args.config)
     exit_code = execute_steps(steps, log_path=args.log)
     if args.notify:
-        send_notification("ai-do completed")
+        if exit_code == 0:
+            send_notification("ai-do completed")
+        else:
+            send_notification(f"ai-do failed with exit code {exit_code}")
+
 
     return exit_code
 
