@@ -110,21 +110,17 @@ def _preferred_backends() -> tuple[str, str | None]:
 
 
 def _run_backend(name: str, prompt: str, model: str) -> str:
-    """Invoke the backend ``name`` with ``prompt`` and ``model``."""
-    attr_name = f"run_{name.lower()}"
-    attr_func = globals().get(attr_name)
-    try:
-        reg_func = get_backend(name)
-    except ValueError:
-        reg_func = None
+    """Run ``name`` backend with ``prompt`` and ``model``.
 
-    func = None
-    if attr_func is not None and attr_func is not reg_func:
-        func = attr_func
-    elif reg_func is not None:
-        func = reg_func
-    if func is None:
-        raise ValueError(f"Unknown backend: {name}")
+    Prefer dynamically patched ``run_<name>`` functions if present so tests can
+    monkeypatch the module without re-registering backends. Fall back to the
+    backend registry otherwise.
+    """
+    attr = globals().get(f"run_{name.lower()}")
+    if callable(attr):
+        return attr(prompt, model)
+    func = get_backend(name)
+
     return func(prompt, model)
 
 
