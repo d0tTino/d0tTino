@@ -1,7 +1,8 @@
 from llm.langchain_backend import LangChainBackend
 import io
 import contextlib
-from scripts import ai_router
+from scripts import ai_router as cli_ai_router
+from llm import router
 
 
 class DummyChain:
@@ -22,26 +23,30 @@ def test_langchain_backend_invokes_chain():
 
 
 def test_cli_backend_option(monkeypatch):
-    def mock_run_langchain(prompt: str) -> str:
+    def mock_send_prompt(prompt: str, *, local: bool = False, model: str = router.DEFAULT_MODEL) -> str:
+
         assert prompt == "cli"
+        assert model == router.DEFAULT_MODEL
         return "ok"
 
-    monkeypatch.setattr(ai_router, "run_langchain", mock_run_langchain)
+    monkeypatch.setattr(router, "send_prompt", mock_send_prompt)
+
 
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
-        rc = ai_router.main(["--backend", "langchain", "cli"])
+        rc = cli_ai_router.main(["--backend", "langchain", "cli"])
     assert rc == 0
     assert out.getvalue().strip() == "ok"
 
 def test_run_backend_langchain(monkeypatch):
     calls = []
 
-    def mock_run(prompt: str) -> str:
+    def mock_backend(name: str, prompt: str, model: str) -> str:
+        assert name == "langchain"
         calls.append(prompt)
         return "done"
 
-    monkeypatch.setattr(ai_router, "run_langchain", mock_run)
-    out = ai_router._run_backend("langchain", "hi", "m")
+    monkeypatch.setattr(router, "_run_backend", mock_backend)
+    out = router._run_backend("langchain", "hi", "m")
     assert out == "done"
     assert calls == ["hi"]
