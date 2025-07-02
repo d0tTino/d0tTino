@@ -282,6 +282,7 @@ def test_send_prompt_prefers_dspy(monkeypatch):
     monkeypatch.setattr(router, "GeminiDSPyBackend", Dummy)
     monkeypatch.setattr(router, "GeminiBackend", FailBackend)
     monkeypatch.setattr(router, "run_ollama", fail_ollama)
+    register_backend("gemini", router.run_gemini)
     register_backend("ollama", router.run_ollama)
 
     out = router.send_prompt("msg", model="m")
