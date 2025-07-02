@@ -48,6 +48,14 @@ ai-plan "Refactor the codebase"
 # Execute the plan interactively
 ai-do "Refactor the codebase"
 
+# Or use the consolidated interface
+ai-cli send "Hello"
+ai-cli plan "Refactor the codebase"
+ai-cli do "Refactor the codebase"
+
+Legacy commands `ai`, `ai-plan`, and `ai-do` now invoke these subcommands
+behind the scenes.
+
 ```
 Set `LLM_ROUTING_MODE` to `remote` or `local` to override the automatic
 selection logic, or adjust `LLM_COMPLEXITY_THRESHOLD` to change when the prompt

@@ -14,6 +14,7 @@ from llm.backends import (
     GeminiDSPyBackend,
     OllamaBackend,
     OllamaDSPyBackend,
+
     OpenRouterBackend,
     OpenRouterDSPyBackend,
 )
@@ -25,12 +26,14 @@ DEFAULT_COMPLEXITY_THRESHOLD = router.DEFAULT_COMPLEXITY_THRESHOLD
 def run_gemini(prompt: str, model: str | None = None) -> str:
     backend_cls = GeminiDSPyBackend if GeminiDSPyBackend is not None else GeminiBackend
     backend = backend_cls(model)  # type: ignore[arg-type]
+    
     return backend.run(prompt)
 
 
 def run_ollama(prompt: str, model: str) -> str:
     backend_cls = OllamaDSPyBackend if OllamaDSPyBackend is not None else OllamaBackend
     backend = backend_cls(model)  # type: ignore[arg-type]
+
     return backend.run(prompt)
 
 
@@ -46,6 +49,7 @@ def run_langchain(prompt: str) -> str:  # pragma: no cover - placeholder
     return f"langchain:{prompt}"
 
 
+
 def _run_backend(name: str, prompt: str, model: str) -> str:
     name = name.lower()
     if name == "gemini":
@@ -54,6 +58,7 @@ def _run_backend(name: str, prompt: str, model: str) -> str:
         return run_ollama(prompt, model)
     if name == "openrouter":
         return run_openrouter(prompt, model)
+
     if name == "langchain":
         return run_langchain(prompt)
     raise ValueError(f"Unknown backend: {name}")

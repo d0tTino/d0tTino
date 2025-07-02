@@ -1,3 +1,6 @@
+from collections.abc import Callable
+from typing import Dict
+
 from .base import Backend
 from .gemini import GeminiBackend
 from .ollama import OllamaBackend
@@ -48,4 +51,7 @@ __all__ = [
     "GeminiDSPyBackend",
     "OllamaDSPyBackend",
     "OpenRouterDSPyBackend",
+    "register_backend",
+    "get_backend",
+    "clear_registry",
 ]
