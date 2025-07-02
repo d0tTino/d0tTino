@@ -92,7 +92,8 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         if args.backend:
-            output = _run_backend(args.backend, prompt, args.model)
+            output = router._run_backend(args.backend, prompt, args.model)
+
         else:
             output = router.send_prompt(prompt, local=args.local, model=args.model)
 
