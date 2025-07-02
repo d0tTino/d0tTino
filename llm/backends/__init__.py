@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from typing import Dict
 
 from .base import Backend
 from .gemini import GeminiBackend
