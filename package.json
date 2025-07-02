@@ -7,6 +7,9 @@
     "lint": "npx eslint",
     "smoke": "pwsh -File scripts/smoke_test.ps1"
   },
+  "dependencies": {
+    "n8n-nodes-mcp": "^0.1.28"
+  },
   "devDependencies": {
     "eslint": "^9.29.0"
   }

@@ -161,6 +161,6 @@ An example workflow for the [n8n](https://n8n.io/) automation platform lives in 
 docker-compose up -d
 ```
 
-Open <http://localhost:5678> in your browser and choose **Import from File** to load `n8n/flows/mcp-ai_exec.json`. The workflow contains a single **Execute Command** node that calls `scripts/ai_exec.py`.
+Open <http://localhost:5678> in your browser and choose **Import from File** to load `n8n/flows/mcp-ai_exec.json`. Install the `n8n-nodes-mcp` community package (use the **Manage Nodes** menu or run `npm install n8n-nodes-mcp`) and the imported workflow will include an **MCP Client** node that launches `scripts/ai_exec.py`.
 
 

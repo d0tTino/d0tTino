@@ -18,10 +18,28 @@
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "connectionType": "cmd",
+        "operation": "executeTool",
+        "toolName": "ai_exec",
+        "toolParameters": "{}"
+      },
+      "id": "3",
+      "name": "mcp",
+      "type": "n8n-nodes-mcp.mcpClient",
+      "typeVersion": 1,
+      "position": [680, 300]
     }
   ],
   "connections": {
     "Start": {
+      "main": [
+        [ { "node": "mcp", "type": "main", "index": 0 } ]
+      ]
+    },
+    "mcp": {
       "main": [
         [ { "node": "ai_exec", "type": "main", "index": 0 } ]
       ]
