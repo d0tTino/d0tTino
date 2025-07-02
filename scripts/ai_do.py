@@ -14,11 +14,17 @@ from typing import List, Optional
 from scripts import ai_exec
 
 
+def send_notification(message: str) -> None:
+    """Post a notification via ``ntfy`` if available."""
+    subprocess.run(["ntfy", "send", message], check=False)
+
+
 
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("goal", help="High level description of the task")
     parser.add_argument("--config")
+    parser.add_argument("--notify", action="store_true", help="Send notification when done")
     parser.add_argument(
         "--log",
         type=Path,
@@ -56,6 +62,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             print(result.stderr, end="", file=sys.stderr)
         if result.returncode and not exit_code:
             exit_code = result.returncode
+    if args.notify:
+        send_notification(f"ai-do completed with exit code {exit_code}")
     return exit_code
 
 
