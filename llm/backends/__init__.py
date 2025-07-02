@@ -1,5 +1,4 @@
 from collections.abc import Callable
-from typing import Dict
 
 from .base import Backend
 from .gemini import GeminiBackend
@@ -39,6 +38,23 @@ OllamaDSPyBackend: type[Backend] | None = OllamaDSPyBackendType
 OpenRouterDSPyBackend: type[Backend] | None = OpenRouterDSPyBackendType
 LMQLBackend: type[Backend] | None = LMQLBackendType
 GuidanceBackend: type[Backend] | None = GuidanceBackendType
+
+_REGISTRY: dict[str, Callable[[str, str], str]] = {}
+
+
+def register_backend(name: str, func: Callable[[str, str], str]) -> None:
+    """Register ``func`` under ``name``."""
+    _REGISTRY[name] = func
+
+
+def get_backend(name: str) -> Callable[[str, str], str]:
+    """Return the backend function registered as ``name``."""
+    return _REGISTRY[name]
+
+
+def clear_registry() -> None:
+    """Clear all registered backends."""
+    _REGISTRY.clear()
 
 __all__ = [
     "Backend",
