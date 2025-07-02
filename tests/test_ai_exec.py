@@ -61,3 +61,16 @@ def test_main_invokes_plan(monkeypatch):
     assert rc == 0
     assert out.getvalue().splitlines() == ["one", "two"]
 
+
+def test_main_notifies(monkeypatch):
+    monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: [])
+    called = []
+
+    def fake_notify(msg):
+        called.append(msg)
+
+    monkeypatch.setattr(ai_exec, "send_notification", fake_notify)
+    rc = ai_exec.main(["goal", "--notify"])
+    assert rc == 0
+    assert called == ["ai-plan completed"]
+

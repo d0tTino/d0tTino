@@ -17,6 +17,7 @@ from .backends import (
     get_backend,
 )
 from .ai_router import get_preferred_models
+from .langchain_backend import LangChainBackend
 
 DEFAULT_MODEL = "llama3"
 DEFAULT_PRIMARY_BACKEND = "gemini"
@@ -66,6 +67,40 @@ def run_openrouter(prompt: str, model: str) -> str:
 register_backend("openrouter", run_openrouter)
 
 
+def create_default_chain() -> object:
+    """Return a simple LangChain chain."""
+
+    try:  # pragma: no cover - optional dependency
+        from langchain_openai import ChatOpenAI
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.output_parsers import StrOutputParser
+        from pydantic import SecretStr
+    except Exception as exc:  # pragma: no cover - optional dependency
+        raise RuntimeError("langchain is required for the langchain backend") from exc
+
+    if os.environ.get("OPENAI_API_KEY") is None:
+
+        class DummyChain:
+            def invoke(self, _data):
+                return "ok"
+
+        return DummyChain()
+
+    prompt = ChatPromptTemplate.from_messages([("human", "{input}")])
+    api_key = SecretStr(os.environ.get("OPENAI_API_KEY", "sk-dummy"))
+    return prompt | ChatOpenAI(api_key=api_key) | StrOutputParser()
+
+
+def run_langchain(prompt: str) -> str:
+    """Return response using a LangChain chain if available."""
+
+    if not os.environ.get("OPENAI_API_KEY"):
+        return send_prompt(prompt, model=DEFAULT_MODEL)
+
+    backend = LangChainBackend(create_default_chain())
+    return backend.run(prompt)
+
+
 def _preferred_backends() -> tuple[str, str | None]:
     env_primary = os.environ.get("LLM_PRIMARY_BACKEND")
     env_fallback = os.environ.get("LLM_FALLBACK_BACKEND")
@@ -85,6 +120,7 @@ def _run_backend(name: str, prompt: str, model: str) -> str:
     if callable(attr):
         return attr(prompt, model)
     func = get_backend(name)
+
     return func(prompt, model)
 
 
@@ -135,5 +171,7 @@ __all__ = [
     "run_gemini",
     "run_ollama",
     "run_openrouter",
+    "create_default_chain",
+    "run_langchain",
     "send_prompt",
 ]
