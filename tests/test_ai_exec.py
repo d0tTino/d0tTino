@@ -51,7 +51,7 @@ def test_plan_falls_back(monkeypatch):
 def test_main_invokes_plan(monkeypatch):
     def mock_plan(goal: str, *, config_path=None):
         assert goal == "goal"
-        assert config_path == "cfg.json"
+        assert str(config_path) == "cfg.json"
         return ["one", "two"]
 
     monkeypatch.setattr(ai_exec, "plan", mock_plan)

@@ -24,11 +24,13 @@ def test_langchain_backend_invokes_chain():
 
 def test_cli_backend_option(monkeypatch):
     def mock_send_prompt(prompt: str, *, local: bool = False, model: str = router.DEFAULT_MODEL) -> str:
+
         assert prompt == "cli"
         assert model == router.DEFAULT_MODEL
         return "ok"
 
     monkeypatch.setattr(router, "send_prompt", mock_send_prompt)
+
 
     out = io.StringIO()
     with contextlib.redirect_stdout(out):

@@ -38,8 +38,13 @@ jobs:
       - name: Run mypy
         run: mypy llm scripts
 
+      - name: Invoke ai-plan
+        run: ai-plan --help
+
       - name: Run tests
         run: pytest -n auto
+      - name: Run backend/UI tests
+        run: pytest -n auto tests/test_langchain_backend.py tests/test_openrouter_backend.py
       - name: Run smoke test
         run: pytest -n auto tests/test_smoke_test.py
       - name: Run lint
@@ -76,8 +81,13 @@ jobs:
       - name: Run mypy
         run: mypy llm scripts
 
+      - name: Invoke ai-plan
+        run: ai-plan --help
+
       - name: Run tests
         run: pytest -n auto
+      - name: Run backend/UI tests
+        run: pytest -n auto tests/test_langchain_backend.py tests/test_openrouter_backend.py
       - name: Run smoke test
         run: pytest -n auto tests/test_smoke_test.py
       - name: Run lint

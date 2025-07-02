@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from .backends.base import Backend
+from typing import Any
 
 
 class LangChainBackend(Backend):
     """Backend that delegates to a LangChain chain."""
 
-    def __init__(self, chain: object) -> None:
+    def __init__(self, chain: Any) -> None:
         self.chain = chain
 
     def run(self, prompt: str) -> str:
