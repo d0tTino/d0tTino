@@ -8,6 +8,52 @@ import subprocess
 import sys
 
 from llm import router
+from llm.backends import (  # noqa: F401
+    GeminiBackend,
+    GeminiDSPyBackend,
+    OllamaBackend,
+    OllamaDSPyBackend,
+    OpenRouterBackend,
+    OpenRouterDSPyBackend,
+)
+from llm.langchain_backend import LangChainBackend
+from typing import Any, cast
+
+run_gemini = router.run_gemini
+run_ollama = router.run_ollama
+def run_openrouter(prompt: str, model: str) -> str:
+    """Return OpenRouter response for ``prompt`` using ``model``."""
+    backend_cls = (
+        OpenRouterDSPyBackend if OpenRouterDSPyBackend is not None else OpenRouterBackend
+    )
+    backend = cast(Any, backend_cls)(model)
+    return backend.run(prompt)
+send_prompt = router.send_prompt
+
+
+def create_default_chain() -> object:
+    """Return a simple LangChain chain."""
+    try:  # pragma: no cover - optional dependency
+        from langchain_openai import ChatOpenAI
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.output_parsers import StrOutputParser
+    except Exception as exc:  # pragma: no cover - optional dependency
+        raise RuntimeError("langchain is required for the langchain backend") from exc
+
+    prompt = ChatPromptTemplate.from_messages([("human", "{input}")])
+    return prompt | ChatOpenAI() | StrOutputParser()
+
+
+def run_langchain(prompt: str) -> str:
+    """Return response using a LangChain chain."""
+    backend = LangChainBackend(create_default_chain())
+    return backend.run(prompt)
+
+
+def _run_backend(name: str, prompt: str, model: str) -> str:
+    if name == "langchain":
+        return run_langchain(prompt)
+    return router._run_backend(name, prompt, model)
 
 DEFAULT_MODEL = router.DEFAULT_MODEL
 
@@ -40,7 +86,10 @@ def main(argv: list[str] | None = None) -> int:
         prompt = sys.stdin.read()
 
     try:
-        output = router.send_prompt(prompt, local=args.local, model=args.model)
+        if args.backend:
+            output = _run_backend(args.backend, prompt, args.model)
+        else:
+            output = router.send_prompt(prompt, local=args.local, model=args.model)
 
     except (FileNotFoundError, subprocess.CalledProcessError) as exc:
         print(exc, file=sys.stderr)

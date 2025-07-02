@@ -2,31 +2,37 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from pathlib import Path
 
-try:  # pragma: no cover - optional dependency
+if TYPE_CHECKING:
     from .universal_dspy_wrapper_v2 import LoggedFewShotWrapper, is_repo_data_path
-except ImportError as exc:  # dspy not installed
-    def _missing(name: str, _exc: Exception = exc):
-        raise ImportError(
-            "The 'dspy' package is required to use "
-            f"{name}; install it via 'pip install dspy-ai'"
-        ) from _exc
+else:  # pragma: no cover - optional dependency
+    try:
+        from .universal_dspy_wrapper_v2 import LoggedFewShotWrapper, is_repo_data_path
+    except ImportError as exc:  # dspy not installed
+        def _missing(name: str, _exc: Exception = exc) -> None:
+            raise ImportError(
+                "The 'dspy' package is required to use "
+                f"{name}; install it via 'pip install dspy-ai'"
+            ) from _exc
 
-    class LoggedFewShotWrapper:  # type: ignore[assignment]
-        def __init__(self, *args, **kwargs) -> None:
-            _missing("LoggedFewShotWrapper")
+        class LoggedFewShotWrapper:
+            def __init__(self, *args, **kwargs) -> None:
+                _missing("LoggedFewShotWrapper")
 
-    def is_repo_data_path(path: str | Path) -> bool:  # type: ignore[assignment]
-        _missing("is_repo_data_path")
+        def is_repo_data_path(path: str | Path) -> bool:
+            _missing("is_repo_data_path")
+            return False
 
 
 if TYPE_CHECKING:  # pragma: no cover - for type checkers only
     from .ai_router import get_preferred_models as _get_preferred_models  # noqa: F401
 
 
-def __getattr__(name: str):
+
+
+def __getattr__(name: str) -> Any:
     if name == "get_preferred_models":
         from .ai_router import get_preferred_models as _get_preferred_models
 
