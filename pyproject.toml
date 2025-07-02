@@ -18,12 +18,15 @@ test = [
     "mypy",
 ]
 cli = ["tomli_w"]
+lmql = ["lmql"]
+guidance = ["guidance"]
 
 [project.scripts]
 thm = "scripts.thm:main"
-ai = "scripts.ai_router:main"
-ai-plan = "scripts.ai_exec:main"
-ai-do = "scripts.ai_do:main"
+ai = "scripts.ai_cli:send_main"
+ai-plan = "scripts.ai_cli:plan_main"
+ai-do = "scripts.ai_cli:do_main"
+ai-cli = "scripts.ai_cli:main"
 
 
 [tool.setuptools.packages.find]

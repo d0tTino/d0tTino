@@ -1,12 +1,27 @@
+from collections.abc import Callable
+from typing import Dict
+
 from .base import Backend
 from .gemini import GeminiBackend
 from .ollama import OllamaBackend
 from .openrouter import OpenRouterBackend
 from ..langchain_backend import LangChainBackend
 
+LMQLBackendType: type[Backend] | None
+GuidanceBackendType: type[Backend] | None
+
 GeminiDSPyBackendType: type[Backend] | None
 OllamaDSPyBackendType: type[Backend] | None
 OpenRouterDSPyBackendType: type[Backend] | None
+try:  # pragma: no cover - optional dependency
+    from .lmql import LMQLBackend as LMQLBackendType
+except ImportError:
+    LMQLBackendType = None
+
+try:  # pragma: no cover - optional dependency
+    from .guidance import GuidanceBackend as GuidanceBackendType
+except ImportError:
+    GuidanceBackendType = None
 
 try:  # pragma: no cover - optional dependency
     from .dspy_backends import (
@@ -22,14 +37,21 @@ except Exception:  # pragma: no cover - dspy missing
 GeminiDSPyBackend: type[Backend] | None = GeminiDSPyBackendType
 OllamaDSPyBackend: type[Backend] | None = OllamaDSPyBackendType
 OpenRouterDSPyBackend: type[Backend] | None = OpenRouterDSPyBackendType
+LMQLBackend: type[Backend] | None = LMQLBackendType
+GuidanceBackend: type[Backend] | None = GuidanceBackendType
 
 __all__ = [
     "Backend",
     "GeminiBackend",
     "OllamaBackend",
     "OpenRouterBackend",
+    "LMQLBackend",
+    "GuidanceBackend",
     "LangChainBackend",
     "GeminiDSPyBackend",
     "OllamaDSPyBackend",
     "OpenRouterDSPyBackend",
+    "register_backend",
+    "get_backend",
+    "clear_registry",
 ]

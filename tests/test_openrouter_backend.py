@@ -1,7 +1,7 @@
 import pytest
 
 from llm.backends import OpenRouterBackend
-from scripts import ai_router
+from llm import router as ai_router
 
 
 def test_openrouter_backend_returns_string():

@@ -4,7 +4,7 @@ from textual.app import App, ComposeResult
 from textual.widgets import Input, Button, Static, Select
 from textual.containers import Vertical
 
-from scripts.ai_router import send_prompt
+from llm.router import send_prompt
 from scripts.thm import apply_palette, PALETTES_DIR, REPO_ROOT
 
 

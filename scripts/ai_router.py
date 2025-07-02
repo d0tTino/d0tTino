@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+import os
 
 from llm import router
 from llm.backends import (
@@ -29,6 +30,7 @@ run_ollama = router.run_ollama
 
 def run_openrouter(prompt: str, model: str) -> str:
     """Return OpenRouter response for ``prompt`` using ``model``."""
+
     backend_cls = (
         OpenRouterDSPyBackend if OpenRouterDSPyBackend is not None else OpenRouterBackend
     )
@@ -65,6 +67,7 @@ def send_prompt(prompt: str, *, local: bool = False, model: str = DEFAULT_MODEL)
     return router.send_prompt(prompt, local=local, model=model)
 
 
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -97,6 +100,7 @@ def main(argv: list[str] | None = None) -> int:
             output = _run_backend(args.backend, prompt, args.model)
         else:
             output = send_prompt(prompt, local=args.local, model=args.model)
+
 
     except (FileNotFoundError, subprocess.CalledProcessError) as exc:
         print(exc, file=sys.stderr)
