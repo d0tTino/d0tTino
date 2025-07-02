@@ -150,6 +150,19 @@ The wrapper automatically uses the compiled module on the next call. Whenever
 you log new examples, run `snapshot_log_to_fewshot()` and recompile again to
 extend the training set.
 
+## Document Ingestion
+
+`llm.etl` provides helpers to load documents into a ChromaDB persistent store.
+Use the `etl.py` script to process a file or directory in one step:
+
+```bash
+python scripts/etl.py docs/ai-automation.md --persist chroma_db
+python scripts/etl.py ./docs --persist chroma_db
+```
+
+The resulting collection can be registered on a LangGraph with
+`llm.etl.register_retrieval_nodes` for retrieval-augmented generation.
+
 ## Ghostty integration
 
 Ghostty's GPU acceleration keeps AI shells responsive even under heavy output. Add an alias in your shell profile to open projects directly in Ghostty:
@@ -200,4 +213,3 @@ n8n start --tunnel
 ```
 
 A simple workflow might fetch JSON from an API, transform it with a Function node, then store the result in Nextcloud. Save the workflow so it runs on a schedule or when triggered by a webhook.
-
