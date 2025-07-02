@@ -1,6 +1,8 @@
 import pytest
 pytest.importorskip("textual")
 from textual.widgets import Static, Input, Select  # noqa: E402 - imported after importorskip
+from textual.command import CommandPalette
+from ui.textual_app import PlanOverlay
 
 from ui.textual_app import TerminalUI
 
@@ -42,4 +44,24 @@ async def test_palette_application(monkeypatch):
 
         assert calls == ["dracula"]
         assert str(app.query_one("#status", Static).renderable) == "Applied dracula"
+
+
+@pytest.mark.asyncio
+async def test_command_palette_hotkey():
+    app = TerminalUI()
+    async with app.run_test() as pilot:
+        await pilot.press("ctrl+p")
+        await pilot.pause(0.05)
+        assert any(isinstance(s, CommandPalette) for s in app.screen_stack)
+
+
+@pytest.mark.asyncio
+async def test_plan_overlay_timeout():
+    app = TerminalUI()
+    async with app.run_test() as pilot:
+        overlay = PlanOverlay(["step"], timeout=0.1)
+        app.push_screen(overlay)
+        assert overlay in app.screen_stack
+        await pilot.pause(0.2)
+        assert overlay not in app.screen_stack
 

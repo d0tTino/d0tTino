@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import argparse
-import subprocess
 from pathlib import Path
 from typing import List, Optional
 
@@ -39,6 +38,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             send_notification("ai-do completed")
         else:
             send_notification(f"ai-do failed with exit code {exit_code}")
+
 
     return exit_code
 

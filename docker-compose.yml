@@ -11,3 +11,28 @@ services:
       - GENERIC_TIMEZONE=UTC
       - N8N_PERSONALIZATION_ENABLED=false
 
+  nextcloud:
+    image: nextcloud
+    ports:
+      - "8082:80"
+    volumes:
+      - ./nextcloud:/var/www/html
+
+  mattermost:
+    image: mattermost/mattermost-team-edition
+    ports:
+      - "8065:8065"
+    volumes:
+      - ./mattermost:/mattermost/data
+
+  romm:
+    image: rommapp/romm
+    ports:
+      - "8080:80"
+    volumes:
+      - ./romm:/romm
+
+  neko:
+    image: m1k1o/neko:latest
+    ports:
+      - "8081:8080"
