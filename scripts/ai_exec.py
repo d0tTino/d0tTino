@@ -13,7 +13,7 @@ from llm import router
 from llm.ai_router import get_preferred_models
 
 
-def plan(goal: str, *, config_path: Optional[str] = None) -> List[str]:
+def plan(goal: str, *, config_path: Optional[Path] = None) -> List[str]:
     """Return planning steps for ``goal`` using preferred models."""
     primary, fallback = get_preferred_models(
         router.DEFAULT_MODEL, router.DEFAULT_MODEL, config_path=config_path
@@ -22,7 +22,7 @@ def plan(goal: str, *, config_path: Optional[str] = None) -> List[str]:
     try:
         text = router.run_gemini(goal, model=primary)
     except (FileNotFoundError, subprocess.CalledProcessError):
-        text = router.run_ollama(goal, model=fallback)
+        text = router.run_ollama(goal, model=fallback or router.DEFAULT_MODEL)
 
     return [line.strip() for line in text.splitlines() if line.strip()]
 
@@ -32,7 +32,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("goal")
     parser.add_argument("--config")
     args = parser.parse_args(argv)
-    steps = plan(args.goal, config_path=args.config)
+    cfg_path = Path(args.config) if args.config else None
+    steps = plan(args.goal, config_path=cfg_path)
     for step in steps:
         print(step)
     return 0
