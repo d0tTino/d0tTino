@@ -135,22 +135,23 @@ On Windows you can call the PowerShell wrapper or use `bootstrap.ps1` with the
 
 ## Ghostty terminal
 
-[Ghostty](https://github.com/mitchellh/ghostty) is a GPU-accelerated terminal emulator. To try it out:
+[Ghostty](https://github.com/mitchellh/ghostty) is a GPU-accelerated terminal emulator. Use the helper script to install it and copy the default configuration:
 
-1. Install the Rust toolchain if you do not already have it:
-   ```bash
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-   ```
-2. Use `cargo` to install Ghostty:
-   ```bash
-   cargo install ghostty
-   ```
-3. Create the configuration directory and a basic config file at `~/.config/ghostty/ghostty.toml`:
-   ```toml
-   use_ligatures = true
-   window_title = "Ghostty"
-   ```
-4. Launch `ghostty` from your shell. The terminal picks up changes to the config file on restart.
+```bash
+./scripts/setup-ghostty.sh
+# Alternatively install manually
+cargo install ghostty
+```
+
+Configuration lives in `~/.config/ghostty/ghostty.toml`. A minimal example enables ligatures and sets the window title:
+
+```toml
+use_ligatures = true
+window_title = "Ghostty"
+```
+
+Launch `ghostty` instead of your default terminal to try it out.
+
 
 ## Nextcloud server
 
