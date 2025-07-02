@@ -33,3 +33,26 @@ To start Neko without the script, run:
 ```bash
 docker compose up neko
 ```
+
+## Nextcloud
+
+Nextcloud provides file sync and collaboration tools. Start it with:
+
+```bash
+./scripts/run-nextcloud.sh
+```
+
+It maps port `8082` to container port `80`. Adjust the value in `docker-compose.yml` if needed.
+
+You can also use `docker compose up nextcloud` directly.
+
+## Mattermost
+
+Mattermost is a self-hosted chat server. Run it via:
+
+```bash
+./scripts/run-mattermost.sh
+```
+
+The service listens on port `8065`. Data is stored under `./mattermost`.
+Use `docker compose up mattermost` to start it manually.
