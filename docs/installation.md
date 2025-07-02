@@ -152,25 +152,34 @@ window_title = "Ghostty"
 
 Launch `ghostty` instead of your default terminal to try it out.
 
+
 ## Nextcloud server
 
-[Nextcloud](https://nextcloud.com/) provides private file sync and collaborative editing. The quickest way to test it locally is with Docker:
+[Nextcloud](https://nextcloud.com/) provides private file sync and collaborative
+editing. Launch it using the included helper script:
 
 ```bash
-docker run -d --name nextcloud -p 8080:80 nextcloud
+./scripts/run-nextcloud.sh
 ```
 
-Visit `http://localhost:8080` to finish the setup. Customize trusted domains with the `NEXTCLOUD_TRUSTED_DOMAINS` environment variable if you expose it to the network.
+The compose file maps port `8082` to the container's port `80`. Visit
+`http://localhost:8082` to finish the setup. Customize trusted domains with the
+`NEXTCLOUD_TRUSTED_DOMAINS` environment variable if you expose it to the
+network.
 
 ## Mattermost chat
 
-Run an open-source team chat server using Mattermost's Docker image:
+Run an open-source team chat server using the Mattermost service defined in the
+compose file:
 
 ```bash
-docker run -d --name mattermost -p 8065:8065 mattermost/mattermost-team-edition
+./scripts/run-mattermost.sh
 ```
 
-The initial configuration is stored under `~/mattermost/config`. Edit `config.json` to set the site URL and enable integrations.
+The initial configuration is stored under `./mattermost`. Edit `config.json` to
+set the site URL and enable integrations. The server listens on port `8065` by
+default.
+
 
 ## Hyper-V support
 
@@ -184,11 +193,13 @@ Create virtual machines via the **Quick Create** wizard or `New-VM` in PowerShel
 
 ## ETL automation with n8n
 
-[n8n](https://n8n.io/) is a workflow automation tool suited for lightweight ETL tasks. Spin up the community edition with Docker:
+[n8n](https://n8n.io/) is a workflow automation tool suited for lightweight ETL tasks.
 
-```bash
-docker run -it --name n8n -p 5678:5678 n8nio/n8n
-```
-
-Open `http://localhost:5678` to build flows. A simple example watches a folder and sends new files to Nextcloud using the built-in nodes. Persist workflows by mounting a volume at `/home/node/.n8n`.
+1. Start the container interactively on port `5678`:
+   ```bash
+   docker run -it --name n8n -p 5678:5678 n8nio/n8n
+   ```
+2. Navigate to `http://localhost:5678` and create your first workflow.
+3. Mount a local directory to `/home/node/.n8n` to persist workflows between runs.
+4. A simple test flow watches a folder and sends new files to Nextcloud using the built-in nodes.
 
