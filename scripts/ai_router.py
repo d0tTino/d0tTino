@@ -65,7 +65,11 @@ def create_default_chain() -> object:
 
 
 def run_langchain(prompt: str) -> str:
-    """Return response using a LangChain chain."""
+    """Return response using a LangChain chain if available."""
+    if not os.environ.get("OPENAI_API_KEY"):
+        # Fallback to the standard routing logic when no API key is set.
+        return router.send_prompt(prompt, model=DEFAULT_MODEL)
+
     backend = LangChainBackend(create_default_chain())
     return backend.run(prompt)
 

@@ -21,6 +21,13 @@ Install the Python development tools including `ruff`:
 pip install -e . -r requirements.txt
 ```
 
+If you want to try the Textual-based UI prototype, install the
+optional dependency:
+
+```bash
+pip install textual
+```
+
 Run `ruff` to check the code style:
 
 ```bash
