@@ -85,6 +85,14 @@ ai-do "git add . && git commit -m 'update' && git push" --log my.log
 `ai-do` returns the exit status of the first failing command so it can be used
 in scripts.
 
+The `ai-cli` tool provides the same functionality via subcommands:
+
+```bash
+ai-cli plan "create a venv and install requirements"
+ai-cli do "git add . && git commit -m 'update' && git push" --log my.log
+```
+Legacy commands `ai-plan` and `ai-do` now delegate to these subcommands.
+
 This interactive review makes the workflow safer by ensuring you see and approve
 every step before it runs.
 
