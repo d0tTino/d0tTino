@@ -115,3 +115,19 @@ def test_main_confirms_and_sanitizes(monkeypatch, tmp_path):
 
     assert rc == 0
     assert any(prompt.startswith("Run command: echo hi") for prompt in prompts)
+
+
+def test_main_notifies(monkeypatch, tmp_path):
+    monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: [])
+    monkeypatch.setattr("builtins.input", lambda _: "n")
+    called = []
+
+    def fake_notify(msg):
+        called.append(msg)
+
+    monkeypatch.setattr(ai_do, "send_notification", fake_notify)
+    log = tmp_path / "log.txt"
+    rc = ai_do.main(["goal", "--log", str(log), "--notify"])
+
+    assert rc == 0
+    assert called == ["ai-do completed with exit code 0"]

@@ -12,11 +12,17 @@ from scripts import ai_exec
 from scripts.cli_common import execute_steps
 
 
+def send_notification(message: str) -> None:
+    """Post a notification via ``ntfy`` if available."""
+    subprocess.run(["ntfy", "send", message], check=False)
+
+
 
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("goal", help="High level description of the task")
     parser.add_argument("--config")
+    parser.add_argument("--notify", action="store_true", help="Send notification when done")
     parser.add_argument(
         "--log",
         type=Path,
