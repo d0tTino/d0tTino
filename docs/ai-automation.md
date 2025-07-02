@@ -163,4 +163,18 @@ docker-compose up -d
 
 Open <http://localhost:5678> in your browser and choose **Import from File** to load `n8n/flows/mcp-ai_exec.json`. The workflow contains a single **Execute Command** node that calls `scripts/ai_exec.py`.
 
+## LangGraph Retrieval Example
+
+`scripts/rag_example.py` demonstrates how to build a simple retrieval graph. First ingest a document into ChromaDB:
+
+```bash
+python scripts/etl.py examples/rag_example.txt --persist examples/chroma --collection demo
+```
+
+Then query the collection using the retrieval graph:
+
+```bash
+python scripts/rag_example.py "small document" --persist examples/chroma --collection demo
+```
+
 
