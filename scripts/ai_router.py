@@ -8,8 +8,42 @@ import subprocess
 import sys
 
 from llm import router
+from llm.backends import (
+    OpenRouterBackend,
+    OpenRouterDSPyBackend,
+)
 
 DEFAULT_MODEL = router.DEFAULT_MODEL
+
+def run_openrouter(prompt: str, model: str) -> str:
+    """Return OpenRouter response for ``prompt`` using ``model``."""
+    backend_cls = (
+        OpenRouterDSPyBackend if OpenRouterDSPyBackend is not None else OpenRouterBackend
+    )
+    backend = backend_cls(model)  # type: ignore[arg-type]
+    return backend.run(prompt)
+
+
+def run_langchain(prompt: str) -> str:
+    """Process ``prompt`` using a configured LangChain chain."""
+    raise RuntimeError("LangChain backend is not configured")
+
+
+def _run_backend(name: str, prompt: str, model: str) -> str:
+    if name.lower() == "langchain":
+        return run_langchain(prompt)
+    return router._run_backend(name, prompt, model)
+
+
+__all__ = [
+    "DEFAULT_MODEL",
+    "run_openrouter",
+    "run_langchain",
+    "_run_backend",
+    "OpenRouterBackend",
+    "OpenRouterDSPyBackend",
+    "main",
+]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -40,7 +74,10 @@ def main(argv: list[str] | None = None) -> int:
         prompt = sys.stdin.read()
 
     try:
-        output = router.send_prompt(prompt, local=args.local, model=args.model)
+        if args.backend:
+            output = _run_backend(args.backend, prompt, args.model)
+        else:
+            output = router.send_prompt(prompt, local=args.local, model=args.model)
 
     except (FileNotFoundError, subprocess.CalledProcessError) as exc:
         print(exc, file=sys.stderr)
