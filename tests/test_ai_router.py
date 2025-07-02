@@ -171,7 +171,8 @@ def test_invalid_complexity_threshold(monkeypatch):
     monkeypatch.setenv("LLM_COMPLEXITY_THRESHOLD", "invalid")
 
 
-    long_prompt = " ".join(["word"] * (llm_router.DEFAULT_COMPLEXITY_THRESHOLD + 1))
+    long_prompt = " ".join(["word"] * (router.DEFAULT_COMPLEXITY_THRESHOLD + 1))
+
 
     def mock_run_gemini(prompt, model=None):
         return f"gemini:{prompt}:{model}"
@@ -180,10 +181,10 @@ def test_invalid_complexity_threshold(monkeypatch):
 
         raise AssertionError("ollama should not be called")
 
-    monkeypatch.setattr(llm_router, "run_gemini", mock_run_gemini)
-    monkeypatch.setattr(llm_router, "run_ollama", fail_run_ollama)
+    monkeypatch.setattr(router, "run_gemini", mock_run_gemini)
+    monkeypatch.setattr(router, "run_ollama", fail_run_ollama)
 
-    out = llm_router.send_prompt(long_prompt, model="g1")
+    out = router.send_prompt(long_prompt, model="g1")
 
     assert out.startswith("gemini:")
 

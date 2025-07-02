@@ -94,14 +94,11 @@ def send_prompt(prompt: str, *, local: bool = False, model: str = DEFAULT_MODEL)
             if fallback:
                 order.append(fallback)
         else:  # auto
+            threshold_str = os.environ.get("LLM_COMPLEXITY_THRESHOLD")
             try:
-                threshold = int(
-                    os.environ.get(
-                        "LLM_COMPLEXITY_THRESHOLD", DEFAULT_COMPLEXITY_THRESHOLD
-                    )
-                )
+                threshold = int(threshold_str) if threshold_str else DEFAULT_COMPLEXITY_THRESHOLD
+            except ValueError:  # pragma: no cover - invalid env value
 
-            except ValueError:
                 threshold = DEFAULT_COMPLEXITY_THRESHOLD
             complexity = estimate_prompt_complexity(prompt)
             if complexity > threshold:
