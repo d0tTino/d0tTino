@@ -16,10 +16,11 @@ Key directories:
 ## Quickstart
 
 Install the required Python packages (including test utilities such as
-`pytest` and `json5`). The optional `dspy` dependency (install via
-`pip install dspy-ai`) enables the full test suite and is required for
-`llm.LoggedFewShotWrapper`. Tests that rely on it will be skipped if the
-package is missing:
+`pytest` and `json5`). Optional dependencies enable additional backends.
+Install `dspy` via `pip install dspy-ai` for DSPy wrappers.
+Use `pip install lmql` or `pip install guidance` to enable the LMQL and
+Guidance backends. Tests that rely on these packages will be skipped if
+they are missing:
 
 ```bash
 pip install -e .[cli] -r requirements.txt
@@ -135,6 +136,10 @@ pip install -e .[cli]
 pip install -r requirements.txt
 # Optional: install `dspy` to run the complete suite
 pip install dspy-ai
+# Optional: enable the LMQL backend
+pip install lmql
+# Optional: enable the Guidance backend
+pip install guidance
 ```
 
 Then invoke `pytest`:

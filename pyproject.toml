@@ -18,6 +18,8 @@ test = [
     "mypy",
 ]
 cli = ["tomli_w"]
+lmql = ["lmql"]
+guidance = ["guidance"]
 
 [project.scripts]
 thm = "scripts.thm:main"

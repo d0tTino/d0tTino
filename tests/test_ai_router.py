@@ -7,6 +7,8 @@ import pytest
 from scripts import ai_router as cli_ai_router
 from llm import router, ai_router as llm_router
 
+ai_router = cli_ai_router
+
 
 def _set_env(monkeypatch, primary="gemini", fallback="ollama"):
     monkeypatch.setenv("LLM_PRIMARY_BACKEND", primary)
