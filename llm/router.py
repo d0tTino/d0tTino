@@ -13,6 +13,8 @@ from .backends import (
     OllamaDSPyBackend,
     OpenRouterBackend,
     OpenRouterDSPyBackend,
+    register_backend,
+    get_backend,
 )
 from .ai_router import get_preferred_models
 
@@ -35,11 +37,17 @@ def run_gemini(prompt: str, model: str | None = None) -> str:
     return backend.run(prompt)
 
 
+register_backend("gemini", run_gemini)
+
+
 def run_ollama(prompt: str, model: str) -> str:
     """Return Ollama response for ``prompt`` using ``model``."""
     backend_cls = OllamaDSPyBackend if OllamaDSPyBackend is not None else OllamaBackend
     backend = backend_cls(model)  # type: ignore[arg-type]
     return backend.run(prompt)
+
+
+register_backend("ollama", run_ollama)
 
 
 def run_openrouter(prompt: str, model: str) -> str:
@@ -51,6 +59,9 @@ def run_openrouter(prompt: str, model: str) -> str:
     return backend.run(prompt)
 
 
+register_backend("openrouter", run_openrouter)
+
+
 def _preferred_backends() -> tuple[str, str | None]:
     env_primary = os.environ.get("LLM_PRIMARY_BACKEND")
     env_fallback = os.environ.get("LLM_FALLBACK_BACKEND")
@@ -60,14 +71,8 @@ def _preferred_backends() -> tuple[str, str | None]:
 
 
 def _run_backend(name: str, prompt: str, model: str) -> str:
-    name = name.lower()
-    if name == "gemini":
-        return run_gemini(prompt, model)
-    if name == "ollama":
-        return run_ollama(prompt, model)
-    if name == "openrouter":
-        return run_openrouter(prompt, model)
-    raise ValueError(f"Unknown backend: {name}")
+    func = get_backend(name)
+    return func(prompt, model)
 
 
 def send_prompt(prompt: str, *, local: bool = False, model: str = DEFAULT_MODEL) -> str:
@@ -85,9 +90,11 @@ def send_prompt(prompt: str, *, local: bool = False, model: str = DEFAULT_MODEL)
             if fallback:
                 order.append(fallback)
         else:  # auto
-            threshold = int(
-                os.environ.get("LLM_COMPLEXITY_THRESHOLD", DEFAULT_COMPLEXITY_THRESHOLD)
-            )
+            raw = os.environ.get("LLM_COMPLEXITY_THRESHOLD")
+            try:
+                threshold = int(raw) if raw is not None else DEFAULT_COMPLEXITY_THRESHOLD
+            except ValueError:
+                threshold = DEFAULT_COMPLEXITY_THRESHOLD
             complexity = estimate_prompt_complexity(prompt)
             if complexity > threshold:
                 order.append(primary)

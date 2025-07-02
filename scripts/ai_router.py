@@ -40,7 +40,10 @@ def main(argv: list[str] | None = None) -> int:
         prompt = sys.stdin.read()
 
     try:
-        output = router.send_prompt(prompt, local=args.local, model=args.model)
+        if args.backend:
+            output = router._run_backend(args.backend, prompt, args.model)
+        else:
+            output = router.send_prompt(prompt, local=args.local, model=args.model)
 
     except (FileNotFoundError, subprocess.CalledProcessError) as exc:
         print(exc, file=sys.stderr)

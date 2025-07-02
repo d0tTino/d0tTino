@@ -2,6 +2,8 @@ from llm.langchain_backend import LangChainBackend
 import io
 import contextlib
 from scripts import ai_router
+from llm.backends import register_backend
+from llm import router
 
 
 class DummyChain:
@@ -22,11 +24,11 @@ def test_langchain_backend_invokes_chain():
 
 
 def test_cli_backend_option(monkeypatch):
-    def mock_run_langchain(prompt: str) -> str:
+    def mock_run_langchain(prompt: str, model: str) -> str:
         assert prompt == "cli"
         return "ok"
 
-    monkeypatch.setattr(ai_router, "run_langchain", mock_run_langchain)
+    register_backend("langchain", mock_run_langchain)
 
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
@@ -37,11 +39,11 @@ def test_cli_backend_option(monkeypatch):
 def test_run_backend_langchain(monkeypatch):
     calls = []
 
-    def mock_run(prompt: str) -> str:
+    def mock_run(prompt: str, model: str) -> str:
         calls.append(prompt)
         return "done"
 
-    monkeypatch.setattr(ai_router, "run_langchain", mock_run)
-    out = ai_router._run_backend("langchain", "hi", "m")
+    register_backend("langchain", mock_run)
+    out = router._run_backend("langchain", "hi", "m")
     assert out == "done"
     assert calls == ["hi"]
