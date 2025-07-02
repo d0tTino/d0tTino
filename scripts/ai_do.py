@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import argparse
-import subprocess
 from pathlib import Path
 from typing import List, Optional
 
@@ -35,7 +34,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     steps = ai_exec.plan(args.goal, config_path=args.config)
     exit_code = execute_steps(steps, log_path=args.log)
     if args.notify:
-        send_notification(f"ai-do completed with exit code {exit_code}")
+        send_notification("ai-do completed")
 
     return exit_code
 

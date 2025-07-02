@@ -154,27 +154,31 @@ On Windows you can call the PowerShell wrapper or use `bootstrap.ps1` with the
 
 ## Nextcloud server
 
-[Nextcloud](https://nextcloud.com/) provides private file sync and collaborative editing.
-To spin up a test instance:
+[Nextcloud](https://nextcloud.com/) provides private file sync and collaborative
+editing. Launch it using the included helper script:
 
-1. Start the container and map port `8080` to `80`:
-   ```bash
-   docker run -d --name nextcloud -p 8080:80 nextcloud
-   ```
-2. Open `http://localhost:8080` in your browser and create the admin account.
-3. (Optional) Persist data by mounting a volume to `/var/www/html`.
-4. If exposing the instance to the network, set `NEXTCLOUD_TRUSTED_DOMAINS` to your host name.
+```bash
+./scripts/run-nextcloud.sh
+```
+
+The compose file maps port `8082` to the container's port `80`. Visit
+`http://localhost:8082` to finish the setup. Customize trusted domains with the
+`NEXTCLOUD_TRUSTED_DOMAINS` environment variable if you expose it to the
+network.
 
 ## Mattermost chat
 
-Run an open-source team chat server using Mattermost's Docker image.
+Run an open-source team chat server using the Mattermost service defined in the
+compose file:
 
-1. Launch the container on port `8065`:
-   ```bash
-   docker run -d --name mattermost -p 8065:8065 mattermost/mattermost-team-edition
-   ```
-2. Browse to `http://localhost:8065` and create the initial admin user.
-3. Configuration files live under `~/mattermost/config`. Edit `config.json` to set the site URL and enable integrations.
+```bash
+./scripts/run-mattermost.sh
+```
+
+The initial configuration is stored under `./mattermost`. Edit `config.json` to
+set the site URL and enable integrations. The server listens on port `8065` by
+default.
+
 
 ## Hyper-V support
 
