@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import argparse
 import subprocess
-from pathlib import Path
 from typing import List, Optional
 
 from llm import router
