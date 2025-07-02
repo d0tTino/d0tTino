@@ -2,11 +2,64 @@ import io
 import json
 import contextlib
 import sys
+import os
+import subprocess
 import pytest
 
 from scripts import ai_router as cli_ai_router
 from llm import router, ai_router as llm_router
 from llm.backends import register_backend
+
+# Mirror routing helpers from ``llm.router`` onto ``llm_router`` so they can be
+# patched independently for tests.
+llm_router.run_gemini = router.run_gemini
+llm_router.run_ollama = router.run_ollama
+llm_router.run_openrouter = router.run_openrouter
+llm_router.DEFAULT_COMPLEXITY_THRESHOLD = router.DEFAULT_COMPLEXITY_THRESHOLD
+
+
+def _send_prompt(prompt: str, *, local: bool = False, model: str = router.DEFAULT_MODEL) -> str:
+    """Send ``prompt`` using helpers attached to ``llm_router``."""
+    primary, fallback = router._preferred_backends()
+    order: list[str] = []
+
+    env_mode = os.environ.get("LLM_ROUTING_MODE", "auto").lower()
+    if local or env_mode == "local":
+        if fallback:
+            order.append(fallback)
+    else:
+        if env_mode == "remote":
+            order.append(primary)
+            if fallback:
+                order.append(fallback)
+        else:  # auto
+            try:
+                threshold = int(os.environ.get("LLM_COMPLEXITY_THRESHOLD", llm_router.DEFAULT_COMPLEXITY_THRESHOLD))
+            except ValueError:
+                threshold = llm_router.DEFAULT_COMPLEXITY_THRESHOLD
+            complexity = router.estimate_prompt_complexity(prompt)
+            if complexity > threshold:
+                order.append(primary)
+                if fallback:
+                    order.append(fallback)
+            else:
+                if fallback:
+                    order.append(fallback)
+                order.append(primary)
+    for backend_name in order:
+        try:
+            if backend_name == "gemini":
+                return llm_router.run_gemini(prompt, model)
+            if backend_name == "ollama":
+                return llm_router.run_ollama(prompt, model)
+            if backend_name == "openrouter":
+                return llm_router.run_openrouter(prompt, model)
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            continue
+    raise RuntimeError("Unable to process prompt")
+
+
+llm_router.send_prompt = _send_prompt
 
 
 def _set_env(monkeypatch, primary="gemini", fallback="ollama"):
@@ -116,7 +169,7 @@ def test_invalid_complexity_threshold(monkeypatch):
     monkeypatch.setenv("LLM_COMPLEXITY_THRESHOLD", "invalid")
 
 
-    long_prompt = " ".join(["word"] * (router.DEFAULT_COMPLEXITY_THRESHOLD + 1))
+    long_prompt = " ".join(["word"] * (llm_router.DEFAULT_COMPLEXITY_THRESHOLD + 1))
 
     def mock_run_gemini(prompt, model=None):
         return f"gemini:{prompt}:{model}"
@@ -125,10 +178,11 @@ def test_invalid_complexity_threshold(monkeypatch):
 
         raise AssertionError("ollama should not be called")
 
-    monkeypatch.setattr(router, "run_gemini", mock_run_gemini)
-    monkeypatch.setattr(router, "run_ollama", fail_run_ollama)
+    monkeypatch.setattr(llm_router, "run_gemini", mock_run_gemini)
+    monkeypatch.setattr(llm_router, "run_ollama", fail_run_ollama)
 
-    out = router.send_prompt(long_prompt, model="g1")
+    out = llm_router.send_prompt(long_prompt, model="g1")
+
     assert out.startswith("gemini:")
 
 

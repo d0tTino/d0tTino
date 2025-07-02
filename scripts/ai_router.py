@@ -8,20 +8,10 @@ import subprocess
 import sys
 
 from llm import router
-from llm.langchain_backend import LangChainBackend
-from llm.backends import OpenRouterDSPyBackend, OpenRouterBackend  # noqa: F401
-
-run_gemini = router.run_gemini
-run_ollama = router.run_ollama
-
-
-def run_openrouter(prompt: str, model: str) -> str:
-    """Return OpenRouter response for ``prompt`` using ``model``."""
-    backend_cls = (
-        OpenRouterDSPyBackend if OpenRouterDSPyBackend is not None else OpenRouterBackend
-    )
-    backend = backend_cls(model)  # type: ignore[arg-type]
-    return backend.run(prompt)
+from llm.backends import (
+    OpenRouterBackend,
+    OpenRouterDSPyBackend,
+)
 
 DEFAULT_MODEL = router.DEFAULT_MODEL
 DEFAULT_COMPLEXITY_THRESHOLD = router.DEFAULT_COMPLEXITY_THRESHOLD
@@ -106,6 +96,36 @@ def _run_backend(name: str, prompt: str, model: str) -> str:
         return run_langchain(prompt)
     raise ValueError(f"Unknown backend: {name}")
 
+def run_openrouter(prompt: str, model: str) -> str:
+    """Return OpenRouter response for ``prompt`` using ``model``."""
+    backend_cls = (
+        OpenRouterDSPyBackend if OpenRouterDSPyBackend is not None else OpenRouterBackend
+    )
+    backend = backend_cls(model)  # type: ignore[arg-type]
+    return backend.run(prompt)
+
+
+def run_langchain(prompt: str) -> str:
+    """Process ``prompt`` using a configured LangChain chain."""
+    raise RuntimeError("LangChain backend is not configured")
+
+
+def _run_backend(name: str, prompt: str, model: str) -> str:
+    if name.lower() == "langchain":
+        return run_langchain(prompt)
+    return router._run_backend(name, prompt, model)
+
+
+__all__ = [
+    "DEFAULT_MODEL",
+    "run_openrouter",
+    "run_langchain",
+    "_run_backend",
+    "OpenRouterBackend",
+    "OpenRouterDSPyBackend",
+    "main",
+]
+
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -137,7 +157,6 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.backend:
             output = _run_backend(args.backend, prompt, args.model)
-
         else:
             output = router.send_prompt(prompt, local=args.local, model=args.model)
 
