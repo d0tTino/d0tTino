@@ -11,6 +11,7 @@ from typing import List, Optional
 
 from llm import router
 from llm.ai_router import get_preferred_models
+from scripts.cli_common import read_prompt
 
 
 def plan(goal: str, *, config_path: Optional[Path] = None) -> List[str]:
@@ -33,7 +34,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--config")
     args = parser.parse_args(argv)
     cfg_path = Path(args.config) if args.config else None
-    steps = plan(args.goal, config_path=cfg_path)
+    goal = read_prompt(args.goal)
+    steps = plan(goal, config_path=cfg_path)
     for step in steps:
         print(step)
     return 0
