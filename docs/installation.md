@@ -135,9 +135,11 @@ On Windows you can call the PowerShell wrapper or use `bootstrap.ps1` with the
 
 ## Ghostty terminal
 
-[Ghostty](https://github.com/mitchellh/ghostty) is a GPU-accelerated terminal emulator. Grab the latest release for your platform or build from source:
+[Ghostty](https://github.com/mitchellh/ghostty) is a GPU-accelerated terminal emulator. Use the helper script to install it and copy the default configuration:
 
 ```bash
+./scripts/setup-ghostty.sh
+# Alternatively install manually
 cargo install ghostty
 ```
 
