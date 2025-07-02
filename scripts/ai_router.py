@@ -17,7 +17,6 @@ from llm.backends import (
     GeminiDSPyBackend,
     OllamaDSPyBackend,
     OpenRouterDSPyBackend,
-    LangChainBackend,
 )
 
 DEFAULT_MODEL = router.DEFAULT_MODEL
@@ -49,6 +48,7 @@ def create_default_chain() -> object:
         from langchain_openai import ChatOpenAI
         from langchain_core.prompts import ChatPromptTemplate
         from langchain_core.output_parsers import StrOutputParser
+        from pydantic import SecretStr
     except Exception as exc:  # pragma: no cover - optional dependency
         raise RuntimeError("langchain is required for the langchain backend") from exc
 
@@ -60,7 +60,8 @@ def create_default_chain() -> object:
         return DummyChain()
 
     prompt = ChatPromptTemplate.from_messages([("human", "{input}")])
-    return prompt | ChatOpenAI() | StrOutputParser()
+    api_key = SecretStr(os.environ.get("OPENAI_API_KEY", "sk-dummy"))
+    return prompt | ChatOpenAI(api_key=api_key) | StrOutputParser()
 
 
 def run_langchain(prompt: str) -> str:
@@ -68,10 +69,11 @@ def run_langchain(prompt: str) -> str:
     backend = LangChainBackend(create_default_chain())
     return backend.run(prompt)
 
+
 def _run_backend(name: str, prompt: str, model: str) -> str:
     """Delegate to ``router._run_backend`` with LangChain support."""
     if name.lower() == "langchain":
-        return run_langchain(prompt)
+        return send_prompt(prompt, model=model)
     return router._run_backend(name, prompt, model)
 
 def send_prompt(prompt: str, *, local: bool = False, model: str = DEFAULT_MODEL) -> str:
@@ -109,7 +111,10 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         if args.backend:
-            output = _run_backend(args.backend, prompt, args.model)
+            if args.backend.lower() == "langchain":
+                output = router.send_prompt(prompt, local=args.local, model=args.model)
+            else:
+                output = router._run_backend(args.backend, prompt, args.model)
         else:
             output = send_prompt(prompt, local=args.local, model=args.model)
 
@@ -136,7 +141,6 @@ __all__ = [
     "run_ollama",
     "run_openrouter",
     "run_langchain",
-    "create_default_chain",
     "_run_backend",
     "send_prompt",
     "main",
