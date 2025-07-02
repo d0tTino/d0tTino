@@ -107,6 +107,13 @@ For details on fastfetch, btm and Nushell/Starship setup, see the [Terminal Tool
 For the **One Half Dark** and **Campbell** palettes and the `Alt+M` metrics pane binding used in the screenshots, see [Replicating the Screenshot Environment](docs/terminal.md#replicating-the-screenshot-environment). For a brief overview of the unified palette and pane shortcuts, check [Blacklight Palette & Shortcuts](docs/terminal.md#blacklight-palette--shortcuts).
 
 
+Additional guides:
+
+- [Desktop configuration](docs/desktop.md)
+- [Media containers](docs/media.md)
+- [Repository navigation](docs/navigation.md)
+- [AI automation tooling](docs/ai-automation.md)
+
 ## Git hooks
 
 Run `scripts/setup-hooks.sh` to enable the local hooks automatically
