@@ -110,15 +110,14 @@ def _preferred_backends() -> tuple[str, str | None]:
 
 
 def _run_backend(name: str, prompt: str, model: str) -> str:
-    """Run ``name`` backend with ``prompt`` and ``model``.
+    """Return response for ``prompt`` using backend ``name``."""
+    if name.lower() == "gemini":
+        return run_gemini(prompt, model)
+    if name.lower() == "ollama":
+        return run_ollama(prompt, model)
+    if name.lower() == "openrouter":
+        return run_openrouter(prompt, model)
 
-    Prefer dynamically patched ``run_<name>`` functions if present so tests can
-    monkeypatch the module without re-registering backends. Fall back to the
-    backend registry otherwise.
-    """
-    attr = globals().get(f"run_{name.lower()}")
-    if callable(attr):
-        return attr(prompt, model)
     func = get_backend(name)
 
     return func(prompt, model)

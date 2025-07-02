@@ -153,66 +153,14 @@ The wrapper automatically uses the compiled module on the next call. Whenever
 you log new examples, run `snapshot_log_to_fewshot()` and recompile again to
 extend the training set.
 
-## Document Ingestion
+## n8n Integration
 
-`llm.etl` provides helpers to load documents into a ChromaDB persistent store.
-Use the `etl.py` script to process a file or directory in one step:
-
-```bash
-python scripts/etl.py docs/ai-automation.md --persist chroma_db
-python scripts/etl.py ./docs --persist chroma_db
-```
-
-The resulting collection can be registered on a LangGraph with
-`llm.etl.register_retrieval_nodes` for retrieval-augmented generation.
-
-## Ghostty integration
-
-Ghostty's GPU acceleration keeps AI shells responsive even under heavy output. Add an alias in your shell profile to open projects directly in Ghostty:
+An example workflow for the [n8n](https://n8n.io/) automation platform lives in `n8n/flows/`. Start the service with Docker Compose:
 
 ```bash
-alias ghost='ghostty --working-directory $(pwd)'
+docker-compose up -d
 ```
 
-Use `ghost` when launching long-running LLM tasks to keep them isolated from other terminals.
+Open <http://localhost:5678> in your browser and choose **Import from File** to load `n8n/flows/mcp-ai_exec.json`. The workflow contains a single **Execute Command** node that calls `scripts/ai_exec.py`.
 
-## Syncing data with Nextcloud
 
-Store prompt libraries and result logs in a private Nextcloud instance. Mount the WebDAV endpoint locally:
-
-```bash
-mkdir ~/Nextcloud
-sudo mount -t davfs https://example.com/remote.php/webdav/ ~/Nextcloud
-```
-
-Point your automation scripts at this path so generated files are automatically synced across devices.
-
-## Mattermost notifications
-
-Send task results to a team chat by creating an incoming webhook. In Mattermost go to **Integrations → Incoming Webhooks** and copy the URL. Then post messages from your scripts:
-
-```bash
-curl -X POST -H 'Content-Type: application/json' \
-  -d '{"text":"ETL job complete"}' \
-  https://chat.example.com/hooks/your-id
-```
-
-## Hyper-V test environments
-
-Use Hyper-V virtual machines to test complex workflows before running them on your host machine. Create a quick Ubuntu VM:
-
-```powershell
-New-VM -Name AITest -Generation 2 -MemoryStartupBytes 4GB -VHDPath C:\VMs\AITest.vhdx
-```
-
-Start the VM with `Start-VM AITest` and connect via the Hyper-V Manager.
-
-## ETL flows with n8n
-
-The new ETL scripts rely on n8n for orchestrating data moves between services. Launch it locally and import your flows via the UI. Example CLI invocation:
-
-```bash
-n8n start --tunnel
-```
-
-A simple workflow might fetch JSON from an API, transform it with a Function node, then store the result in Nextcloud. Save the workflow so it runs on a schedule or when triggered by a webhook.
