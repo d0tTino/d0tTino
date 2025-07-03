@@ -15,7 +15,6 @@ _BACKEND_REGISTRY: Dict[str, Callable[[str, str], str]] = {}
 GeminiBackend: type[Backend] | None = None
 OllamaBackend: type[Backend] | None = None
 OpenRouterBackend: type[Backend] | None = None
-SuperClaudeBackend: type[Backend] | None = None
 GeminiDSPyBackend = None
 OllamaDSPyBackend = None
 OpenRouterDSPyBackend = None
@@ -37,7 +36,6 @@ __all__ = [
     "OpenRouterDSPyBackend",
     "LMQLBackend",
     "GuidanceBackend",
-    "SuperClaudeBackend",
 ]
 
 

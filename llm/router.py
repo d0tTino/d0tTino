@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import subprocess
-from typing import Callable, List, cast
+from typing import Any, Callable, List, cast
 
 from .backends import (  # type: ignore[attr-defined]
     GeminiBackend,  # noqa: F401 - re-exported for tests
@@ -13,12 +13,10 @@ from .backends import (  # type: ignore[attr-defined]
     OllamaDSPyBackend,  # noqa: F401 - re-exported for tests
     OpenRouterBackend,  # noqa: F401 - re-exported for tests
     OpenRouterDSPyBackend,  # noqa: F401 - re-exported for tests
-
     register_backend,
     get_backend,
-    register_backend,
+    SuperClaudeBackend,
 )
-from .backends.superclaude import SuperClaudeBackend
 
 from .ai_router import get_preferred_models
 from .langchain_backend import LangChainBackend
