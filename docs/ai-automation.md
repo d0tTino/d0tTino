@@ -121,7 +121,15 @@ requires a `y` confirmation; pressing `Enter` or `n` skips that command. Output
 is appended to `ai_do.log` by default.
 
 Both `ai-plan` and `ai-do` accept a `--notify` flag to send a notification via
-[`ntfy`](https://ntfy.sh) when the command completes.
+[`ntfy`](https://ntfy.sh). When a topic is provided all step results are
+published under `TOPIC/step-N`:
+
+```text
+https://ntfy.sh/TOPIC/step-1  # "success", "failed" or "skipped"
+```
+
+If the flag is used without an explicit value the default topic is `ai-do`.
+The final completion status posts to `TOPIC` itself.
 
 ```bash
 ai-do "git add . && git commit -m 'update' && git push" --log my.log

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import subprocess
-from typing import Callable, List, cast
+from typing import Any, List, cast
 
 from .backends import (  # type: ignore[attr-defined]
     GeminiBackend,  # noqa: F401 - re-exported for tests
@@ -16,7 +16,6 @@ from .backends import (  # type: ignore[attr-defined]
 
     register_backend,
     get_backend,
-    register_backend,
 )
 from .backends.superclaude import SuperClaudeBackend
 
@@ -36,10 +35,10 @@ def estimate_prompt_complexity(prompt: str) -> int:
 
 
 def run_gemini(prompt: str, model: str | None = None) -> str:
-    """Return Gemini response for ``prompt`` using registered backend."""
+    """Return Gemini response for ``prompt`` using the Gemini plugin."""
 
-    func = cast(Callable[[str, str | None], str], get_backend("gemini"))
-    return func(prompt, model)
+    from .backends.plugins import gemini as gemini_plugin
+    return gemini_plugin.run_gemini(prompt, model)
 
 
 def run_ollama(prompt: str, model: str) -> str:

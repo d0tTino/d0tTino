@@ -125,12 +125,45 @@ def test_main_notifies(monkeypatch, tmp_path):
     monkeypatch.setattr("builtins.input", lambda _: "n")
     called = []
 
-    def fake_notify(msg):
-        called.append(msg)
+    def fake_notify(msg, *, topic=None):
+        called.append((topic, msg))
 
     monkeypatch.setattr(ai_do, "send_notification", fake_notify)
+    import scripts.cli_common as cli_common
+    monkeypatch.setattr(cli_common, "send_notification", fake_notify)
     log = tmp_path / "log.txt"
     rc = ai_do.main(["goal", "--log", str(log), "--notify"])
 
     assert rc == 0
-    assert called == ["ai-do completed"]
+    assert called == [("ai-do", "ai-do completed with exit code 0")]
+
+
+def test_step_notifications(monkeypatch, tmp_path):
+    monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: ["cmd"])
+    inputs = iter(["y", "y"])
+    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
+    def fake_run(cmd, *, shell, capture_output, text):
+        assert cmd == ["cmd"] if isinstance(cmd, list) else cmd
+        class Result:
+            def __init__(self):
+                self.stdout = ""
+                self.stderr = ""
+                self.returncode = 0
+        return Result()
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    called = []
+
+    def fake_notify(msg, *, topic=None):
+        called.append((topic, msg))
+
+    monkeypatch.setattr(ai_do, "send_notification", fake_notify)
+    import scripts.cli_common as cli_common
+    monkeypatch.setattr(cli_common, "send_notification", fake_notify)
+    log = tmp_path / "log.txt"
+    rc = ai_do.main(["goal", "--log", str(log), "--notify", "topic"])
+
+    assert rc == 0
+    assert ("topic/step-1", "success") in called
+    assert ("topic", "ai-do completed with exit code 0") in called

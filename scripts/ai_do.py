@@ -16,7 +16,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("goal", help="High level description of the task")
     parser.add_argument("--config")
-    parser.add_argument("--notify", action="store_true", help="Send notification when done")
+    parser.add_argument(
+        "--notify",
+        nargs="?",
+        const="ai-do",
+        help="Publish step status to ntfy topic (default: %(const)s)",
+    )
     parser.add_argument(
         "--log",
         type=Path,
@@ -26,13 +31,16 @@ def main(argv: Optional[List[str]] = None) -> int:
     args = parser.parse_args(argv)
 
     steps = ai_exec.plan(args.goal, config_path=args.config)
-    exit_code = execute_steps(steps, log_path=args.log)
+    exit_code = execute_steps(steps, log_path=args.log, notify_topic=args.notify)
     if args.notify:
         if exit_code == 0:
-            send_notification("ai-do completed with exit code 0")
-
+            send_notification(
+                "ai-do completed with exit code 0", topic=args.notify
+            )
         else:
-            send_notification(f"ai-do failed with exit code {exit_code}")
+            send_notification(
+                f"ai-do failed with exit code {exit_code}", topic=args.notify
+            )
 
 
     return exit_code

@@ -23,6 +23,7 @@ if lmql is not None:
         def run(self, prompt: str) -> str:  # pragma: no cover - network placeholder
             return f"lmql:{prompt}:{self.model}"
     _LMQLBackend = _RealLMQLBackend
+    LMQLBackend = _LMQLBackend
 else:  # pragma: no cover - optional dependency missing
     LMQLBackend = None  # type: ignore[misc, assignment]
 
