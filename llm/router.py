@@ -16,6 +16,7 @@ from .backends import (
 
     get_backend,
 )
+from llm.backends import SuperClaudeBackend, register_backend
 from .ai_router import get_preferred_models
 from .langchain_backend import LangChainBackend
 
