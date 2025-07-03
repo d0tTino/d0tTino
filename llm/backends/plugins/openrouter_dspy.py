@@ -5,7 +5,7 @@ from typing import Any, Callable, Mapping
 from ..base import Backend
 
 try:  # pragma: no cover - optional dependency
-    import dspy  # type: ignore
+    import dspy
 except ImportError:  # pragma: no cover - optional dependency
     dspy = None
 
@@ -27,7 +27,7 @@ if dspy is not None:
             result = self.lm.forward(prompt=prompt)
             return _extract_text(result)
 else:  # pragma: no cover - optional dependency missing
-    OpenRouterDSPyBackend = None  # type: ignore
+    OpenRouterDSPyBackend = None  # type: ignore[misc, assignment]
 
 
 def _extract_text(result: Mapping[str, Any]) -> str:

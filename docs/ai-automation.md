@@ -70,12 +70,15 @@ React code so both environments share a consistent interface.
 Earlier versions provided a Streamlit UI located at `ui/web_app.py`. It remains
 for reference and can be launched with:
 
+
 ```bash
-streamlit run ui/web_app.py --server.headless true
+uvicorn api:app --reload
+cd dashboard && npm install && npm run dev
 ```
 
 This prototype is no longer actively developed but still mirrors the prompt
 routing and palette controls.
+
 
 ## LLM Configuration
 
