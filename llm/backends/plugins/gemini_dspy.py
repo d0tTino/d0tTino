@@ -4,8 +4,10 @@ from typing import Any, Callable, Mapping
 
 from ..base import Backend
 
+GeminiDSPyBackend: type[Backend] | None = None
+
 try:  # pragma: no cover - optional dependency
-    import dspy  # type: ignore
+    import dspy
 except ImportError:  # pragma: no cover - optional dependency
     dspy = None
 
@@ -17,7 +19,7 @@ if dspy is not None:
         raise ImportError("dspy does not expose an LLM wrapper")
     LM = _LM
 
-    class GeminiDSPyBackend(Backend):
+    class GeminiDSPyBackendImpl(Backend):
         """Gemini backend implemented via ``dspy``."""
 
         def __init__(self, model: str | None = None) -> None:
@@ -26,8 +28,9 @@ if dspy is not None:
         def run(self, prompt: str) -> str:
             result = self.lm.forward(prompt=prompt)
             return _extract_text(result)
+    GeminiDSPyBackend = GeminiDSPyBackendImpl
 else:  # pragma: no cover - optional dependency missing
-    GeminiDSPyBackend = None  # type: ignore
+    GeminiDSPyBackend = None
 
 
 def _extract_text(result: Mapping[str, Any]) -> str:

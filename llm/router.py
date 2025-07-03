@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import subprocess
-from typing import List
+from typing import List, Callable, cast
 
 from .backends import (
     GeminiBackend,  # noqa: F401 - re-exported for tests
@@ -18,6 +18,8 @@ from .backends import (
 )
 from .ai_router import get_preferred_models
 from .langchain_backend import LangChainBackend
+from .backends.superclaude import SuperClaudeBackend
+from .backends import register_backend
 
 DEFAULT_MODEL = "llama3"
 DEFAULT_PRIMARY_BACKEND = "gemini"
@@ -34,7 +36,7 @@ def estimate_prompt_complexity(prompt: str) -> int:
 def run_gemini(prompt: str, model: str | None = None) -> str:
     """Return Gemini response for ``prompt`` using registered backend."""
 
-    func = get_backend("gemini")
+    func = cast(Callable[[str, str | None], str], get_backend("gemini"))
     return func(prompt, model)
 
 

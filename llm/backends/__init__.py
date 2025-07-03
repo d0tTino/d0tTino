@@ -3,11 +3,25 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Dict
+from typing import Dict, TYPE_CHECKING
 import importlib
 import pkgutil
 
 from .base import Backend
+
+if TYPE_CHECKING:
+    from .plugins.gemini import (
+        GeminiBackend as GeminiBackend,
+        GeminiDSPyBackend as GeminiDSPyBackend,
+    )  # noqa: F401
+    from .plugins.ollama import (
+        OllamaBackend as OllamaBackend,
+        OllamaDSPyBackend as OllamaDSPyBackend,
+    )  # noqa: F401
+    from .plugins.openrouter import (
+        OpenRouterBackend as OpenRouterBackend,
+        OpenRouterDSPyBackend as OpenRouterDSPyBackend,
+    )  # noqa: F401
 
 
 _BACKEND_REGISTRY: Dict[str, Callable[[str, str], str]] = {}

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import requests
-
 from .base import Backend
 
 
@@ -12,6 +10,8 @@ class SuperClaudeBackend(Backend):
         self.model = model
 
     def run(self, prompt: str) -> str:  # pragma: no cover - network placeholder
+        import requests  # pragma: no cover - optional dependency
+
         response = requests.post(
             "https://api.superclaude.ai/generate",
             json={"model": self.model, "prompt": prompt},
