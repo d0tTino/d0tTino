@@ -10,7 +10,7 @@ pytest.importorskip("requests")
 
 from scripts import ai_router as cli_ai_router
 from llm import router, ai_router as llm_router
-from llm.backends import register_backend
+from llm.backends import register_backend, get_backend
 
 # Mirror routing helpers from ``llm.router`` onto ``llm_router`` so they can be
 # patched independently for tests.
@@ -305,14 +305,21 @@ def test_send_prompt_routes_to_superclaude(monkeypatch):
     def fail_run_gemini(prompt, model=None):  # pragma: no cover - simulate missing binary
         raise FileNotFoundError
 
-    def mock_run_superclaude(prompt, model):
-        return f"sc:{prompt}:{model}"
+    class DummyBackend:
+        def __init__(self, model):
+            self.model = model
+
+        def run(self, prompt: str) -> str:
+            return f"sc:{prompt}:{self.model}"
 
     monkeypatch.setattr(router, "run_gemini", fail_run_gemini)
     register_backend("gemini", router.run_gemini)
-    monkeypatch.setattr(router, "run_superclaude", mock_run_superclaude)
-    register_backend("superclaude", router.run_superclaude)
+    monkeypatch.setattr(router, "SuperClaudeBackend", DummyBackend)
 
     out = router.send_prompt("hi", model="c1")
     assert out == "sc:hi:c1"
+
+
+def test_superclaude_backend_registered():
+    assert get_backend("superclaude") is router.run_superclaude
 
