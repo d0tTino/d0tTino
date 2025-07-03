@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+from pathlib import Path
 from typing import Any, Callable, List, cast
 
 
@@ -16,11 +17,11 @@ from .backends import (
     OpenRouterDSPyBackend,  # noqa: F401 - re-exported for tests
     register_backend,
     get_backend,
-    SuperClaudeBackend,
+
 )
 
 
-from .ai_router import get_preferred_models
+from .ai_router import get_preferred_models, _load_config, _DEFAULT_CONFIG
 from .langchain_backend import LangChainBackend
 
 DEFAULT_MODEL = "llama3"
@@ -38,13 +39,21 @@ def estimate_prompt_complexity(prompt: str) -> int:
 def run_gemini(prompt: str, model: str | None = None) -> str:
     """Return Gemini response for ``prompt`` using registered backend."""
 
-    return _plugin_run_gemini(prompt, model)
+    func = cast(Callable[[str, str | None], str], get_backend("gemini"))
+    if func is run_gemini:
+        from llm.backends.plugins import gemini as plugin
+        func = plugin.run_gemini
+    return func(prompt, model)
+
 
 
 def run_ollama(prompt: str, model: str) -> str:
     """Return Ollama response for ``prompt`` using ``model`` and registered backend."""
 
     func = get_backend("ollama")
+    if func is run_ollama:
+        from llm.backends.plugins import ollama as plugin
+        func = plugin.run_ollama
     return func(prompt, model)
 
 
@@ -52,6 +61,9 @@ def run_openrouter(prompt: str, model: str) -> str:
     """Return OpenRouter response for ``prompt`` using ``model`` and registered backend."""
 
     func = get_backend("openrouter")
+    if func is run_openrouter:
+        from llm.backends.plugins import openrouter as plugin
+        func = plugin.run_openrouter
     return func(prompt, model)
 
 
@@ -113,6 +125,15 @@ def _run_backend(name: str, prompt: str, model: str) -> str:
     return func(prompt, model)
 
 
+def _model_info(model: str) -> dict[str, Any]:
+    """Return metadata for ``model`` from ``llm_config.json`` if available."""
+
+    path = os.environ.get("LLM_CONFIG_PATH")
+    cfg_path = Path(path) if path else _DEFAULT_CONFIG
+    cfg = _load_config(cfg_path)
+    return cast(dict[str, Any], cfg.get("models", {}).get(model, {}))
+
+
 def send_prompt(prompt: str, *, local: bool = False, model: str = DEFAULT_MODEL) -> str:
     """Send ``prompt`` using the configured backends."""
     primary, fallback = _preferred_backends()
@@ -128,21 +149,38 @@ def send_prompt(prompt: str, *, local: bool = False, model: str = DEFAULT_MODEL)
             if fallback:
                 order.append(fallback)
         else:  # auto
-            threshold_str = os.environ.get("LLM_COMPLEXITY_THRESHOLD")
-            try:
-                threshold = int(threshold_str) if threshold_str else DEFAULT_COMPLEXITY_THRESHOLD
-            except ValueError:  # pragma: no cover - invalid env value
-
-                threshold = DEFAULT_COMPLEXITY_THRESHOLD
             complexity = estimate_prompt_complexity(prompt)
-            if complexity > threshold:
-                order.append(primary)
-                if fallback:
-                    order.append(fallback)
+            candidates = [primary]
+            if fallback:
+                candidates.append(fallback)
+
+            ranked: List[tuple[float, str]] = []
+            for name in candidates:
+                info = _model_info(name)
+                max_ctx = info.get("max_tokens")
+                if isinstance(max_ctx, int) and complexity > max_ctx:
+                    continue
+                price = info.get("price_per_1k_tokens")
+                est_cost = float(price) * complexity / 1000 if isinstance(price, (int, float)) else float("inf")
+                ranked.append((est_cost, name))
+
+            if ranked and not all(cost == float("inf") for cost, _ in ranked):
+                for _, name in sorted(ranked, key=lambda t: t[0]):
+                    order.append(name)
             else:
-                if fallback:
-                    order.append(fallback)
-                order.append(primary)
+                threshold_str = os.environ.get("LLM_COMPLEXITY_THRESHOLD")
+                try:
+                    threshold = int(threshold_str) if threshold_str else DEFAULT_COMPLEXITY_THRESHOLD
+                except ValueError:  # pragma: no cover - invalid env value
+                    threshold = DEFAULT_COMPLEXITY_THRESHOLD
+                if complexity > threshold:
+                    order.append(primary)
+                    if fallback:
+                        order.append(fallback)
+                else:
+                    if fallback:
+                        order.append(fallback)
+                    order.append(primary)
     for backend_name in order:
         try:
             return _run_backend(backend_name, prompt, model)

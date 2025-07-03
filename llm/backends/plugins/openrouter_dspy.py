@@ -9,7 +9,10 @@ try:  # pragma: no cover - optional dependency
 except ImportError:  # pragma: no cover - optional dependency
     dspy = None
 
-OpenRouterDSPyBackend: type[Backend] | None
+_LM: Callable[..., Any] | None = None
+LM: Callable[..., Any]
+OpenRouterDSPyBackend: type[Backend] | None = None
+
 if dspy is not None:
     lm = getattr(dspy, "LLM", getattr(dspy, "LM", None))
     if lm is None:  # pragma: no cover - sanity check
@@ -26,7 +29,8 @@ if dspy is not None:
         def run(self, prompt: str) -> str:
             result = self.lm.forward(prompt=prompt)
             return _extract_text(result)
-    OpenRouterDSPyBackend = _OpenRouterDSPyBackend
+    OpenRouterDSPyBackend = _RealOpenRouterDSPyBackend
+
 else:  # pragma: no cover - optional dependency missing
     OpenRouterDSPyBackend = None
 
