@@ -13,14 +13,13 @@ from .backends import (  # type: ignore[attr-defined]
     OllamaDSPyBackend,  # noqa: F401 - re-exported for tests
     OpenRouterBackend,  # noqa: F401 - re-exported for tests
     OpenRouterDSPyBackend,  # noqa: F401 - re-exported for tests
-    SuperClaudeBackend,  # noqa: F401 - re-exported for tests
 
     register_backend,
     get_backend,
     register_backend,
     SuperClaudeBackend,
 )
-from llm.backends import SuperClaudeBackend, register_backend
+from .backends.superclaude import SuperClaudeBackend
 
 from .ai_router import get_preferred_models
 from .langchain_backend import LangChainBackend
