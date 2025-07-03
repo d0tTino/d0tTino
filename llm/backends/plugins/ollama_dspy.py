@@ -11,13 +11,14 @@ except ImportError:  # pragma: no cover - optional dependency
 
 _LM: Callable[..., Any] | None = None
 LM: Callable[..., Any]
+_OllamaDSPyBackend: type[Backend] | None = None
 if dspy is not None:
     _LM = getattr(dspy, "LLM", getattr(dspy, "LM", None))
     if _LM is None:  # pragma: no cover - sanity check
         raise ImportError("dspy does not expose an LLM wrapper")
     LM = _LM
 
-    class OllamaDSPyBackend(Backend):
+    class _RealOllamaDSPyBackend(Backend):
         """Ollama backend implemented via ``dspy``."""
 
         def __init__(self, model: str) -> None:
@@ -26,8 +27,11 @@ if dspy is not None:
         def run(self, prompt: str) -> str:
             result = self.lm.forward(prompt=prompt)
             return _extract_text(result)
-else:  # pragma: no cover - optional dependency missing
-    OllamaDSPyBackend = None  # type: ignore[misc, assignment]
+
+    _OllamaDSPyBackend = _RealOllamaDSPyBackend
+
+OllamaDSPyBackend: type[Backend] | None = _OllamaDSPyBackend
+
 
 
 def _extract_text(result: Mapping[str, Any]) -> str:
