@@ -16,7 +16,7 @@ from .backends import (  # type: ignore[attr-defined]
     register_backend,
     get_backend,
 )
-from .backends.superclaude import SuperClaudeBackend
+from llm.backends import SuperClaudeBackend, register_backend
 
 from .ai_router import get_preferred_models
 from .langchain_backend import LangChainBackend
