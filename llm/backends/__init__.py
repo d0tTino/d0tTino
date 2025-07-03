@@ -8,6 +8,7 @@ import importlib
 import pkgutil
 
 from .base import Backend
+from .superclaude import SuperClaudeBackend
 
 
 _BACKEND_REGISTRY: Dict[str, Callable[[str, str], str]] = {}
@@ -28,6 +29,7 @@ __all__ = [
     "OpenRouterDSPyBackend",
     "LMQLBackend",
     "GuidanceBackend",
+    "SuperClaudeBackend",
 ]
 
 

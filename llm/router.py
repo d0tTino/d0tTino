@@ -13,7 +13,8 @@ from .backends import (
     OllamaDSPyBackend,  # noqa: F401 - re-exported for tests
     OpenRouterBackend,  # noqa: F401 - re-exported for tests
     OpenRouterDSPyBackend,  # noqa: F401 - re-exported for tests
-
+    SuperClaudeBackend,  # noqa: F401 - re-exported for tests
+    register_backend,
     get_backend,
 )
 from .ai_router import get_preferred_models

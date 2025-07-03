@@ -119,7 +119,7 @@ Additional guides:
 - [Media containers](docs/media.md)
 - [Repository navigation](docs/navigation.md)
 - [AI automation tooling](docs/ai-automation.md)
-- [Dashboard concept and API endpoints](docs/dashboard.md)
+- [Dashboard overview](docs/dashboard.md)
 
 ## Git hooks
 
