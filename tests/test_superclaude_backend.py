@@ -1,6 +1,7 @@
 import pytest
 
-pytest.importorskip("requests")  # ensure dependency present
+pytest.importorskip("requests")
+
 
 from llm.backends.superclaude import SuperClaudeBackend
 from llm import router as ai_router

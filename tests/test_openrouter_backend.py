@@ -1,5 +1,7 @@
 import pytest
 
+pytest.importorskip("requests")
+
 from llm.backends import OpenRouterBackend
 from llm import router as ai_router
 

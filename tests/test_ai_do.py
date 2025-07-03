@@ -1,6 +1,9 @@
 import io
 import contextlib
 import subprocess
+import pytest
+
+pytest.importorskip("requests")
 
 from scripts import ai_do, ai_exec
 

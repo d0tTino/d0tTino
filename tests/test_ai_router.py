@@ -6,6 +6,8 @@ import os
 import subprocess
 import pytest
 
+pytest.importorskip("requests")
+
 from scripts import ai_router as cli_ai_router
 from llm import router, ai_router as llm_router
 from llm.backends import register_backend, get_backend

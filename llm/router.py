@@ -17,7 +17,6 @@ from .backends import (  # type: ignore[attr-defined]
     register_backend,
     get_backend,
     register_backend,
-    SuperClaudeBackend,
 )
 from .backends.superclaude import SuperClaudeBackend
 
