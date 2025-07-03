@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import subprocess
-from pathlib import Path
+
 from typing import Any, Callable, List, cast
 
 
@@ -38,11 +38,12 @@ def estimate_prompt_complexity(prompt: str) -> int:
 
 def run_gemini(prompt: str, model: str | None = None) -> str:
     """Return Gemini response for ``prompt`` using registered backend."""
-
     func = cast(Callable[[str, str | None], str], get_backend("gemini"))
     if func is run_gemini:
-        from llm.backends.plugins import gemini as plugin
-        func = plugin.run_gemini
+        from .backends.plugins.gemini import run_gemini as plugin_run_gemini
+
+        func = plugin_run_gemini
+
     return func(prompt, model)
 
 
