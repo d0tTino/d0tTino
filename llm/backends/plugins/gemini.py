@@ -10,7 +10,7 @@ from ..base import Backend
 try:  # pragma: no cover - optional dependency
     from .gemini_dspy import GeminiDSPyBackend
 except Exception:  # pragma: no cover - optional dependency missing
-    GeminiDSPyBackend = None  # type: ignore[misc, assignment]
+    GeminiDSPyBackend = None
 
 
 class GeminiBackend(Backend):

@@ -9,7 +9,7 @@ from ..base import Backend
 try:  # pragma: no cover - optional dependency
     from .ollama_dspy import OllamaDSPyBackend
 except Exception:  # pragma: no cover - optional dependency missing
-    OllamaDSPyBackend = None  # type: ignore[misc, assignment]
+    OllamaDSPyBackend = None
 
 
 

@@ -8,14 +8,14 @@ import importlib
 import pkgutil
 
 from .base import Backend
-from .superclaude import SuperClaudeBackend
+from .superclaude import SuperClaudeBackend as _RealSuperClaudeBackend
 
 
 _BACKEND_REGISTRY: Dict[str, Callable[[str, str], str]] = {}
 GeminiBackend: type[Backend] | None = None
 OllamaBackend: type[Backend] | None = None
 OpenRouterBackend: type[Backend] | None = None
-SuperClaudeBackend: type[Backend] | None = None
+SuperClaudeBackend: type[Backend] | None = _RealSuperClaudeBackend
 GeminiDSPyBackend = None
 OllamaDSPyBackend = None
 OpenRouterDSPyBackend = None
@@ -37,7 +37,6 @@ __all__ = [
     "OpenRouterDSPyBackend",
     "LMQLBackend",
     "GuidanceBackend",
-    "SuperClaudeBackend",
 ]
 
 
