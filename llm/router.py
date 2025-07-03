@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import subprocess
-from typing import List
+from typing import Any, Callable, List, cast
 
 from .backends import (
     GeminiBackend,  # noqa: F401 - re-exported for tests
@@ -15,6 +15,8 @@ from .backends import (
     OpenRouterDSPyBackend,  # noqa: F401 - re-exported for tests
 
     get_backend,
+    register_backend,
+    SuperClaudeBackend,
 )
 from .ai_router import get_preferred_models
 from .langchain_backend import LangChainBackend
@@ -34,7 +36,7 @@ def estimate_prompt_complexity(prompt: str) -> int:
 def run_gemini(prompt: str, model: str | None = None) -> str:
     """Return Gemini response for ``prompt`` using registered backend."""
 
-    func = get_backend("gemini")
+    func = cast(Callable[[str, str | None], str], get_backend("gemini"))
     return func(prompt, model)
 
 
@@ -54,7 +56,7 @@ def run_openrouter(prompt: str, model: str) -> str:
 
 def run_superclaude(prompt: str, model: str) -> str:
     """Return SuperClaude response for ``prompt`` using ``model``."""
-    backend = SuperClaudeBackend(model)
+    backend = cast(Any, SuperClaudeBackend)(model)
     return backend.run(prompt)
 
 

@@ -11,6 +11,10 @@ from .base import Backend
 
 
 _BACKEND_REGISTRY: Dict[str, Callable[[str, str], str]] = {}
+GeminiBackend: type[Backend] | None = None
+OllamaBackend: type[Backend] | None = None
+OpenRouterBackend: type[Backend] | None = None
+SuperClaudeBackend: type[Backend] | None = None
 GeminiDSPyBackend = None
 OllamaDSPyBackend = None
 OpenRouterDSPyBackend = None
@@ -23,6 +27,10 @@ __all__ = [
     "clear_registry",
     "discover_plugins",
     "available_backends",
+    "GeminiBackend",
+    "OllamaBackend",
+    "OpenRouterBackend",
+    "SuperClaudeBackend",
     "GeminiDSPyBackend",
     "OllamaDSPyBackend",
     "OpenRouterDSPyBackend",
