@@ -195,6 +195,13 @@ Create virtual machines via the **Quick Create** wizard or `New-VM` in PowerShel
 ./scripts/create-hyperv-vm.ps1 -Name TestVM
 ```
 
+Specify an ISO download URL and optional Cloud-Init ISO for unattended
+installation:
+
+```powershell
+./scripts/create-hyperv-vm.ps1 -Name DevVM -IsoUrl https://example.com/os.iso -CloudInit ./seed.iso
+```
+
 Hyper-V is useful for testing scripts in clean environments.
 
 ## ETL automation with n8n
