@@ -5,10 +5,11 @@ from typing import Any, cast
 from .. import register_backend
 from ..base import Backend
 
+OpenRouterDSPyBackend: type[Backend] | None
 try:  # pragma: no cover - optional dependency
-    from .openrouter_dspy import OpenRouterDSPyBackend
+    from .openrouter_dspy import OpenRouterDSPyBackend as OpenRouterDSPyBackend
 except Exception:  # pragma: no cover - optional dependency missing
-    OpenRouterDSPyBackend = None  # type: ignore[misc, assignment]
+    OpenRouterDSPyBackend = None
 
 
 

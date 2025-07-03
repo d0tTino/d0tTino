@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import os
 import subprocess
-from typing import Callable, List, cast
+from typing import Any, List, cast
 
-from .backends import (  # type: ignore[attr-defined]
+from .backends import (
     GeminiBackend,  # noqa: F401 - re-exported for tests
     GeminiDSPyBackend,  # noqa: F401 - re-exported for tests
     OllamaBackend,  # noqa: F401 - re-exported for tests
@@ -16,8 +16,8 @@ from .backends import (  # type: ignore[attr-defined]
 
     register_backend,
     get_backend,
-    register_backend,
 )
+from .backends.plugins.gemini import run_gemini as _plugin_run_gemini
 from .backends.superclaude import SuperClaudeBackend
 
 from .ai_router import get_preferred_models
@@ -38,8 +38,7 @@ def estimate_prompt_complexity(prompt: str) -> int:
 def run_gemini(prompt: str, model: str | None = None) -> str:
     """Return Gemini response for ``prompt`` using registered backend."""
 
-    func = cast(Callable[[str, str | None], str], get_backend("gemini"))
-    return func(prompt, model)
+    return _plugin_run_gemini(prompt, model)
 
 
 def run_ollama(prompt: str, model: str) -> str:
