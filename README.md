@@ -10,7 +10,7 @@ Key directories:
 - `tablet-config/` – full example configuration for a tablet, including Windows Terminal
 - `starship.toml` – example Starship prompt configuration
 - `vscode/` – VS Code user settings
-- `llm/` – prompts and other LLM-related files. The optional `llm/llm_config.json` file stores preferred model names used by `llm.ai_router`. Set the `LLM_CONFIG_PATH` environment variable to override the location.
+- `llm/` – prompts and other LLM-related files. The optional `llm/llm_config.json` file stores preferred model names used by `llm.ai_router`. Set the `LLM_CONFIG_PATH` environment variable to override the location. Configure it with Claude model names when using the `superclaude` backend.
 - `scripts/thm.py` – Terminal Harmony Manager for palette and profile sync (installs as `thm` when using `pip install -e .[cli]`)
 
 ## Quickstart
@@ -30,6 +30,12 @@ Run `ruff` to lint the Python code:
 
 ```bash
 ruff check .
+```
+
+Run `mypy` to verify type hints:
+
+```bash
+mypy --install-types --non-interactive
 ```
 
 The installation also provides an `ai` command for routing prompts to your chosen
@@ -113,6 +119,7 @@ Additional guides:
 - [Media containers](docs/media.md)
 - [Repository navigation](docs/navigation.md)
 - [AI automation tooling](docs/ai-automation.md)
+- [Dashboard concept and API endpoints](docs/dashboard.md)
 
 ## Git hooks
 
@@ -169,6 +176,12 @@ Run `ruff` before committing to ensure the Python code is lint-free:
 
 ```bash
 ruff check .
+```
+
+Run `mypy` as well to catch type errors:
+
+```bash
+mypy --install-types --non-interactive
 ```
 
 After fixing any lint errors, rerun the command and verify that it reports zero

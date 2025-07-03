@@ -23,6 +23,8 @@ jobs:
           pip install -e . -r requirements.txt
       - name: Run ruff
         run: ruff check .
+      - name: Run mypy
+        run: mypy --install-types --non-interactive
       - name: Run tests
         run: pytest -n auto
 
