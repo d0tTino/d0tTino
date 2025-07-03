@@ -11,7 +11,7 @@ except ImportError:  # pragma: no cover - optional dependency
 
 _LM: Callable[..., Any] | None = None
 LM: Callable[..., Any]
-_OpenRouterDSPyBackend: type[Backend] | None = None
+OpenRouterDSPyBackend: type[Backend] | None = None
 if dspy is not None:
     _LM = getattr(dspy, "LLM", getattr(dspy, "LM", None))
     if _LM is None:  # pragma: no cover - sanity check
@@ -27,8 +27,10 @@ if dspy is not None:
         def run(self, prompt: str) -> str:
             result = self.lm.forward(prompt=prompt)
             return _extract_text(result)
+
+    OpenRouterDSPyBackend = _RealOpenRouterDSPyBackend
 else:  # pragma: no cover - optional dependency missing
-    OpenRouterDSPyBackend = None  # type: ignore[misc, assignment]
+    OpenRouterDSPyBackend = None
 
 
 

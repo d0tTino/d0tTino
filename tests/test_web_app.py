@@ -3,6 +3,7 @@ import sys
 import time
 
 import pytest
+pytest.importorskip("fastapi")
 from fastapi.testclient import TestClient
 from api import app
 

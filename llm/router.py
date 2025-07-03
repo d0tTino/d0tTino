@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import os
 import subprocess
-from typing import Callable, List, cast
+from typing import Any, Callable, List, cast
 
-from .backends import (  # type: ignore[attr-defined]
+from .backends import (
     GeminiBackend,  # noqa: F401 - re-exported for tests
     GeminiDSPyBackend,  # noqa: F401 - re-exported for tests
     OllamaBackend,  # noqa: F401 - re-exported for tests
@@ -16,12 +16,17 @@ from .backends import (  # type: ignore[attr-defined]
 
     register_backend,
     get_backend,
-    register_backend,
 )
-from .backends.superclaude import SuperClaudeBackend
-
+from .backends.base import Backend
 from .ai_router import get_preferred_models
 from .langchain_backend import LangChainBackend
+
+SuperClaudeBackend: type[Backend] | None = None
+try:  # pragma: no cover - optional dependency
+    from .backends.superclaude import SuperClaudeBackend as _SuperClaudeBackend
+    SuperClaudeBackend = _SuperClaudeBackend
+except Exception:  # pragma: no cover - optional dependency missing
+    pass
 
 DEFAULT_MODEL = "llama3"
 DEFAULT_PRIMARY_BACKEND = "gemini"
@@ -58,6 +63,8 @@ def run_openrouter(prompt: str, model: str) -> str:
 
 def run_superclaude(prompt: str, model: str) -> str:
     """Return SuperClaude response for ``prompt`` using ``model``."""
+    if SuperClaudeBackend is None:
+        raise RuntimeError("requests is required for the SuperClaude backend")
     backend = cast(Any, SuperClaudeBackend)(model)
     return backend.run(prompt)
 

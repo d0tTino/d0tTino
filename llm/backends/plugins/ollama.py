@@ -6,10 +6,12 @@ from typing import Any, cast
 from .. import register_backend
 from ..base import Backend
 
+OllamaDSPyBackend: type[Backend] | None = None
 try:  # pragma: no cover - optional dependency
-    from .ollama_dspy import OllamaDSPyBackend
+    from .ollama_dspy import OllamaDSPyBackend as _OllamaDSPyBackend
+    OllamaDSPyBackend = _OllamaDSPyBackend
 except Exception:  # pragma: no cover - optional dependency missing
-    OllamaDSPyBackend = None  # type: ignore[misc, assignment]
+    OllamaDSPyBackend = None
 
 
 
