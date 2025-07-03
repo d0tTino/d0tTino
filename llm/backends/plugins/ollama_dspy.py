@@ -33,6 +33,7 @@ if dspy is not None:
 OllamaDSPyBackend: type[Backend] | None = _OllamaDSPyBackend
 
 
+
 def _extract_text(result: Mapping[str, Any]) -> str:
     """Return the assistant text from a LiteLLM-style result."""
     try:

@@ -6,18 +6,22 @@ import os
 import subprocess
 from typing import Any, Callable, List, cast
 
-from .backends import (
+from .backends import (  # type: ignore[attr-defined]
     GeminiBackend,  # noqa: F401 - re-exported for tests
     GeminiDSPyBackend,  # noqa: F401 - re-exported for tests
     OllamaBackend,  # noqa: F401 - re-exported for tests
     OllamaDSPyBackend,  # noqa: F401 - re-exported for tests
     OpenRouterBackend,  # noqa: F401 - re-exported for tests
     OpenRouterDSPyBackend,  # noqa: F401 - re-exported for tests
+    SuperClaudeBackend,  # noqa: F401 - re-exported for tests
 
+    register_backend,
     get_backend,
     register_backend,
     SuperClaudeBackend,
 )
+from llm.backends import SuperClaudeBackend, register_backend
+
 from .ai_router import get_preferred_models
 from .langchain_backend import LangChainBackend
 

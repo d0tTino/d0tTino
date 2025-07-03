@@ -29,6 +29,7 @@ else:  # pragma: no cover - optional dependency missing
 LMQLBackend: type[Backend] | None = _LMQLBackend
 
 
+
 def run_lmql(prompt: str, model: str) -> str:
     """Return response using ``lmql`` backend."""
 

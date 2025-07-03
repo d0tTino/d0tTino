@@ -33,6 +33,7 @@ if dspy is not None:
 OpenRouterDSPyBackend: type[Backend] | None = _OpenRouterDSPyBackend
 
 
+
 def _extract_text(result: Mapping[str, Any]) -> str:
     """Return the assistant text from a LiteLLM-style result."""
     try:

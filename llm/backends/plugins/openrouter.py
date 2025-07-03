@@ -13,6 +13,7 @@ except Exception:  # pragma: no cover - optional dependency missing
 OpenRouterDSPyBackend: type[Backend] | None = _OpenRouterDSPyBackend
 
 
+
 class OpenRouterBackend(Backend):
     """Placeholder OpenRouter client."""
 

@@ -1,26 +1,24 @@
 import subprocess
 import sys
 import time
-from pathlib import Path
 
 import pytest
-pytest.importorskip("streamlit")
+from fastapi.testclient import TestClient
+from api import app
 
-def test_streamlit_app_starts(tmp_path):
-    script = Path('ui/web_app.py')
+pytest.importorskip("uvicorn")
+
+def test_fastapi_app_starts(tmp_path):
     log = tmp_path / 'out.txt'
     with log.open('w') as log_file:
         proc = subprocess.Popen(
             [
                 sys.executable,
                 '-m',
-                'streamlit',
-                'run',
-                str(script),
-                '--server.headless',
-                'true',
-                '--server.port',
-                '0',
+                'uvicorn',
+                'api:app',
+                '--port',
+                '8000',
             ],
             stdout=log_file,
             stderr=subprocess.STDOUT,
@@ -31,5 +29,12 @@ def test_streamlit_app_starts(tmp_path):
             proc.terminate()
             proc.wait(timeout=10)
     output = log.read_text(encoding='utf-8')
-    assert 'Streamlit app' in output or 'You can now view' in output
+    assert 'Application startup complete' in output or 'Uvicorn running on' in output
+
+
+def test_health_endpoint():
+    client = TestClient(app)
+    resp = client.get('/api/health')
+    assert resp.status_code == 200
+    assert resp.json() == {'status': 'ok'}
 

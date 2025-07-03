@@ -14,6 +14,7 @@ except Exception:  # pragma: no cover - optional dependency missing
 OllamaDSPyBackend: type[Backend] | None = _OllamaDSPyBackend
 
 
+
 class OllamaBackend(Backend):
     """Backend that calls Ollama's ``ollama run`` command."""
 

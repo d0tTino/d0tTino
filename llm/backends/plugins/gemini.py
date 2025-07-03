@@ -15,6 +15,7 @@ except Exception:  # pragma: no cover - optional dependency missing
 GeminiDSPyBackend: type[Backend] | None = _GeminiDSPyBackend
 
 
+
 class GeminiBackend(Backend):
     """Backend that invokes the ``gemini`` CLI."""
 

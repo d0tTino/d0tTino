@@ -33,6 +33,7 @@ if dspy is not None:
 GeminiDSPyBackend: type[Backend] | None = _GeminiDSPyBackend
 
 
+
 def _extract_text(result: Mapping[str, Any]) -> str:
     """Return the assistant text from a LiteLLM-style result."""
     try:
