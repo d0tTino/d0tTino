@@ -7,6 +7,7 @@ import subprocess
 from pathlib import Path
 from typing import Any, Callable, List, cast
 
+
 from .backends import (
     GeminiBackend,  # noqa: F401 - re-exported for tests
     GeminiDSPyBackend,  # noqa: F401 - re-exported for tests
@@ -14,11 +15,11 @@ from .backends import (
     OllamaDSPyBackend,  # noqa: F401 - re-exported for tests
     OpenRouterBackend,  # noqa: F401 - re-exported for tests
     OpenRouterDSPyBackend,  # noqa: F401 - re-exported for tests
-
     register_backend,
     get_backend,
+
 )
-from .backends.superclaude import SuperClaudeBackend
+
 
 from .ai_router import get_preferred_models, _load_config, _DEFAULT_CONFIG
 from .langchain_backend import LangChainBackend
@@ -43,6 +44,7 @@ def run_gemini(prompt: str, model: str | None = None) -> str:
         from llm.backends.plugins import gemini as plugin
         func = plugin.run_gemini
     return func(prompt, model)
+
 
 
 def run_ollama(prompt: str, model: str) -> str:

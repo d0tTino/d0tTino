@@ -16,11 +16,13 @@ GeminiBackend: type[Backend] | None = None
 OllamaBackend: type[Backend] | None = None
 OpenRouterBackend: type[Backend] | None = None
 SuperClaudeBackend: type[Backend] | None = _RealSuperClaudeBackend
+
 GeminiDSPyBackend = None
 OllamaDSPyBackend = None
 OpenRouterDSPyBackend = None
 LMQLBackend = None
 GuidanceBackend = None
+
 __all__ = [
     "Backend",
     "register_backend",

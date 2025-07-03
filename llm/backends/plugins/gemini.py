@@ -7,8 +7,9 @@ from typing import Any, cast
 from .. import register_backend
 from ..base import Backend
 
+GeminiDSPyBackend: type[Backend] | None
 try:  # pragma: no cover - optional dependency
-    from .gemini_dspy import GeminiDSPyBackend
+    from .gemini_dspy import GeminiDSPyBackend as GeminiDSPyBackend
 except Exception:  # pragma: no cover - optional dependency missing
     GeminiDSPyBackend = None
 
