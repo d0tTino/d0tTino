@@ -5,6 +5,7 @@ from .base import Backend
 from .gemini import GeminiBackend
 from .ollama import OllamaBackend
 from .openrouter import OpenRouterBackend
+from .superclaude import SuperClaudeBackend
 
 _BACKEND_REGISTRY: Dict[str, Callable[[str, str], str]] = {}
 
@@ -65,6 +66,7 @@ __all__ = [
     "GeminiBackend",
     "OllamaBackend",
     "OpenRouterBackend",
+    "SuperClaudeBackend",
     "LMQLBackend",
     "GuidanceBackend",
     "GeminiDSPyBackend",

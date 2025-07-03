@@ -13,6 +13,7 @@ from .backends import (
     OllamaDSPyBackend,
     OpenRouterBackend,
     OpenRouterDSPyBackend,
+    SuperClaudeBackend,
     register_backend,
     get_backend,
 )
@@ -67,6 +68,15 @@ def run_openrouter(prompt: str, model: str) -> str:
 register_backend("openrouter", run_openrouter)
 
 
+def run_superclaude(prompt: str, model: str) -> str:
+    """Return SuperClaude response for ``prompt`` using ``model``."""
+    backend = SuperClaudeBackend(model)
+    return backend.run(prompt)
+
+
+register_backend("superclaude", run_superclaude)
+
+
 def create_default_chain() -> object:
     """Return a simple LangChain chain."""
 
@@ -117,6 +127,8 @@ def _run_backend(name: str, prompt: str, model: str) -> str:
         return run_ollama(prompt, model)
     if name.lower() == "openrouter":
         return run_openrouter(prompt, model)
+    if name.lower() == "superclaude":
+        return run_superclaude(prompt, model)
 
     func = get_backend(name)
 
@@ -170,6 +182,7 @@ __all__ = [
     "run_gemini",
     "run_ollama",
     "run_openrouter",
+    "run_superclaude",
     "create_default_chain",
     "run_langchain",
     "send_prompt",
