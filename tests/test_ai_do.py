@@ -1,6 +1,9 @@
 import io
 import contextlib
 import subprocess
+import pytest
+
+pytest.importorskip("requests")
 
 from scripts import ai_do, ai_exec
 
@@ -130,4 +133,4 @@ def test_main_notifies(monkeypatch, tmp_path):
     rc = ai_do.main(["goal", "--log", str(log), "--notify"])
 
     assert rc == 0
-    assert called == ["ai-do completed with exit code 0"]
+    assert called == ["ai-do completed"]

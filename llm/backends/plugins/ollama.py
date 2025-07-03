@@ -12,6 +12,7 @@ except Exception:  # pragma: no cover - optional dependency missing
     OllamaDSPyBackend = None  # type: ignore[misc, assignment]
 
 
+
 class OllamaBackend(Backend):
     """Backend that calls Ollama's ``ollama run`` command."""
 

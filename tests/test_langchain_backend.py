@@ -1,6 +1,10 @@
 from llm.langchain_backend import LangChainBackend
 import io
 import contextlib
+import pytest
+
+pytest.importorskip("requests")
+
 from scripts import ai_router as cli_ai_router
 from llm import router
 

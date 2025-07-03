@@ -2,6 +2,9 @@ import subprocess
 
 import io
 import contextlib
+import pytest
+
+pytest.importorskip("requests")
 
 from scripts import ai_exec
 

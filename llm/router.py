@@ -14,10 +14,12 @@ from .backends import (  # type: ignore[attr-defined]
     OpenRouterBackend,  # noqa: F401 - re-exported for tests
     OpenRouterDSPyBackend,  # noqa: F401 - re-exported for tests
 
+    register_backend,
     get_backend,
     register_backend,
 )
 from .backends.superclaude import SuperClaudeBackend
+
 from .ai_router import get_preferred_models
 from .langchain_backend import LangChainBackend
 
@@ -56,7 +58,7 @@ def run_openrouter(prompt: str, model: str) -> str:
 
 def run_superclaude(prompt: str, model: str) -> str:
     """Return SuperClaude response for ``prompt`` using ``model``."""
-    backend = SuperClaudeBackend(model)
+    backend = cast(Any, SuperClaudeBackend)(model)
     return backend.run(prompt)
 
 
