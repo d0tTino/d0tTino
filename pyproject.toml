@@ -17,6 +17,8 @@ test = [
     "pytest-asyncio",
     "json5",
     "mypy",
+    "fastapi",
+    "uvicorn",
 ]
 cli = ["tomli_w"]
 lmql = ["lmql"]
