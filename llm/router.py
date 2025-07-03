@@ -6,8 +6,18 @@ import os
 import subprocess
 from typing import List
 
-from .backends import register_backend, get_backend
-from .backends.superclaude import SuperClaudeBackend  # noqa: F401 - tests
+from .backends import (  # type: ignore[attr-defined]
+    GeminiBackend,  # noqa: F401 - re-exported for tests
+    GeminiDSPyBackend,  # noqa: F401 - re-exported for tests
+    OllamaBackend,  # noqa: F401 - re-exported for tests
+    OllamaDSPyBackend,  # noqa: F401 - re-exported for tests
+    OpenRouterBackend,  # noqa: F401 - re-exported for tests
+    OpenRouterDSPyBackend,  # noqa: F401 - re-exported for tests
+    register_backend,
+    get_backend,
+)
+from .backends.superclaude import SuperClaudeBackend
+
 from .ai_router import get_preferred_models
 from .langchain_backend import LangChainBackend
 
@@ -27,7 +37,7 @@ def run_gemini(prompt: str, model: str | None = None) -> str:
     """Return Gemini response for ``prompt`` using registered backend."""
 
     func = get_backend("gemini")
-    return func(prompt, model or "")
+    return func(prompt, model)  # type: ignore[arg-type]
 
 
 def run_ollama(prompt: str, model: str) -> str:

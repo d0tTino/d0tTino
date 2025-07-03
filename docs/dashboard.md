@@ -13,3 +13,21 @@ The UME exposes a small set of FastAPI routes that power the dashboard:
 - `GET /api/health` – simple health check
 
 These endpoints will evolve as the project grows but form the foundation for the web UI.
+
+## Running the Dashboard
+
+Start the API server:
+
+```bash
+uvicorn api:app --reload
+```
+
+Then launch the Next.js client:
+
+```bash
+cd dashboard
+npm install
+npm run dev
+```
+
+Visit `http://localhost:3000` to view the dashboard.
