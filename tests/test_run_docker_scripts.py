@@ -14,6 +14,7 @@ def create_exe(path: Path, contents: str = "#!/usr/bin/env bash\n") -> None:
 @pytest.mark.parametrize("script_name,service", [
     ("run-neko.sh", "neko"),
     ("run-romm.sh", "romm"),
+    ("run-nextcloud.sh", "nextcloud"),
 ])
 def test_run_script_help_invokes_docker(tmp_path: Path, script_name: str, service: str) -> None:
     repo = tmp_path / "repo"
@@ -42,7 +43,7 @@ def test_run_script_help_invokes_docker(tmp_path: Path, script_name: str, servic
     assert cmd_log.read_text().strip() == f"compose up {service} --help"
 
 
-@pytest.mark.parametrize("script_name", ["run-neko.sh", "run-romm.sh"])
+@pytest.mark.parametrize("script_name", ["run-neko.sh", "run-romm.sh", "run-nextcloud.sh"])
 def test_run_script_requires_docker(tmp_path: Path, script_name: str) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()
