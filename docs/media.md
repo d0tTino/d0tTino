@@ -46,3 +46,16 @@ Mattermost is a self-hosted chat server. Run it via:
 
 The service listens on port `8065`. Data is stored under `./mattermost`.
 Use `docker compose up mattermost` to start it manually.
+
+## Repository visualization
+
+Render an animated commit history using [gource](https://gource.io/). The helper
+script relies on `gource` and `ffmpeg`, and will generate `gource.mp4` in the
+repository root. If `terminalizer` is installed the script also exports a GIF.
+
+```bash
+./scripts/render-gource.sh
+```
+
+Run the script manually when you want to update the video or set up a scheduled
+workflow to automate it.

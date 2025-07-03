@@ -15,6 +15,7 @@ from llm.backends import register_backend
 llm_router.run_gemini = router.run_gemini
 llm_router.run_ollama = router.run_ollama
 llm_router.run_openrouter = router.run_openrouter
+llm_router.run_superclaude = router.run_superclaude
 llm_router.DEFAULT_COMPLEXITY_THRESHOLD = router.DEFAULT_COMPLEXITY_THRESHOLD
 
 
@@ -54,6 +55,8 @@ def _send_prompt(prompt: str, *, local: bool = False, model: str = router.DEFAUL
                 return llm_router.run_ollama(prompt, model)
             if backend_name == "openrouter":
                 return llm_router.run_openrouter(prompt, model)
+            if backend_name == "superclaude":
+                return llm_router.run_superclaude(prompt, model)
         except (FileNotFoundError, subprocess.CalledProcessError):
             continue
     raise RuntimeError("Unable to process prompt")
@@ -291,4 +294,23 @@ def test_send_prompt_prefers_dspy(monkeypatch):
 
     out = router.send_prompt("msg", model="m")
     assert out == "dspy:msg:m"
+
+
+def test_send_prompt_routes_to_superclaude(monkeypatch):
+    _set_env(monkeypatch, "gemini", "superclaude")
+    monkeypatch.setenv("LLM_ROUTING_MODE", "remote")
+
+    def fail_run_gemini(prompt, model=None):  # pragma: no cover - simulate missing binary
+        raise FileNotFoundError
+
+    def mock_run_superclaude(prompt, model):
+        return f"sc:{prompt}:{model}"
+
+    monkeypatch.setattr(router, "run_gemini", fail_run_gemini)
+    register_backend("gemini", router.run_gemini)
+    monkeypatch.setattr(router, "run_superclaude", mock_run_superclaude)
+    register_backend("superclaude", router.run_superclaude)
+
+    out = router.send_prompt("hi", model="c1")
+    assert out == "sc:hi:c1"
 

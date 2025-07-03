@@ -9,6 +9,7 @@ import pkgutil
 
 from .base import Backend
 
+
 _BACKEND_REGISTRY: Dict[str, Callable[[str, str], str]] = {}
 GeminiDSPyBackend = None
 OllamaDSPyBackend = None
@@ -75,3 +76,4 @@ def discover_plugins() -> None:
 
 # Discover plugins at import time
 discover_plugins()
+

@@ -13,6 +13,7 @@ from .backends import (
     OllamaDSPyBackend,  # noqa: F401 - re-exported for tests
     OpenRouterBackend,  # noqa: F401 - re-exported for tests
     OpenRouterDSPyBackend,  # noqa: F401 - re-exported for tests
+
     get_backend,
 )
 from .ai_router import get_preferred_models
@@ -49,6 +50,15 @@ def run_openrouter(prompt: str, model: str) -> str:
 
     func = get_backend("openrouter")
     return func(prompt, model)
+
+
+def run_superclaude(prompt: str, model: str) -> str:
+    """Return SuperClaude response for ``prompt`` using ``model``."""
+    backend = SuperClaudeBackend(model)
+    return backend.run(prompt)
+
+
+register_backend("superclaude", run_superclaude)
 
 
 def create_default_chain() -> object:
@@ -95,6 +105,7 @@ def _preferred_backends() -> tuple[str, str | None]:
 
 def _run_backend(name: str, prompt: str, model: str) -> str:
     """Return response for ``prompt`` using backend ``name``."""
+
     func = get_backend(name)
     return func(prompt, model)
 
@@ -146,6 +157,7 @@ __all__ = [
     "run_gemini",
     "run_ollama",
     "run_openrouter",
+    "run_superclaude",
     "create_default_chain",
     "run_langchain",
     "send_prompt",
