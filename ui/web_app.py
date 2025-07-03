@@ -1,24 +1,13 @@
 from __future__ import annotations
 
-import streamlit as st
+import uvicorn
 
-from scripts.ai_router import send_prompt
-from scripts.thm import apply_palette, PALETTES_DIR, REPO_ROOT
+from api import app
 
 
-st.title("LLM Router")
+def main() -> None:
+    uvicorn.run(app, host="0.0.0.0", port=8000)
 
-prompt = st.text_area("Prompt")
-if st.button("Send"):
-    if prompt:
-        result = send_prompt(prompt)
-        st.write(result)
 
-st.header("Apply Palette")
-options = [p.stem for p in PALETTES_DIR.glob("*.toml")]
-palette = st.selectbox("Palette", options)
-if st.button("Apply"):
-    if palette:
-        apply_palette(palette, REPO_ROOT)
-        st.success(f"Applied {palette}")
-
+if __name__ == "__main__":  # pragma: no cover - manual launch
+    main()
