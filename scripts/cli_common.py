@@ -44,4 +44,10 @@ def execute_steps(steps: Iterable[str], *, log_path: Path) -> int:
             exit_code = result.returncode
     return exit_code
 
-__all__ = ["read_prompt", "execute_steps"]
+
+def send_notification(message: str) -> None:
+    """Post ``message`` via ``ntfy`` if available."""
+    subprocess.run(["ntfy", "send", message], check=False)
+
+
+__all__ = ["read_prompt", "execute_steps", "send_notification"]
