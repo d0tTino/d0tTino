@@ -5,19 +5,11 @@
 from __future__ import annotations
 
 import argparse
-import subprocess
 from pathlib import Path
 from typing import List, Optional
-import subprocess
 
 from scripts import ai_exec
-from scripts.cli_common import execute_steps
-
-
-def send_notification(message: str) -> None:
-    """Post a notification via ``ntfy`` if available."""
-    subprocess.run(["ntfy", "send", message], check=False)
-
+from scripts.cli_common import execute_steps, send_notification
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -38,6 +30,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.notify:
         if exit_code == 0:
             send_notification("ai-do completed")
+
         else:
             send_notification(f"ai-do failed with exit code {exit_code}")
 

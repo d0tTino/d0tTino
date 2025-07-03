@@ -32,6 +32,12 @@ Run `ruff` to lint the Python code:
 ruff check .
 ```
 
+Run `mypy` to verify type hints:
+
+```bash
+mypy --install-types --non-interactive
+```
+
 The installation also provides an `ai` command for routing prompts to your chosen
 model:
 
@@ -113,6 +119,7 @@ Additional guides:
 - [Media containers](docs/media.md)
 - [Repository navigation](docs/navigation.md)
 - [AI automation tooling](docs/ai-automation.md)
+- [Dashboard concept and API endpoints](docs/dashboard.md)
 
 ## Git hooks
 
@@ -169,6 +176,12 @@ Run `ruff` before committing to ensure the Python code is lint-free:
 
 ```bash
 ruff check .
+```
+
+Run `mypy` as well to catch type errors:
+
+```bash
+mypy --install-types --non-interactive
 ```
 
 After fixing any lint errors, rerun the command and verify that it reports zero

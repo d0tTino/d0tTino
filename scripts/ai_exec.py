@@ -11,13 +11,7 @@ from typing import List, Optional
 
 from llm import router
 from llm.ai_router import get_preferred_models
-from scripts.cli_common import read_prompt
-
-
-def send_notification(message: str) -> None:
-    """Post a notification via ``ntfy`` if available."""
-    subprocess.run(["ntfy", "send", message], check=False)
-
+from scripts.cli_common import read_prompt, send_notification
 
 def plan(goal: str, *, config_path: Optional[Path] = None) -> List[str]:
     """Return planning steps for ``goal`` using preferred models."""

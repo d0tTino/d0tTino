@@ -189,7 +189,13 @@ On Windows Pro editions you can enable Microsoft's virtualization stack:
 Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All
 ```
 
-Create virtual machines via the **Quick Create** wizard or `New-VM` in PowerShell. Hyper-V is useful for testing scripts in clean environments.
+Create virtual machines via the **Quick Create** wizard or `New-VM` in PowerShell. Use the provided helper script for a quick setup:
+
+```powershell
+./scripts/create-hyperv-vm.ps1 -Name TestVM
+```
+
+Hyper-V is useful for testing scripts in clean environments.
 
 ## ETL automation with n8n
 
