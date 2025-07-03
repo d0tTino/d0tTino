@@ -48,17 +48,37 @@ By default the tool picks the backend automatically based on the prompt length.
 Set `LLM_ROUTING_MODE` to `remote` or `local` to force the behavior, or tweak
 `LLM_COMPLEXITY_THRESHOLD` to adjust when the prompt is considered complex.
 
-## Dashboard Web UI
+## FastAPI/Next.js Dashboard
 
-A small Next.js client interacts with the FastAPI backend. Start the API and the
-dashboard in two terminals:
+The project ships with a small FastAPI backend that exposes routes for sending
+prompts, applying palettes and monitoring the Universal Memory Engine. A
+Next.js front end consumes these endpoints and can also be packaged as a Tauri
+desktop app.
+
+To launch the API locally run:
+
+```bash
+uvicorn llm.api:app --reload --port 8000
+```
+
+The React dashboard connects to the same host, typically started with
+`pnpm dev` on <http://localhost:3000>. The Tauri build uses the same
+React code so both environments share a consistent interface.
+
+### Legacy Streamlit interface
+
+Earlier versions provided a Streamlit UI located at `ui/web_app.py`. It remains
+for reference and can be launched with:
+
 
 ```bash
 uvicorn api:app --reload
 cd dashboard && npm install && npm run dev
 ```
 
-This provides the same prompt routing and palette controls in a browser.
+This prototype is no longer actively developed but still mirrors the prompt
+routing and palette controls.
+
 
 ## LLM Configuration
 
