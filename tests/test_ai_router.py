@@ -255,8 +255,10 @@ def test_run_gemini_uses_dspy_backend(monkeypatch):
         def __init__(self, *a, **k):
             raise AssertionError("GeminiBackend should not be used")
 
-    monkeypatch.setattr(router, "GeminiDSPyBackend", Dummy)
-    monkeypatch.setattr(router, "GeminiBackend", Fail)
+    from llm.backends.plugins import gemini as gemini_plugin
+
+    monkeypatch.setattr(gemini_plugin, "GeminiDSPyBackend", Dummy)
+    monkeypatch.setattr(gemini_plugin, "GeminiBackend", Fail)
 
     out = router.run_gemini("hi", model="m")
     assert out == "dspy"
@@ -282,8 +284,10 @@ def test_send_prompt_prefers_dspy(monkeypatch):
     def fail_ollama(prompt: str, model: str):  # pragma: no cover - ensure unused
         raise AssertionError("ollama should not be called")
 
-    monkeypatch.setattr(router, "GeminiDSPyBackend", Dummy)
-    monkeypatch.setattr(router, "GeminiBackend", FailBackend)
+    from llm.backends.plugins import gemini as gemini_plugin
+
+    monkeypatch.setattr(gemini_plugin, "GeminiDSPyBackend", Dummy)
+    monkeypatch.setattr(gemini_plugin, "GeminiBackend", FailBackend)
     monkeypatch.setattr(router, "run_ollama", fail_ollama)
     register_backend("gemini", router.run_gemini)
     register_backend("ollama", router.run_ollama)

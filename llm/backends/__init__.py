@@ -1,13 +1,34 @@
+"""Backend interfaces and discovery utilities."""
+
+from __future__ import annotations
+
 from collections.abc import Callable
 from typing import Dict
+import importlib
+import pkgutil
 
 from .base import Backend
-from .gemini import GeminiBackend
-from .ollama import OllamaBackend
-from .openrouter import OpenRouterBackend
-from .superclaude import SuperClaudeBackend
+
 
 _BACKEND_REGISTRY: Dict[str, Callable[[str, str], str]] = {}
+GeminiDSPyBackend = None
+OllamaDSPyBackend = None
+OpenRouterDSPyBackend = None
+LMQLBackend = None
+GuidanceBackend = None
+__all__ = [
+    "Backend",
+    "register_backend",
+    "get_backend",
+    "clear_registry",
+    "discover_plugins",
+    "available_backends",
+    "GeminiDSPyBackend",
+    "OllamaDSPyBackend",
+    "OpenRouterDSPyBackend",
+    "LMQLBackend",
+    "GuidanceBackend",
+]
 
 
 def register_backend(name: str, func: Callable[[str, str], str]) -> None:
@@ -28,51 +49,31 @@ def clear_registry() -> None:
     _BACKEND_REGISTRY.clear()
 
 
-LMQLBackendType: type[Backend] | None
-GuidanceBackendType: type[Backend] | None
+def available_backends() -> list[str]:
+    """Return a list of registered backend names."""
 
-GeminiDSPyBackendType: type[Backend] | None
-OllamaDSPyBackendType: type[Backend] | None
-OpenRouterDSPyBackendType: type[Backend] | None
-try:  # pragma: no cover - optional dependency
-    from .lmql import LMQLBackend as LMQLBackendType
-except ImportError:
-    LMQLBackendType = None
+    return sorted(_BACKEND_REGISTRY)
 
-try:  # pragma: no cover - optional dependency
-    from .guidance import GuidanceBackend as GuidanceBackendType
-except ImportError:
-    GuidanceBackendType = None
 
-try:  # pragma: no cover - optional dependency
-    from .dspy_backends import (
-        GeminiDSPyBackend as GeminiDSPyBackendType,
-        OllamaDSPyBackend as OllamaDSPyBackendType,
-        OpenRouterDSPyBackend as OpenRouterDSPyBackendType,
-    )
-except Exception:  # pragma: no cover - dspy missing
-    GeminiDSPyBackendType = None
-    OllamaDSPyBackendType = None
-    OpenRouterDSPyBackendType = None
+def discover_plugins() -> None:
+    """Import backend plugins so they register themselves."""
+    package = f"{__name__}.plugins"
+    try:
+        pkg = importlib.import_module(package)
+    except Exception:  # pragma: no cover - plugins package missing
+        return
+    for mod in pkgutil.iter_modules(pkg.__path__):
+        name = f"{package}.{mod.name}"
+        try:
+            module = importlib.import_module(name)
+        except Exception:  # pragma: no cover - optional dependency missing
+            continue
+        for attr in getattr(module, "__all__", []):
+            globals()[attr] = getattr(module, attr)
+            if attr not in __all__:
+                __all__.append(attr)
 
-GeminiDSPyBackend: type[Backend] | None = GeminiDSPyBackendType
-OllamaDSPyBackend: type[Backend] | None = OllamaDSPyBackendType
-OpenRouterDSPyBackend: type[Backend] | None = OpenRouterDSPyBackendType
-LMQLBackend: type[Backend] | None = LMQLBackendType
-GuidanceBackend: type[Backend] | None = GuidanceBackendType
 
-__all__ = [
-    "Backend",
-    "GeminiBackend",
-    "OllamaBackend",
-    "OpenRouterBackend",
-    "SuperClaudeBackend",
-    "LMQLBackend",
-    "GuidanceBackend",
-    "GeminiDSPyBackend",
-    "OllamaDSPyBackend",
-    "OpenRouterDSPyBackend",
-    "register_backend",
-    "get_backend",
-    "clear_registry",
-]
+# Discover plugins at import time
+discover_plugins()
+
