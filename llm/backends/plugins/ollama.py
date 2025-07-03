@@ -1,0 +1,43 @@
+from __future__ import annotations
+
+import subprocess
+from typing import Any, cast
+
+from .. import register_backend
+from ..base import Backend
+
+try:  # pragma: no cover - optional dependency
+    from .ollama_dspy import OllamaDSPyBackend  # type: ignore
+except Exception:  # pragma: no cover - optional dependency missing
+    OllamaDSPyBackend = None
+
+
+class OllamaBackend(Backend):
+    """Backend that calls Ollama's ``ollama run`` command."""
+
+    def __init__(self, model: str) -> None:
+        self.model = model
+
+    def run(self, prompt: str) -> str:
+        cmd = ["ollama", "run", self.model, prompt]
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return result.stdout
+
+
+def run_ollama(prompt: str, model: str) -> str:
+    """Return Ollama response for ``prompt`` using ``model``."""
+
+    backend_cls = OllamaDSPyBackend if OllamaDSPyBackend is not None else OllamaBackend
+    backend = cast(Any, backend_cls)(model)
+    return backend.run(prompt)
+
+
+register_backend("ollama", run_ollama)
+
+
+__all__ = ["OllamaBackend", "run_ollama"]

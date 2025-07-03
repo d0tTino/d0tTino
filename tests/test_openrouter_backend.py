@@ -26,8 +26,10 @@ def test_run_openrouter_uses_dspy_backend(monkeypatch):
         def __init__(self, *a, **k):
             raise AssertionError("OpenRouterBackend should not be used")
 
-    monkeypatch.setattr(ai_router, "OpenRouterDSPyBackend", Dummy)
-    monkeypatch.setattr(ai_router, "OpenRouterBackend", Fail)
+    from llm.backends.plugins import openrouter as plugin
+
+    monkeypatch.setattr(plugin, "OpenRouterDSPyBackend", Dummy)
+    monkeypatch.setattr(plugin, "OpenRouterBackend", Fail)
 
     out = ai_router.run_openrouter("hi", "model")
     assert out == "dspy"
@@ -45,8 +47,10 @@ def test_run_openrouter_without_dspy(monkeypatch):
             calls.append(("run", prompt))
             return "cli"
 
-    monkeypatch.setattr(ai_router, "OpenRouterDSPyBackend", None)
-    monkeypatch.setattr(ai_router, "OpenRouterBackend", Dummy)
+    from llm.backends.plugins import openrouter as plugin
+
+    monkeypatch.setattr(plugin, "OpenRouterDSPyBackend", None)
+    monkeypatch.setattr(plugin, "OpenRouterBackend", Dummy)
 
     out = ai_router.run_openrouter("yo", "m")
     assert out == "cli"

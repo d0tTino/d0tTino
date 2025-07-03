@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from .base import Backend
+from typing import Any, cast
+
+from .. import register_backend
+from ..base import Backend
 
 try:  # pragma: no cover - optional dependency
     import guidance  # noqa: F401
@@ -18,3 +21,16 @@ class GuidanceBackend(Backend):
 
     def run(self, prompt: str) -> str:  # pragma: no cover - network placeholder
         return f"guidance:{prompt}:{self.model}"
+
+
+def run_guidance(prompt: str, model: str) -> str:
+    """Return response using ``guidance`` backend."""
+
+    backend = cast(Any, GuidanceBackend)(model)
+    return backend.run(prompt)
+
+
+register_backend("guidance", run_guidance)
+
+
+__all__ = ["GuidanceBackend", "run_guidance"]

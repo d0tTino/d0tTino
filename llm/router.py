@@ -4,16 +4,15 @@ from __future__ import annotations
 
 import os
 import subprocess
-from typing import Any, List, cast
+from typing import List
 
 from .backends import (
-    GeminiBackend,
-    GeminiDSPyBackend,
-    OllamaBackend,
-    OllamaDSPyBackend,
-    OpenRouterBackend,
-    OpenRouterDSPyBackend,
-    register_backend,
+    GeminiBackend,  # noqa: F401 - re-exported for tests
+    GeminiDSPyBackend,  # noqa: F401 - re-exported for tests
+    OllamaBackend,  # noqa: F401 - re-exported for tests
+    OllamaDSPyBackend,  # noqa: F401 - re-exported for tests
+    OpenRouterBackend,  # noqa: F401 - re-exported for tests
+    OpenRouterDSPyBackend,  # noqa: F401 - re-exported for tests
     get_backend,
 )
 from .ai_router import get_preferred_models
@@ -32,39 +31,24 @@ def estimate_prompt_complexity(prompt: str) -> int:
 
 
 def run_gemini(prompt: str, model: str | None = None) -> str:
-    """Return Gemini response for ``prompt``."""
-    backend_cls = (
-        GeminiDSPyBackend if GeminiDSPyBackend is not None else GeminiBackend
-    )
-    backend = cast(Any, backend_cls)(model)
-    return backend.run(prompt)
+    """Return Gemini response for ``prompt`` using registered backend."""
 
-
-register_backend("gemini", run_gemini)
+    func = get_backend("gemini")
+    return func(prompt, model)
 
 
 def run_ollama(prompt: str, model: str) -> str:
-    """Return Ollama response for ``prompt`` using ``model``."""
-    backend_cls = (
-        OllamaDSPyBackend if OllamaDSPyBackend is not None else OllamaBackend
-    )
-    backend = cast(Any, backend_cls)(model)
-    return backend.run(prompt)
+    """Return Ollama response for ``prompt`` using ``model`` and registered backend."""
 
-
-register_backend("ollama", run_ollama)
+    func = get_backend("ollama")
+    return func(prompt, model)
 
 
 def run_openrouter(prompt: str, model: str) -> str:
-    """Return OpenRouter response for ``prompt`` using ``model``."""
-    backend_cls = (
-        OpenRouterDSPyBackend if OpenRouterDSPyBackend is not None else OpenRouterBackend
-    )
-    backend = cast(Any, backend_cls)(model)
-    return backend.run(prompt)
+    """Return OpenRouter response for ``prompt`` using ``model`` and registered backend."""
 
-
-register_backend("openrouter", run_openrouter)
+    func = get_backend("openrouter")
+    return func(prompt, model)
 
 
 def create_default_chain() -> object:
@@ -111,15 +95,7 @@ def _preferred_backends() -> tuple[str, str | None]:
 
 def _run_backend(name: str, prompt: str, model: str) -> str:
     """Return response for ``prompt`` using backend ``name``."""
-    if name.lower() == "gemini":
-        return run_gemini(prompt, model)
-    if name.lower() == "ollama":
-        return run_ollama(prompt, model)
-    if name.lower() == "openrouter":
-        return run_openrouter(prompt, model)
-
     func = get_backend(name)
-
     return func(prompt, model)
 
 

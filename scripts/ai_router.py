@@ -9,14 +9,7 @@ import sys
 
 
 from llm import router
-from llm.backends import (
-    GeminiBackend,
-    OllamaBackend,
-    OpenRouterBackend,
-    GeminiDSPyBackend,
-    OllamaDSPyBackend,
-    OpenRouterDSPyBackend,
-)
+from llm.backends import available_backends
 
 DEFAULT_MODEL = router.DEFAULT_MODEL
 DEFAULT_PRIMARY_BACKEND = router.DEFAULT_PRIMARY_BACKEND
@@ -61,7 +54,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--backend",
-        choices=["gemini", "ollama", "openrouter", "langchain"],
+        choices=available_backends() + ["langchain"],
         help="Explicit backend to use",
     )
     args = parser.parse_args(argv)
@@ -105,10 +98,4 @@ __all__ = [
     "_run_backend",
     "send_prompt",
     "main",
-    "GeminiBackend",
-    "OllamaBackend",
-    "OpenRouterBackend",
-    "GeminiDSPyBackend",
-    "OllamaDSPyBackend",
-    "OpenRouterDSPyBackend",
 ]
