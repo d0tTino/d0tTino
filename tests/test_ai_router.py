@@ -14,11 +14,11 @@ from llm.backends import register_backend, get_backend
 
 # Mirror routing helpers from ``llm.router`` onto ``llm_router`` so they can be
 # patched independently for tests.
-llm_router.run_gemini = router.run_gemini
-llm_router.run_ollama = router.run_ollama
-llm_router.run_openrouter = router.run_openrouter
-llm_router.run_superclaude = router.run_superclaude
-llm_router.DEFAULT_COMPLEXITY_THRESHOLD = router.DEFAULT_COMPLEXITY_THRESHOLD
+llm_router.run_gemini = router.run_gemini  # type: ignore[attr-defined]
+llm_router.run_ollama = router.run_ollama  # type: ignore[attr-defined]
+llm_router.run_openrouter = router.run_openrouter  # type: ignore[attr-defined]
+llm_router.run_superclaude = router.run_superclaude  # type: ignore[attr-defined]
+llm_router.DEFAULT_COMPLEXITY_THRESHOLD = router.DEFAULT_COMPLEXITY_THRESHOLD  # type: ignore[attr-defined]
 
 
 def _send_prompt(prompt: str, *, local: bool = False, model: str = router.DEFAULT_MODEL) -> str:
@@ -37,9 +37,14 @@ def _send_prompt(prompt: str, *, local: bool = False, model: str = router.DEFAUL
                 order.append(fallback)
         else:  # auto
             try:
-                threshold = int(os.environ.get("LLM_COMPLEXITY_THRESHOLD", llm_router.DEFAULT_COMPLEXITY_THRESHOLD))
+                threshold = int(
+                    os.environ.get(
+                        "LLM_COMPLEXITY_THRESHOLD",
+                        llm_router.DEFAULT_COMPLEXITY_THRESHOLD,  # type: ignore[attr-defined]
+                    )
+                )
             except ValueError:
-                threshold = llm_router.DEFAULT_COMPLEXITY_THRESHOLD
+                threshold = llm_router.DEFAULT_COMPLEXITY_THRESHOLD  # type: ignore[attr-defined]
             complexity = router.estimate_prompt_complexity(prompt)
             if complexity > threshold:
                 order.append(primary)
@@ -52,19 +57,19 @@ def _send_prompt(prompt: str, *, local: bool = False, model: str = router.DEFAUL
     for backend_name in order:
         try:
             if backend_name == "gemini":
-                return llm_router.run_gemini(prompt, model)
+                return llm_router.run_gemini(prompt, model)  # type: ignore[attr-defined]
             if backend_name == "ollama":
-                return llm_router.run_ollama(prompt, model)
+                return llm_router.run_ollama(prompt, model)  # type: ignore[attr-defined]
             if backend_name == "openrouter":
-                return llm_router.run_openrouter(prompt, model)
+                return llm_router.run_openrouter(prompt, model)  # type: ignore[attr-defined]
             if backend_name == "superclaude":
-                return llm_router.run_superclaude(prompt, model)
+                return llm_router.run_superclaude(prompt, model)  # type: ignore[attr-defined]
         except (FileNotFoundError, subprocess.CalledProcessError):
             continue
     raise RuntimeError("Unable to process prompt")
 
 
-llm_router.send_prompt = _send_prompt
+llm_router.send_prompt = _send_prompt  # type: ignore[attr-defined]
 
 ai_router = cli_ai_router
 
@@ -261,6 +266,7 @@ def test_run_gemini_uses_dspy_backend(monkeypatch):
 
     monkeypatch.setattr(gemini_plugin, "GeminiDSPyBackend", Dummy)
     monkeypatch.setattr(gemini_plugin, "GeminiBackend", Fail)
+    register_backend("gemini", gemini_plugin.run_gemini)
 
     out = router.run_gemini("hi", model="m")
     assert out == "dspy"
@@ -322,4 +328,39 @@ def test_send_prompt_routes_to_superclaude(monkeypatch):
 
 def test_superclaude_backend_registered():
     assert get_backend("superclaude") is router.run_superclaude
+
+
+def test_auto_prefers_lower_cost(monkeypatch, tmp_path):
+    cfg = {
+        "primary_model": "gemini",
+        "fallback_model": "ollama",
+        "models": {
+            "gemini": {"price_per_1k_tokens": 0.02, "max_tokens": 100},
+            "ollama": {"price_per_1k_tokens": 0.01, "max_tokens": 100},
+        },
+    }
+    path = tmp_path / "cfg.json"
+    path.write_text(json.dumps(cfg))
+    monkeypatch.setenv("LLM_CONFIG_PATH", str(path))
+    monkeypatch.delenv("LLM_PRIMARY_BACKEND", raising=False)
+    monkeypatch.delenv("LLM_FALLBACK_BACKEND", raising=False)
+
+    calls = []
+
+    def mock_gemini(prompt, model=None):
+        calls.append("gemini")
+        return "g"
+
+    def mock_ollama(prompt, model):
+        calls.append("ollama")
+        return "o"
+
+    monkeypatch.setattr(router, "run_gemini", mock_gemini)
+    register_backend("gemini", router.run_gemini)
+    monkeypatch.setattr(router, "run_ollama", mock_ollama)
+    register_backend("ollama", router.run_ollama)
+
+    out = router.send_prompt("hello")
+    assert out == "o"
+    assert calls[0] == "ollama"
 

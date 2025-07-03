@@ -47,6 +47,9 @@ echo "Summarize" | ai -
 By default the tool picks the backend automatically based on the prompt length.
 Set `LLM_ROUTING_MODE` to `remote` or `local` to force the behavior, or tweak
 `LLM_COMPLEXITY_THRESHOLD` to adjust when the prompt is considered complex.
+When the mode is `auto` the router now sorts available backends by the
+estimated cost of running the prompt and ignores models that cannot fit the
+input within their context window.
 
 ## FastAPI/Next.js Dashboard
 
@@ -92,9 +95,17 @@ Example configuration:
 ```json
 {
   "primary_model": "gpt-4",
-  "fallback_model": "gpt-3.5-turbo"
+  "fallback_model": "gpt-3.5-turbo",
+  "models": {
+    "gpt-4": {"price_per_1k_tokens": 0.1, "max_tokens": 8192},
+    "gpt-3.5-turbo": {"price_per_1k_tokens": 0.02, "max_tokens": 4096}
+  }
 }
 ```
+The optional `models` section defines per-model pricing and maximum context
+size. When present, `send_prompt()` ranks available backends by the estimated
+cost of processing the prompt and discards any model whose context window is too
+small.
 
 To use Anthropic's Claude models with the `superclaude` backend set the
 model names accordingly:

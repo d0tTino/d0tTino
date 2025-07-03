@@ -11,14 +11,16 @@ except ImportError:  # pragma: no cover - optional dependency
 
 _LM: Callable[..., Any] | None = None
 LM: Callable[..., Any]
-_GeminiDSPyBackend: type[Backend] | None = None
-if dspy is not None:
-    _LM = getattr(dspy, "LLM", getattr(dspy, "LM", None))
-    if _LM is None:  # pragma: no cover - sanity check
-        raise ImportError("dspy does not expose an LLM wrapper")
-    LM = _LM
+GeminiDSPyBackend: type[Backend] | None = None
 
-    class _RealGeminiDSPyBackend(Backend):
+if dspy is not None:
+    lm = getattr(dspy, "LLM", getattr(dspy, "LM", None))
+    if lm is None:  # pragma: no cover - sanity check
+        raise ImportError("dspy does not expose an LLM wrapper")
+
+    LM: Callable[..., Any] = lm
+
+    class _GeminiDSPyBackend(Backend):
         """Gemini backend implemented via ``dspy``."""
 
         def __init__(self, model: str | None = None) -> None:
@@ -30,8 +32,9 @@ if dspy is not None:
 
     _GeminiDSPyBackend = _RealGeminiDSPyBackend
     GeminiDSPyBackend: type[Backend] | None = _GeminiDSPyBackend
+
 else:  # pragma: no cover - optional dependency missing
-    GeminiDSPyBackend = None  # type: ignore[misc, assignment]
+    GeminiDSPyBackend = None
 
 
 
