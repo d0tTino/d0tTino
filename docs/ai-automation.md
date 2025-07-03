@@ -48,18 +48,17 @@ By default the tool picks the backend automatically based on the prompt length.
 Set `LLM_ROUTING_MODE` to `remote` or `local` to force the behavior, or tweak
 `LLM_COMPLEXITY_THRESHOLD` to adjust when the prompt is considered complex.
 
-## Streamlit Web UI
+## Dashboard Web UI
 
-A lightweight web interface built with [Streamlit](https://streamlit.io/) exposes
-the same prompt routing and palette controls. Launch it from the repository
-root:
+A small Next.js client interacts with the FastAPI backend. Start the API and the
+dashboard in two terminals:
 
 ```bash
-streamlit run ui/web_app.py --server.headless true
+uvicorn api:app --reload
+cd dashboard && npm install && npm run dev
 ```
 
-Use **Send** to route prompts via `ai_router.send_prompt` and **Apply** to call
-`thm.apply_palette`.
+This provides the same prompt routing and palette controls in a browser.
 
 ## LLM Configuration
 
