@@ -6,7 +6,8 @@ import os
 import subprocess
 from typing import Any, Callable, List, cast
 
-from .backends import (  # type: ignore[attr-defined]
+
+from .backends import (
     GeminiBackend,  # noqa: F401 - re-exported for tests
     GeminiDSPyBackend,  # noqa: F401 - re-exported for tests
     OllamaBackend,  # noqa: F401 - re-exported for tests
@@ -17,6 +18,7 @@ from .backends import (  # type: ignore[attr-defined]
     get_backend,
     SuperClaudeBackend,
 )
+
 
 from .ai_router import get_preferred_models
 from .langchain_backend import LangChainBackend
@@ -36,8 +38,7 @@ def estimate_prompt_complexity(prompt: str) -> int:
 def run_gemini(prompt: str, model: str | None = None) -> str:
     """Return Gemini response for ``prompt`` using registered backend."""
 
-    func = cast(Callable[[str, str | None], str], get_backend("gemini"))
-    return func(prompt, model)
+    return _plugin_run_gemini(prompt, model)
 
 
 def run_ollama(prompt: str, model: str) -> str:

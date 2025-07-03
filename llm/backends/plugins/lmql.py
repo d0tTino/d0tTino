@@ -5,7 +5,7 @@ from typing import Any, cast
 from .. import register_backend
 from ..base import Backend
 
-_LMQLBackend: type[Backend] | None = None
+LMQLBackend: type[Backend] | None = None
 
 try:  # pragma: no cover - optional dependency
     import lmql  # noqa: F401
@@ -22,9 +22,9 @@ if lmql is not None:
 
         def run(self, prompt: str) -> str:  # pragma: no cover - network placeholder
             return f"lmql:{prompt}:{self.model}"
-    _LMQLBackend = _RealLMQLBackend
+    LMQLBackend = _RealLMQLBackend
 else:  # pragma: no cover - optional dependency missing
-    LMQLBackend = None  # type: ignore[misc, assignment]
+    LMQLBackend = None
 
 
 
