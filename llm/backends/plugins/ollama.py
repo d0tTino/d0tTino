@@ -1,15 +1,21 @@
 from __future__ import annotations
 
 import subprocess
-from typing import Any, cast
+from typing import Any, cast, TYPE_CHECKING
 
 from .. import register_backend
 from ..base import Backend
 
+if TYPE_CHECKING:  # pragma: no cover - help type checkers
+    from .ollama_dspy import OllamaDSPyBackend as _OllamaDSPyBackend  # noqa: F401
+
 try:  # pragma: no cover - optional dependency
-    from .ollama_dspy import OllamaDSPyBackend  # type: ignore
+    from .ollama_dspy import OllamaDSPyBackend as _ImportedDSPyBackend
 except Exception:  # pragma: no cover - optional dependency missing
-    OllamaDSPyBackend = None
+    _ImportedDSPyBackend = None
+
+OllamaDSPyBackend: type[Backend] | None
+OllamaDSPyBackend = _ImportedDSPyBackend
 
 
 class OllamaBackend(Backend):
@@ -29,7 +35,7 @@ class OllamaBackend(Backend):
         return result.stdout
 
 
-def run_ollama(prompt: str, model: str) -> str:
+def run_ollama(prompt: str, model: str | None) -> str:
     """Return Ollama response for ``prompt`` using ``model``."""
 
     backend_cls = OllamaDSPyBackend if OllamaDSPyBackend is not None else OllamaBackend

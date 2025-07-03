@@ -1,14 +1,20 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any, cast, TYPE_CHECKING
 
 from .. import register_backend
 from ..base import Backend
 
+if TYPE_CHECKING:  # pragma: no cover - help type checkers
+    from .openrouter_dspy import OpenRouterDSPyBackend as _OpenRouterDSPyBackend  # noqa: F401
+
 try:  # pragma: no cover - optional dependency
-    from .openrouter_dspy import OpenRouterDSPyBackend  # type: ignore
+    from .openrouter_dspy import OpenRouterDSPyBackend as _ImportedDSPyBackend
 except Exception:  # pragma: no cover - optional dependency missing
-    OpenRouterDSPyBackend = None
+    _ImportedDSPyBackend = None
+
+OpenRouterDSPyBackend: type[Backend] | None
+OpenRouterDSPyBackend = _ImportedDSPyBackend
 
 
 class OpenRouterBackend(Backend):
@@ -21,7 +27,7 @@ class OpenRouterBackend(Backend):
         return f"openrouter:{prompt}:{self.model}"
 
 
-def run_openrouter(prompt: str, model: str) -> str:
+def run_openrouter(prompt: str, model: str | None) -> str:
     """Return OpenRouter response for ``prompt`` using ``model``."""
 
     backend_cls = (

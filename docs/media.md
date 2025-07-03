@@ -59,3 +59,16 @@ repository root. If `terminalizer` is installed the script also exports a GIF.
 
 Run the script manually when you want to update the video or set up a scheduled
 workflow to automate it.
+
+### Posting the render
+
+`render-gource.sh` can upload the resulting files to Mattermost or Nextcloud
+when the following environment variables are set:
+
+- `MATTERMOST_URL`, `MATTERMOST_TOKEN` and `MATTERMOST_CHANNEL_ID` to post to a
+  channel.
+- `NEXTCLOUD_URL`, `NEXTCLOUD_USERNAME`, `NEXTCLOUD_PASSWORD` and
+  `NEXTCLOUD_FOLDER` for uploads via WebDAV.
+
+Create a `.env` file based on `.env.example` and update `docker-compose.yml` if
+you want the containers to read the same values.

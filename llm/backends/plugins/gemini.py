@@ -2,15 +2,21 @@ from __future__ import annotations
 
 import subprocess
 
-from typing import Any, cast
+from typing import Any, cast, TYPE_CHECKING
 
 from .. import register_backend
 from ..base import Backend
 
+if TYPE_CHECKING:  # pragma: no cover - help type checkers
+    from .gemini_dspy import GeminiDSPyBackend as _GeminiDSPyBackend  # noqa: F401
+
 try:  # pragma: no cover - optional dependency
-    from .gemini_dspy import GeminiDSPyBackend  # type: ignore
+    from .gemini_dspy import GeminiDSPyBackend as _ImportedDSPyBackend
 except Exception:  # pragma: no cover - optional dependency missing
-    GeminiDSPyBackend = None
+    _ImportedDSPyBackend = None
+
+GeminiDSPyBackend: type[Backend] | None
+GeminiDSPyBackend = _ImportedDSPyBackend
 
 
 class GeminiBackend(Backend):

@@ -23,7 +23,7 @@ class GuidanceBackend(Backend):
         return f"guidance:{prompt}:{self.model}"
 
 
-def run_guidance(prompt: str, model: str) -> str:
+def run_guidance(prompt: str, model: str | None) -> str:
     """Return response using ``guidance`` backend."""
 
     backend = cast(Any, GuidanceBackend)(model)

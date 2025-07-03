@@ -5,6 +5,8 @@ from typing import Any, cast
 from .. import register_backend
 from ..base import Backend
 
+LMQLBackend: type[Backend] | None
+
 try:  # pragma: no cover - optional dependency
     import lmql  # noqa: F401
 except ImportError:  # pragma: no cover - missing optional dep
@@ -12,7 +14,7 @@ except ImportError:  # pragma: no cover - missing optional dep
 
 
 if lmql is not None:
-    class LMQLBackend(Backend):
+    class LMQLBackendImpl(Backend):
         """Backend implemented using `lmql`."""
 
         def __init__(self, model: str) -> None:
@@ -20,11 +22,12 @@ if lmql is not None:
 
         def run(self, prompt: str) -> str:  # pragma: no cover - network placeholder
             return f"lmql:{prompt}:{self.model}"
+    LMQLBackend = LMQLBackendImpl
 else:  # pragma: no cover - optional dependency missing
-    LMQLBackend = None  # type: ignore
+    LMQLBackend = None
 
 
-def run_lmql(prompt: str, model: str) -> str:
+def run_lmql(prompt: str, model: str | None) -> str:
     """Return response using ``lmql`` backend."""
 
     backend = cast(Any, LMQLBackend)(model)

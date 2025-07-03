@@ -3,14 +3,27 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Dict
+from typing import Dict, TYPE_CHECKING
 import importlib
 import pkgutil
 
 from .base import Backend
 
+if TYPE_CHECKING:  # pragma: no cover - typing helpers
+    from .plugins.gemini import GeminiBackend as _GeminiBackend  # noqa: F401
+    from .plugins.gemini_dspy import GeminiDSPyBackend as _GeminiDSPyBackend  # noqa: F401
+    from .plugins.ollama import OllamaBackend as _OllamaBackend  # noqa: F401
+    from .plugins.ollama_dspy import OllamaDSPyBackend as _OllamaDSPyBackend  # noqa: F401
+    from .plugins.openrouter import OpenRouterBackend as _OpenRouterBackend  # noqa: F401
+    from .plugins.openrouter_dspy import (
+        OpenRouterDSPyBackend as _OpenRouterDSPyBackend,  # noqa: F401
+    )
 
-_BACKEND_REGISTRY: Dict[str, Callable[[str, str], str]] = {}
+
+_BACKEND_REGISTRY: Dict[str, Callable[[str, str | None], str]] = {}
+GeminiBackend: type[Backend] | None = None
+OllamaBackend: type[Backend] | None = None
+OpenRouterBackend: type[Backend] | None = None
 GeminiDSPyBackend = None
 OllamaDSPyBackend = None
 OpenRouterDSPyBackend = None
@@ -31,12 +44,12 @@ __all__ = [
 ]
 
 
-def register_backend(name: str, func: Callable[[str, str], str]) -> None:
+def register_backend(name: str, func: Callable[[str, str | None], str]) -> None:
     """Register ``func`` to handle ``name``."""
     _BACKEND_REGISTRY[name.lower()] = func
 
 
-def get_backend(name: str) -> Callable[[str, str], str]:
+def get_backend(name: str) -> Callable[[str, str | None], str]:
     """Return the backend callable registered for ``name``."""
     key = name.lower()
     if key not in _BACKEND_REGISTRY:

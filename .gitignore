@@ -20,3 +20,4 @@ winget-packages.lock.json
 __pycache__/
 node_modules/
 *.egg-info/
+.env
