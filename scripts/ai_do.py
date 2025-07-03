@@ -8,6 +8,7 @@ import argparse
 import subprocess
 from pathlib import Path
 from typing import List, Optional
+import subprocess
 
 from scripts import ai_exec
 from scripts.cli_common import execute_steps
@@ -37,6 +38,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.notify:
         if exit_code == 0:
             send_notification(f"ai-do completed with exit code {exit_code}")
+
         else:
             send_notification(f"ai-do failed with exit code {exit_code}")
 
