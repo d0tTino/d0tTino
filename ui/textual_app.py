@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from textual.app import App, ComposeResult
-from textual.command import CommandPalette
 from textual.containers import Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, ProgressBar, Select, Static
