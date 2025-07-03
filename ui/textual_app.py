@@ -46,6 +46,7 @@ class TerminalUI(App):
     CSS_PATH = None
     BINDINGS = [
         ("q", "quit", "Quit"),
+        # use Textual's built-in command palette action
         ("ctrl+p", "command_palette", "Command Palette"),
     ]
 
