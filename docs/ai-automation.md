@@ -77,6 +77,16 @@ Example configuration:
 }
 ```
 
+To use Anthropic's Claude models with the `superclaude` backend set the
+model names accordingly:
+
+```json
+{
+  "primary_model": "claude-3-opus",
+  "fallback_model": "claude-instant"
+}
+```
+
 ## Shell Command Planning
 
 `scripts/ai_exec.py` converts a high level goal into individual shell commands
