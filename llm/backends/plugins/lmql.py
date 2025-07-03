@@ -24,9 +24,7 @@ if lmql is not None:
             return f"lmql:{prompt}:{self.model}"
     _LMQLBackend = _RealLMQLBackend
 else:  # pragma: no cover - optional dependency missing
-    _LMQLBackend = None
-
-LMQLBackend: type[Backend] | None = _LMQLBackend
+    LMQLBackend = None  # type: ignore[misc, assignment]
 
 
 

@@ -8,12 +8,9 @@ from .. import register_backend
 from ..base import Backend
 
 try:  # pragma: no cover - optional dependency
-    from .gemini_dspy import GeminiDSPyBackend as _GeminiDSPyBackend
+    from .gemini_dspy import GeminiDSPyBackend
 except Exception:  # pragma: no cover - optional dependency missing
-    _GeminiDSPyBackend = None
-
-GeminiDSPyBackend: type[Backend] | None = _GeminiDSPyBackend
-
+    GeminiDSPyBackend = None  # type: ignore[misc, assignment]
 
 
 class GeminiBackend(Backend):

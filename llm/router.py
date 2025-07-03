@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 import subprocess
-from typing import Any, Callable, List, cast
+from typing import Callable, List, cast
 
 from .backends import (  # type: ignore[attr-defined]
     GeminiBackend,  # noqa: F401 - re-exported for tests

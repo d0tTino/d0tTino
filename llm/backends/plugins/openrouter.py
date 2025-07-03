@@ -6,11 +6,9 @@ from .. import register_backend
 from ..base import Backend
 
 try:  # pragma: no cover - optional dependency
-    from .openrouter_dspy import OpenRouterDSPyBackend as _OpenRouterDSPyBackend
+    from .openrouter_dspy import OpenRouterDSPyBackend
 except Exception:  # pragma: no cover - optional dependency missing
-    _OpenRouterDSPyBackend = None
-
-OpenRouterDSPyBackend: type[Backend] | None = _OpenRouterDSPyBackend
+    OpenRouterDSPyBackend = None  # type: ignore[misc, assignment]
 
 
 

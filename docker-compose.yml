@@ -17,6 +17,9 @@ services:
       - "8082:80"
     volumes:
       - ./nextcloud:/var/www/html
+    environment:
+      - NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_USERNAME:-admin}
+      - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_PASSWORD:-password}
 
   mattermost:
     image: mattermost/mattermost-team-edition
@@ -24,6 +27,9 @@ services:
       - "8065:8065"
     volumes:
       - ./mattermost:/mattermost/data
+    environment:
+      - MATTERMOST_TOKEN=${MATTERMOST_TOKEN:-}
+      - MATTERMOST_CHANNEL_ID=${MATTERMOST_CHANNEL_ID:-}
 
   romm:
     image: rommapp/romm

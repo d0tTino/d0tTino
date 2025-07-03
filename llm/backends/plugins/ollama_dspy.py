@@ -27,10 +27,8 @@ if dspy is not None:
         def run(self, prompt: str) -> str:
             result = self.lm.forward(prompt=prompt)
             return _extract_text(result)
-
-    _OllamaDSPyBackend = _RealOllamaDSPyBackend
-
-OllamaDSPyBackend: type[Backend] | None = _OllamaDSPyBackend
+else:  # pragma: no cover - optional dependency missing
+    OllamaDSPyBackend = None  # type: ignore[misc, assignment]
 
 
 

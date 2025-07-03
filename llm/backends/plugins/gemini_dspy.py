@@ -27,10 +27,8 @@ if dspy is not None:
         def run(self, prompt: str) -> str:
             result = self.lm.forward(prompt=prompt)
             return _extract_text(result)
-
-    _GeminiDSPyBackend = _RealGeminiDSPyBackend
-
-GeminiDSPyBackend: type[Backend] | None = _GeminiDSPyBackend
+else:  # pragma: no cover - optional dependency missing
+    GeminiDSPyBackend = None  # type: ignore[misc, assignment]
 
 
 
