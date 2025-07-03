@@ -6,10 +6,17 @@ from scripts import ai_cli
 
 
 def test_send_subcommand(monkeypatch):
-    def mock_send(prompt, *, local=False, model=ai_cli.router.DEFAULT_MODEL):
+    def mock_send(
+        prompt,
+        *,
+        local=False,
+        model=ai_cli.router.DEFAULT_MODEL,
+        strategy="auto",
+    ):
         assert prompt == "msg"
         assert local is True
         assert model == "m"
+        assert strategy == "auto"
         return "ok"
 
     monkeypatch.setattr(ai_cli.router, "send_prompt", mock_send)
@@ -18,6 +25,20 @@ def test_send_subcommand(monkeypatch):
         rc = ai_cli.main(["send", "--local", "--model", "m", "msg"])
     assert rc == 0
     assert out.getvalue().strip() == "ok"
+
+
+def test_send_subcommand_with_strategy(monkeypatch):
+    def mock_send(prompt, *, local=False, model=ai_cli.router.DEFAULT_MODEL, strategy="auto"):
+        assert prompt == "hey"
+        assert strategy == "cost"
+        return "done"
+
+    monkeypatch.setattr(ai_cli.router, "send_prompt", mock_send)
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        rc = ai_cli.main(["send", "--route", "cost", "hey"])
+    assert rc == 0
+    assert out.getvalue().strip() == "done"
 
 
 def test_plan_subcommand(monkeypatch):

@@ -17,7 +17,12 @@ from scripts.cli_common import execute_steps, read_prompt
 def _cmd_send(args: argparse.Namespace) -> int:
     prompt = read_prompt(args.prompt)
     try:
-        output = router.send_prompt(prompt, local=args.local, model=args.model)
+        output = router.send_prompt(
+            prompt,
+            local=args.local,
+            model=args.model,
+            strategy=args.route,
+        )
     except (FileNotFoundError, subprocess.CalledProcessError) as exc:
         print(exc, file=sys.stderr)
         return 1
@@ -47,6 +52,12 @@ def build_parser() -> argparse.ArgumentParser:
     send.add_argument("prompt", help="Prompt or '-' to read from STDIN")
     send.add_argument("--local", action="store_true", help="Force use of fallback backend")
     send.add_argument("--model", default=router.DEFAULT_MODEL, help="Model name for Ollama (default: %(default)s)")
+    send.add_argument(
+        "--route",
+        choices=["auto", "cost", "context"],
+        default="auto",
+        help="Routing strategy (default: %(default)s)",
+    )
     send.set_defaults(func=_cmd_send)
 
     plan = sub.add_parser("plan", help="Generate a shell plan for a goal")

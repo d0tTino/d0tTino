@@ -314,3 +314,63 @@ def test_send_prompt_routes_to_superclaude(monkeypatch):
     out = router.send_prompt("hi", model="c1")
     assert out == "sc:hi:c1"
 
+
+def test_send_prompt_ranks_by_cost(monkeypatch, tmp_path):
+    _set_env(monkeypatch, "gemini", "ollama")
+    monkeypatch.setenv("LLM_ROUTING_MODE", "remote")
+    cfg = {
+        "primary_model": "g",
+        "fallback_model": "o",
+        "models": {
+            "g": {"cost": 2, "context": 5},
+            "o": {"cost": 1, "context": 3},
+        },
+    }
+    config = tmp_path / "cfg.json"
+    config.write_text(json.dumps(cfg))
+    monkeypatch.setenv("LLM_CONFIG_PATH", str(config))
+
+    def mock_run_gemini(prompt, model=None):
+        return "gemini"
+
+    def mock_run_ollama(prompt, model):
+        return "ollama"
+
+    monkeypatch.setattr(router, "run_gemini", mock_run_gemini)
+    register_backend("gemini", router.run_gemini)
+    monkeypatch.setattr(router, "run_ollama", mock_run_ollama)
+    register_backend("ollama", router.run_ollama)
+
+    out = router.send_prompt("msg", model="o", strategy="cost")
+    assert out == "ollama"
+
+
+def test_send_prompt_ranks_by_context(monkeypatch, tmp_path):
+    _set_env(monkeypatch, "gemini", "ollama")
+    monkeypatch.setenv("LLM_ROUTING_MODE", "remote")
+    cfg = {
+        "primary_model": "g",
+        "fallback_model": "o",
+        "models": {
+            "g": {"cost": 2, "context": 5},
+            "o": {"cost": 3, "context": 2},
+        },
+    }
+    config = tmp_path / "cfg.json"
+    config.write_text(json.dumps(cfg))
+    monkeypatch.setenv("LLM_CONFIG_PATH", str(config))
+
+    def mock_run_gemini(prompt, model=None):
+        return "gemini"
+
+    def mock_run_ollama(prompt, model):
+        return "ollama"
+
+    monkeypatch.setattr(router, "run_gemini", mock_run_gemini)
+    register_backend("gemini", router.run_gemini)
+    monkeypatch.setattr(router, "run_ollama", mock_run_ollama)
+    register_backend("ollama", router.run_ollama)
+
+    out = router.send_prompt("msg", model="o", strategy="context")
+    assert out == "gemini"
+

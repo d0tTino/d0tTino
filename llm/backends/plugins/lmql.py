@@ -11,8 +11,9 @@ except ImportError:  # pragma: no cover - missing optional dep
     lmql = None
 
 
+LMQLBackend: type[Backend] | None
 if lmql is not None:
-    class LMQLBackend(Backend):
+    class _LMQLBackend(Backend):
         """Backend implemented using `lmql`."""
 
         def __init__(self, model: str) -> None:
@@ -20,8 +21,9 @@ if lmql is not None:
 
         def run(self, prompt: str) -> str:  # pragma: no cover - network placeholder
             return f"lmql:{prompt}:{self.model}"
+    LMQLBackend = _LMQLBackend
 else:  # pragma: no cover - optional dependency missing
-    LMQLBackend = None  # type: ignore
+    LMQLBackend = None
 
 
 def run_lmql(prompt: str, model: str) -> str:

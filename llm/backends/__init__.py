@@ -11,6 +11,9 @@ from .base import Backend
 
 
 _BACKEND_REGISTRY: Dict[str, Callable[[str, str], str]] = {}
+GeminiBackend = None
+OllamaBackend = None
+OpenRouterBackend = None
 GeminiDSPyBackend = None
 OllamaDSPyBackend = None
 OpenRouterDSPyBackend = None
@@ -23,6 +26,9 @@ __all__ = [
     "clear_registry",
     "discover_plugins",
     "available_backends",
+    "GeminiBackend",
+    "OllamaBackend",
+    "OpenRouterBackend",
     "GeminiDSPyBackend",
     "OllamaDSPyBackend",
     "OpenRouterDSPyBackend",

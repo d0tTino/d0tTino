@@ -1,8 +1,22 @@
+"""SuperClaude backend."""
+
 from __future__ import annotations
 
-import requests
-
 from .base import Backend
+
+try:  # pragma: no cover - optional dependency
+    import requests
+except Exception:  # pragma: no cover - optional dependency missing
+    import sys
+    import types
+
+    requests = types.ModuleType("requests")
+
+    def _missing(*_args: object, **_kwargs: object) -> None:
+        raise ModuleNotFoundError("requests package not installed")
+
+    setattr(requests, "post", _missing)
+    sys.modules["requests"] = requests
 
 
 class SuperClaudeBackend(Backend):

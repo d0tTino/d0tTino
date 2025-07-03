@@ -48,6 +48,9 @@ By default the tool picks the backend automatically based on the prompt length.
 Set `LLM_ROUTING_MODE` to `remote` or `local` to force the behavior, or tweak
 `LLM_COMPLEXITY_THRESHOLD` to adjust when the prompt is considered complex.
 
+Use `--route cost` to prefer the cheapest model or `--route context` to prefer
+the backend with the largest context window.
+
 ## Streamlit Web UI
 
 A lightweight web interface built with [Streamlit](https://streamlit.io/) exposes
@@ -73,7 +76,11 @@ Example configuration:
 ```json
 {
   "primary_model": "gpt-4",
-  "fallback_model": "gpt-3.5-turbo"
+  "fallback_model": "gpt-3.5-turbo",
+  "models": {
+    "gpt-4": {"cost": 0.06, "context": 8192},
+    "gpt-3.5-turbo": {"cost": 0.01, "context": 4096}
+  }
 }
 ```
 

@@ -7,9 +7,11 @@ from .. import register_backend
 from ..base import Backend
 
 try:  # pragma: no cover - optional dependency
-    from .ollama_dspy import OllamaDSPyBackend  # type: ignore
+    from .ollama_dspy import OllamaDSPyBackend as _ODSPY
 except Exception:  # pragma: no cover - optional dependency missing
-    OllamaDSPyBackend = None
+    OllamaDSPyBackend: Any = None
+else:
+    OllamaDSPyBackend = _ODSPY
 
 
 class OllamaBackend(Backend):
