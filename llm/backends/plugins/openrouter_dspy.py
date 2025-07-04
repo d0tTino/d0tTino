@@ -20,7 +20,7 @@ if dspy is not None:
 
     LM: Callable[..., Any] = lm
 
-    class _OpenRouterDSPyBackend(Backend):
+    class _RealOpenRouterDSPyBackend(Backend):
         """OpenRouter backend implemented via ``dspy``."""
 
         def __init__(self, model: str) -> None:

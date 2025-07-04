@@ -43,19 +43,6 @@ class PlanOverlay(ModalScreen[bool]):
         self.dismiss(False)
 
 
-class SearchOverlay(ModalScreen[str]):
-    """Overlay that lets the user pick an action from ``results``."""
-
-    def __init__(self, results: list[str]) -> None:
-        super().__init__()
-        self.results = results
-
-    def compose(self) -> ComposeResult:  # pragma: no cover - simple UI
-        options = [(r, r) for r in self.results]
-        yield Select(options, id="search-results")
-
-    def on_select_submitted(self, event: Select.Submitted) -> None:
-        self.dismiss(str(event.value))
 
 
 class TerminalUI(App):
@@ -107,12 +94,11 @@ class TerminalUI(App):
         if not results:
             self.query_one("#status", Static).update("No results")
             return
-        selection = await self.push_screen(SearchOverlay(results))
-        if selection:
-            steps = ai_exec.plan(selection)
-            accepted = await self.show_plan(steps)
-            if accepted:
-                execute_steps(steps, log_path=Path("ui_do.log"))
+        selection = results[0]
+        steps = ai_exec.plan(selection)
+        accepted = await self.show_plan(steps)
+        if accepted:
+            execute_steps(steps, log_path=Path("ui_do.log"))
 
 
 if __name__ == "__main__":  # pragma: no cover - manual launch

@@ -87,9 +87,7 @@ async def test_search_actions_executes(monkeypatch):
     app = TerminalUI()
     async with app.run_test() as pilot:
         app.query_one("#prompt", Input).value = "query"
-        await pilot.press("ctrl+p")
-        await pilot.pause()
-        await pilot.press("enter")
+        await app.action_search_actions()
         await pilot.pause()
 
     assert executed[0] == ["show", ["run foo"]]

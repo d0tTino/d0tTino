@@ -20,7 +20,7 @@ if dspy is not None:
 
     LM: Callable[..., Any] = lm
 
-    class _OllamaDSPyBackend(Backend):
+    class _RealOllamaDSPyBackend(Backend):
         """Ollama backend implemented via ``dspy``."""
 
         def __init__(self, model: str) -> None:
