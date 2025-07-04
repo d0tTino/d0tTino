@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable, Mapping
+from typing import Any, Callable, Mapping, cast
 
 from ..base import Backend
 
@@ -18,7 +18,7 @@ if dspy is not None:
     if lm is None:  # pragma: no cover - sanity check
         raise ImportError("dspy does not expose an LLM wrapper")
 
-    LM: Callable[..., Any] = lm
+    LM = cast(Callable[..., Any], lm)
 
     class _OpenRouterDSPyBackend(Backend):
         """OpenRouter backend implemented via ``dspy``."""
@@ -30,8 +30,7 @@ if dspy is not None:
             result = self.lm.forward(prompt=prompt)
             return _extract_text(result)
 
-    _OpenRouterDSPyBackend = _RealOpenRouterDSPyBackend
-    OpenRouterDSPyBackend: type[Backend] | None = _OpenRouterDSPyBackend
+    OpenRouterDSPyBackend = _OpenRouterDSPyBackend
 
 else:  # pragma: no cover - optional dependency missing
     OpenRouterDSPyBackend = None
