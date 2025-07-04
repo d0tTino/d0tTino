@@ -5,7 +5,7 @@ import sys
 import types
 from pathlib import Path
 
-
+import requests
 
 def load_app(send_prompt=lambda p, local=False: f"resp-{p}", apply_palette=lambda n, r: None, state_path: Path | None = None):
     stub_router = types.SimpleNamespace(send_prompt=send_prompt)
@@ -33,10 +33,27 @@ def test_health(tmp_path):
 
 def test_stats(tmp_path):
     app = load_app(state_path=tmp_path / 'state.json')
+
     client = TestClient(app)
     resp = client.get('/api/stats')
     assert resp.status_code == 200
-    assert resp.json() == {'queries': 0, 'memory': 0}
+    assert resp.json() == {'queries': 1, 'memory': 2}
+    assert calls == ['http://ume/dashboard/stats']
+
+
+def test_graph(monkeypatch):
+    calls = []
+
+    class FakeResponse:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {'nodes': ['n1'], 'edges': ['e1']}
+
+        @staticmethod
+        def raise_for_status():
+            pass
 
     resp = client.post('/api/prompt', json={'prompt': 'hello'})
     assert resp.status_code == 200
@@ -46,6 +63,7 @@ def test_stats(tmp_path):
 
 def test_graph(tmp_path):
     app = load_app(state_path=tmp_path / 'state.json')
+
     client = TestClient(app)
     resp = client.post('/api/prompt', json={'prompt': 'one'})
     assert resp.status_code == 200
@@ -56,6 +74,7 @@ def test_graph(tmp_path):
     data = resp.json()
     assert len(data['nodes']) == 2
     assert len(data['edges']) == 1
+
 
 
 def test_prompt(tmp_path):

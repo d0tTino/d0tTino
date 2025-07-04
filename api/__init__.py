@@ -7,6 +7,8 @@ from typing import Any
 
 from fastapi import FastAPI
 from pydantic import BaseModel
+import os
+import requests
 
 from scripts.ai_router import send_prompt
 from scripts.thm import apply_palette, REPO_ROOT
@@ -45,6 +47,7 @@ def get_graph() -> dict[str, list]:
     return {"nodes": state["nodes"], "edges": state["edges"]}
 
 app = FastAPI()
+UME_API_URL = os.environ.get("UME_API_URL", "http://localhost:8000")
 
 class PromptRequest(BaseModel):
     prompt: str
@@ -75,6 +78,7 @@ async def stats() -> dict[str, int]:
 @app.get("/api/graph")
 async def graph() -> dict[str, list]:
     return get_graph()
+
 
 if __name__ == "__main__":  # pragma: no cover - manual launch
     import uvicorn
