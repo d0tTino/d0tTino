@@ -4,7 +4,7 @@ import sys
 import types
 from pathlib import Path
 
-
+import requests
 
 def load_app(send_prompt=lambda p, local=False: f"resp-{p}", apply_palette=lambda n, r: None):
     stub_router = types.SimpleNamespace(send_prompt=send_prompt)
@@ -25,20 +25,60 @@ def test_health():
     assert resp.json() == {'status': 'ok'}
 
 
-def test_stats():
+def test_stats(monkeypatch):
+    calls = []
+
+    class FakeResponse:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {'queries': 1, 'memory': 2}
+
+        @staticmethod
+        def raise_for_status():
+            pass
+
+    def fake_get(url):
+        calls.append(url)
+        return FakeResponse()
+
+    monkeypatch.setenv('UME_API_URL', 'http://ume')
+    monkeypatch.setattr(requests, 'get', fake_get)
     app = load_app()
     client = TestClient(app)
     resp = client.get('/api/stats')
     assert resp.status_code == 200
-    assert resp.json() == {'queries': 0, 'memory': 0}
+    assert resp.json() == {'queries': 1, 'memory': 2}
+    assert calls == ['http://ume/dashboard/stats']
 
 
-def test_graph():
+def test_graph(monkeypatch):
+    calls = []
+
+    class FakeResponse:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {'nodes': ['n1'], 'edges': ['e1']}
+
+        @staticmethod
+        def raise_for_status():
+            pass
+
+    def fake_get(url):
+        calls.append(url)
+        return FakeResponse()
+
+    monkeypatch.setenv('UME_API_URL', 'http://ume')
+    monkeypatch.setattr(requests, 'get', fake_get)
     app = load_app()
     client = TestClient(app)
     resp = client.get('/api/graph')
     assert resp.status_code == 200
-    assert resp.json() == {'nodes': [], 'edges': []}
+    assert resp.json() == {'nodes': ['n1'], 'edges': ['e1']}
+    assert calls == ['http://ume/graph']
 
 
 def test_prompt():
