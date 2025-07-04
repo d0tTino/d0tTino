@@ -29,7 +29,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     exit_code = execute_steps(steps, log_path=args.log)
     if args.notify:
         if exit_code == 0:
-            send_notification("ai-do completed")
+            send_notification("ai-do completed with exit code 0")
         else:
             send_notification(f"ai-do failed with exit code {exit_code}")
 
