@@ -120,6 +120,7 @@ Additional guides:
 - [Repository navigation](docs/navigation.md)
 - [AI automation tooling](docs/ai-automation.md)
 - [Dashboard overview](docs/dashboard.md)
+- [UME Quickstart](docs/ume.md)
 
 ## Git hooks
 
