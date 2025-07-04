@@ -2,11 +2,14 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 from pydantic import BaseModel
+import os
+import requests
 
 from scripts.ai_router import send_prompt
 from scripts.thm import apply_palette, REPO_ROOT
 
 app = FastAPI()
+UME_API_URL = os.environ.get("UME_API_URL", "http://localhost:8000")
 
 class PromptRequest(BaseModel):
     prompt: str
@@ -30,15 +33,19 @@ async def palette(req: PaletteRequest) -> dict[str, str]:
     return {"status": "applied"}
 
 @app.get("/api/stats")
-async def stats() -> dict[str, int]:
-    return {"queries": 0, "memory": 0}
+async def stats() -> dict:
+    resp = requests.get(f"{UME_API_URL}/dashboard/stats")
+    resp.raise_for_status()
+    return resp.json()
 
 @app.get("/api/graph")
-async def graph() -> dict[str, list]:
-    return {"nodes": [], "edges": []}
+async def graph() -> dict:
+    resp = requests.get(f"{UME_API_URL}/graph")
+    resp.raise_for_status()
+    return resp.json()
 
 if __name__ == "__main__":  # pragma: no cover - manual launch
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
-__all__ = ["app"]
+__all__ = ["app", "UME_API_URL"]
