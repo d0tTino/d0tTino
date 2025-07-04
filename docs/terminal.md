@@ -194,6 +194,9 @@ python -m ui.textual_app
 Use **Send** to route prompts via `ai_router.send_prompt` and **Apply** to call
 `thm.apply_palette`. Palette names are loaded from the `palettes/` directory and
 responses or status messages show directly in the terminal window.
+Press **Ctrl+P** to search available scripts and n8n flows via the LLM; a list of
+matches appears and the chosen entry runs after confirming the plan. The
+traditional command palette is available with **Ctrl+Shift+P**.
 ---
 
 ## Cloning & Managing Dotfiles
