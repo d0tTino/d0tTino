@@ -6,6 +6,7 @@ import os
 import subprocess
 
 from typing import Any, Callable, List, cast
+from pathlib import Path
 
 
 from .backends import (
@@ -17,6 +18,7 @@ from .backends import (
     OpenRouterDSPyBackend,  # noqa: F401 - re-exported for tests
     register_backend,
     get_backend,
+    SuperClaudeBackend,
 
 )
 

@@ -50,7 +50,7 @@ async def test_palette_application(monkeypatch):
 async def test_command_palette_hotkey():
     app = TerminalUI()
     async with app.run_test() as pilot:
-        await pilot.press("ctrl+p")
+        await pilot.press("ctrl+shift+p")
         await pilot.pause(0.05)
         assert any(isinstance(s, CommandPalette) for s in app.screen_stack)
 
@@ -64,4 +64,34 @@ async def test_plan_overlay_timeout():
         assert overlay in app.screen_stack
         await pilot.pause(0.2)
         assert overlay not in app.screen_stack
+
+
+@pytest.mark.asyncio
+async def test_search_actions_executes(monkeypatch):
+    monkeypatch.setattr("ui.textual_app.send_prompt", lambda p: "foo\nbar")
+    monkeypatch.setattr("ui.textual_app.ai_exec.plan", lambda a: [f"run {a}"])
+
+    executed = []
+
+    def fake_execute(steps, *, log_path):
+        executed.append((steps, log_path))
+        return 0
+
+    async def fake_show(self, steps, timeout=3):
+        executed.append(["show", steps])
+        return True
+
+    monkeypatch.setattr("ui.textual_app.execute_steps", fake_execute)
+    monkeypatch.setattr(TerminalUI, "show_plan", fake_show)
+
+    app = TerminalUI()
+    async with app.run_test() as pilot:
+        app.query_one("#prompt", Input).value = "query"
+        await pilot.press("ctrl+p")
+        await pilot.pause()
+        await pilot.press("enter")
+        await pilot.pause()
+
+    assert executed[0] == ["show", ["run foo"]]
+    assert executed[1][0] == ["run foo"]
 
