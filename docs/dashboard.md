@@ -36,3 +36,5 @@ npm run dev
 ```
 
 Visit `http://localhost:3000` to view the dashboard.
+
+See [UME Quickstart](ume.md) for cloning and running the backend with Poetry.
