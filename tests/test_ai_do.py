@@ -1,6 +1,7 @@
 import io
 import contextlib
 import subprocess
+from pathlib import Path
 import pytest
 
 pytest.importorskip("requests")
@@ -133,4 +134,18 @@ def test_main_notifies(monkeypatch, tmp_path):
     rc = ai_do.main(["goal", "--log", str(log), "--notify"])
 
     assert rc == 0
-    assert called == ["ai-do completed with exit code 0"]
+    assert called == ["ai-do completed"]
+
+
+def test_main_accepts_config_path(monkeypatch):
+    def fake_plan(goal: str, *, config_path=None):
+        assert goal == "goal"
+        assert config_path == Path("file.json")
+        return []
+
+    monkeypatch.setattr(ai_exec, "plan", fake_plan)
+    monkeypatch.setattr("builtins.input", lambda _: "n")
+
+    rc = ai_do.main(["goal", "--config", "file.json"])
+
+    assert rc == 0

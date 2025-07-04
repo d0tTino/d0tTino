@@ -25,11 +25,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    steps = ai_exec.plan(args.goal, config_path=args.config)
+    cfg_path = Path(args.config) if args.config else None
+    steps = ai_exec.plan(args.goal, config_path=cfg_path)
     exit_code = execute_steps(steps, log_path=args.log)
     if args.notify:
         if exit_code == 0:
             send_notification("ai-do completed with exit code 0")
+
         else:
             send_notification(f"ai-do failed with exit code {exit_code}")
 

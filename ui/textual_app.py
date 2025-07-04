@@ -3,9 +3,12 @@ from __future__ import annotations
 from textual.app import App, ComposeResult
 from textual.containers import Vertical
 from textual.screen import ModalScreen
+from pathlib import Path
 from textual.widgets import Button, Input, ProgressBar, Select, Static
 
 from llm.router import send_prompt
+from scripts import ai_exec
+from scripts.cli_common import execute_steps
 from scripts.thm import apply_palette, PALETTES_DIR, REPO_ROOT
 
 
@@ -40,14 +43,29 @@ class PlanOverlay(ModalScreen[bool]):
         self.dismiss(False)
 
 
+class SearchOverlay(ModalScreen[str]):
+    """Overlay that lets the user pick an action from ``results``."""
+
+    def __init__(self, results: list[str]) -> None:
+        super().__init__()
+        self.results = results
+
+    def compose(self) -> ComposeResult:  # pragma: no cover - simple UI
+        options = [(r, r) for r in self.results]
+        yield Select(options, id="search-results")
+
+    def on_select_submitted(self, event: Select.Submitted) -> None:
+        self.dismiss(str(event.value))
+
+
 class TerminalUI(App):
     """Minimal Textual interface for prompt sending and palette application."""
 
     CSS_PATH = None
     BINDINGS = [
         ("q", "quit", "Quit"),
-        # use Textual's built-in command palette action
-        ("ctrl+p", "command_palette", "Command Palette"),
+        ("ctrl+p", "search_actions", "Search"),
+        ("ctrl+shift+p", "command_palette", "Command Palette"),
     ]
 
     def compose(self) -> ComposeResult:  # pragma: no cover - simple UI
@@ -75,9 +93,26 @@ class TerminalUI(App):
                 apply_palette(palette, REPO_ROOT)
                 self.query_one("#status", Static).update(f"Applied {palette}")
 
-    def show_plan(self, steps: list[str], timeout: float = 3) -> None:
-        """Display a plan overlay with an auto-accept timer."""
-        self.push_screen(PlanOverlay(steps, timeout))
+    async def show_plan(self, steps: list[str], timeout: float = 3) -> bool:
+        """Display a plan overlay with an auto-accept timer and return result."""
+        return await self.push_screen(PlanOverlay(steps, timeout))
+
+    async def action_search_actions(self) -> None:
+        """Search for scripts and flows using the current prompt."""
+        prompt = self.query_one("#prompt", Input).value
+        if not prompt:
+            return
+        text = send_prompt(prompt)
+        results = [line.strip() for line in text.splitlines() if line.strip()]
+        if not results:
+            self.query_one("#status", Static).update("No results")
+            return
+        selection = await self.push_screen(SearchOverlay(results))
+        if selection:
+            steps = ai_exec.plan(selection)
+            accepted = await self.show_plan(steps)
+            if accepted:
+                execute_steps(steps, log_path=Path("ui_do.log"))
 
 
 if __name__ == "__main__":  # pragma: no cover - manual launch
