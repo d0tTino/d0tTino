@@ -7,6 +7,9 @@ export default function Home() {
   const [response, setResponse] = useState('');
   const [palette, setPalette] = useState('');
   const [status, setStatus] = useState('');
+  const [goal, setGoal] = useState('');
+  const [steps, setSteps] = useState([]);
+  const [logs, setLogs] = useState('');
 
   useEffect(() => {
     fetch('/api/health')
@@ -41,6 +44,27 @@ export default function Home() {
       .catch(() => setStatus('error'));
   };
 
+  const getPlan = () => {
+    fetch('/api/plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ goal })
+    })
+      .then((res) => res.json())
+      .then((data) => setSteps(data.steps || []));
+  };
+
+  const runExec = () => {
+    setLogs('');
+    const es = new EventSource(`/api/exec?goal=${encodeURIComponent(goal)}`);
+    es.onmessage = (e) => {
+      setLogs((prev) => prev + e.data + '\n');
+    };
+    es.onerror = () => {
+      es.close();
+    };
+  };
+
   return (
     <div>
       <h1>UME Dashboard</h1>
@@ -59,6 +83,17 @@ export default function Home() {
         <input value={palette} onChange={(e) => setPalette(e.target.value)} placeholder="palette" />
         <button onClick={applyPalette}>Apply</button>
         {status && <p>{status}</p>}
+      </div>
+      <div>
+        <input value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="goal" />
+        <button onClick={getPlan}>Plan</button>
+        <button onClick={runExec}>Run</button>
+        {steps.length > 0 && (
+          <pre>{steps.join('\n')}</pre>
+        )}
+        {logs && (
+          <pre>{logs}</pre>
+        )}
       </div>
     </div>
   );

@@ -16,6 +16,8 @@ The UME exposes a small set of FastAPI routes that power the dashboard:
 - `POST /api/palette` – apply a color palette
 - `POST /api/prompt` – forward an LLM prompt and return the response
 - `GET /api/health` – simple health check
+- `POST /api/plan` – generate shell steps for a goal
+- `GET /api/exec?goal=` – execute steps and stream logs as SSE
 
 These endpoints will evolve as the project grows but form the foundation for the web UI.
 
@@ -36,5 +38,9 @@ npm run dev
 ```
 
 Visit `http://localhost:3000` to view the dashboard.
+
+Use the **Plan** button to generate shell steps for a goal. The **Run** button
+opens a server-sent events stream from `/api/exec` and displays log lines as the
+commands execute.
 
 See [UME Quickstart](ume.md) for cloning and running the backend with Poetry.

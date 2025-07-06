@@ -6,12 +6,13 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-import os
-import requests
+import asyncio
 
 from scripts.ai_router import send_prompt
 from scripts.thm import apply_palette, REPO_ROOT
+from scripts import ai_exec
 
 STATE_PATH = Path(os.environ.get("API_STATE_PATH", REPO_ROOT / "api_state.json"))
 
@@ -56,6 +57,9 @@ class PromptRequest(BaseModel):
 class PaletteRequest(BaseModel):
     name: str
 
+class ExecRequest(BaseModel):
+    goal: str
+
 @app.get("/api/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -70,6 +74,31 @@ async def prompt(req: PromptRequest) -> dict[str, str]:
 async def palette(req: PaletteRequest) -> dict[str, str]:
     apply_palette(req.name, REPO_ROOT)
     return {"status": "applied"}
+
+@app.post("/api/plan")
+async def plan(req: ExecRequest) -> dict[str, list[str]]:
+    steps = ai_exec.plan(req.goal)
+    return {"steps": steps}
+
+@app.get("/api/exec")
+async def exec_stream(goal: str):
+    steps = ai_exec.plan(goal)
+
+    async def streamer():
+        for step in steps:
+            yield f"data: $ {step}\n\n"
+            proc = await asyncio.create_subprocess_shell(
+                step,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+            )
+            assert proc.stdout is not None
+            async for line in proc.stdout:
+                yield f"data: {line.decode().rstrip()}\n\n"
+            await proc.wait()
+            yield f"data: (exit {proc.returncode})\n\n"
+
+    return StreamingResponse(streamer(), media_type="text/event-stream")
 
 @app.get("/api/stats")
 async def stats() -> dict[str, int]:
@@ -89,4 +118,6 @@ __all__ = [
     "record_prompt",
     "get_stats",
     "get_graph",
+    "plan",
+    "exec_stream",
 ]
