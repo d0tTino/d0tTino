@@ -9,9 +9,8 @@ try:  # pragma: no cover - optional dependency
 except ImportError:  # pragma: no cover - optional dependency
     dspy = None
 
-_LM: Callable[..., Any] | None = None
 LM: Callable[..., Any]
-OpenRouterDSPyBackend: type[Backend] | None = None
+OpenRouterDSPyBackend: type[Backend] | None
 
 if dspy is not None:
     lm = getattr(dspy, "LLM", getattr(dspy, "LM", None))
@@ -32,6 +31,7 @@ if dspy is not None:
 
     _OpenRouterDSPyBackend = _RealOpenRouterDSPyBackend
     OpenRouterDSPyBackend = _OpenRouterDSPyBackend
+
 
 else:  # pragma: no cover - optional dependency missing
     OpenRouterDSPyBackend = None
