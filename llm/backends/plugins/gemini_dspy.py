@@ -9,9 +9,8 @@ try:  # pragma: no cover - optional dependency
 except ImportError:  # pragma: no cover - optional dependency
     dspy = None
 
-_LM: Callable[..., Any] | None = None
 LM: Callable[..., Any]
-GeminiDSPyBackend: type[Backend] | None = None
+GeminiDSPyBackend: type[Backend] | None
 
 if dspy is not None:
     lm = getattr(dspy, "LLM", getattr(dspy, "LM", None))
@@ -30,7 +29,7 @@ if dspy is not None:
             result = self.lm.forward(prompt=prompt)
             return _extract_text(result)
 
-    GeminiDSPyBackend = _GeminiDSPyBackend
+    GeminiDSPyBackend = _RealGeminiDSPyBackend
 
 else:  # pragma: no cover - optional dependency missing
     GeminiDSPyBackend = None
