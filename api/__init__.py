@@ -7,8 +7,6 @@ from typing import Any
 
 from fastapi import FastAPI
 from pydantic import BaseModel
-import os
-import requests
 
 from scripts.ai_router import send_prompt
 from scripts.thm import apply_palette, REPO_ROOT
