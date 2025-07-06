@@ -19,6 +19,7 @@ test = [
     "mypy",
     "fastapi",
     "uvicorn",
+    "httpx",
 ]
 cli = ["tomli_w"]
 lmql = ["lmql"]
