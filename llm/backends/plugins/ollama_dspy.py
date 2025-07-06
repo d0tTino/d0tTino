@@ -9,9 +9,8 @@ try:  # pragma: no cover - optional dependency
 except ImportError:  # pragma: no cover - optional dependency
     dspy = None
 
-_LM: Callable[..., Any] | None = None
 LM: Callable[..., Any]
-OllamaDSPyBackend: type[Backend] | None = None
+OllamaDSPyBackend: type[Backend] | None
 
 if dspy is not None:
     lm = getattr(dspy, "LLM", getattr(dspy, "LM", None))
@@ -31,6 +30,8 @@ if dspy is not None:
             return _extract_text(result)
 
     OllamaDSPyBackend = _RealOllamaDSPyBackend
+
+
 
 else:  # pragma: no cover - optional dependency missing
     OllamaDSPyBackend = None

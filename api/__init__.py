@@ -10,6 +10,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import asyncio
 
+
 from scripts.ai_router import send_prompt
 from scripts.thm import apply_palette, REPO_ROOT
 from scripts import ai_exec
