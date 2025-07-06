@@ -33,6 +33,8 @@ Third-party packages may add new backends by exposing an entry point in the
 ``llm.plugins`` group. A plug-in module should import
 ``llm.backends.register_backend`` and call it when loaded.
 
+See [plugins.md](plugins.md) for a full template and interface description.
+
 Example ``pyproject.toml`` snippet:
 
 ```toml

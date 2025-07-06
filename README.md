@@ -121,6 +121,7 @@ Additional guides:
 - [AI automation tooling](docs/ai-automation.md)
 - [Dashboard overview](docs/dashboard.md)
 - [UME Quickstart](docs/ume.md)
+- [Backend plug-in guide](docs/plugins.md)
 
 ## Git hooks
 
