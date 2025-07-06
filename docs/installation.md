@@ -44,13 +44,15 @@ ruff check .
    ./scripts/setup-winget.ps1
    ```
 2. Copy or symlink the files from this repository to your profile directory.
-3. From an elevated PowerShell window, run `bootstrap.ps1` to set up your PATH.
-   You must run the script from an **elevated** window so that
+3. From an elevated PowerShell window, run `bootstrap.ps1` (or call
+   `install.sh` from a regular shell) to set up your PATH. You must run the
+   PowerShell script from an **elevated** window so that
    `scripts/fix-path.ps1` can modify the user PATH.
-   Pass `-InstallWinget` to install the core tools automatically. You can also
-   add `-InstallWindowsTerminal` to copy the default Windows Terminal settings,
-   `-InstallWSL` to enable WSL, and `-SetupWSL` to configure the Ubuntu instance:
-   ```powershell
+   Pass the appropriate flags to install the core tools automatically. The
+   equivalent command using `install.sh` is shown below:
+   ```bash
+   ./install.sh --winget --windows-terminal --install-wsl --setup-wsl
+   # PowerShell alternative
    ./bootstrap.ps1 -InstallWinget -InstallWindowsTerminal -InstallWSL -SetupWSL
    ```
    The script calls `scripts/fix-path.ps1` to clean up duplicate entries and ensure your `bin` directory is included.
@@ -66,15 +68,20 @@ install WSL:
 ./scripts/install-wsl.ps1
 ```
 
-You can also pass `-InstallWSL` to `bootstrap.ps1` to run the same command.
+You can also pass `--install-wsl` to `install.sh` or `-InstallWSL` to
+`bootstrap.ps1` to run the same command.
 
 Run the provided script from the repository root to install the basic tools on
 a fresh Ubuntu/WSL instance. The script uses `apt-get` and may prompt for your
-password. Invoke it directly inside WSL or pass `-SetupWSL` to `bootstrap.ps1`
-from Windows to run it via `wsl.exe`:
+password. Invoke it directly inside WSL or pass `--setup-wsl` to `install.sh` or
+`-SetupWSL` to `bootstrap.ps1` from Windows to run it via `wsl.exe`:
 
 ```bash
 sudo bash scripts/setup-wsl.sh
+```
+
+```bash
+./install.sh --setup-wsl
 ```
 
 ```powershell
@@ -88,10 +95,11 @@ sudo bash scripts/setup-wsl.sh
    git clone https://github.com/d0tTino/d0tTino.git
    ```
 2. Use `stow` or your preferred method to symlink the dotfiles into place.
-3. Run `bootstrap.ps1` to clean up your PATH:
-   ```powershell
-   ./bootstrap.ps1
+3. Run `install.sh` to clean up your PATH:
+   ```bash
+   ./install.sh
    ```
+   If you prefer PowerShell, you can run `./bootstrap.ps1` instead.
 4. Launch a new shell to pick up the configuration.
 
 ## Local LLM tools
@@ -121,7 +129,7 @@ IMAGE_NAME=myimage bash scripts/setup-docker.sh
 ```
 
 On Windows you can call the PowerShell wrapper or use `bootstrap.ps1` with the
-`-SetupDocker` switch:
+`-SetupDocker` switch. From other shells you can run `install.sh --setup-docker`:
 
 ```powershell
 ./scripts/setup-docker.ps1
@@ -131,6 +139,10 @@ On Windows you can call the PowerShell wrapper or use `bootstrap.ps1` with the
 ./bootstrap.ps1 -SetupDocker
 # with image name forwarding
 ./bootstrap.ps1 -SetupDocker -DockerImageName myimage
+```
+
+```bash
+./install.sh --setup-docker --image myimage
 ```
 
 ## Ghostty terminal

@@ -72,13 +72,15 @@ automation scripts.
 
 Next, install the Git hooks so `pre-commit` runs automatically:
 
-```powershell
+```bash
+./install.sh
+# or on Windows
 ./bootstrap.ps1
 ```
 
-`bootstrap.ps1` sets up the hooks for you. It runs
-`scripts/setup-hooks.ps1` on Windows and `scripts/setup-hooks.sh` on other
-platforms so `pre-commit` runs on each commit.
+`install.sh` sets up the hooks for you. It detects your platform and calls
+`scripts/setup-hooks.ps1` on Windows or `scripts/setup-hooks.sh` elsewhere so
+`pre-commit` runs on each commit.
 
 You can then run the test suite to verify the configuration:
 
@@ -94,14 +96,14 @@ npm run smoke
 
 
 See the [installation guide](docs/installation.md) for setup instructions.
-After cloning the repository, run `./bootstrap.ps1` from an elevated
-PowerShell window. Running it with elevation allows
+After cloning the repository, run `./install.sh` (or `./bootstrap.ps1` from an
+elevated PowerShell window). Running it with elevation allows
 `scripts/fix-path.ps1` to modify your user PATH and enables the local Git
-hooks automatically. On Windows it invokes `scripts/setup-hooks.ps1` while on
-other platforms it runs `scripts/setup-hooks.sh`.
-To enable and set up WSL in one step, pass `-InstallWSL -SetupWSL` to
-`bootstrap.ps1`; see the [installation guide](docs/installation.md#WSL) for
-more details.
+hooks automatically. On Windows the script calls `scripts/setup-hooks.ps1`
+while on other platforms it invokes `scripts/setup-hooks.sh`.
+To enable and set up WSL in one step, pass `--install-wsl --setup-wsl` to
+`install.sh` or `-InstallWSL -SetupWSL` with `bootstrap.ps1`; see the
+[installation guide](docs/installation.md#WSL) for more details.
 
 After running the script, reload your profile with `. $PROFILE` or restart the terminal to pick up the new configuration. The profile defines an `ai` helper that forwards prompts to `python -m ai_router`.
 
@@ -126,10 +128,10 @@ Additional guides:
 ## Git hooks
 
 Run `scripts/setup-hooks.sh` to enable the local hooks automatically
-(equivalent to running `git config core.hooksPath .githooks`). `bootstrap.ps1`
-invokes the appropriate script for you (`scripts/setup-hooks.ps1` on Windows and
-`scripts/setup-hooks.sh` elsewhere), so you usually don't need to run it
-manually:
+(equivalent to running `git config core.hooksPath .githooks`). `install.sh`
+and `bootstrap.ps1` call the appropriate script for you (`scripts/setup-hooks.ps1`
+on Windows and `scripts/setup-hooks.sh` elsewhere), so you usually don't need to
+run it manually:
 
 ```bash
 ./scripts/setup-hooks.sh
