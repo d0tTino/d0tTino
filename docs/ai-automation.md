@@ -27,6 +27,19 @@ ruff check .
 `dspy` (version 2.6.27) powers the local LLM wrapper found in `llm/`, while
 `pytest` runs the test suite.
 
+## Plug-in Registration
+
+Third-party packages may add new backends by exposing an entry point in the
+``llm.plugins`` group. A plug-in module should import
+``llm.backends.register_backend`` and call it when loaded.
+
+Example ``pyproject.toml`` snippet:
+
+```toml
+[project.entry-points."llm.plugins"]
+my_backend = "my_package.plugins:backend"
+```
+
 ## LLM Routing CLI
 
 Use the `ai` command to route prompts to your configured language model. By
