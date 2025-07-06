@@ -30,6 +30,7 @@ if dspy is not None:
             result = self.lm.forward(prompt=prompt)
             return _extract_text(result)
 
+    _OpenRouterDSPyBackend = _RealOpenRouterDSPyBackend
     OpenRouterDSPyBackend = _OpenRouterDSPyBackend
 
 else:  # pragma: no cover - optional dependency missing
