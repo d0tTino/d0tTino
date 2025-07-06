@@ -4,7 +4,10 @@ export default [
     ignores: ["node_modules/**"],
     languageOptions: {
       ecmaVersion: "latest",
-      sourceType: "module"
+      sourceType: "module",
+      parserOptions: {
+        ecmaFeatures: { jsx: true }
+      }
     },
     rules: {}
   }

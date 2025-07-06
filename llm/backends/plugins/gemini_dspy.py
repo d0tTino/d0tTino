@@ -29,7 +29,9 @@ if dspy is not None:
             result = self.lm.forward(prompt=prompt)
             return _extract_text(result)
 
-    GeminiDSPyBackend = _RealGeminiDSPyBackend
+    _GeminiDSPyBackend = _RealGeminiDSPyBackend
+    GeminiDSPyBackend = _GeminiDSPyBackend
+
 
 else:  # pragma: no cover - optional dependency missing
     GeminiDSPyBackend = None

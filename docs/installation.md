@@ -227,6 +227,14 @@ installation:
 ./scripts/create-hyperv-vm.ps1 -Name DevVM -IsoUrl https://example.com/os.iso -CloudInit ./seed.iso
 ```
 
+You can also provision a VM or WSL distribution using the Python helper. Pass
+`--notify` to post a message via `ntfy` when provisioning completes:
+
+```powershell
+python scripts/provision_vm.py hyperv --name DevVM --iso-url https://example.com/os.iso --cloud-init ./seed.iso --notify
+python scripts/provision_vm.py wsl --name DevDistro --rootfs ubuntu.tar --target C:\\VMs\\DevDistro --notify
+```
+
 Hyper-V is useful for testing scripts in clean environments.
 
 ## ETL automation with n8n
