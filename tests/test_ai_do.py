@@ -134,7 +134,7 @@ def test_main_notifies(monkeypatch, tmp_path):
     rc = ai_do.main(["goal", "--log", str(log), "--notify"])
 
     assert rc == 0
-    assert called == ["ai-do completed"]
+    assert called == ["ai-do completed with exit code 0"]
 
 
 def test_main_accepts_config_path(monkeypatch):
@@ -147,5 +147,20 @@ def test_main_accepts_config_path(monkeypatch):
     monkeypatch.setattr("builtins.input", lambda _: "n")
 
     rc = ai_do.main(["goal", "--config", "file.json"])
+
+    assert rc == 0
+
+
+def test_main_accepts_sample_config(monkeypatch):
+    def fake_plan(goal: str, *, config_path=None):
+        assert goal == "goal"
+        assert isinstance(config_path, Path)
+        assert config_path == Path("sample.json")
+        return []
+
+    monkeypatch.setattr(ai_exec, "plan", fake_plan)
+    monkeypatch.setattr("builtins.input", lambda _: "n")
+
+    rc = ai_do.main(["goal", "--config", "sample.json"])
 
     assert rc == 0
