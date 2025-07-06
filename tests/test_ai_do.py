@@ -137,6 +137,22 @@ def test_main_notifies(monkeypatch, tmp_path):
     assert called == ["ai-do completed with exit code 0"]
 
 
+def test_main_records_event(monkeypatch, tmp_path):
+    monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: [])
+    monkeypatch.setattr("builtins.input", lambda _: "n")
+    recorded = []
+
+    def fake_record(name, payload, *, enabled=False):
+        recorded.append((name, payload, enabled))
+
+    monkeypatch.setattr(ai_do, "record_event", fake_record)
+    log = tmp_path / "log.txt"
+    rc = ai_do.main(["goal", "--log", str(log), "--analytics"])
+
+    assert rc == 0
+    assert recorded == [("ai-do", {"goal": "goal", "exit_code": 0}, True)]
+
+
 def test_main_accepts_config_path(monkeypatch):
     def fake_plan(goal: str, *, config_path=None):
         assert goal == "goal"

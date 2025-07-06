@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from scripts import ai_exec
-from scripts.cli_common import execute_steps, send_notification
+from scripts.cli_common import execute_steps, record_event, send_notification
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -17,6 +17,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("goal", help="High level description of the task")
     parser.add_argument("--config")
     parser.add_argument("--notify", action="store_true", help="Send notification when done")
+    parser.add_argument(
+        "--analytics",
+        action="store_true",
+        help="Record anonymous usage events",
+    )
     parser.add_argument(
         "--log",
         type=Path,
@@ -33,7 +38,11 @@ def main(argv: Optional[List[str]] = None) -> int:
             send_notification("ai-do completed with exit code 0")
         else:
             send_notification(f"ai-do failed with exit code {exit_code}")
-
+    record_event(
+        "ai-do",
+        {"goal": args.goal, "exit_code": exit_code},
+        enabled=args.analytics,
+    )
 
     return exit_code
 
