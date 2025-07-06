@@ -1,11 +1,6 @@
 add_newline = false
-format = """
-[┌─](bold purple)$directory$git_branch$git_state$git_status$status$fill$time
-[└─](bold purple)$character
-"""
-
+format = "[┌─](bold purple)$directory$git_branch$git_state$git_status$status$fill$time\n[└─](bold purple)$character\n"
 palette = "blacklight"
-# Colors also stored in palettes/blacklight.toml for Windows Terminal
 
 [palettes.blacklight]
 black = "#000000"
@@ -14,7 +9,6 @@ green = "#b2ff59"
 yellow = "#ffff66"
 blue = "#66b2ff"
 purple = "#845CFF"
-
 cyan = "#66fff2"
 white = "#f2f2f2"
 bright_black = "#666666"
@@ -23,9 +17,26 @@ bright_green = "#b2ff59"
 bright_yellow = "#ffff66"
 bright_blue = "#66b2ff"
 bright_purple = "#FC17DA"
-
 bright_cyan = "#66fff2"
 bright_white = "#ffffff"
+
+[palettes.dracula]
+black = "#21222C"
+red = "#FF5555"
+green = "#50FA7B"
+yellow = "#F1FA8C"
+blue = "#BD93F9"
+purple = "#FF79C6"
+cyan = "#8BE9FD"
+white = "#F8F8F2"
+bright_black = "#6272A4"
+bright_red = "#FF6E6E"
+bright_green = "#69FF94"
+bright_yellow = "#FFFFA5"
+bright_blue = "#D6ACFF"
+bright_purple = "#FF92DF"
+bright_cyan = "#A4FFFF"
+bright_white = "#FFFFFF"
 
 [directory]
 style = "fg:bright_purple"
@@ -49,3 +60,4 @@ style = "fg:purple"
 
 [status]
 disabled = false
+
