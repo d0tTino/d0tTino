@@ -10,3 +10,5 @@ streamlit
 textual
 requests
 httpx
+fastapi
+uvicorn
