@@ -113,6 +113,14 @@ New-Item -ItemType SymbolicLink -Path $Env:USERPROFILE\\AppData\\Local\\Packages
 
 These examples assume the repository is cloned in a convenient location. Adjust the paths to match your setup.
 
+## Required Terminal Tools
+
+Install [tmux](https://github.com/tmux/tmux) for pane management and
+[Ghostty](https://github.com/mitchellh/ghostty) for a GPU-accelerated
+terminal emulator. The helper script `scripts/setup-ghostty.sh` installs
+Ghostty and copies an example config. Launch the five-pane layout with
+`scripts/start-workspace.sh` (or the PowerShell variant on Windows).
+
 ## Terminal Tools: fastfetch, btm & Nushell/Starship
 
 ### fastfetch
