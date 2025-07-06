@@ -191,4 +191,11 @@ mypy --install-types --non-interactive
 After fixing any lint errors, rerun the command and verify that it reports zero
 issues. The `pre-commit` hook runs the same command automatically.
 
+## Privacy
+
+`ai-do` can send anonymous completion events when invoked with `--analytics`.
+The data is posted to the URL specified in the `EVENTS_URL` environment
+variable with optional authorization via `EVENTS_TOKEN`. No information is sent
+unless the flag is provided.
+
 Licensed under the [Apache 2.0](LICENSE) license.

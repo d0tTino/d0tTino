@@ -1,11 +1,14 @@
 """Shared utilities for CLI modules."""
 from __future__ import annotations
 
+import os
 import shlex
 import subprocess
 import sys
 from pathlib import Path
 from typing import Iterable
+
+import requests
 
 
 def read_prompt(prompt: str) -> str:
@@ -50,4 +53,23 @@ def send_notification(message: str) -> None:
     subprocess.run(["ntfy", "send", message], check=False)
 
 
-__all__ = ["read_prompt", "execute_steps", "send_notification"]
+def record_event(name: str, payload: dict, *, enabled: bool = False) -> None:
+    """Send ``payload`` to ``EVENTS_URL`` when ``enabled`` is ``True``."""
+    if not enabled:
+        return
+    url = os.environ.get("EVENTS_URL")
+    if not url:
+        return
+    token = os.environ.get("EVENTS_TOKEN")
+    headers = {}
+    if token:
+        headers["apikey"] = token
+        headers["Authorization"] = f"Bearer {token}"
+    data = {"name": name, **payload}
+    try:
+        requests.post(url, headers=headers, json=data, timeout=5)
+    except Exception:
+        pass
+
+
+__all__ = ["read_prompt", "execute_steps", "send_notification", "record_event"]
