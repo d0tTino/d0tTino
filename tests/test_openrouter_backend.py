@@ -6,9 +6,37 @@ from llm.backends import OpenRouterBackend
 from llm import router as ai_router
 
 
-def test_openrouter_backend_returns_string():
+def test_openrouter_backend_makes_request(monkeypatch):
+    calls = {}
+
+    def fake_post(url, json, headers, timeout):
+        calls["url"] = url
+        calls["json"] = json
+        calls["headers"] = headers
+
+        class Resp:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {"choices": [{"message": {"content": "result"}}]}
+
+        return Resp()
+
+    monkeypatch.setattr("requests.post", fake_post)
+    monkeypatch.setenv("OPENROUTER_API_KEY", "k")
+    monkeypatch.setenv("OPENROUTER_BASE_URL", "https://example.com/api")
+
     backend = OpenRouterBackend("m")
-    assert backend.run("p") == "openrouter:p:m"
+    result = backend.run("p")
+
+    assert result == "result"
+    assert calls["url"] == "https://example.com/api/chat/completions"
+    assert calls["json"] == {
+        "model": "m",
+        "messages": [{"role": "user", "content": "p"}],
+    }
+    assert calls["headers"] == {"Authorization": "Bearer k"}
 
 
 def test_run_openrouter_uses_dspy_backend(monkeypatch):
