@@ -33,6 +33,7 @@ ai-plan = "scripts.ai_cli:plan_main"
 ai-do = "scripts.ai_cli:do_main"
 ai-cli = "scripts.ai_cli:main"
 etl = "scripts.etl:main"
+plugins = "scripts.plugins:main"
 
 [project.entry-points."llm.plugins"]
 # Third-party packages can expose backends here

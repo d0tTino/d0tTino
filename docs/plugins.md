@@ -40,3 +40,18 @@ register_backend("my_backend", run)
 ```
 
 See `llm/backends/plugins/sample.py` for a full example.
+
+## Managing Plug-ins
+
+Use the `plugins` helper to install or remove third-party backends.
+
+```bash
+# List available plug-ins
+python -m scripts.plugins list
+
+# Install a plug-in
+python -m scripts.plugins install sample
+
+# Remove a plug-in
+python -m scripts.plugins remove sample
+```
