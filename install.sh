@@ -4,6 +4,14 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 scripts="$repo_root/scripts"
 
+# Determine the platform when OSTYPE is not provided
+if [[ -z "${OSTYPE:-}" ]]; then
+    OSTYPE="$(uname -s | tr '[:upper:]' '[:lower:]')"
+    case $OSTYPE in
+        mingw*) OSTYPE="msys" ;;
+    esac
+fi
+
 install_winget=false
 install_windows_terminal=false
 install_wsl=false
