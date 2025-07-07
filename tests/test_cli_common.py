@@ -1,3 +1,6 @@
+import pytest
+
+pytest.importorskip("requests")
 from scripts import cli_common
 
 

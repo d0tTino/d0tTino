@@ -1,4 +1,7 @@
+import pytest
 from fastapi.testclient import TestClient
+
+pytest.importorskip("fastapi")
 import importlib
 import os
 import sys
@@ -8,8 +11,8 @@ from pathlib import Path
 def load_app(send_prompt=lambda p, local=False: f"resp-{p}", apply_palette=lambda n, r: None, state_path: Path | None = None):
     stub_router = types.SimpleNamespace(send_prompt=send_prompt)
     stub_thm = types.SimpleNamespace(apply_palette=apply_palette, REPO_ROOT=Path('.'))
-    sys.modules['llm.router'] = stub_router
-    sys.modules['scripts.thm'] = stub_thm
+    sys.modules['llm.router'] = stub_router  # type: ignore[assignment]
+    sys.modules['scripts.thm'] = stub_thm  # type: ignore[assignment]
     if state_path is None:
         state_path = Path('state.json')
     os.environ['API_STATE_PATH'] = str(state_path)

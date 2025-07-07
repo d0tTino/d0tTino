@@ -3,6 +3,10 @@ import sys
 import time
 
 import pytest
+
+pytest.importorskip("httpx")
+pytest.importorskip("fastapi")
+
 import httpx
 from fastapi.testclient import TestClient
 from api import app
