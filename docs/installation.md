@@ -1,6 +1,18 @@
 # Installation
 
 Follow these steps to set up the configuration files on a new system.
+For a fully automated setup run the OS-aware installer:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/d0tTino/d0tTino/main/scripts/install.sh | bash
+```
+
+Windows users can run the PowerShell variant:
+
+```powershell
+irm https://raw.githubusercontent.com/d0tTino/d0tTino/main/scripts/install.ps1 | iex
+```
+
 
 ## Node.js
 
