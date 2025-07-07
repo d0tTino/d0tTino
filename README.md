@@ -176,20 +176,16 @@ pytest
 
 ## Contributing
 
-Run `ruff` before committing to ensure the Python code is lint-free:
+Run `ruff` and `mypy` before committing to ensure the code is lint and type
+error free:
 
 ```bash
 ruff check .
-```
-
-Run `mypy` as well to catch type errors:
-
-```bash
 mypy --install-types --non-interactive
 ```
 
-After fixing any lint errors, rerun the command and verify that it reports zero
-issues. The `pre-commit` hook runs the same command automatically.
+After fixing any errors, rerun the commands and verify they report zero issues.
+The `pre-commit` hook runs the same checks automatically.
 
 ## Privacy
 
