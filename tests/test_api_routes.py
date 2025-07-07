@@ -8,7 +8,7 @@ from pathlib import Path
 def load_app(send_prompt=lambda p, local=False: f"resp-{p}", apply_palette=lambda n, r: None, state_path: Path | None = None):
     stub_router = types.SimpleNamespace(send_prompt=send_prompt)
     stub_thm = types.SimpleNamespace(apply_palette=apply_palette, REPO_ROOT=Path('.'))
-    sys.modules['scripts.ai_router'] = stub_router
+    sys.modules['llm.router'] = stub_router
     sys.modules['scripts.thm'] = stub_thm
     if state_path is None:
         state_path = Path('state.json')
