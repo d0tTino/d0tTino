@@ -58,3 +58,61 @@ def test_do_subcommand(monkeypatch, tmp_path):
     rc = ai_cli.main(["do", "goal", "--log", str(log)])
     assert rc == 0
     assert log.exists()
+
+
+def test_send_records_event(monkeypatch):
+    monkeypatch.setattr(ai_cli.router, "send_prompt", lambda *a, **k: "ok")
+    recorded = []
+
+    def fake_record(name, payload, *, enabled=False):
+        recorded.append((name, payload, enabled))
+
+    monkeypatch.setattr(ai_cli, "record_event", fake_record)
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        rc = ai_cli.main(["send", "msg", "--analytics"])
+
+    assert rc == 0
+    assert recorded == [("ai-cli-send", {"exit_code": 0}, True)]
+
+
+def test_plan_records_event(monkeypatch):
+    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: ["one"])
+    recorded = []
+
+    def fake_record(name, payload, *, enabled=False):
+        recorded.append((name, payload, enabled))
+
+    monkeypatch.setattr(ai_cli, "record_event", fake_record)
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        rc = ai_cli.main(["plan", "goal", "--analytics"])
+
+    assert rc == 0
+    assert recorded == [("ai-cli-plan", {"goal": "goal", "step_count": 1}, True)]
+
+
+def test_do_records_event(monkeypatch, tmp_path):
+    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: ["echo hi"])
+    inputs = iter(["y", "y"])
+    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
+    class Result:
+        def __init__(self):
+            self.stdout = ""
+            self.stderr = ""
+            self.returncode = 0
+
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: Result())
+
+    recorded = []
+
+    def fake_record(name, payload, *, enabled=False):
+        recorded.append((name, payload, enabled))
+
+    monkeypatch.setattr(ai_cli, "record_event", fake_record)
+    log = tmp_path / "log.txt"
+    rc = ai_cli.main(["do", "goal", "--log", str(log), "--analytics"])
+
+    assert rc == 0
+    assert recorded == [("ai-cli-do", {"goal": "goal", "exit_code": 0}, True)]
