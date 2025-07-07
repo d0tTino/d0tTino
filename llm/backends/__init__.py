@@ -88,7 +88,7 @@ def discover_plugins() -> None:
             if attr not in __all__:
                 __all__.append(attr)
 
-    for entry in importlib.metadata.entry_points(group="llm.plugins"):
+    for entry in importlib.metadata.entry_points().select(group="llm.plugins"):
         try:
             module = entry.load()
         except Exception:  # pragma: no cover - optional dependency missing

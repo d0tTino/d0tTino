@@ -2,6 +2,7 @@ import importlib
 import importlib.metadata
 import sys
 import types
+import pytest
 
 from llm import backends
 
@@ -70,7 +71,7 @@ def test_discover_plugins_loads_entry_points(monkeypatch):
     monkeypatch.setattr(
         importlib.metadata,
         "entry_points",
-        lambda group=None: (entry,) if group == "llm.plugins" else (),
+        lambda: importlib.metadata.EntryPoints((entry,)),
     )
 
     backends.discover_plugins()
@@ -107,7 +108,7 @@ def test_backends_import_loads_entry_point_plugins(monkeypatch):
     monkeypatch.setattr(
         importlib.metadata,
         "entry_points",
-        lambda group=None: (entry,) if group == "llm.plugins" else (),
+        lambda: importlib.metadata.EntryPoints((entry,)),
     )
     monkeypatch.setattr(importlib.metadata, "import_module", fake_import)
 
@@ -129,10 +130,43 @@ def test_backends_import_skips_unknown_entry_points(monkeypatch):
     monkeypatch.setattr(
         importlib.metadata,
         "entry_points",
-        lambda group=None: (entry,) if group == "llm.plugins" else (),
+        lambda: importlib.metadata.EntryPoints((entry,)),
     )
 
     reloaded = importlib.reload(backends)
 
     assert "ghost" not in reloaded.available_backends()
     _reset_plugins()
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="requires Python 3.10+")
+def test_discover_plugins_loads_entry_points_py310(monkeypatch):
+    _reset_plugins()
+
+    module = types.ModuleType("dummy_plugin")
+    exec(
+        "from llm.backends import register_backend\n"
+        "def run(prompt: str, model: str | None = None) -> str:\n"
+        "    return 'dummy'\n"
+        "register_backend('dummy', run)\n"
+        "__all__ = ['run']\n",
+        module.__dict__,
+    )
+    sys.modules["dummy_plugin"] = module
+
+    entry = importlib.metadata.EntryPoint(
+        name="dummy",
+        value="dummy_plugin",
+        group="llm.plugins",
+    )
+
+    def fake_entry_points(*args, **kwargs):
+        if args or kwargs:
+            raise AssertionError("entry_points called with arguments")
+        return importlib.metadata.EntryPoints((entry,))
+
+    monkeypatch.setattr(importlib.metadata, "entry_points", fake_entry_points)
+
+    backends.discover_plugins()
+
+    assert "dummy" in backends.available_backends()
