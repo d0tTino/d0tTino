@@ -36,8 +36,18 @@ def _cmd_install(args: argparse.Namespace) -> int:
         print(f"Unknown plug-in: {name}", file=sys.stderr)
         return 1
     pkg = PLUGIN_REGISTRY[name]
-    result = subprocess.run([sys.executable, "-m", "pip", "install", pkg])
-    return result.returncode
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", pkg],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return 0
+    except subprocess.CalledProcessError as e:
+        if e.stderr:
+            print(e.stderr, file=sys.stderr, end="")
+        return e.returncode
 
 
 def _cmd_remove(args: argparse.Namespace) -> int:
@@ -46,10 +56,18 @@ def _cmd_remove(args: argparse.Namespace) -> int:
         print(f"Unknown plug-in: {name}", file=sys.stderr)
         return 1
     pkg = PLUGIN_REGISTRY[name]
-    result = subprocess.run(
-        [sys.executable, "-m", "pip", "uninstall", "-y", pkg]
-    )
-    return result.returncode
+    try:
+        subprocess.run(
+            [sys.executable, "-m", "pip", "uninstall", "-y", pkg],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return 0
+    except subprocess.CalledProcessError as e:
+        if e.stderr:
+            print(e.stderr, file=sys.stderr, end="")
+        return e.returncode
 
 
 def build_parser() -> argparse.ArgumentParser:
