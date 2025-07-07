@@ -187,6 +187,16 @@ mypy --install-types --non-interactive
 After fixing any errors, rerun the commands and verify they report zero issues.
 The `pre-commit` hook runs the same checks automatically.
 
+## Telemetry and Metrics
+
+When invoked with the `--analytics` flag, `ai-do` sends a small JSON payload to
+the URL specified by `EVENTS_URL`. These events record whether a command sequence
+completed successfully and can be aggregated per user. Summing successful
+executions for each developer over a calendar week yields the “successful
+automated tasks per active developer per week” metric. This telemetry helps track
+how effectively the automation tooling is being adopted and highlights trends in
+task reliability.
+
 ## Privacy
 
 `ai-do` and the `ai-cli` subcommands (`send`, `plan`, `do`) can send anonymous
