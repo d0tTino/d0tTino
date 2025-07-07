@@ -22,17 +22,8 @@ run_ollama = router.run_ollama
 run_openrouter = router.run_openrouter
 create_default_chain = router.create_default_chain
 run_langchain = router.run_langchain
-
-
-def _run_backend(name: str, prompt: str, model: str) -> str:
-    """Delegate to ``router._run_backend`` with LangChain support."""
-    if name.lower() == "langchain":
-        return send_prompt(prompt, model=model)
-    return router._run_backend(name, prompt, model)
-
-def send_prompt(prompt: str, *, local: bool = False, model: str = DEFAULT_MODEL) -> str:
-    """Proxy to ``router.send_prompt`` so tests can monkeypatch it."""
-    return router.send_prompt(prompt, local=local, model=model)
+_run_backend = router._run_backend
+send_prompt = router.send_prompt
 
 
 
@@ -65,12 +56,9 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         if args.backend:
-            if args.backend.lower() == "langchain":
-                output = router.send_prompt(prompt, local=args.local, model=args.model)
-            else:
-                output = router._run_backend(args.backend, prompt, args.model)
+            output = router._run_backend(args.backend, prompt, args.model)
         else:
-            output = send_prompt(prompt, local=args.local, model=args.model)
+            output = router.send_prompt(prompt, local=args.local, model=args.model)
 
 
     except (FileNotFoundError, subprocess.CalledProcessError) as exc:
