@@ -189,13 +189,15 @@ The `pre-commit` hook runs the same checks automatically.
 
 ## Telemetry and Metrics
 
-When invoked with the `--analytics` flag, `ai-do` sends a small JSON payload to
-the URL specified by `EVENTS_URL`. These events record whether a command sequence
+When invoked with the [`--analytics`](scripts/ai_do.py#L20-L24) flag, `ai-do`
+sends a small JSON payload to the URL specified by `EVENTS_URL`. If
+`EVENTS_TOKEN` is set, its value is included as both an `apikey` and
+`Authorization: Bearer` header. These events record whether a command sequence
 completed successfully and can be aggregated per user. Summing successful
-executions for each developer over a calendar week yields the “successful
-automated tasks per active developer per week” metric. This telemetry helps track
-how effectively the automation tooling is being adopted and highlights trends in
-task reliability.
+executions for each developer over a calendar week yields the
+“successful automated tasks per active developer per week” metric. This telemetry
+helps track how effectively the automation tooling is being adopted and
+highlights trends in task reliability.
 
 ## Privacy
 
@@ -205,3 +207,11 @@ specified in the `EVENTS_URL` environment variable with optional authorization
 via `EVENTS_TOKEN`. No information is sent unless the flag is provided.
 
 Licensed under the [Apache 2.0](LICENSE) license.
+
+## North Star Metric
+
+The project tracks “successful automated tasks per active developer per week” as
+its north star metric. Every time a command completes successfully with the
+[--analytics](scripts/ai_do.py#L20-L24) flag enabled, an event is posted to
+`EVENTS_URL` and counted toward the developer's weekly total. Aggregating these
+numbers highlights adoption trends and guides future automation work.
