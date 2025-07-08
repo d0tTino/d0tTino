@@ -3,7 +3,7 @@ from scripts import plugins
 
 
 def test_list_outputs_available_plugins(monkeypatch, capsys):
-    monkeypatch.setattr(plugins, "PLUGIN_REGISTRY", {"dummy": "dummy-pkg"})
+    monkeypatch.setattr(plugins, "load_registry", lambda: {"dummy": "dummy-pkg"})
     monkeypatch.setattr(plugins, "_is_installed", lambda p: False)
     rc = plugins.main(["list"])
     captured = capsys.readouterr().out
@@ -20,7 +20,7 @@ def test_install_runs_pip(monkeypatch):
             returncode = 0
         return Result()
     monkeypatch.setattr(plugins.subprocess, "run", fake_run)
-    monkeypatch.setattr(plugins, "PLUGIN_REGISTRY", {"dummy": "dummy-pkg"})
+    monkeypatch.setattr(plugins, "load_registry", lambda: {"dummy": "dummy-pkg"})
     rc = plugins.main(["install", "dummy"])
     assert rc == 0
     assert called["cmd"][0] == sys.executable
@@ -43,7 +43,7 @@ def test_remove_runs_pip(monkeypatch):
         return Result()
 
     monkeypatch.setattr(plugins.subprocess, "run", fake_run)
-    monkeypatch.setattr(plugins, "PLUGIN_REGISTRY", {"dummy": "dummy-pkg"})
+    monkeypatch.setattr(plugins, "load_registry", lambda: {"dummy": "dummy-pkg"})
     rc = plugins.main(["remove", "dummy"])
     assert rc == 0
     assert called["cmd"][0] == sys.executable
@@ -60,7 +60,7 @@ def test_install_failure_propagates(monkeypatch, capsys):
         )
 
     monkeypatch.setattr(plugins.subprocess, "run", fake_run)
-    monkeypatch.setattr(plugins, "PLUGIN_REGISTRY", {"dummy": "dummy-pkg"})
+    monkeypatch.setattr(plugins, "load_registry", lambda: {"dummy": "dummy-pkg"})
     rc = plugins.main(["install", "dummy"])
     captured = capsys.readouterr()
     assert rc == 5
@@ -72,7 +72,7 @@ def test_remove_failure_propagates(monkeypatch, capsys):
         raise plugins.subprocess.CalledProcessError(3, cmd, stderr="boom\n")
 
     monkeypatch.setattr(plugins.subprocess, "run", fake_run)
-    monkeypatch.setattr(plugins, "PLUGIN_REGISTRY", {"dummy": "dummy-pkg"})
+    monkeypatch.setattr(plugins, "load_registry", lambda: {"dummy": "dummy-pkg"})
     rc = plugins.main(["remove", "dummy"])
     captured = capsys.readouterr()
     assert rc == 3
