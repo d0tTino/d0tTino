@@ -5,14 +5,51 @@ from __future__ import annotations
 
 import argparse
 import importlib.metadata
+import json
+import os
+from pathlib import Path
 import subprocess
 import sys
 from typing import Dict, List, Optional
 
-# Mapping of plug-in name to pip package
+import requests
+
+# Mapping of plug-in name to pip package used as a fallback when a registry
+# cannot be loaded from the network or cache.
 PLUGIN_REGISTRY: Dict[str, str] = {
     "sample": "d0ttino-sample-plugin",
 }
+
+# Cache file for the remote registry
+CACHE_PATH = Path.home() / ".cache" / "d0ttino" / "plugin_registry.json"
+
+
+def load_registry() -> Dict[str, str]:
+    """Return the plug-in registry from URL, cache or the built-in default."""
+
+    url = os.environ.get("PLUGIN_REGISTRY_URL")
+    if url:
+        try:
+            resp = requests.get(url, timeout=5)
+            resp.raise_for_status()
+            data = resp.json()
+            if isinstance(data, dict):
+                CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+                CACHE_PATH.write_text(json.dumps(data))
+                return {str(k): str(v) for k, v in data.items()}
+        except Exception:
+            pass
+
+    if CACHE_PATH.exists():
+        try:
+            with CACHE_PATH.open(encoding="utf-8") as fh:
+                data = json.load(fh)
+            if isinstance(data, dict):
+                return {str(k): str(v) for k, v in data.items()}
+        except Exception:
+            pass
+
+    return PLUGIN_REGISTRY
 
 
 def _is_installed(package: str) -> bool:
@@ -24,18 +61,20 @@ def _is_installed(package: str) -> bool:
 
 
 def _cmd_list(args: argparse.Namespace) -> int:
-    for name, package in sorted(PLUGIN_REGISTRY.items()):
+    registry = load_registry()
+    for name, package in sorted(registry.items()):
         status = "installed" if _is_installed(package) else "not installed"
         print(f"{name}\t({package}) - {status}")
     return 0
 
 
 def _cmd_install(args: argparse.Namespace) -> int:
+    registry = load_registry()
     name = args.name
-    if name not in PLUGIN_REGISTRY:
+    if name not in registry:
         print(f"Unknown plug-in: {name}", file=sys.stderr)
         return 1
-    pkg = PLUGIN_REGISTRY[name]
+    pkg = registry[name]
     try:
         subprocess.run(
             [sys.executable, "-m", "pip", "install", pkg],
@@ -51,11 +90,12 @@ def _cmd_install(args: argparse.Namespace) -> int:
 
 
 def _cmd_remove(args: argparse.Namespace) -> int:
+    registry = load_registry()
     name = args.name
-    if name not in PLUGIN_REGISTRY:
+    if name not in registry:
         print(f"Unknown plug-in: {name}", file=sys.stderr)
         return 1
-    pkg = PLUGIN_REGISTRY[name]
+    pkg = registry[name]
     try:
         subprocess.run(
             [sys.executable, "-m", "pip", "uninstall", "-y", pkg],
