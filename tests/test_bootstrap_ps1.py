@@ -3,61 +3,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-
-def create_stub_pwsh(path: Path, log: Path | None = None) -> None:
-    if log is None:
-        log = path.parent / "pwsh.log"
-    path.write_text(
-        f"""#!/usr/bin/env bash
-log_file='{log}'
-file=""
-args=()
-while [[ $# -gt 0 ]]; do
-  if [[ $1 == -File ]]; then
-    file=$2
-    shift 2
-  else
-    args+=($1)
-    shift
-  fi
-done
-root=$(dirname "$file")
-base=$(basename "$file")
-if [[ $base == bootstrap.ps1 ]]; then
-  install_winget=false
-  install_windows_terminal=false
-  install_wsl=false
-  setup_wsl=false
-  setup_docker=false
-  for arg in "${{args[@]}}"; do
-    case $arg in
-      -InstallWinget) install_winget=true ;;
-      -InstallWindowsTerminal) install_windows_terminal=true ;;
-      -InstallWSL) install_wsl=true ;;
-      -SetupWSL) setup_wsl=true ;;
-      -SetupDocker) setup_docker=true ;;
-    esac
-  done
-  echo fix-path.ps1 >> "$log_file"
-  echo install_common.sh >> "$log_file"
-  if [[ -f "$root/scripts/install_common.sh" ]]; then
-    /bin/bash "$root/scripts/install_common.sh"
-  fi
-  $install_winget && echo setup-winget.ps1 >> "$log_file"
-  $install_windows_terminal && echo install-windows-terminal.ps1 >> "$log_file"
-  $install_wsl && echo install-wsl.ps1 >> "$log_file"
-  $setup_wsl && echo setup-wsl.ps1 >> "$log_file"
-  $setup_docker && echo setup-docker.ps1 >> "$log_file"
-  exit 0
-else
-  echo "$base" >> "$log_file"
-  exit 0
-fi
-""",
-        encoding="utf-8",
-    )
-    path.chmod(0o755)
-
+from tests.stubs import create_stub_install, create_stub_install_common, create_stub_pwsh
 
 def test_bootstrap_sets_hooks_path(tmp_path: Path) -> None:
     repo_root = Path(__file__).resolve().parents[1]
@@ -165,3 +111,62 @@ def test_bootstrap_setup_docker(tmp_path: Path) -> None:
 
     lines = log_file.read_text().splitlines()
     assert "setup-docker.ps1" in lines
+
+
+def _prepare_repo(tmp_path: Path, name: str, log: Path) -> Path:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / name
+    repo.mkdir()
+    shutil.copy(repo_root / "bootstrap.ps1", repo / "bootstrap.ps1")
+    shutil.copytree(repo_root / "scripts", repo / "scripts")
+    create_stub_install(repo / "scripts" / "install.sh", log)
+    create_stub_install_common(repo / "scripts" / "install_common.sh", log)
+    return repo
+
+
+def test_bootstrap_installs_fonts_macos(tmp_path: Path) -> None:
+    log_file = tmp_path / "pwsh.log"
+    repo = _prepare_repo(tmp_path, "repo_macos", log_file)
+
+    stub_dir = tmp_path / "bin"
+    stub_dir.mkdir()
+    create_stub_pwsh(stub_dir / "pwsh", log_file)
+
+    env = os.environ.copy()
+    env.update({"PATH": f"{stub_dir}:{env['PATH']}", "STUB_IS_WINDOWS": "0", "OSTYPE": "darwin"})
+
+    subprocess.run(
+        ["pwsh", "-NoLogo", "-NoProfile", "-File", str(repo / "bootstrap.ps1")],
+        cwd=repo,
+        env=env,
+        check=True,
+    )
+
+    lines = log_file.read_text().splitlines()
+    assert "install_common" in lines
+    assert "install_fonts_unix" in lines
+    assert "pull_palettes" in lines
+
+
+def test_bootstrap_installs_fonts_windows(tmp_path: Path) -> None:
+    log_file = tmp_path / "pwsh.log"
+    repo = _prepare_repo(tmp_path, "repo_windows", log_file)
+
+    stub_dir = tmp_path / "bin"
+    stub_dir.mkdir()
+    create_stub_pwsh(stub_dir / "pwsh", log_file)
+
+    env = os.environ.copy()
+    env.update({"PATH": f"{stub_dir}:{env['PATH']}", "STUB_IS_WINDOWS": "1", "OSTYPE": "msys"})
+
+    subprocess.run(
+        ["pwsh", "-NoLogo", "-NoProfile", "-File", str(repo / "bootstrap.ps1")],
+        cwd=repo,
+        env=env,
+        check=True,
+    )
+
+    lines = log_file.read_text().splitlines()
+    assert "install_common" in lines
+    assert "install_fonts_windows" in lines
+    assert "pull_palettes" in lines

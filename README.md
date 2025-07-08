@@ -206,6 +206,7 @@ calendar week yields the “successful automated tasks per active developer per
 week” metric. This telemetry helps track how effectively the automation tooling
 is being adopted and highlights trends in task reliability.
 
+
 ## Privacy
 
 `ai-do`, `ai-exec`, and the `ai-cli` subcommands (`send`, `plan`, `do`) can send anonymous
@@ -214,3 +215,11 @@ specified in the `EVENTS_URL` environment variable with optional authorization
 via `EVENTS_TOKEN`. No information is sent unless the flag is provided.
 
 Licensed under the [Apache 2.0](LICENSE) license.
+
+## North Star Metric
+
+The project tracks “successful automated tasks per active developer per week” as
+its north star metric. Every time a command completes successfully with the
+[--analytics](scripts/ai_do.py#L20-L24) flag enabled, an event is posted to
+`EVENTS_URL` and counted toward the developer's weekly total. Aggregating these
+numbers highlights adoption trends and guides future automation work.
