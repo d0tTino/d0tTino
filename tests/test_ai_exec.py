@@ -52,7 +52,7 @@ def test_plan_falls_back(monkeypatch):
 
 
 def test_main_invokes_plan(monkeypatch):
-    def mock_plan(goal: str, *, config_path=None):
+    def mock_plan(goal: str, *, config_path=None, analytics=False):
         assert goal == "goal"
         assert str(config_path) == "cfg.json"
         return ["one", "two"]
@@ -76,4 +76,24 @@ def test_main_notifies(monkeypatch):
     rc = ai_exec.main(["goal", "--notify"])
     assert rc == 0
     assert called == ["ai-plan completed"]
+
+
+def test_plan_records_event(monkeypatch):
+    monkeypatch.setattr(ai_exec.router, "run_gemini", lambda *a, **k: "step")
+    monkeypatch.setattr(ai_exec.router, "run_ollama", lambda *a, **k: "step")
+    monkeypatch.setattr(ai_exec, "get_preferred_models", lambda *a, **k: ("g", "o"))
+    recorded = []
+
+    def fake_record(name, payload, *, enabled=False):
+        recorded.append((name, payload, enabled))
+
+    monkeypatch.setattr(ai_exec, "record_event", fake_record)
+    steps = ai_exec.plan("goal", analytics=True)
+    assert steps == ["step"]
+    name, payload, enabled = recorded[0]
+    assert name == "ai-exec-plan"
+    assert enabled is True
+    assert payload["goal"] == "goal"
+    assert payload["step_count"] == 1
+    assert "latency_ms" in payload and payload["latency_ms"] >= 0
 

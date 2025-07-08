@@ -12,6 +12,7 @@ from typing import List, Optional
 from llm import router
 from scripts import ai_exec
 from scripts.cli_common import execute_steps, read_prompt, record_event
+import time
 
 
 def _cmd_send(args: argparse.Namespace) -> int:
@@ -30,23 +31,41 @@ def _cmd_send(args: argparse.Namespace) -> int:
 
 
 def _cmd_plan(args: argparse.Namespace) -> int:
-    steps = ai_exec.plan(args.goal, config_path=args.config)
+    start = time.time()
+    steps = ai_exec.plan(args.goal, config_path=args.config, analytics=args.analytics)
     for step in steps:
         print(step)
+    end = time.time()
     record_event(
         "ai-cli-plan",
-        {"goal": args.goal, "step_count": len(steps)},
+        {
+            "goal": args.goal,
+            "step_count": len(steps),
+            "start_ts": start,
+            "end_ts": end,
+            "latency_ms": int((end - start) * 1000),
+        },
         enabled=args.analytics,
     )
     return 0
 
 
 def _cmd_do(args: argparse.Namespace) -> int:
-    steps = ai_exec.plan(args.goal, config_path=args.config)
+    start = time.time()
+    steps = ai_exec.plan(
+        args.goal, config_path=args.config, analytics=args.analytics
+    )
     exit_code = execute_steps(steps, log_path=args.log)
+    end = time.time()
     record_event(
         "ai-cli-do",
-        {"goal": args.goal, "exit_code": exit_code},
+        {
+            "goal": args.goal,
+            "exit_code": exit_code,
+            "start_ts": start,
+            "end_ts": end,
+            "latency_ms": int((end - start) * 1000),
+        },
         enabled=args.analytics,
     )
     return exit_code
