@@ -13,3 +13,8 @@ pip install -r requirements.txt
 pip install dspy-ai
 pytest
 ```
+
+The CI workflow installs the runtime requirements with
+`pip install -r requirements.txt` before running the tests.
+Running the same command locally ensures your environment matches the
+automated checks.
