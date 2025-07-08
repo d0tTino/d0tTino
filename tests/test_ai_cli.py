@@ -24,7 +24,7 @@ def test_send_subcommand(monkeypatch):
 
 
 def test_plan_subcommand(monkeypatch):
-    def fake_plan(goal: str, *, config_path=None):
+    def fake_plan(goal: str, *, config_path=None, analytics=False):
         assert goal == "goal"
         assert config_path == "cfg.json"
         return ["one", "two"]
@@ -89,7 +89,12 @@ def test_plan_records_event(monkeypatch):
         rc = ai_cli.main(["plan", "goal", "--analytics"])
 
     assert rc == 0
-    assert recorded == [("ai-cli-plan", {"goal": "goal", "step_count": 1}, True)]
+    name, payload, enabled = recorded[0]
+    assert name == "ai-cli-plan"
+    assert enabled is True
+    assert payload["goal"] == "goal"
+    assert payload["step_count"] == 1
+    assert "latency_ms" in payload and payload["latency_ms"] >= 0
 
 
 def test_do_records_event(monkeypatch, tmp_path):
@@ -115,4 +120,9 @@ def test_do_records_event(monkeypatch, tmp_path):
     rc = ai_cli.main(["do", "goal", "--log", str(log), "--analytics"])
 
     assert rc == 0
-    assert recorded == [("ai-cli-do", {"goal": "goal", "exit_code": 0}, True)]
+    name, payload, enabled = recorded[0]
+    assert name == "ai-cli-do"
+    assert enabled is True
+    assert payload["goal"] == "goal"
+    assert payload["exit_code"] == 0
+    assert "latency_ms" in payload and payload["latency_ms"] >= 0

@@ -11,10 +11,14 @@ from typing import List, Optional
 
 from llm import router
 from llm.ai_router import get_preferred_models
-from scripts.cli_common import read_prompt, send_notification
+from scripts.cli_common import read_prompt, record_event, send_notification
+import time
 
-def plan(goal: str, *, config_path: Optional[Path] = None) -> List[str]:
+def plan(
+    goal: str, *, config_path: Optional[Path] = None, analytics: bool = False
+) -> List[str]:
     """Return planning steps for ``goal`` using preferred models."""
+    start = time.time()
     primary, fallback = get_preferred_models(
         router.DEFAULT_MODEL, router.DEFAULT_MODEL, config_path=config_path
 
@@ -24,7 +28,20 @@ def plan(goal: str, *, config_path: Optional[Path] = None) -> List[str]:
     except (FileNotFoundError, subprocess.CalledProcessError):
         text = router.run_ollama(goal, model=fallback or router.DEFAULT_MODEL)
 
-    return [line.strip() for line in text.splitlines() if line.strip()]
+    steps = [line.strip() for line in text.splitlines() if line.strip()]
+    end = time.time()
+    record_event(
+        "ai-exec-plan",
+        {
+            "goal": goal,
+            "step_count": len(steps),
+            "start_ts": start,
+            "end_ts": end,
+            "latency_ms": int((end - start) * 1000),
+        },
+        enabled=analytics,
+    )
+    return steps
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -32,10 +49,15 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("goal")
     parser.add_argument("--config")
     parser.add_argument("--notify", action="store_true", help="Send notification when done")
+    parser.add_argument(
+        "--analytics",
+        action="store_true",
+        help="Record anonymous usage events",
+    )
     args = parser.parse_args(argv)
     cfg_path = Path(args.config) if args.config else None
     goal = read_prompt(args.goal)
-    steps = plan(goal, config_path=cfg_path)
+    steps = plan(goal, config_path=cfg_path, analytics=args.analytics)
     for step in steps:
         print(step)
     if args.notify:

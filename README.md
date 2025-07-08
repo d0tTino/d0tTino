@@ -189,17 +189,26 @@ The `pre-commit` hook runs the same checks automatically.
 
 ## Telemetry and Metrics
 
-When invoked with the `--analytics` flag, `ai-do` sends a small JSON payload to
-the URL specified by `EVENTS_URL`. These events record whether a command sequence
-completed successfully and can be aggregated per user. Summing successful
-executions for each developer over a calendar week yields the “successful
-automated tasks per active developer per week” metric. This telemetry helps track
-how effectively the automation tooling is being adopted and highlights trends in
-task reliability.
+When invoked with the `--analytics` flag, the CLI tools (`ai-do`, `ai-exec`, and
+the `ai-cli` subcommands `send`, `plan`, `do`) send a small JSON payload to the
+URL specified by `EVENTS_URL`. Each payload contains the following fields:
+
+- `name` – event type such as `ai-cli-plan` or `ai-do`
+- `goal` – the provided goal or prompt
+- `step_count` – number of generated steps (when planning)
+- `exit_code` – command execution result
+- `start_ts` and `end_ts` – Unix timestamps capturing the plan duration
+- `latency_ms` – computed from the timestamps
+
+These events record whether a command sequence completed successfully and can be
+aggregated per user. Summing successful executions for each developer over a
+calendar week yields the “successful automated tasks per active developer per
+week” metric. This telemetry helps track how effectively the automation tooling
+is being adopted and highlights trends in task reliability.
 
 ## Privacy
 
-`ai-do` and the `ai-cli` subcommands (`send`, `plan`, `do`) can send anonymous
+`ai-do`, `ai-exec`, and the `ai-cli` subcommands (`send`, `plan`, `do`) can send anonymous
 completion events when invoked with `--analytics`. The data is posted to the URL
 specified in the `EVENTS_URL` environment variable with optional authorization
 via `EVENTS_TOKEN`. No information is sent unless the flag is provided.
