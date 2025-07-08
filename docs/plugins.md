@@ -56,6 +56,23 @@ python -m scripts.plugins install sample
 python -m scripts.plugins remove sample
 ```
 
+## Built-in Backends
+
+`llm` includes HTTP clients for LobeChat and MindBridge. Set the following
+environment variables to configure them:
+
+### LobeChat
+
+- `LOBECHAT_API_KEY` – API token for your LobeChat instance (optional).
+- `LOBECHAT_BASE_URL` – Override the service URL (default
+  `http://localhost:3210/api`).
+
+### MindBridge
+
+- `MINDBRIDGE_API_KEY` – API token for the MindBridge service (optional).
+- `MINDBRIDGE_BASE_URL` – Override the service URL (default
+  `https://api.mindbridge.ai/v1`).
+
 # Writing a Recipe Plug-in
 
 Automation recipes are small helpers that return shell steps for a goal.
