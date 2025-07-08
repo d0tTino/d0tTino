@@ -38,6 +38,9 @@ plugins = "scripts.plugins:main"
 [project.entry-points."llm.plugins"]
 # Third-party packages can expose backends here
 
+[project.entry-points."d0ttino.recipes"]
+sample = "scripts.recipes.plugins.sample:run"
+
 
 [tool.setuptools.packages.find]
 where = ["."]

@@ -55,3 +55,25 @@ python -m scripts.plugins install sample
 # Remove a plug-in
 python -m scripts.plugins remove sample
 ```
+
+# Writing a Recipe Plug-in
+
+Automation recipes are small helpers that return shell steps for a goal.
+A recipe exposes a callable that matches the following interface:
+
+```python
+from typing import List
+
+def run(goal: str) -> List[str]:
+    ...
+```
+
+Expose the callable via the `d0ttino.recipes` entry point group so the
+loader can discover it:
+
+```toml
+[project.entry-points."d0ttino.recipes"]
+my_recipe = "my_package.recipes:run"
+```
+
+See `scripts/recipes/plugins/sample.py` for a simple example.
