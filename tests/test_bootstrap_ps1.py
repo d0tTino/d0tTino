@@ -39,9 +39,9 @@ if [[ $base == bootstrap.ps1 ]]; then
     esac
   done
   echo fix-path.ps1 >> "$log_file"
-  echo setup-hooks.ps1 >> "$log_file"
-  if [[ -f "$root/scripts/setup-hooks.sh" ]]; then
-    /bin/bash "$root/scripts/setup-hooks.sh"
+  echo install_common.sh >> "$log_file"
+  if [[ -f "$root/scripts/install_common.sh" ]]; then
+    /bin/bash "$root/scripts/install_common.sh"
   fi
   $install_winget && echo setup-winget.ps1 >> "$log_file"
   $install_windows_terminal && echo install-windows-terminal.ps1 >> "$log_file"
@@ -126,7 +126,7 @@ def test_bootstrap_invokes_optional_scripts(tmp_path: Path) -> None:
         )
         lines = log_file.read_text().splitlines()
         assert "fix-path.ps1" in lines
-        assert "setup-hooks.ps1" in lines
+        assert "install_common.sh" in lines
         assert expected in lines
 
 
