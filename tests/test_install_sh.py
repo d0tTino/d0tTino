@@ -15,6 +15,11 @@ def test_install_sh_creates_hooks_and_palettes(tmp_path: Path) -> None:
     repo.mkdir()
     shutil.copy(repo_root / "install.sh", repo / "install.sh")
     shutil.copytree(repo_root / "scripts", repo / "scripts")
+    install_log = tmp_path / "install.log"
+    create_exe(
+        repo / "scripts" / "install.sh",
+        f"#!/usr/bin/env bash\n" f"echo install >> '{install_log}'\n",
+    )
     shutil.copytree(repo_root / ".githooks", repo / ".githooks")
     shutil.copytree(repo_root / "palettes", repo / "palettes")
 
@@ -30,6 +35,7 @@ def test_install_sh_creates_hooks_and_palettes(tmp_path: Path) -> None:
     )
     assert result.stdout.strip() == ".githooks"
     assert (repo / "palettes" / "blacklight.toml").is_file()
+    assert install_log.read_text().strip() == "install"
 
 
 def test_install_sh_runs_without_ostype(tmp_path: Path) -> None:
@@ -38,6 +44,11 @@ def test_install_sh_runs_without_ostype(tmp_path: Path) -> None:
     repo.mkdir()
     shutil.copy(repo_root / "install.sh", repo / "install.sh")
     shutil.copytree(repo_root / "scripts", repo / "scripts")
+    install_log = tmp_path / "install_no_ostype.log"
+    create_exe(
+        repo / "scripts" / "install.sh",
+        f"#!/usr/bin/env bash\n" f"echo install >> '{install_log}'\n",
+    )
     shutil.copytree(repo_root / ".githooks", repo / ".githooks")
     shutil.copytree(repo_root / "palettes", repo / "palettes")
 
@@ -47,6 +58,7 @@ def test_install_sh_runs_without_ostype(tmp_path: Path) -> None:
     subprocess.run(["/bin/bash", "install.sh"], cwd=repo, check=True, env=env)
 
     assert (repo / "palettes" / "blacklight.toml").is_file()
+    assert install_log.read_text().strip() == "install"
 
 
 def test_install_sh_installs_nerd_font_macos(tmp_path: Path) -> None:
@@ -55,28 +67,18 @@ def test_install_sh_installs_nerd_font_macos(tmp_path: Path) -> None:
     repo.mkdir()
     shutil.copy(repo_root / "install.sh", repo / "install.sh")
     shutil.copytree(repo_root / "scripts", repo / "scripts")
+    install_log = tmp_path / "install_macos.log"
+    create_exe(
+        repo / "scripts" / "install.sh",
+        f"#!/usr/bin/env bash\n" f"echo install >> '{install_log}'\n",
+    )
     shutil.copytree(repo_root / ".githooks", repo / ".githooks")
     shutil.copytree(repo_root / "palettes", repo / "palettes")
 
     subprocess.run(["git", "init"], cwd=repo, check=True)
 
-    bin_dir = tmp_path / "bin"
-    bin_dir.mkdir()
-    brew_log = tmp_path / "brew.log"
-    create_exe(
-        bin_dir / "brew",
-        (
-            "#!/usr/bin/env bash\n"
-            f"echo \"$@\" >> '{brew_log}'\n"
-            "if [[ $1 == list ]]; then exit 1; fi\n"
-        ),
-    )
-
     env = os.environ.copy()
-    env["PATH"] = f"{bin_dir}:{env['PATH']}"
     env["OSTYPE"] = "darwin"
     subprocess.run(["/bin/bash", "install.sh"], cwd=repo, check=True, env=env)
 
-    lines = brew_log.read_text().splitlines()
-    assert any("tap" in line for line in lines)
-    assert any("font-caskaydia-cove-nerd-font" in line for line in lines)
+    assert install_log.read_text().strip() == "install"

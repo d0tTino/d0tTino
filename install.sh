@@ -54,20 +54,14 @@ run_pwsh() {
     pwsh -NoLogo -NoProfile -File "$scripts/$script" "$@"
 }
 
-install_nerd_font_macos() {
-    if ! command -v brew >/dev/null; then
-        echo "Homebrew is required on macOS to install fonts" >&2
-        return 1
-    fi
-    if ! brew list --cask font-caskaydia-cove-nerd-font >/dev/null 2>&1; then
-        brew tap homebrew/cask-fonts >/dev/null
-        brew install --cask font-caskaydia-cove-nerd-font
-    fi
-}
 
 if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == windows* ]]; then
     run_pwsh fix-path.ps1
-    run_pwsh setup-hooks.ps1
+fi
+
+bash "$scripts/install_common.sh"
+
+if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == windows* ]]; then
     if $install_winget; then run_pwsh setup-winget.ps1; fi
     if $install_windows_terminal; then run_pwsh install-windows-terminal.ps1; fi
     if $install_wsl; then run_pwsh install-wsl.ps1; fi
@@ -78,10 +72,6 @@ if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == 
         run_pwsh setup-docker.ps1 "${args[@]}"
     fi
 else
-    bash "$scripts/setup-hooks.sh"
-    if [[ $OSTYPE == darwin* ]]; then
-        install_nerd_font_macos
-    fi
     if $setup_wsl; then bash "$scripts/setup-wsl.sh"; fi
     if $setup_docker; then
         args=()
