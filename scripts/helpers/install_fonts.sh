@@ -2,9 +2,17 @@
 set -euo pipefail
 
 install_fonts_unix() {
+    if ! command -v curl >/dev/null 2>&1; then
+        echo "install_fonts.sh: curl is required" >&2
+        exit 1
+    fi
+    if ! command -v unzip >/dev/null 2>&1; then
+        echo "install_fonts.sh: unzip is required" >&2
+        exit 1
+    fi
     url="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/CaskaydiaCove.zip"
     tmpdir="$(mktemp -d)"
-    curl -fsSL "$url" -o "$tmpdir/font.zip"
+    curl --retry 5 -fsSL "$url" -o "$tmpdir/font.zip"
     unzip -q "$tmpdir/font.zip" -d "$tmpdir"
     font_dir="$HOME/.local/share/fonts"
     mkdir -p "$font_dir"

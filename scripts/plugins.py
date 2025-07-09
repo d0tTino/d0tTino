@@ -52,7 +52,11 @@ def load_registry() -> Dict[str, str]:
                 CACHE_PATH.write_text(json.dumps(data))
                 return {str(k): str(v) for k, v in data.items()}
         except requests.exceptions.RequestException as exc:
-            logger.warning("Failed to fetch plug-in registry from %s: %s", url, exc)
+            logger.warning(
+                "Failed to fetch plug-in registry from %s: %s. Using cached registry if available.",
+                url,
+                exc,
+            )
         except Exception:
             pass
 
