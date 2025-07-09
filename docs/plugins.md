@@ -56,6 +56,25 @@ python -m scripts.plugins install sample
 python -m scripts.plugins remove sample
 ```
 
+### Adding Your Plug-in
+
+Plug-ins listed by the helper come from a small registry file. Update
+`plugin-registry.json` in this repository with your plug-in name and the pip
+package that provides it. The file must conform to
+[plugin-registry.schema.json](../plugin-registry.schema.json).
+
+Example entry:
+
+```json
+{
+  "my_backend": "my-package"
+}
+```
+
+During development you can point `PLUGIN_REGISTRY_URL` at a JSON file
+containing your entry. The file must pass validation against
+`plugin-registry.schema.json`.
+
 ## Built-in Backends
 
 `llm` includes HTTP clients for LobeChat and MindBridge. Set the following

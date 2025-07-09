@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/d0ttino/plugin-registry.schema.json",
+  "title": "d0tTino Plug-in Registry",
+  "description": "Mapping of plug-in names to pip packages.",
+  "type": "object",
+  "additionalProperties": {
+    "type": "string",
+    "description": "Name of the pip package containing the plug-in"
+  }
+}
