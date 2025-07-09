@@ -75,10 +75,25 @@ During development you can point `PLUGIN_REGISTRY_URL` at a JSON file
 containing your entry. The file must pass validation against
 `plugin-registry.schema.json`.
 
+Sample plug-in packages for the built-in backends are included under
+`examples/plugins`. Install them with:
+
+```bash
+python -m scripts.plugins install openrouter
+python -m scripts.plugins install lobechat
+python -m scripts.plugins install mindbridge
+```
+
 ## Built-in Backends
 
-`llm` includes HTTP clients for LobeChat and MindBridge. Set the following
-environment variables to configure them:
+`llm` includes HTTP clients for OpenRouter, LobeChat and MindBridge. Set the
+following environment variables to configure them:
+
+### OpenRouter
+
+- `OPENROUTER_API_KEY` – API token for the OpenRouter service.
+- `OPENROUTER_BASE_URL` – Override the service URL (default
+  `https://openrouter.ai/api/v1`).
 
 ### LobeChat
 

@@ -36,8 +36,14 @@ class GeminiBackend(Backend):
 def run_gemini(prompt: str, model: str | None = None) -> str:
     """Return Gemini response for ``prompt``."""
 
-    backend_cls = GeminiDSPyBackend if GeminiDSPyBackend is not None else GeminiBackend
-    backend = cast(Any, backend_cls)(model)
+    if GeminiDSPyBackend is not None:
+        backend = cast(Any, GeminiDSPyBackend)(model)
+        try:
+            return backend.run(prompt)
+        except Exception:
+            pass
+
+    backend = GeminiBackend(model)
     return backend.run(prompt)
 
 
