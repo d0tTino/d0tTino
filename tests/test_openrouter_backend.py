@@ -2,8 +2,10 @@ import pytest
 
 pytest.importorskip("requests")
 
-from llm.backends import OpenRouterBackend
-from llm import router as ai_router
+from llm import backends, router as ai_router
+
+backends.load_backends()
+OpenRouterBackend = backends.OpenRouterBackend
 
 
 def test_openrouter_backend_makes_request(monkeypatch):

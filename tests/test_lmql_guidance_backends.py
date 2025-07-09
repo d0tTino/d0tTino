@@ -1,6 +1,9 @@
 import pytest
 
-from llm.backends import LMQLBackend, GuidanceBackend
+from llm import backends
+backends.load_backends()
+LMQLBackend = backends.LMQLBackend
+GuidanceBackend = backends.GuidanceBackend
 
 
 def test_lmql_backend_returns_string():

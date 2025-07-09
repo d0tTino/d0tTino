@@ -9,13 +9,14 @@ import sys
 
 
 from llm import router
-from llm.backends import available_backends
+from llm.backends import available_backends, load_backends
 
 DEFAULT_MODEL = router.DEFAULT_MODEL
 DEFAULT_PRIMARY_BACKEND = router.DEFAULT_PRIMARY_BACKEND
 DEFAULT_FALLBACK_BACKEND = router.DEFAULT_FALLBACK_BACKEND
 DEFAULT_COMPLEXITY_THRESHOLD = router.DEFAULT_COMPLEXITY_THRESHOLD
 
+load_backends()
 
 run_gemini = router.run_gemini
 run_ollama = router.run_ollama
