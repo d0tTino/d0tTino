@@ -10,13 +10,9 @@ param(
 & "$PSScriptRoot/scripts/fix-path.ps1"
 
 if ($IsWindows) {
-    & "$PSScriptRoot/scripts/setup-hooks.ps1"
-    & "$PSScriptRoot/scripts/helpers/install_fonts.ps1"
-    & "$PSScriptRoot/scripts/helpers/sync_palettes.ps1"
+    & "$PSScriptRoot/scripts/helpers/install_common.ps1"
 } elseif (Get-Command bash -ErrorAction SilentlyContinue) {
-    & bash "$PSScriptRoot/scripts/setup-hooks.sh"
-    & bash "$PSScriptRoot/scripts/helpers/install_fonts.sh"
-    & bash "$PSScriptRoot/scripts/helpers/sync_palettes.sh"
+    & bash "$PSScriptRoot/scripts/install_common.sh"
 }
 
 if ($InstallWinget -and $IsWindows) {

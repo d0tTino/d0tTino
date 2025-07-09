@@ -10,7 +10,12 @@ from typing import List, Optional
 
 from scripts import ai_exec
 from llm.backends import load_backends
-from scripts.cli_common import execute_steps, record_event, send_notification
+from scripts.cli_common import (
+    execute_steps,
+    record_event,
+    send_notification,
+    analytics_default,
+)
 
 load_backends()
 
@@ -33,6 +38,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    analytics = args.analytics or analytics_default()
     cfg_path = Path(args.config) if args.config else None
     steps = ai_exec.plan(args.goal, config_path=cfg_path)
     exit_code = execute_steps(steps, log_path=args.log)
@@ -41,11 +47,12 @@ def main(argv: Optional[List[str]] = None) -> int:
             send_notification("ai-do completed with exit code 0")
         else:
             send_notification(f"ai-do failed with exit code {exit_code}")
-    record_event(
-        "ai-do",
-        {"goal": args.goal, "exit_code": exit_code},
-        enabled=args.analytics,
-    )
+    if exit_code == 0:
+        record_event(
+            "ai-do",
+            {"goal": args.goal, "exit_code": exit_code},
+            enabled=analytics,
+        )
 
     return exit_code
 

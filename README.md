@@ -198,9 +198,11 @@ The `pre-commit` hook runs the same checks automatically.
 
 ## Telemetry and Metrics
 
-When invoked with the `--analytics` flag, the CLI tools (`ai-do`, `ai-exec`, and
-the `ai-cli` subcommands `send`, `plan`, `do`) send a small JSON payload to the
-URL specified by `EVENTS_URL`. Each payload contains the following fields:
+When invoked with the `--analytics` flag or when the `EVENTS_ENABLED`
+environment variable is set to a truthy value, the CLI tools (`ai-do`,
+`ai-exec`, and the `ai-cli` subcommands `send`, `plan`, `do`) send a small JSON
+payload to the URL specified by `EVENTS_URL`. Each payload contains the
+following fields:
 
 - `name` – event type such as `ai-cli-plan` or `ai-do`
 - `goal` – the provided goal or prompt
@@ -228,17 +230,19 @@ CSV rows for each successful `ai-do` run per developer per ISO week.
 
 ## Privacy
 
-`ai-do`, `ai-exec`, and the `ai-cli` subcommands (`send`, `plan`, `do`) can send anonymous
-completion events when invoked with `--analytics`. The data is posted to the URL
-specified in the `EVENTS_URL` environment variable with optional authorization
-via `EVENTS_TOKEN`. No information is sent unless the flag is provided.
+`ai-do`, `ai-exec`, and the `ai-cli` subcommands (`send`, `plan`, `do`) can send
+anonymous completion events. Set `EVENTS_ENABLED=true` to opt in globally or use
+`--analytics` per invocation. A hashed developer UUID derived from the current
+user name is included with each payload. Events are posted to the URL specified
+in `EVENTS_URL` with optional authorization via `EVENTS_TOKEN`.
 
 Licensed under the [Apache 2.0](LICENSE) license.
 
 ## North Star Metric
 
 The project tracks “successful automated tasks per active developer per week” as
-its north star metric. Every time a command completes successfully with the
-[--analytics](scripts/ai_do.py#L20-L24) flag enabled, an event is posted to
-`EVENTS_URL` and counted toward the developer's weekly total. Aggregating these
-numbers highlights adoption trends and guides future automation work.
+its north star metric. Every time a command completes successfully with
+analytics enabled (via `--analytics` or `EVENTS_ENABLED=true`), an event is
+posted to `EVENTS_URL` and counted toward the developer's weekly total.
+Aggregating these numbers highlights adoption trends and guides future
+automation work.

@@ -3,8 +3,7 @@ from __future__ import annotations
 import subprocess
 from typing import Any, cast
 
-from .. import register_backend
-from ..base import Backend
+from ..plugin_sdk import Backend, register_backend
 
 OllamaDSPyBackend: type[Backend] | None
 try:  # pragma: no cover - optional dependency

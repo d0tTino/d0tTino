@@ -5,8 +5,7 @@ import shutil
 
 from typing import Any, cast
 
-from .. import register_backend
-from ..base import Backend
+from ..plugin_sdk import Backend, register_backend
 
 GeminiDSPyBackend: type[Backend] | None
 try:  # pragma: no cover - optional dependency
@@ -46,6 +45,7 @@ def run_gemini(prompt: str, model: str | None = None) -> str:
         msg = "Gemini CLI not found and DSPy backend unavailable"
         raise RuntimeError(msg)
     backend = cast(Any, backend_cls)(model)
+
     return backend.run(prompt)
 
 

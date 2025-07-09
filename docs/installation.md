@@ -5,6 +5,7 @@ provided install scripts are lightweight wrappers that call shared helpers to
 install fonts, sync color palettes and configure Git hooks. Fetch and run the
 cross-platform installer with a single command:
 
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/d0tTino/d0tTino/main/scripts/install.sh | bash
 ```

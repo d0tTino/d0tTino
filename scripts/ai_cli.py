@@ -12,7 +12,12 @@ from typing import List, Optional
 from llm import router
 from llm.backends import load_backends
 from scripts import ai_exec
-from scripts.cli_common import execute_steps, read_prompt, record_event
+from scripts.cli_common import (
+    execute_steps,
+    read_prompt,
+    record_event,
+    analytics_default,
+)
 import time
 
 load_backends()
@@ -60,17 +65,18 @@ def _cmd_do(args: argparse.Namespace) -> int:
     )
     exit_code = execute_steps(steps, log_path=args.log)
     end = time.time()
-    record_event(
-        "ai-cli-do",
-        {
-            "goal": args.goal,
-            "exit_code": exit_code,
-            "start_ts": start,
-            "end_ts": end,
-            "latency_ms": int((end - start) * 1000),
-        },
-        enabled=args.analytics,
-    )
+    if exit_code == 0:
+        record_event(
+            "ai-cli-do",
+            {
+                "goal": args.goal,
+                "exit_code": exit_code,
+                "start_ts": start,
+                "end_ts": end,
+                "latency_ms": int((end - start) * 1000),
+            },
+            enabled=args.analytics,
+        )
     return exit_code
 
 
@@ -108,7 +114,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[List[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    args.analytics = getattr(args, "analytics", False)
+    args.analytics = getattr(args, "analytics", analytics_default())
     return args.func(args)
 
 

@@ -1,7 +1,7 @@
 # Writing a Backend Plug-in
 
 Third-party packages can add new LLM backends without modifying this repository.
-A plug-in must call `llm.backends.register_backend` when it is imported so the
+A plug-in must call `llm.backends.plugin_sdk.register_backend` when it is imported so the
 backend becomes available to the routing utilities.
 
 ## Required Entry Point
@@ -25,7 +25,7 @@ model name, returning the model's response as a string. The callable can be a
 function or a method of a `Backend` subclass.
 
 ```python
-from llm.backends import register_backend, Backend
+from llm.backends.plugin_sdk import Backend, register_backend
 
 class MyBackend(Backend):
     def run(self, prompt: str) -> str:
@@ -75,10 +75,25 @@ During development you can point `PLUGIN_REGISTRY_URL` at a JSON file
 containing your entry. The file must pass validation against
 `plugin-registry.schema.json`.
 
+Sample plug-in packages for the built-in backends are included under
+`examples/plugins`. Install them with:
+
+```bash
+python -m scripts.plugins install openrouter
+python -m scripts.plugins install lobechat
+python -m scripts.plugins install mindbridge
+```
+
 ## Built-in Backends
 
-`llm` includes HTTP clients for LobeChat and MindBridge. Set the following
-environment variables to configure them:
+`llm` includes HTTP clients for OpenRouter, LobeChat and MindBridge. Set the
+following environment variables to configure them:
+
+### OpenRouter
+
+- `OPENROUTER_API_KEY` – API token for the OpenRouter service.
+- `OPENROUTER_BASE_URL` – Override the service URL (default
+  `https://openrouter.ai/api/v1`).
 
 ### LobeChat
 
@@ -100,8 +115,16 @@ A recipe exposes a callable that matches the following interface:
 ```python
 from typing import List
 
+from llm.backends.plugin_sdk import register_recipe, Recipe
+
+class MyRecipe(Recipe):
+    def run(self, goal: str) -> List[str]:
+        return [f"echo {goal}"]
+
 def run(goal: str) -> List[str]:
-    ...
+    return MyRecipe().run(goal)
+
+register_recipe("my_recipe", run)
 ```
 
 Expose the callable via the `d0ttino.recipes` entry point group so the

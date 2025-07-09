@@ -38,9 +38,16 @@ if [[ $base == bootstrap.ps1 ]]; then
     esac
   done
   echo fix-path.ps1 >> "$log_file"
-  echo install_common.sh >> "$log_file"
-  if [[ -f "$root/scripts/install_common.sh" ]]; then
-    /bin/bash "$root/scripts/install_common.sh"
+  if [[ $is_windows == 1 ]]; then
+    echo install_common.ps1 >> "$log_file"
+    if [[ -f "$root/scripts/helpers/install_common.ps1" ]]; then
+      /bin/bash "$root/scripts/helpers/install_common.ps1"
+    fi
+  else
+    echo install_common.sh >> "$log_file"
+    if [[ -f "$root/scripts/install_common.sh" ]]; then
+      /bin/bash "$root/scripts/install_common.sh"
+    fi
   fi
   if [[ $is_windows == 1 ]]; then
     $install_winget && echo setup-winget.ps1 >> "$log_file"
@@ -55,6 +62,9 @@ if [[ $base == bootstrap.ps1 ]]; then
   exit 0
 else
   echo "$base" >> "$log_file"
+  if [[ $base == install_common.ps1 ]]; then
+    /bin/bash "$file"
+  fi
   exit 0
 fi
 """,
@@ -80,6 +90,13 @@ def create_stub_install_common(path: Path, log: Path) -> None:
     )
     (helpers / "sync_palettes.ps1").write_text(
         f"#!/usr/bin/env bash\necho pull_palettes >> '{log}'\n",
+        encoding="utf-8",
+    )
+    (helpers / "install_common.ps1").write_text(
+        f"#!/usr/bin/env bash\necho install_common >> '{log}'\n"
+        "bash \"$(dirname \"${BASH_SOURCE[0]}\")/../setup-hooks.sh\"\n"
+        "bash \"$(dirname \"${BASH_SOURCE[0]}\")/install_fonts.sh\"\n"
+        "bash \"$(dirname \"${BASH_SOURCE[0]}\")/sync_palettes.sh\"\n",
         encoding="utf-8",
     )
     for f in helpers.iterdir():

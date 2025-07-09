@@ -112,3 +112,37 @@ def test_install_sh_installs_nerd_font_windows(tmp_path: Path) -> None:
     assert "install_common" in lines
     assert "install_fonts_windows" in lines
     assert "pull_palettes" in lines
+
+
+def test_install_sh_installs_nerd_font_linux(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / "repo_linux"
+    repo.mkdir()
+    shutil.copy(repo_root / "install.sh", repo / "install.sh")
+    shutil.copytree(repo_root / "scripts", repo / "scripts")
+    install_log = tmp_path / "install_linux.log"
+    create_stub_install(repo / "scripts" / "install.sh", install_log)
+    create_stub_install_common(repo / "scripts" / "install_common.sh", install_log)
+    shutil.copytree(repo_root / ".githooks", repo / ".githooks")
+    shutil.copytree(repo_root / "palettes", repo / "palettes")
+
+    subprocess.run(["git", "init"], cwd=repo, check=True)
+
+    env = os.environ.copy()
+    env["OSTYPE"] = "linux-gnu"
+    subprocess.run(["/bin/bash", "install.sh"], cwd=repo, check=True, env=env)
+
+    result = subprocess.run(
+        ["git", "config", "--get", "core.hooksPath"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert result.stdout.strip() == ".githooks"
+    assert (repo / "palettes" / "blacklight.toml").is_file()
+
+    lines = install_log.read_text().splitlines()
+    assert "install_common" in lines
+    assert "install_fonts_unix" in lines
+    assert "pull_palettes" in lines

@@ -27,6 +27,9 @@ except Exception:
 # cannot be loaded from the network or cache.
 PLUGIN_REGISTRY: Dict[str, str] = {
     "sample": "d0ttino-sample-plugin",
+    "openrouter": "d0ttino-openrouter-plugin",
+    "lobechat": "d0ttino-lobechat-plugin",
+    "mindbridge": "d0ttino-mindbridge-plugin",
 }
 
 # Cache file for the remote registry

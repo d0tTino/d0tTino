@@ -11,6 +11,7 @@ def test_bootstrap_sets_hooks_path(tmp_path: Path) -> None:
     repo.mkdir()
     shutil.copy(repo_root / "bootstrap.ps1", repo / "bootstrap.ps1")
     shutil.copytree(repo_root / "scripts", repo / "scripts")
+    create_stub_install_common(repo / "scripts" / "install_common.sh", tmp_path / "pwsh.log")
 
     stub_dir = tmp_path / "bin"
     stub_dir.mkdir()
@@ -72,7 +73,7 @@ def test_bootstrap_invokes_optional_scripts(tmp_path: Path) -> None:
         )
         lines = log_file.read_text().splitlines()
         assert "fix-path.ps1" in lines
-        assert "install_common.sh" in lines
+        assert "install_common.ps1" in lines
         assert expected in lines
 
 

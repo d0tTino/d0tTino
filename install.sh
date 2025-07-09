@@ -57,9 +57,10 @@ run_pwsh() {
 
 if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == windows* ]]; then
     run_pwsh fix-path.ps1
+    run_pwsh helpers/install_common.ps1
+else
+    bash "$scripts/install_common.sh"
 fi
-
-bash "$scripts/install_common.sh"
 
 if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == windows* ]]; then
     if $install_winget; then run_pwsh setup-winget.ps1; fi
