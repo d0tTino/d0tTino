@@ -1,5 +1,7 @@
 import json
 
+import logging
+
 from scripts import plugins
 
 
@@ -19,7 +21,7 @@ def test_load_registry_fetches_and_caches(monkeypatch, tmp_path):
     def fake_get(url, timeout=None):
         return Resp()
 
-    monkeypatch.setattr(plugins, "requests", type("req", (), {"get": fake_get}))
+    monkeypatch.setattr(plugins.requests, "get", fake_get)
     monkeypatch.setenv("PLUGIN_REGISTRY_URL", "https://example.com")
 
     registry = plugins.load_registry()
@@ -33,13 +35,31 @@ def test_load_registry_uses_cache_on_error(monkeypatch, tmp_path):
     monkeypatch.setattr(plugins, "CACHE_PATH", cached)
 
     def fake_get(url, timeout=None):
-        raise OSError()
+        raise plugins.requests.exceptions.RequestException("boom")
 
-    monkeypatch.setattr(plugins, "requests", type("req", (), {"get": fake_get}))
+    monkeypatch.setattr(plugins.requests, "get", fake_get)
     monkeypatch.setenv("PLUGIN_REGISTRY_URL", "https://example.com")
 
     registry = plugins.load_registry()
     assert registry == {"y": "pkg"}
+
+
+def test_load_registry_logs_warning(monkeypatch, tmp_path, caplog):
+    cached = tmp_path / "cache.json"
+    cached.write_text(json.dumps({"y": "pkg"}))
+    monkeypatch.setattr(plugins, "CACHE_PATH", cached)
+
+    def fake_get(url, timeout=None):
+        raise plugins.requests.exceptions.RequestException("boom")
+
+    monkeypatch.setattr(plugins.requests, "get", fake_get)
+    monkeypatch.setenv("PLUGIN_REGISTRY_URL", "https://example.com")
+
+    with caplog.at_level(logging.WARNING):
+        registry = plugins.load_registry()
+
+    assert registry == {"y": "pkg"}
+    assert any("Failed to fetch" in r.message for r in caplog.records)
 
 
 def test_load_registry_defaults_when_missing(monkeypatch, tmp_path):
