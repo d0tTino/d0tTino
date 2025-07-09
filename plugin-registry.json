@@ -1,3 +1,6 @@
 {
-  "sample": "d0ttino-sample-plugin"
+  "sample": "d0ttino-sample-plugin",
+  "openrouter": "d0ttino-openrouter-plugin",
+  "lobechat": "d0ttino-lobechat-plugin",
+  "mindbridge": "d0ttino-mindbridge-plugin"
 }
