@@ -76,3 +76,70 @@ def test_register_retrieval_nodes(monkeypatch):
     out = etl.register_retrieval_nodes(g, "coll", node_name="n")
     assert out is g
     assert calls == [("n", sentinel)]
+
+
+def test_partition_document_small_file(monkeypatch, tmp_path):
+    file = tmp_path / "doc.txt"
+    file.write_text("one\ntwo\n\nthree")
+
+    class E:
+        def __init__(self, text):
+            self.text = text
+
+    def fake_partition(filename: str):
+        with open(filename) as f:
+            return [E(line.strip()) for line in f.read().splitlines() if line.strip()]
+
+    monkeypatch.setitem(
+        sys.modules,
+        "unstructured.partition.auto",
+        types.SimpleNamespace(partition=fake_partition),
+    )
+
+    chunks = etl.partition_document(file)
+    assert chunks == ["one", "two", "three"]
+
+
+def test_store_embeddings_multiple_chunks(monkeypatch, tmp_path):
+    recorded: dict[str, object] = {}
+
+    class FakeCollection:
+        def add(self, *, documents, ids):
+            recorded["docs"] = documents
+            recorded["ids"] = ids
+
+    class FakeClient:
+        def __init__(self, path):
+            recorded["path"] = path
+
+        def get_or_create_collection(self, name, embedding_function=None):
+            recorded["name"] = name
+            recorded["embed"] = embedding_function
+            return FakeCollection()
+
+    fake_emb_mod = types.SimpleNamespace(
+        SentenceTransformerEmbeddingFunction=lambda: "embed"
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "chromadb.utils.embedding_functions",
+        fake_emb_mod,
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "chromadb.utils",
+        types.SimpleNamespace(embedding_functions=fake_emb_mod),
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "chromadb",
+        types.SimpleNamespace(PersistentClient=FakeClient),
+    )
+
+    coll = etl.store_embeddings(["a", "b"], persist_dir=tmp_path, collection_name="demo")
+    assert recorded["path"] == str(tmp_path)
+    assert recorded["name"] == "demo"
+    assert recorded["embed"] == "embed"
+    assert recorded["docs"] == ["a", "b"]
+    assert recorded["ids"] == ["doc-0", "doc-1"]
+    assert isinstance(coll, FakeCollection)
