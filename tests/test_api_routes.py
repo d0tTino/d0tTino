@@ -78,3 +78,24 @@ def test_palette(tmp_path):
     assert resp.status_code == 200
     assert resp.json() == {'status': 'applied'}
     assert calls == ['dracula']
+
+
+def test_prompt_real_modules(monkeypatch, tmp_path):
+    calls = []
+
+    def fake(prompt: str, local: bool = False):
+        calls.append(prompt)
+        return 'ok-' + prompt
+
+    os.environ['API_STATE_PATH'] = str(tmp_path / 'state.json')
+    sys.modules.pop('llm.router', None)
+    sys.modules.pop('scripts.thm', None)
+    if 'api' in sys.modules:
+        del sys.modules['api']
+    api = importlib.import_module('api')
+    monkeypatch.setattr(api, 'send_prompt', fake)
+    client = TestClient(api.app)
+    resp = client.post('/api/prompt', json={'prompt': 'hello'})
+    assert resp.status_code == 200
+    assert resp.json() == {'response': 'ok-hello'}
+    assert calls == ['hello']

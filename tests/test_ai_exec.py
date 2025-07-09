@@ -1,8 +1,10 @@
 import subprocess
-
+import os
+import sys
 import io
 import contextlib
 import pytest
+from pathlib import Path
 
 pytest.importorskip("requests")
 
@@ -96,4 +98,25 @@ def test_plan_records_event(monkeypatch):
     assert payload["goal"] == "goal"
     assert payload["step_count"] == 1
     assert "latency_ms" in payload and payload["latency_ms"] >= 0
+
+
+def create_exe(path: Path, contents: str = "#!/usr/bin/env bash\n") -> None:
+    path.write_text(contents, encoding="utf-8")
+    path.chmod(0o755)
+
+
+def test_script_runs(tmp_path: Path) -> None:
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    create_exe(bin_dir / "gemini", "#!/usr/bin/env bash\necho step1\necho step2\n")
+    env = os.environ.copy()
+    env["PATH"] = f"{bin_dir}:{env['PATH']}"
+    result = subprocess.run(
+        [sys.executable, "-m", "scripts.ai_exec", "goal"],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert result.returncode == 0
+    assert result.stdout.splitlines() == ["step1", "step2"]
 

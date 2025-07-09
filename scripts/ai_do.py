@@ -9,7 +9,10 @@ from pathlib import Path
 from typing import List, Optional
 
 from scripts import ai_exec
+from llm.backends import load_backends
 from scripts.cli_common import execute_steps, record_event, send_notification
+
+load_backends()
 
 
 def main(argv: Optional[List[str]] = None) -> int:
