@@ -14,6 +14,14 @@ Key directories:
 - `scripts/thm.py` – Terminal Harmony Manager for palette and profile sync (installs as `thm` when using `pip install -e .[cli]`)
 - `research-papers/` – space to store research PDFs, links, and notes
 
+Get the fonts, palettes and Git hooks in one step:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/d0tTino/d0tTino/main/scripts/install.sh | bash
+# Windows
+irm https://raw.githubusercontent.com/d0tTino/d0tTino/main/scripts/install.ps1 | iex
+```
+
 ## Quickstart
 
 Install the required Python packages (including test utilities such as
