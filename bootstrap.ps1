@@ -8,7 +8,16 @@ param(
 )
 
 & "$PSScriptRoot/scripts/fix-path.ps1"
-& bash "$PSScriptRoot/scripts/install_common.sh"
+
+if ($IsWindows) {
+    & "$PSScriptRoot/scripts/setup-hooks.ps1"
+    & "$PSScriptRoot/scripts/helpers/install_fonts.ps1"
+    & "$PSScriptRoot/scripts/helpers/sync_palettes.ps1"
+} elseif (Get-Command bash -ErrorAction SilentlyContinue) {
+    & bash "$PSScriptRoot/scripts/setup-hooks.sh"
+    & bash "$PSScriptRoot/scripts/helpers/install_fonts.sh"
+    & bash "$PSScriptRoot/scripts/helpers/sync_palettes.sh"
+}
 
 if ($InstallWinget -and $IsWindows) {
     & "$PSScriptRoot/scripts/setup-winget.ps1"
@@ -41,4 +50,3 @@ if ($SetupDocker) {
         & bash "$PSScriptRoot/scripts/setup-docker.sh" @bashArgs
     }
 }
-

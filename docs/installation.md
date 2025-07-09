@@ -1,6 +1,8 @@
 # Installation
 
 Follow these steps to set up the configuration files on a new system.
+The provided install scripts are lightweight wrappers that call shared helpers to
+install fonts, sync color palettes and configure Git hooks.
 For a fully automated setup run the OS-aware installer:
 
 ```bash
@@ -57,7 +59,8 @@ ruff check .
    ```
 2. Copy or symlink the files from this repository to your profile directory.
 3. From an elevated PowerShell window, run `bootstrap.ps1` (or call
-   `install.sh` from a regular shell) to set up your PATH. You must run the
+   `install.sh` from a regular shell) to set up your PATH. The script relies on
+   the shared helpers for fonts, palettes and Git hooks. You must run the
    PowerShell script from an **elevated** window so that
    `scripts/fix-path.ps1` can modify the user PATH.
    Pass the appropriate flags to install the core tools automatically. The
@@ -107,11 +110,12 @@ sudo bash scripts/setup-wsl.sh
    git clone https://github.com/d0tTino/d0tTino.git
    ```
 2. Use `stow` or your preferred method to symlink the dotfiles into place.
-3. Run `install.sh` to clean up your PATH:
+3. Run `install.sh` to clean up your PATH and install the shared resources:
    ```bash
    ./install.sh
    ```
-   If you prefer PowerShell, you can run `./bootstrap.ps1` instead.
+   If you prefer PowerShell, you can run `./bootstrap.ps1` instead which invokes
+   the same helper scripts.
 4. Launch a new shell to pick up the configuration.
 
 ## Local LLM tools

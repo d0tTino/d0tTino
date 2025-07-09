@@ -62,18 +62,34 @@ fi
     )
     path.chmod(0o755)
 
-
 def create_stub_install_common(path: Path, log: Path) -> None:
-    """Create an install_common.sh stub."""
+    """Create an install_common.sh stub along with helper stubs."""
+    helpers = path.parent / "helpers"
+    helpers.mkdir(exist_ok=True)
+    (helpers / "install_fonts.sh").write_text(
+        f"#!/usr/bin/env bash\nif [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == windows* ]]; then\n  echo install_fonts_windows >> '{log}'\nelse\n  echo install_fonts_unix >> '{log}'\nfi\n",
+        encoding="utf-8",
+    )
+    (helpers / "sync_palettes.sh").write_text(
+        f"#!/usr/bin/env bash\necho pull_palettes >> '{log}'\n",
+        encoding="utf-8",
+    )
+    (helpers / "install_fonts.ps1").write_text(
+        f"#!/usr/bin/env bash\necho install_fonts_windows >> '{log}'\n",
+        encoding="utf-8",
+    )
+    (helpers / "sync_palettes.ps1").write_text(
+        f"#!/usr/bin/env bash\necho pull_palettes >> '{log}'\n",
+        encoding="utf-8",
+    )
+    for f in helpers.iterdir():
+        f.chmod(0o755)
     path.write_text(
-        f"""#!/usr/bin/env bash
-echo install_common >> '{log}'
-bash \"$(dirname \"${{BASH_SOURCE[0]}}\")/setup-hooks.sh\"
-bash \"$(dirname \"${{BASH_SOURCE[0]}}\")/install.sh\"
-""",
+        f"#!/usr/bin/env bash\necho install_common >> '{log}'\nbash \"$(dirname \"${{BASH_SOURCE[0]}}\")/setup-hooks.sh\"\nbash \"$(dirname \"${{BASH_SOURCE[0]}}\")/helpers/install_fonts.sh\"\nbash \"$(dirname \"${{BASH_SOURCE[0]}}\")/helpers/sync_palettes.sh\"\n",
         encoding="utf-8",
     )
     path.chmod(0o755)
+
 
 
 def create_stub_install(path: Path, log: Path) -> None:
