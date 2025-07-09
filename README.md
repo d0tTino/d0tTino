@@ -207,6 +207,16 @@ calendar week yields the “successful automated tasks per active developer per
 week” metric. This telemetry helps track how effectively the automation tooling
 is being adopted and highlights trends in task reliability.
 
+To summarize these events, run:
+
+```bash
+python scripts/nsm_stats.py events.json
+```
+
+Replace `events.json` with a local NDJSON file or set the `EVENTS_URL` environment
+variable to fetch records from a server. The script prints `developer,week,count`
+CSV rows for each successful `ai-do` run per developer per ISO week.
+
 
 ## Privacy
 
