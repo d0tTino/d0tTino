@@ -8,12 +8,12 @@ import os
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Iterable
+from typing import Any, Dict, Iterable
 
 import requests
 
 
-Event = Dict[str, object]
+Event = Dict[str, Any]
 
 
 def _read_lines(source: str) -> Iterable[str]:
