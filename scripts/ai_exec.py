@@ -12,7 +12,12 @@ from typing import List, Optional
 from llm import router
 from llm.ai_router import get_preferred_models
 from llm.backends import load_backends
-from scripts.cli_common import read_prompt, record_event, send_notification
+from scripts.cli_common import (
+    read_prompt,
+    record_event,
+    send_notification,
+    analytics_default,
+)
 import time
 
 load_backends()
@@ -58,6 +63,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Record anonymous usage events",
     )
     args = parser.parse_args(argv)
+    args.analytics = getattr(args, "analytics", analytics_default())
     cfg_path = Path(args.config) if args.config else None
     goal = read_prompt(args.goal)
     steps = plan(goal, config_path=cfg_path, analytics=args.analytics)
