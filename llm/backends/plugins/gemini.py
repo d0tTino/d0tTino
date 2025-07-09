@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import subprocess
+import shutil
 
 from typing import Any, cast
 
@@ -37,7 +38,13 @@ class GeminiBackend(Backend):
 def run_gemini(prompt: str, model: str | None = None) -> str:
     """Return Gemini response for ``prompt``."""
 
-    backend_cls = GeminiDSPyBackend if GeminiDSPyBackend is not None else GeminiBackend
+    if shutil.which("gemini"):
+        backend_cls = GeminiBackend
+    elif GeminiDSPyBackend is not None:
+        backend_cls = GeminiDSPyBackend
+    else:  # pragma: no cover - can't run without a backend
+        msg = "Gemini CLI not found and DSPy backend unavailable"
+        raise RuntimeError(msg)
     backend = cast(Any, backend_cls)(model)
     return backend.run(prompt)
 
