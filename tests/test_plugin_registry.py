@@ -34,7 +34,7 @@ def test_load_registry_uses_cache_on_error(monkeypatch, tmp_path):
     cached.write_text(json.dumps({"y": "pkg"}))
     monkeypatch.setattr(plugins, "CACHE_PATH", cached)
 
-    def fake_get(url, timeout=None):
+    def fake_get(*args, **kwargs):
         raise plugins.requests.exceptions.RequestException("boom")
 
     monkeypatch.setattr(plugins.requests, "get", fake_get)
@@ -81,7 +81,10 @@ def test_load_registry_ignores_invalid_data(monkeypatch, tmp_path):
         def json(self):
             return ["bad"]
 
-    monkeypatch.setattr(plugins.requests, "get", lambda *a, **k: Resp())
+    def fake_get(*args, **kwargs):
+        return Resp()
+
+    monkeypatch.setattr(plugins.requests, "get", fake_get)
     monkeypatch.setenv("PLUGIN_REGISTRY_URL", "https://example.com")
 
     registry = plugins.load_registry()
@@ -113,7 +116,43 @@ def test_load_registry_rejects_bad_entries(monkeypatch, tmp_path):
         def json(self):
             return {"ok": "pkg", "bad": 123}
 
-    monkeypatch.setattr(plugins.requests, "get", lambda *a, **k: Resp())
+    def fake_get(*args, **kwargs):
+        return Resp()
+
+    monkeypatch.setattr(plugins.requests, "get", fake_get)
+    monkeypatch.setenv("PLUGIN_REGISTRY_URL", "https://example.com")
+
+    registry = plugins.load_registry()
+    assert registry == plugins.PLUGIN_REGISTRY
+
+
+def test_load_registry_defaults_when_download_fails(monkeypatch, tmp_path):
+    monkeypatch.setattr(plugins, "CACHE_PATH", tmp_path / "missing.json")
+
+    def fake_get(*args, **kwargs):
+        raise plugins.requests.exceptions.RequestException("boom")
+
+    monkeypatch.setattr(plugins.requests, "get", fake_get)
+    monkeypatch.setenv("PLUGIN_REGISTRY_URL", "https://example.com")
+
+    registry = plugins.load_registry()
+    assert registry == plugins.PLUGIN_REGISTRY
+
+
+def test_load_registry_defaults_on_invalid_schema(monkeypatch, tmp_path):
+    monkeypatch.setattr(plugins, "CACHE_PATH", tmp_path / "missing.json")
+
+    class Resp:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"ok": ["pkg"]}
+
+    def fake_get(*args, **kwargs):
+        return Resp()
+
+    monkeypatch.setattr(plugins.requests, "get", fake_get)
     monkeypatch.setenv("PLUGIN_REGISTRY_URL", "https://example.com")
 
     registry = plugins.load_registry()
