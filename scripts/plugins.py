@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import importlib.metadata
 import json
+import logging
 import os
 from pathlib import Path
 import subprocess
@@ -23,6 +24,9 @@ PLUGIN_REGISTRY: Dict[str, str] = {
 # Cache file for the remote registry
 CACHE_PATH = Path.home() / ".cache" / "d0ttino" / "plugin_registry.json"
 
+# Logger for plug-in management utilities
+logger = logging.getLogger(__name__)
+
 
 def load_registry() -> Dict[str, str]:
     """Return the plug-in registry from URL, cache or the built-in default."""
@@ -37,6 +41,8 @@ def load_registry() -> Dict[str, str]:
                 CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
                 CACHE_PATH.write_text(json.dumps(data))
                 return {str(k): str(v) for k, v in data.items()}
+        except requests.exceptions.RequestException as exc:
+            logger.warning("Failed to fetch plug-in registry from %s: %s", url, exc)
         except Exception:
             pass
 
