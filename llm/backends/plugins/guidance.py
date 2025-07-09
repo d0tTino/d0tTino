@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from .. import register_backend
-from ..base import Backend
+from ..plugin_sdk import Backend, register_backend
 
 try:  # pragma: no cover - optional dependency
     import guidance  # noqa: F401

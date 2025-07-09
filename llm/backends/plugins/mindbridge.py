@@ -5,8 +5,7 @@ from typing import Any, Mapping, cast
 
 import requests
 
-from .. import register_backend
-from ..base import Backend
+from ..plugin_sdk import Backend, register_backend
 
 DEFAULT_BASE_URL = "https://api.mindbridge.ai/v1"
 
