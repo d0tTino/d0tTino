@@ -1,8 +1,9 @@
 # Installation
 
 Follow these steps to set up the configuration files on a new system.
-The provided install scripts are lightweight wrappers that call shared helpers to
-install fonts, sync color palettes and configure Git hooks.
+The provided install scripts are lightweight wrappers that call
+`scripts/install_common.sh` or `scripts/helpers/install_common.ps1` to install
+fonts, sync color palettes and configure Git hooks.
 For a fully automated setup run the OS-aware installer:
 
 ```bash
