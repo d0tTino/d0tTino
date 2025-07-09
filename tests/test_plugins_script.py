@@ -104,3 +104,15 @@ def test_main_remove(monkeypatch, capsys, retcode):
     if retcode:
         assert "fail" in captured.err
 
+
+def test_main_warns_when_jsonschema_missing(monkeypatch, capsys):
+    monkeypatch.setitem(sys.modules, "jsonschema", None)
+    import importlib
+    reloaded = importlib.reload(plugins)
+    monkeypatch.setattr(reloaded, "load_registry", lambda: {"dummy": "pkg"})
+    monkeypatch.setattr(reloaded, "_is_installed", lambda p: False)
+    rc = reloaded.main(["list"])
+    out = capsys.readouterr()
+    assert rc == 0
+    assert "jsonschema is required" in out.err
+

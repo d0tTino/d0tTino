@@ -14,13 +14,19 @@ import sys
 from typing import Dict, List, Optional
 
 import requests
-import jsonschema
+try:
+    import jsonschema
+except ImportError:  # pragma: no cover - optional dependency
+    jsonschema = None
 
 SCHEMA_PATH = Path(__file__).resolve().parent.parent / "plugin-registry.schema.json"
-try:
-    with SCHEMA_PATH.open(encoding="utf-8") as fh:
-        _REGISTRY_VALIDATOR = jsonschema.Draft202012Validator(json.load(fh))
-except Exception:
+if jsonschema is not None:
+    try:
+        with SCHEMA_PATH.open(encoding="utf-8") as fh:
+            _REGISTRY_VALIDATOR = jsonschema.Draft202012Validator(json.load(fh))
+    except Exception:
+        _REGISTRY_VALIDATOR = None
+else:  # pragma: no cover - optional dependency missing
     _REGISTRY_VALIDATOR = None
 
 # Mapping of plug-in name to pip package used as a fallback when a registry
@@ -155,6 +161,11 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Optional[List[str]] = None) -> int:
     parser = build_parser()
+    if jsonschema is None:
+        print(
+            "jsonschema is required for plug-in management. Install it via 'pip install llm[cli]' or 'pip install jsonschema'.",
+            file=sys.stderr,
+        )
     args = parser.parse_args(argv)
     return args.func(args)
 
