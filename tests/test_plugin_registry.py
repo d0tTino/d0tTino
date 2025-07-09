@@ -60,6 +60,7 @@ def test_load_registry_logs_warning(monkeypatch, tmp_path, caplog):
 
     assert registry == {"y": "pkg"}
     assert any("Failed to fetch" in r.message for r in caplog.records)
+    assert any("cached registry" in r.message for r in caplog.records)
 
 
 def test_load_registry_defaults_when_missing(monkeypatch, tmp_path):
