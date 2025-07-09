@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from .. import register_backend
-from ..base import Backend
+from ..plugin_sdk import Backend, register_backend
 
 LMQLBackend: type[Backend] | None = None
 

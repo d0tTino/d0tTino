@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Mapping, cast
 
-from ..base import Backend
+from ..plugin_sdk import Backend
 
 try:  # pragma: no cover - optional dependency
     import dspy

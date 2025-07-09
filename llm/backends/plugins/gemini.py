@@ -4,8 +4,7 @@ import subprocess
 
 from typing import Any, cast
 
-from .. import register_backend
-from ..base import Backend
+from ..plugin_sdk import Backend, register_backend
 
 GeminiDSPyBackend: type[Backend] | None
 try:  # pragma: no cover - optional dependency
