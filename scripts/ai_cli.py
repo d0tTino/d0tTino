@@ -10,9 +10,12 @@ from pathlib import Path
 from typing import List, Optional
 
 from llm import router
+from llm.backends import load_backends
 from scripts import ai_exec
 from scripts.cli_common import execute_steps, read_prompt, record_event
 import time
+
+load_backends()
 
 
 def _cmd_send(args: argparse.Namespace) -> int:

@@ -113,6 +113,7 @@ def test_backends_import_loads_entry_point_plugins(monkeypatch):
     monkeypatch.setattr(importlib.metadata, "import_module", fake_import)
 
     reloaded = importlib.reload(backends)
+    reloaded.load_backends()
 
     assert "dummy" in reloaded.available_backends()
     _reset_plugins()
@@ -134,6 +135,7 @@ def test_backends_import_skips_unknown_entry_points(monkeypatch):
     )
 
     reloaded = importlib.reload(backends)
+    reloaded.load_backends()
 
     assert "ghost" not in reloaded.available_backends()
     _reset_plugins()
