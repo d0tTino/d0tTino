@@ -1,4 +1,5 @@
 import pytest
+import uuid
 
 pytest.importorskip("requests")
 from scripts import cli_common
@@ -19,6 +20,7 @@ def test_record_event_skips_when_disabled(monkeypatch):
 def test_record_event_posts(monkeypatch):
     monkeypatch.setenv("EVENTS_URL", "https://example.com")
     monkeypatch.setenv("EVENTS_TOKEN", "tok")
+    monkeypatch.setenv("USER", "alice")
     sent = {}
 
     def fake_post(url, headers=None, json=None, timeout=None):
@@ -30,7 +32,8 @@ def test_record_event_posts(monkeypatch):
     cli_common.record_event("name", {"a": 1}, enabled=True)
 
     assert sent["url"] == "https://example.com"
-    assert sent["data"] == {"name": "name", "a": 1}
+    expected_dev = uuid.uuid5(uuid.NAMESPACE_DNS, "alice").hex
+    assert sent["data"] == {"name": "name", "a": 1, "developer": expected_dev}
     assert sent["headers"]["Authorization"] == "Bearer tok"
 
 
@@ -45,3 +48,11 @@ def test_record_event_requires_url(monkeypatch):
     cli_common.record_event("name", {"a": 1}, enabled=True)
 
     assert not called
+
+
+
+def test_analytics_default(monkeypatch):
+    monkeypatch.setenv("EVENTS_ENABLED", "yes")
+    assert cli_common.analytics_default() is True
+    monkeypatch.setenv("EVENTS_ENABLED", "0")
+    assert cli_common.analytics_default() is False

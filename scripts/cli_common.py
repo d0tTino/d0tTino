@@ -5,6 +5,7 @@ import os
 import shlex
 import subprocess
 import sys
+import uuid
 from pathlib import Path
 from typing import Iterable
 
@@ -53,6 +54,12 @@ def send_notification(message: str) -> None:
     subprocess.run(["ntfy", "send", message], check=False)
 
 
+def analytics_default() -> bool:
+    """Return ``True`` when ``EVENTS_ENABLED`` is set to a truthy value."""
+    val = os.environ.get("EVENTS_ENABLED")
+    return str(val).lower() in {"1", "true", "yes", "y"}
+
+
 def record_event(name: str, payload: dict, *, enabled: bool = False) -> None:
     """Send ``payload`` to ``EVENTS_URL`` when ``enabled`` is ``True``."""
     if not enabled:
@@ -65,11 +72,24 @@ def record_event(name: str, payload: dict, *, enabled: bool = False) -> None:
     if token:
         headers["apikey"] = token
         headers["Authorization"] = f"Bearer {token}"
-    data = {"name": name, **payload}
+    dev_src = (
+        os.environ.get("GIT_AUTHOR_EMAIL")
+        or os.environ.get("EMAIL")
+        or os.environ.get("USER")
+        or "unknown"
+    )
+    developer = uuid.uuid5(uuid.NAMESPACE_DNS, dev_src).hex
+    data = {"name": name, "developer": developer, **payload}
     try:
         requests.post(url, headers=headers, json=data, timeout=5)
     except Exception:
         pass
 
 
-__all__ = ["read_prompt", "execute_steps", "send_notification", "record_event"]
+__all__ = [
+    "read_prompt",
+    "execute_steps",
+    "send_notification",
+    "analytics_default",
+    "record_event",
+]

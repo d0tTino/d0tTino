@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""Aggregate ai-do success counts per developer per week."""
+"""Aggregate ai-do success counts per developer per week.
+
+Usage examples::
+
+    # Read events from a local NDJSON file
+    python scripts/nsm_stats.py events.json
+
+    # Fetch events from the server defined in ``EVENTS_URL``
+    EVENTS_URL=https://example.com python scripts/nsm_stats.py
+"""
 from __future__ import annotations
 
 import argparse
