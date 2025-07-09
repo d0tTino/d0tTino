@@ -21,7 +21,7 @@ test = [
     "uvicorn",
     "httpx",
 ]
-cli = ["tomli_w"]
+cli = ["tomli_w", "jsonschema"]
 lmql = ["lmql"]
 guidance = ["guidance"]
 etl = ["unstructured", "chromadb"]

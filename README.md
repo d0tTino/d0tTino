@@ -34,6 +34,13 @@ they are missing:
 ```bash
 pip install -e .[cli] -r requirements.txt
 ```
+The `jsonschema` package included in the `cli` extras is required for
+managing plug-ins with `python -m scripts.plugins`. You can also
+install it separately with:
+
+```bash
+pip install jsonschema
+```
 
 Run `ruff` to lint the Python code:
 
