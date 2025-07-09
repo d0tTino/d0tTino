@@ -11,8 +11,11 @@ from typing import List, Optional
 
 from llm import router
 from llm.ai_router import get_preferred_models
+from llm.backends import load_backends
 from scripts.cli_common import read_prompt, record_event, send_notification
 import time
+
+load_backends()
 
 def plan(
     goal: str, *, config_path: Optional[Path] = None, analytics: bool = False

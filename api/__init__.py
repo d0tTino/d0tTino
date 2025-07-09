@@ -11,9 +11,12 @@ from pydantic import BaseModel
 import asyncio
 
 
+from llm import backends
 from llm.router import send_prompt
 from scripts.thm import apply_palette, REPO_ROOT
 from scripts import ai_exec
+
+backends.load_backends()
 
 STATE_PATH = Path(os.environ.get("API_STATE_PATH", REPO_ROOT / "api_state.json"))
 
