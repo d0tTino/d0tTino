@@ -25,6 +25,7 @@ cli = ["tomli_w"]
 lmql = ["lmql"]
 guidance = ["guidance"]
 etl = ["unstructured", "chromadb"]
+plugins = ["jsonschema"]
 
 [project.scripts]
 thm = "scripts.thm:main"
