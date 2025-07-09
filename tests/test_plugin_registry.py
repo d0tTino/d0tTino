@@ -68,3 +68,52 @@ def test_load_registry_defaults_when_missing(monkeypatch, tmp_path):
 
     registry = plugins.load_registry()
     assert registry == plugins.PLUGIN_REGISTRY
+
+
+def test_load_registry_ignores_invalid_data(monkeypatch, tmp_path):
+    monkeypatch.setattr(plugins, "CACHE_PATH", tmp_path / "missing.json")
+
+    class Resp:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return ["bad"]
+
+    monkeypatch.setattr(plugins.requests, "get", lambda *a, **k: Resp())
+    monkeypatch.setenv("PLUGIN_REGISTRY_URL", "https://example.com")
+
+    registry = plugins.load_registry()
+    assert registry == plugins.PLUGIN_REGISTRY
+
+
+def test_load_registry_ignores_invalid_cache(monkeypatch, tmp_path):
+    cached = tmp_path / "cache.json"
+    cached.write_text(json.dumps(["bad"]))
+    monkeypatch.setattr(plugins, "CACHE_PATH", cached)
+
+    def fake_get(url, timeout=None):
+        raise plugins.requests.exceptions.RequestException("boom")
+
+    monkeypatch.setattr(plugins.requests, "get", fake_get)
+    monkeypatch.setenv("PLUGIN_REGISTRY_URL", "https://example.com")
+
+    registry = plugins.load_registry()
+    assert registry == plugins.PLUGIN_REGISTRY
+
+
+def test_load_registry_rejects_bad_entries(monkeypatch, tmp_path):
+    monkeypatch.setattr(plugins, "CACHE_PATH", tmp_path / "missing.json")
+
+    class Resp:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"ok": "pkg", "bad": 123}
+
+    monkeypatch.setattr(plugins.requests, "get", lambda *a, **k: Resp())
+    monkeypatch.setenv("PLUGIN_REGISTRY_URL", "https://example.com")
+
+    registry = plugins.load_registry()
+    assert registry == plugins.PLUGIN_REGISTRY

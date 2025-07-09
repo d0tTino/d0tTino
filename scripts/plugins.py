@@ -14,6 +14,14 @@ import sys
 from typing import Dict, List, Optional
 
 import requests
+import jsonschema
+
+SCHEMA_PATH = Path(__file__).resolve().parent.parent / "plugin-registry.schema.json"
+try:
+    with SCHEMA_PATH.open(encoding="utf-8") as fh:
+        _REGISTRY_VALIDATOR = jsonschema.Draft202012Validator(json.load(fh))
+except Exception:
+    _REGISTRY_VALIDATOR = None
 
 # Mapping of plug-in name to pip package used as a fallback when a registry
 # cannot be loaded from the network or cache.
@@ -37,7 +45,9 @@ def load_registry() -> Dict[str, str]:
             resp = requests.get(url, timeout=5)
             resp.raise_for_status()
             data = resp.json()
-            if isinstance(data, dict):
+            if isinstance(data, dict) and (
+                _REGISTRY_VALIDATOR is None or _REGISTRY_VALIDATOR.is_valid(data)
+            ):
                 CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
                 CACHE_PATH.write_text(json.dumps(data))
                 return {str(k): str(v) for k, v in data.items()}
@@ -50,7 +60,9 @@ def load_registry() -> Dict[str, str]:
         try:
             with CACHE_PATH.open(encoding="utf-8") as fh:
                 data = json.load(fh)
-            if isinstance(data, dict):
+            if isinstance(data, dict) and (
+                _REGISTRY_VALIDATOR is None or _REGISTRY_VALIDATOR.is_valid(data)
+            ):
                 return {str(k): str(v) for k, v in data.items()}
         except Exception:
             pass
