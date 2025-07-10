@@ -27,9 +27,9 @@ def test_discover_recipes_loads_entry_points(monkeypatch):
     )
 
     monkeypatch.setattr(
-        importlib.metadata,
-        "entry_points",
-        lambda: importlib.metadata.EntryPoints((entry,)),
+        recipes,
+        "iter_entry_points",
+        lambda group: iter([entry]),
     )
 
     mapping = recipes.discover_recipes()
