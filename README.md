@@ -32,11 +32,17 @@ Guidance backends. Tests that rely on these packages will be skipped if
 they are missing:
 
 ```bash
-pip install -e .[cli] -r requirements.txt
+pip install -e .[cli,plugins] -r requirements.txt
 ```
-The `jsonschema` package included in the `cli` extras is required for
-managing plug-ins with `python -m scripts.plugins`. You can also
-install it separately with:
+The `[plugins]` extra installs `jsonschema` so you can manage plug-ins
+with `python -m scripts.plugins`. For example:
+
+```bash
+python -m scripts.plugins install openrouter
+```
+
+See the [backend plug-in guide](docs/plugins.md) for details. If you
+prefer not to install the extras, install `jsonschema` separately with:
 
 ```bash
 pip install jsonschema
