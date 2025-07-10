@@ -30,11 +30,11 @@ class OllamaBackend(Backend):
         return result.stdout
 
 
-def run_ollama(prompt: str, model: str) -> str:
+def run_ollama(prompt: str, model: str | None = None) -> str:
     """Return Ollama response for ``prompt`` using ``model``."""
 
     backend_cls = OllamaDSPyBackend if OllamaDSPyBackend is not None else OllamaBackend
-    backend = cast(Any, backend_cls)(model)
+    backend = cast(Any, backend_cls)(model or "")
     return backend.run(prompt)
 
 

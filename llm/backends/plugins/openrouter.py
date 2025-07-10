@@ -59,13 +59,13 @@ class OpenRouterBackend(Backend):
         return _extract_text(data)
 
 
-def run_openrouter(prompt: str, model: str) -> str:
+def run_openrouter(prompt: str, model: str | None = None) -> str:
     """Return OpenRouter response for ``prompt`` using ``model``."""
 
     backend_cls = (
         OpenRouterDSPyBackend if OpenRouterDSPyBackend is not None else OpenRouterBackend
     )
-    backend = cast(Any, backend_cls)(model)
+    backend = cast(Any, backend_cls)(model or "")
     return backend.run(prompt)
 
 

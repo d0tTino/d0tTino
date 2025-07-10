@@ -11,7 +11,7 @@ from typing import List, Optional
 
 from llm import router
 from llm.backends import load_backends
-from scripts import ai_exec
+from scripts import ai_exec, ai_do, recipes
 from scripts.cli_common import (
     execute_steps,
     read_prompt,
@@ -80,6 +80,34 @@ def _cmd_do(args: argparse.Namespace) -> int:
     return exit_code
 
 
+def _cmd_recipe(args: argparse.Namespace) -> int:
+    start = time.time()
+    mapping = recipes.discover_recipes()
+    if args.name not in mapping:
+        print(f"Unknown recipe: {args.name}", file=sys.stderr)
+        return 1
+    steps = mapping[args.name](args.goal)
+    exit_code = ai_do.run_recipe(
+        args.name, args.goal, log_path=args.log, analytics=args.analytics
+    )
+    end = time.time()
+    if exit_code == 0:
+        record_event(
+            "ai-cli-recipe",
+            {
+                "recipe": args.name,
+                "goal": args.goal,
+                "exit_code": exit_code,
+                "step_count": len(steps),
+                "start_ts": start,
+                "end_ts": end,
+                "latency_ms": int((end - start) * 1000),
+            },
+            enabled=args.analytics,
+        )
+    return exit_code
+
+
 def build_parser() -> argparse.ArgumentParser:
     analytics = argparse.ArgumentParser(add_help=False)
     analytics.add_argument(
@@ -108,6 +136,12 @@ def build_parser() -> argparse.ArgumentParser:
     do.add_argument("--log", type=Path, default=Path("ai_do.log"), help="Log file path (default: %(default)s)")
     do.set_defaults(func=_cmd_do)
 
+    recipe = sub.add_parser("recipe", help="Execute a named recipe", parents=[analytics])
+    recipe.add_argument("name", help="Recipe name")
+    recipe.add_argument("goal", help="High level description of the task")
+    recipe.add_argument("--log", type=Path, default=Path("ai_do.log"), help="Log file path (default: %(default)s)")
+    recipe.set_defaults(func=_cmd_recipe)
+
     return parser
 
 
@@ -130,6 +164,11 @@ def do_main(argv: Optional[List[str]] = None) -> int:
 
 def send_main(argv: Optional[List[str]] = None) -> int:
     argv = ["send", *(argv or [])]
+    return main(argv)
+
+
+def recipe_main(argv: Optional[List[str]] = None) -> int:
+    argv = ["recipe", *(argv or [])]
     return main(argv)
 
 

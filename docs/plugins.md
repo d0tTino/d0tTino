@@ -136,3 +136,13 @@ my_recipe = "my_package.recipes:run"
 ```
 
 See `scripts/recipes/plugins/sample.py` for a simple example.
+
+## Running a Recipe
+
+Use the ``ai-cli recipe`` subcommand to execute a named recipe. The command
+loads available recipes via ``discover_recipes()`` and runs the shell commands
+it returns interactively.
+
+```bash
+ai-cli recipe sample "Show my goal"
+```

@@ -126,3 +126,60 @@ def test_do_records_event(monkeypatch, tmp_path):
     assert payload["goal"] == "goal"
     assert payload["exit_code"] == 0
     assert "latency_ms" in payload and payload["latency_ms"] >= 0
+
+
+def test_recipe_subcommand(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        ai_cli.recipes,
+        "discover_recipes",
+        lambda: {"dummy": lambda goal: [f"echo {goal}"]},
+    )
+    captured = {}
+
+    def fake_run_recipe(name, goal, *, log_path, analytics=False):
+        captured["name"] = name
+        captured["goal"] = goal
+        captured["log"] = log_path
+        captured["analytics"] = analytics
+        return 0
+
+    monkeypatch.setattr(ai_cli.ai_do, "run_recipe", fake_run_recipe)
+    log = tmp_path / "log.txt"
+    rc = ai_cli.main(["recipe", "dummy", "goal", "--log", str(log)])
+    assert rc == 0
+    assert captured["name"] == "dummy"
+    assert captured["goal"] == "goal"
+    assert captured["log"] == log
+
+
+def test_recipe_records_event(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        ai_cli.recipes, "discover_recipes", lambda: {"dummy": lambda g: []}
+    )
+    monkeypatch.setattr(ai_cli, "execute_steps", lambda *a, **k: 0)
+    monkeypatch.setattr(ai_cli.ai_do, "run_recipe", lambda *a, **k: 0)
+    recorded = []
+
+    def fake_record(name, payload, *, enabled=False):
+        recorded.append((name, payload, enabled))
+
+    monkeypatch.setattr(ai_cli, "record_event", fake_record)
+    log = tmp_path / "log.txt"
+    rc = ai_cli.main([
+        "recipe",
+        "dummy",
+        "goal",
+        "--log",
+        str(log),
+        "--analytics",
+    ])
+
+    assert rc == 0
+    name, payload, enabled = recorded[0]
+    assert name == "ai-cli-recipe"
+    assert enabled is True
+    assert payload["recipe"] == "dummy"
+    assert payload["goal"] == "goal"
+    assert payload["exit_code"] == 0
+    assert payload["step_count"] == 0
+    assert "latency_ms" in payload and payload["latency_ms"] >= 0
