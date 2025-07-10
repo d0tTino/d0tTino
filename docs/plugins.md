@@ -66,11 +66,15 @@ python -m scripts.plugins recipes remove echo
 
 ### Adding Your Plug-in
 
-Plug-ins listed by the helper come from a small registry file. Update
-`plugin-registry.json` in this repository with your plug-in name and the pip
-package that provides it. Recipe packages go under the `recipes` section.
+Plug-ins listed by the helper come from a remote registry. Submit a pull
+request updating
+[plugin-registry.json](../plugin-registry.json) with your plug-in name and the
+pip package that provides it. Recipe packages go under the `recipes` section.
 The file must conform to
-[plugin-registry.schema.json](../plugin-registry.schema.json).
+[plugin-registry.schema.json](../plugin-registry.schema.json). The CLI fetches
+this file from `https://raw.githubusercontent.com/d0tTino/d0tTino/main/plugin-registry.json`
+and caches it in `~/.cache/d0ttino/plugin_registry.json`. Override the URL with
+`PLUGIN_REGISTRY_URL` during development to test your own registry.
 
 Example entry:
 
