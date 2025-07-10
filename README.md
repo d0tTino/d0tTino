@@ -234,6 +234,17 @@ Replace `events.json` with a local NDJSON file or set the `EVENTS_URL` environme
 variable to fetch records from a server. The script prints `developer,week,count`
 CSV rows for each successful `ai-do` run per developer per ISO week.
 
+### Viewing Aggregated Statistics
+
+Run the script and pipe the output through `column -t` for a quick view:
+
+```bash
+EVENTS_URL=https://example.com python scripts/nsm_stats.py | column -t -s ,
+```
+
+Each row shows the anonymized developer identifier, ISO week, and the number of
+successful `ai-do` runs.
+
 
 ## Privacy
 
