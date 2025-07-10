@@ -9,7 +9,7 @@ def test_load_registry_fetches_and_caches(monkeypatch, tmp_path):
     cached = tmp_path / "cache.json"
     monkeypatch.setattr(plugins, "CACHE_PATH", cached)
 
-    result = {"x": "pkg"}
+    result = {"plugins": {"x": "pkg"}}
 
     class Resp:
         def raise_for_status(self):
@@ -25,13 +25,13 @@ def test_load_registry_fetches_and_caches(monkeypatch, tmp_path):
     monkeypatch.setenv("PLUGIN_REGISTRY_URL", "https://example.com")
 
     registry = plugins.load_registry()
-    assert registry == result
+    assert registry == {"x": "pkg"}
     assert json.loads(cached.read_text()) == result
 
 
 def test_load_registry_uses_cache_on_error(monkeypatch, tmp_path):
     cached = tmp_path / "cache.json"
-    cached.write_text(json.dumps({"y": "pkg"}))
+    cached.write_text(json.dumps({"plugins": {"y": "pkg"}}))
     monkeypatch.setattr(plugins, "CACHE_PATH", cached)
 
     def fake_get(*args, **kwargs):
@@ -46,7 +46,7 @@ def test_load_registry_uses_cache_on_error(monkeypatch, tmp_path):
 
 def test_load_registry_logs_warning(monkeypatch, tmp_path, caplog):
     cached = tmp_path / "cache.json"
-    cached.write_text(json.dumps({"y": "pkg"}))
+    cached.write_text(json.dumps({"plugins": {"y": "pkg"}}))
     monkeypatch.setattr(plugins, "CACHE_PATH", cached)
 
     def fake_get(url, timeout=None):
@@ -114,7 +114,7 @@ def test_load_registry_rejects_bad_entries(monkeypatch, tmp_path):
             pass
 
         def json(self):
-            return {"ok": "pkg", "bad": 123}
+            return {"plugins": {"ok": "pkg", "bad": 123}}
 
     def fake_get(*args, **kwargs):
         return Resp()
@@ -147,7 +147,7 @@ def test_load_registry_defaults_on_invalid_schema(monkeypatch, tmp_path):
             pass
 
         def json(self):
-            return {"ok": ["pkg"]}
+            return {"plugins": {"ok": ["pkg"]}}
 
     def fake_get(*args, **kwargs):
         return Resp()
@@ -157,3 +157,23 @@ def test_load_registry_defaults_on_invalid_schema(monkeypatch, tmp_path):
 
     registry = plugins.load_registry()
     assert registry == plugins.PLUGIN_REGISTRY
+
+
+def test_load_registry_recipes_section(monkeypatch, tmp_path):
+    cached = tmp_path / "cache.json"
+    monkeypatch.setattr(plugins, "CACHE_PATH", cached)
+
+    data = {"plugins": {}, "recipes": {"echo": "pkg"}}
+
+    class Resp:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return data
+
+    monkeypatch.setattr(plugins.requests, "get", lambda *a, **k: Resp())
+    monkeypatch.setenv("PLUGIN_REGISTRY_URL", "https://example.com")
+
+    registry = plugins.load_registry("recipes")
+    assert registry == {"echo": "pkg"}

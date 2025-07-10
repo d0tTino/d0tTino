@@ -38,6 +38,12 @@ PLUGIN_REGISTRY: Dict[str, str] = {
     "mindbridge": "d0ttino-mindbridge-plugin",
 }
 
+# Mapping of recipe name to pip package used as a fallback when a registry
+# cannot be loaded from the network or cache.
+RECIPE_REGISTRY: Dict[str, str] = {
+    "echo": "d0ttino-echo-recipe",
+}
+
 # Cache file for the remote registry
 CACHE_PATH = Path.home() / ".cache" / "d0ttino" / "plugin_registry.json"
 
@@ -53,11 +59,23 @@ def _valid_registry(data: Dict[str, object]) -> bool:
             return bool(_REGISTRY_VALIDATOR.is_valid(data))
         except Exception:  # pragma: no cover - validator failure
             return False
-    return all(isinstance(v, str) for v in data.values())
+    plugins = data.get("plugins")
+    recipes = data.get("recipes")
+    return (
+        isinstance(plugins, dict)
+        and all(isinstance(v, str) for v in plugins.values())
+        and (
+            recipes is None
+            or (
+                isinstance(recipes, dict)
+                and all(isinstance(v, str) for v in recipes.values())
+            )
+        )
+    )
 
 
-def load_registry() -> Dict[str, str]:
-    """Return the plug-in registry from URL, cache or the built-in default."""
+def load_registry(section: str = "plugins") -> Dict[str, str]:
+    """Return the plug-in registry section from URL, cache or the built-in default."""
 
     url = os.environ.get("PLUGIN_REGISTRY_URL")
     if url:
@@ -68,7 +86,9 @@ def load_registry() -> Dict[str, str]:
             if isinstance(data, dict) and _valid_registry(data):
                 CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
                 CACHE_PATH.write_text(json.dumps(data))
-                return {str(k): str(v) for k, v in data.items()}
+                mapping = data.get(section) or {}
+                if isinstance(mapping, dict):
+                    return {str(k): str(v) for k, v in mapping.items()}
         except requests.exceptions.RequestException as exc:
             logger.warning(
                 "Failed to fetch plug-in registry from %s: %s. Using cached registry if available.",
@@ -83,11 +103,15 @@ def load_registry() -> Dict[str, str]:
             with CACHE_PATH.open(encoding="utf-8") as fh:
                 data = json.load(fh)
             if isinstance(data, dict) and _valid_registry(data):
-                return {str(k): str(v) for k, v in data.items()}
+                mapping = data.get(section) or {}
+                if isinstance(mapping, dict):
+                    return {str(k): str(v) for k, v in mapping.items()}
         except Exception:
             pass
 
-    return PLUGIN_REGISTRY
+    if section == "plugins":
+        return PLUGIN_REGISTRY
+    return RECIPE_REGISTRY
 
 
 def _is_installed(package: str) -> bool:
@@ -98,16 +122,20 @@ def _is_installed(package: str) -> bool:
         return False
 
 
-def _cmd_list(args: argparse.Namespace) -> int:
-    registry = load_registry()
+def _cmd_list_impl(section: str) -> int:
+    registry = load_registry(section)
     for name, package in sorted(registry.items()):
         status = "installed" if _is_installed(package) else "not installed"
         print(f"{name}\t({package}) - {status}")
     return 0
 
 
-def _cmd_install(args: argparse.Namespace) -> int:
-    registry = load_registry()
+def _cmd_list(args: argparse.Namespace) -> int:
+    return _cmd_list_impl("plugins")
+
+
+def _cmd_install_impl(args: argparse.Namespace, section: str) -> int:
+    registry = load_registry(section)
     name = args.name
     if name not in registry:
         print(f"Unknown plug-in: {name}", file=sys.stderr)
@@ -127,8 +155,12 @@ def _cmd_install(args: argparse.Namespace) -> int:
         return e.returncode
 
 
-def _cmd_remove(args: argparse.Namespace) -> int:
-    registry = load_registry()
+def _cmd_install(args: argparse.Namespace) -> int:
+    return _cmd_install_impl(args, "plugins")
+
+
+def _cmd_remove_impl(args: argparse.Namespace, section: str) -> int:
+    registry = load_registry(section)
     name = args.name
     if name not in registry:
         print(f"Unknown plug-in: {name}", file=sys.stderr)
@@ -148,6 +180,22 @@ def _cmd_remove(args: argparse.Namespace) -> int:
         return e.returncode
 
 
+def _cmd_remove(args: argparse.Namespace) -> int:
+    return _cmd_remove_impl(args, "plugins")
+
+
+def _cmd_list_recipes(args: argparse.Namespace) -> int:
+    return _cmd_list_impl("recipes")
+
+
+def _cmd_install_recipes(args: argparse.Namespace) -> int:
+    return _cmd_install_impl(args, "recipes")
+
+
+def _cmd_remove_recipes(args: argparse.Namespace) -> int:
+    return _cmd_remove_impl(args, "recipes")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -162,6 +210,20 @@ def build_parser() -> argparse.ArgumentParser:
     remove_cmd = sub.add_parser("remove", help="Remove a plug-in")
     remove_cmd.add_argument("name", help="Plug-in name")
     remove_cmd.set_defaults(func=_cmd_remove)
+
+    recipe = sub.add_parser("recipes", help="Manage recipe plug-ins")
+    recipe_sub = recipe.add_subparsers(dest="recipe_command", required=True)
+
+    r_list = recipe_sub.add_parser("list", help="List available recipes")
+    r_list.set_defaults(func=_cmd_list_recipes)
+
+    r_install = recipe_sub.add_parser("install", help="Install a recipe")
+    r_install.add_argument("name", help="Recipe name")
+    r_install.set_defaults(func=_cmd_install_recipes)
+
+    r_remove = recipe_sub.add_parser("remove", help="Remove a recipe")
+    r_remove.add_argument("name", help="Recipe name")
+    r_remove.set_defaults(func=_cmd_remove_recipes)
 
     return parser
 

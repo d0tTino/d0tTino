@@ -1,0 +1,11 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "d0ttino-echo-recipe"
+version = "0.1.0"
+dependencies = ["llm"]
+
+[project.entry-points."d0ttino.recipes"]
+echo = "d0ttino_echo_recipe:run"

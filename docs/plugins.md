@@ -43,7 +43,7 @@ See `llm/backends/plugins/sample.py` for a full example.
 
 ## Managing Plug-ins
 
-Use the `plugins` helper to install or remove third-party backends.
+Use the `plugins` helper to install or remove third-party backends and recipes.
 
 ```bash
 # List available plug-ins
@@ -56,11 +56,20 @@ python -m scripts.plugins install sample
 python -m scripts.plugins remove sample
 ```
 
+Recipe packages are managed via the `recipes` subcommand:
+
+```bash
+python -m scripts.plugins recipes list
+python -m scripts.plugins recipes install echo
+python -m scripts.plugins recipes remove echo
+```
+
 ### Adding Your Plug-in
 
 Plug-ins listed by the helper come from a small registry file. Update
 `plugin-registry.json` in this repository with your plug-in name and the pip
-package that provides it. The file must conform to
+package that provides it. Recipe packages go under the `recipes` section.
+The file must conform to
 [plugin-registry.schema.json](../plugin-registry.schema.json).
 
 Example entry:
@@ -68,6 +77,16 @@ Example entry:
 ```json
 {
   "my_backend": "my-package"
+}
+```
+
+Add recipe packages under the `recipes` key:
+
+```json
+{
+  "recipes": {
+    "my_recipe": "my-recipe-package"
+  }
 }
 ```
 
@@ -82,6 +101,7 @@ Sample plug-in packages for the built-in backends are included under
 python -m scripts.plugins install openrouter
 python -m scripts.plugins install lobechat
 python -m scripts.plugins install mindbridge
+python -m scripts.plugins recipes install echo
 ```
 
 ## Built-in Backends
