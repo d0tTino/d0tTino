@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 from typing import Any
+from threading import RLock
 
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
@@ -19,17 +20,20 @@ from scripts import ai_exec
 backends.load_backends()
 
 STATE_PATH = Path(os.environ.get("API_STATE_PATH", REPO_ROOT / "api_state.json"))
+STATE_LOCK = RLock()
 
 
 def _load_state() -> dict[str, Any]:
-    if STATE_PATH.exists():
-        with STATE_PATH.open("r", encoding="utf-8") as f:
-            return json.load(f)
-    return {"queries": 0, "nodes": [], "edges": []}
+    with STATE_LOCK:
+        if STATE_PATH.exists():
+            with STATE_PATH.open("r", encoding="utf-8") as f:
+                return json.load(f)
+        return {"queries": 0, "nodes": [], "edges": []}
 
 
 def _save_state(state: dict[str, Any]) -> None:
-    STATE_PATH.write_text(json.dumps(state), encoding="utf-8")
+    with STATE_LOCK:
+        STATE_PATH.write_text(json.dumps(state), encoding="utf-8")
 
 
 def record_prompt(prompt: str) -> None:
@@ -70,7 +74,8 @@ async def health() -> dict[str, str]:
 
 @app.post("/api/prompt")
 async def prompt(req: PromptRequest) -> dict[str, str]:
-    record_prompt(req.prompt)
+    with STATE_LOCK:
+        record_prompt(req.prompt)
     result = send_prompt(req.prompt, local=req.local)
     return {"response": result}
 
