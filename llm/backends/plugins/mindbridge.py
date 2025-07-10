@@ -49,10 +49,10 @@ class MindBridgeBackend(Backend):
         return _extract_text(data)
 
 
-def run_mindbridge(prompt: str, model: str) -> str:
+def run_mindbridge(prompt: str, model: str | None = None) -> str:
     """Return MindBridge response for ``prompt`` using ``model``."""
 
-    backend = cast(Any, MindBridgeBackend)(model)
+    backend = cast(Any, MindBridgeBackend)(model or "")
     return backend.run(prompt)
 
 

@@ -50,10 +50,10 @@ class LobeChatBackend(Backend):
         return _extract_text(data)
 
 
-def run_lobechat(prompt: str, model: str) -> str:
+def run_lobechat(prompt: str, model: str | None = None) -> str:
     """Return LobeChat response for ``prompt`` using ``model``."""
 
-    backend = cast(Any, LobeChatBackend)(model)
+    backend = cast(Any, LobeChatBackend)(model or "")
     return backend.run(prompt)
 
 

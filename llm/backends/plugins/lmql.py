@@ -27,10 +27,10 @@ else:  # pragma: no cover - optional dependency missing
 
 
 
-def run_lmql(prompt: str, model: str) -> str:
+def run_lmql(prompt: str, model: str | None = None) -> str:
     """Return response using ``lmql`` backend."""
 
-    backend = cast(Any, LMQLBackend)(model)
+    backend = cast(Any, LMQLBackend)(model or "")
     return backend.run(prompt)
 
 

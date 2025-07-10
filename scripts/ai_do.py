@@ -8,7 +8,7 @@ import argparse
 from pathlib import Path
 from typing import List, Optional
 
-from scripts import ai_exec
+from scripts import ai_exec, recipes
 from llm.backends import load_backends
 from scripts.cli_common import (
     execute_steps,
@@ -18,6 +18,25 @@ from scripts.cli_common import (
 )
 
 load_backends()
+
+
+def run_recipe(
+    name: str, goal: str, *, log_path: Path, analytics: bool = False
+) -> int:
+    """Execute a recipe by name and record an event."""
+    mapping = recipes.discover_recipes()
+    func = mapping.get(name)
+    if func is None:
+        raise KeyError(name)
+    steps = func(goal)
+    exit_code = execute_steps(steps, log_path=log_path)
+    if exit_code == 0:
+        record_event(
+            "ai-do-recipe",
+            {"recipe": name, "goal": goal, "exit_code": exit_code},
+            enabled=analytics,
+        )
+    return exit_code
 
 
 def main(argv: Optional[List[str]] = None) -> int:

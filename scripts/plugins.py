@@ -45,6 +45,17 @@ CACHE_PATH = Path.home() / ".cache" / "d0ttino" / "plugin_registry.json"
 logger = logging.getLogger(__name__)
 
 
+def _valid_registry(data: Dict[str, object]) -> bool:
+    """Return True if ``data`` is a valid plug-in registry."""
+
+    if _REGISTRY_VALIDATOR is not None:
+        try:
+            return bool(_REGISTRY_VALIDATOR.is_valid(data))
+        except Exception:  # pragma: no cover - validator failure
+            return False
+    return all(isinstance(v, str) for v in data.values())
+
+
 def load_registry() -> Dict[str, str]:
     """Return the plug-in registry from URL, cache or the built-in default."""
 
@@ -54,9 +65,7 @@ def load_registry() -> Dict[str, str]:
             resp = requests.get(url, timeout=5)
             resp.raise_for_status()
             data = resp.json()
-            if isinstance(data, dict) and (
-                _REGISTRY_VALIDATOR is None or _REGISTRY_VALIDATOR.is_valid(data)
-            ):
+            if isinstance(data, dict) and _valid_registry(data):
                 CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
                 CACHE_PATH.write_text(json.dumps(data))
                 return {str(k): str(v) for k, v in data.items()}
@@ -73,9 +82,7 @@ def load_registry() -> Dict[str, str]:
         try:
             with CACHE_PATH.open(encoding="utf-8") as fh:
                 data = json.load(fh)
-            if isinstance(data, dict) and (
-                _REGISTRY_VALIDATOR is None or _REGISTRY_VALIDATOR.is_valid(data)
-            ):
+            if isinstance(data, dict) and _valid_registry(data):
                 return {str(k): str(v) for k, v in data.items()}
         except Exception:
             pass

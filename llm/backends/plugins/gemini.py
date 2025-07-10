@@ -37,6 +37,7 @@ class GeminiBackend(Backend):
 def run_gemini(prompt: str, model: str | None = None) -> str:
     """Return Gemini response for ``prompt``."""
 
+    backend_cls: type[Backend]
     if shutil.which("gemini"):
         backend_cls = GeminiBackend
     elif GeminiDSPyBackend is not None:
