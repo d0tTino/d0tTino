@@ -62,6 +62,7 @@ Recipe packages are managed via the `recipes` subcommand:
 python -m scripts.plugins recipes list
 python -m scripts.plugins recipes install echo
 python -m scripts.plugins recipes remove echo
+python -m scripts.plugins recipes sync
 ```
 
 ### Adding Your Plug-in

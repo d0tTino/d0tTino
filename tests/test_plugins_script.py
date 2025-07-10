@@ -189,3 +189,47 @@ def test_recipe_remove(monkeypatch):
     assert rc == 0
     assert "pkg" in called["cmd"]
 
+
+def test_recipe_sync(monkeypatch, tmp_path):
+    called = []
+
+    def fake_run(cmd, *a, **k):
+        called.append(cmd)
+
+        class Res:
+            returncode = 0
+
+        return Res()
+
+    def fake_load(section="plugins"):
+        if section == "recipes":
+            return {"echo": "pkg"}
+        return {}
+
+    monkeypatch.setattr(plugins.subprocess, "run", fake_run)
+    monkeypatch.setattr(plugins, "load_registry", fake_load)
+
+    rc = plugins.main(["recipes", "sync", "--dest", str(tmp_path)])
+    assert rc == 0
+    assert called
+    assert str(tmp_path) in called[0]
+    assert "pkg" in called[0]
+
+
+def test_recipe_sync_failure(monkeypatch, tmp_path, capsys):
+    def fake_run(cmd, *a, **k):
+        raise plugins.subprocess.CalledProcessError(2, cmd, stderr="err\n")
+
+    def fake_load(section="plugins"):
+        if section == "recipes":
+            return {"echo": "pkg"}
+        return {}
+
+    monkeypatch.setattr(plugins.subprocess, "run", fake_run)
+    monkeypatch.setattr(plugins, "load_registry", fake_load)
+
+    rc = plugins.main(["recipes", "sync", "--dest", str(tmp_path)])
+    captured = capsys.readouterr()
+    assert rc == 2
+    assert "err" in captured.err
+

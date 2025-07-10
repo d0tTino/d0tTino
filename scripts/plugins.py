@@ -44,10 +44,9 @@ RECIPE_REGISTRY: Dict[str, str] = {
     "echo": "d0ttino-echo-recipe",
 }
 
-# Default location of the hosted plug-in registry
-DEFAULT_REGISTRY_URL = (
-    "https://raw.githubusercontent.com/d0tTino/d0tTino/main/plugin-registry.json"
-)
+# Default directory for recipe packages downloaded via ``recipes sync``
+RECIPE_DOWNLOAD_DIR = Path(__file__).resolve().parent / "recipes" / "packages"
+
 
 # Cache file for the remote registry
 CACHE_PATH = Path.home() / ".cache" / "d0ttino" / "plugin_registry.json"
@@ -200,6 +199,35 @@ def _cmd_remove_recipes(args: argparse.Namespace) -> int:
     return _cmd_remove_impl(args, "recipes")
 
 
+def _cmd_sync_recipes(args: argparse.Namespace) -> int:
+    """Download recipe packages listed in the registry."""
+    registry = load_registry("recipes")
+    dest = Path(args.dest) if args.dest else RECIPE_DOWNLOAD_DIR
+    dest.mkdir(parents=True, exist_ok=True)
+    for pkg in registry.values():
+        try:
+            subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "pip",
+                    "download",
+                    "--no-deps",
+                    "-d",
+                    str(dest),
+                    pkg,
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+        except subprocess.CalledProcessError as exc:
+            if exc.stderr:
+                print(exc.stderr, file=sys.stderr, end="")
+            return exc.returncode
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -228,6 +256,15 @@ def build_parser() -> argparse.ArgumentParser:
     r_remove = recipe_sub.add_parser("remove", help="Remove a recipe")
     r_remove.add_argument("name", help="Recipe name")
     r_remove.set_defaults(func=_cmd_remove_recipes)
+
+    r_sync = recipe_sub.add_parser(
+        "sync", help="Download recipe packages from the registry"
+    )
+    r_sync.add_argument(
+        "--dest",
+        help="Directory to store downloaded packages",
+    )
+    r_sync.set_defaults(func=_cmd_sync_recipes)
 
     return parser
 
