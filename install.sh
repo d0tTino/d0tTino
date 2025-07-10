@@ -12,6 +12,35 @@ if [[ -z "${OSTYPE:-}" ]]; then
     esac
 fi
 
+ensure_deps() {
+    local missing=()
+    for cmd in "$@"; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
+            missing+=("$cmd")
+        fi
+    done
+
+    if (( ${#missing[@]} > 0 )); then
+        if [[ $OSTYPE == darwin* ]]; then
+            if command -v brew >/dev/null 2>&1; then
+                echo "Installing ${missing[*]} with Homebrew" >&2
+                brew install "${missing[@]}"
+            else
+                echo "Missing ${missing[*]}" >&2
+                echo "Install Homebrew from https://brew.sh and run: brew install ${missing[*]}" >&2
+                exit 1
+            fi
+        elif [[ $OSTYPE == linux* ]] && command -v apt-get >/dev/null 2>&1; then
+            echo "Installing ${missing[*]} with apt-get" >&2
+            sudo apt-get update
+            sudo apt-get install -y "${missing[@]}"
+        else
+            echo "Missing ${missing[*]}. Please install them and re-run this script." >&2
+            exit 1
+        fi
+    fi
+}
+
 install_winget=false
 install_windows_terminal=false
 install_wsl=false
@@ -53,7 +82,8 @@ run_pwsh() {
     shift
     pwsh -NoLogo -NoProfile -File "$scripts/$script" "$@"
 }
-
+# ensure core utilities are available
+ensure_deps curl unzip git
 
 if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == windows* ]]; then
     run_pwsh fix-path.ps1
