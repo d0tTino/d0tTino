@@ -128,6 +128,37 @@ def test_do_records_event(monkeypatch, tmp_path):
     assert "latency_ms" in payload and payload["latency_ms"] >= 0
 
 
+def test_do_records_failure(monkeypatch, tmp_path):
+    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: ["bad"])
+    inputs = iter(["y", "y"])
+    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
+    class Result:
+        def __init__(self):
+            self.stdout = ""
+            self.stderr = ""
+            self.returncode = 1
+
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: Result())
+
+    recorded = []
+
+    def fake_record(name, payload, *, enabled=False):
+        recorded.append((name, payload, enabled))
+
+    monkeypatch.setattr(ai_cli, "record_event", fake_record)
+    log = tmp_path / "log.txt"
+    rc = ai_cli.main(["do", "goal", "--log", str(log), "--analytics"])
+
+    assert rc == 1
+    name, payload, enabled = recorded[0]
+    assert name == "ai-cli-do"
+    assert enabled is True
+    assert payload["goal"] == "goal"
+    assert payload["exit_code"] == 1
+    assert "latency_ms" in payload and payload["latency_ms"] >= 0
+
+
 def test_recipe_subcommand(monkeypatch, tmp_path):
     monkeypatch.setattr(
         ai_cli.recipes,
