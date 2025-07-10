@@ -26,8 +26,13 @@ def execute_steps(steps: Iterable[str], *, log_path: Path) -> int:
         answer = input(f"{i}. {step} [y/N]?").strip().lower()
         if answer != "y":
             continue
-        tokens = shlex.split(step)
-        needs_shell = any(ch in step for ch in "|&;><$`")
+        try:
+            tokens = shlex.split(step)
+        except ValueError:
+            tokens = []
+            needs_shell = True
+        else:
+            needs_shell = any(ch in step for ch in "|&;><$`") or shlex.join(tokens) != step
         cmd = step if needs_shell else tokens
         cmd_str = step if needs_shell else " ".join(tokens)
         answer = input(f"Run command: {cmd_str} [y/N]?").strip().lower()
