@@ -50,6 +50,36 @@ def test_record_event_requires_url(monkeypatch):
     assert not called
 
 
+def test_record_event_empty_url(monkeypatch):
+    monkeypatch.setenv("EVENTS_URL", "")
+    called = []
+
+    def fake_post(url, headers=None, json=None, timeout=None):
+        called.append(True)
+
+    monkeypatch.setattr(cli_common.requests, "post", fake_post)
+    cli_common.record_event("name", {"a": 1}, enabled=True)
+
+    assert not called
+
+
+def test_record_event_accepts_invalid_timestamps(monkeypatch):
+    monkeypatch.setenv("EVENTS_URL", "https://example.com")
+    sent = {}
+
+    def fake_post(url, headers=None, json=None, timeout=None):
+        sent.update({"url": url, "data": json})
+
+    monkeypatch.setattr(cli_common.requests, "post", fake_post)
+    cli_common.record_event(
+        "ai-do",
+        {"end_ts": "not-a-number", "exit_code": 0},
+        enabled=True,
+    )
+
+    assert sent["data"]["end_ts"] == "not-a-number"
+
+
 
 def test_analytics_default(monkeypatch):
     monkeypatch.setenv("EVENTS_ENABLED", "yes")
