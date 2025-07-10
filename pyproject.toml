@@ -45,7 +45,7 @@ sample = "scripts.recipes.plugins.sample:run"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["llm*", "scripts*"]
+include = ["llm*", "scripts*", "plugins*"]
 
 [tool.ruff]
-src = ["llm", "scripts"]
+src = ["llm", "scripts", "plugins"]

@@ -69,9 +69,9 @@ def test_discover_plugins_loads_entry_points(monkeypatch):
     )
 
     monkeypatch.setattr(
-        importlib.metadata,
-        "entry_points",
-        lambda: importlib.metadata.EntryPoints((entry,)),
+        backends.loader,
+        "iter_entry_points",
+        lambda group: iter([entry]),
     )
 
     backends.discover_plugins()
@@ -106,9 +106,9 @@ def test_backends_import_loads_entry_point_plugins(monkeypatch):
         return original_import(name, package)
 
     monkeypatch.setattr(
-        importlib.metadata,
-        "entry_points",
-        lambda: importlib.metadata.EntryPoints((entry,)),
+        backends.loader,
+        "iter_entry_points",
+        lambda group: iter([entry]),
     )
     monkeypatch.setattr(importlib.metadata, "import_module", fake_import)
 
@@ -129,9 +129,9 @@ def test_backends_import_skips_unknown_entry_points(monkeypatch):
     )
 
     monkeypatch.setattr(
-        importlib.metadata,
-        "entry_points",
-        lambda: importlib.metadata.EntryPoints((entry,)),
+        backends.loader,
+        "iter_entry_points",
+        lambda group: iter([entry]),
     )
 
     reloaded = importlib.reload(backends)
