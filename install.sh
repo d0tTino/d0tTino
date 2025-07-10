@@ -4,42 +4,6 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 scripts="$repo_root/scripts"
 
-# Determine the platform when OSTYPE is not provided
-if [[ -z "${OSTYPE:-}" ]]; then
-    OSTYPE="$(uname -s | tr '[:upper:]' '[:lower:]')"
-    case $OSTYPE in
-        mingw*) OSTYPE="msys" ;;
-    esac
-fi
-
-ensure_deps() {
-    local missing=()
-    for cmd in "$@"; do
-        if ! command -v "$cmd" >/dev/null 2>&1; then
-            missing+=("$cmd")
-        fi
-    done
-
-    if (( ${#missing[@]} > 0 )); then
-        if [[ $OSTYPE == darwin* ]]; then
-            if command -v brew >/dev/null 2>&1; then
-                echo "Installing ${missing[*]} with Homebrew" >&2
-                brew install "${missing[@]}"
-            else
-                echo "Missing ${missing[*]}" >&2
-                echo "Install Homebrew from https://brew.sh and run: brew install ${missing[*]}" >&2
-                exit 1
-            fi
-        elif [[ $OSTYPE == linux* ]] && command -v apt-get >/dev/null 2>&1; then
-            echo "Installing ${missing[*]} with apt-get" >&2
-            sudo apt-get update
-            sudo apt-get install -y "${missing[@]}"
-        else
-            echo "Missing ${missing[*]}. Please install them and re-run this script." >&2
-            exit 1
-        fi
-    fi
-}
 
 install_winget=false
 install_windows_terminal=false
@@ -77,36 +41,16 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-run_pwsh() {
-    local script=$1
-    shift
-    pwsh -NoLogo -NoProfile -File "$scripts/$script" "$@"
-}
-# ensure core utilities are available
-ensure_deps curl unzip git
+args=( )
+if $install_winget; then args+=(--winget); fi
+if $install_windows_terminal; then args+=(--windows-terminal); fi
+if $install_wsl; then args+=(--install-wsl); fi
+if $setup_wsl; then args+=(--setup-wsl); fi
+if $setup_docker; then args+=(--setup-docker); fi
+if [[ -n $docker_image ]]; then args+=(--image "$docker_image"); fi
 
-if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == windows* ]]; then
-    run_pwsh fix-path.ps1
-    run_pwsh helpers/install_common.ps1
+if command -v pwsh >/dev/null 2>&1; then
+    pwsh -NoLogo -NoProfile -File "$scripts/helpers/install_common.ps1" "${args[@]}"
 else
-    bash "$scripts/install_common.sh"
-fi
-
-if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == windows* ]]; then
-    if $install_winget; then run_pwsh setup-winget.ps1; fi
-    if $install_windows_terminal; then run_pwsh install-windows-terminal.ps1; fi
-    if $install_wsl; then run_pwsh install-wsl.ps1; fi
-    if $setup_wsl; then run_pwsh setup-wsl.ps1; fi
-    if $setup_docker; then
-        args=()
-        [[ -n $docker_image ]] && args+=("-ImageName" "$docker_image")
-        run_pwsh setup-docker.ps1 "${args[@]}"
-    fi
-else
-    if $setup_wsl; then bash "$scripts/setup-wsl.sh"; fi
-    if $setup_docker; then
-        args=()
-        [[ -n $docker_image ]] && args+=("--image" "$docker_image")
-        bash "$scripts/setup-docker.sh" "${args[@]}"
-    fi
+    bash "$scripts/install_common.sh" "${args[@]}"
 fi
