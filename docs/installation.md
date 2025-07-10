@@ -16,6 +16,25 @@ Windows users can run the PowerShell variant:
 irm https://raw.githubusercontent.com/d0tTino/d0tTino/main/scripts/install.ps1 | iex
 ```
 
+## Prerequisites
+
+The install scripts rely on `curl`, `unzip` and `git`. On macOS these
+dependencies are installed automatically when [Homebrew](https://brew.sh)
+is available:
+
+```bash
+brew install curl unzip git
+```
+
+Debian based distributions use `apt-get` if present:
+
+```bash
+sudo apt-get install curl unzip git
+```
+
+If neither package manager is detected you'll need to install the tools
+manually before running the installer.
+
 
 ## Node.js
 
