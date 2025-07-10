@@ -86,3 +86,55 @@ def test_analytics_default(monkeypatch):
     assert cli_common.analytics_default() is True
     monkeypatch.setenv("EVENTS_ENABLED", "0")
     assert cli_common.analytics_default() is False
+
+
+def test_execute_steps_parses_quoted_args(monkeypatch, tmp_path):
+    inputs = iter(["y", "y"])
+    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
+    captured = {}
+
+    def fake_run(cmd, *, shell, capture_output, text):
+        captured["cmd"] = cmd
+        captured["shell"] = shell
+
+        class Result:
+            def __init__(self):
+                self.stdout = ""
+                self.stderr = ""
+                self.returncode = 0
+
+        return Result()
+
+    monkeypatch.setattr(cli_common.subprocess, "run", fake_run)
+
+    cli_common.execute_steps(["echo 'foo bar'"], log_path=tmp_path / "log.txt")
+
+    assert captured["cmd"] == ["echo", "foo bar"]
+    assert captured["shell"] is False
+
+
+def test_execute_steps_fallbacks_to_shell(monkeypatch, tmp_path):
+    inputs = iter(["y", "y"])
+    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
+    captured = {}
+
+    def fake_run(cmd, *, shell, capture_output, text):
+        captured["cmd"] = cmd
+        captured["shell"] = shell
+
+        class Result:
+            def __init__(self):
+                self.stdout = ""
+                self.stderr = ""
+                self.returncode = 0
+
+        return Result()
+
+    monkeypatch.setattr(cli_common.subprocess, "run", fake_run)
+
+    cli_common.execute_steps(["python -c \"print('hi')\""], log_path=tmp_path / "log.txt")
+
+    assert captured["cmd"] == "python -c \"print('hi')\""
+    assert captured["shell"] is True
