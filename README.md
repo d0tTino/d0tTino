@@ -224,6 +224,9 @@ following fields:
 - `start_ts` and `end_ts` – Unix timestamps capturing the plan duration
 - `latency_ms` – computed from the timestamps
 
+See [docs/telemetry.md](docs/telemetry.md) for a quick Supabase setup and
+configuration of `EVENTS_URL` and `EVENTS_TOKEN`.
+
 These events record whether a command sequence completed successfully and can be
 aggregated per user. Summing successful executions for each developer over a
 calendar week yields the “successful automated tasks per active developer per

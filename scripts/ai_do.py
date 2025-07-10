@@ -30,12 +30,11 @@ def run_recipe(
         raise KeyError(name)
     steps = func(goal)
     exit_code = execute_steps(steps, log_path=log_path)
-    if exit_code == 0:
-        record_event(
-            "ai-do-recipe",
-            {"recipe": name, "goal": goal, "exit_code": exit_code},
-            enabled=analytics,
-        )
+    record_event(
+        "ai-do-recipe",
+        {"recipe": name, "goal": goal, "exit_code": exit_code},
+        enabled=analytics,
+    )
     return exit_code
 
 
@@ -66,12 +65,11 @@ def main(argv: Optional[List[str]] = None) -> int:
             send_notification("ai-do completed with exit code 0")
         else:
             send_notification(f"ai-do failed with exit code {exit_code}")
-    if exit_code == 0:
-        record_event(
-            "ai-do",
-            {"goal": args.goal, "exit_code": exit_code},
-            enabled=analytics,
-        )
+    record_event(
+        "ai-do",
+        {"goal": args.goal, "exit_code": exit_code},
+        enabled=analytics,
+    )
 
     return exit_code
 

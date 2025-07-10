@@ -65,18 +65,17 @@ def _cmd_do(args: argparse.Namespace) -> int:
     )
     exit_code = execute_steps(steps, log_path=args.log)
     end = time.time()
-    if exit_code == 0:
-        record_event(
-            "ai-cli-do",
-            {
-                "goal": args.goal,
-                "exit_code": exit_code,
-                "start_ts": start,
-                "end_ts": end,
-                "latency_ms": int((end - start) * 1000),
-            },
-            enabled=args.analytics,
-        )
+    record_event(
+        "ai-cli-do",
+        {
+            "goal": args.goal,
+            "exit_code": exit_code,
+            "start_ts": start,
+            "end_ts": end,
+            "latency_ms": int((end - start) * 1000),
+        },
+        enabled=args.analytics,
+    )
     return exit_code
 
 

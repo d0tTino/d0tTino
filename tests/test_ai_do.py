@@ -153,6 +153,32 @@ def test_main_records_event(monkeypatch, tmp_path):
     assert recorded == [("ai-do", {"goal": "goal", "exit_code": 0}, True)]
 
 
+def test_main_records_failure(monkeypatch, tmp_path):
+    monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: ["bad"])
+    inputs = iter(["y", "y"])
+    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
+    class Result:
+        def __init__(self):
+            self.stdout = ""
+            self.stderr = ""
+            self.returncode = 1
+
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: Result())
+
+    recorded = []
+
+    def fake_record(name, payload, *, enabled=False):
+        recorded.append((name, payload, enabled))
+
+    monkeypatch.setattr(ai_do, "record_event", fake_record)
+    log = tmp_path / "log.txt"
+    rc = ai_do.main(["goal", "--log", str(log), "--analytics"])
+
+    assert rc == 1
+    assert recorded == [("ai-do", {"goal": "goal", "exit_code": 1}, True)]
+
+
 def test_main_accepts_config_path(monkeypatch):
     def fake_plan(goal: str, *, config_path=None):
         assert goal == "goal"
