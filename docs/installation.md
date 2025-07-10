@@ -1,9 +1,10 @@
 # Installation
 
 Follow these steps to set up the configuration files on a new system. The
-provided install scripts are lightweight wrappers that call shared helpers to
-install fonts, sync color palettes and configure Git hooks. Fetch and run the
-cross-platform installer with a single command:
+`install.sh` and `bootstrap.ps1` wrappers now only parse command line options
+and delegate all work to the shared helpers. These helpers detect the
+environment, fix your `PATH`, install fonts, sync color palettes and configure
+Git hooks. Fetch and run the cross-platform installer with a single command:
 
 
 ```bash
@@ -79,10 +80,10 @@ ruff check .
    ```
 2. Copy or symlink the files from this repository to your profile directory.
 3. From an elevated PowerShell window, run `bootstrap.ps1` (or call
-   `install.sh` from a regular shell) to set up your PATH. The script relies on
-   the shared helpers for fonts, palettes and Git hooks. You must run the
-   PowerShell script from an **elevated** window so that
-   `scripts/fix-path.ps1` can modify the user PATH.
+   `install.sh` from a regular shell). The wrappers simply forward their
+   arguments to the common installer which cleans up your PATH, installs fonts
+   and sets up Git hooks. You must run the PowerShell script from an
+   **elevated** window so that the helper can modify the user PATH.
    Pass the appropriate flags to install the core tools automatically. The
    equivalent command using `install.sh` is shown below:
    ```bash
@@ -90,7 +91,7 @@ ruff check .
    # PowerShell alternative
    ./bootstrap.ps1 -InstallWinget -InstallWindowsTerminal -InstallWSL -SetupWSL
    ```
-   The script calls `scripts/fix-path.ps1` to clean up duplicate entries and ensure your `bin` directory is included.
+   The helper automatically runs `fix-path.ps1` to clean up duplicate entries and ensure your `bin` directory is included.
    If `$Env:USERPROFILE` isn't defined (e.g. on Linux), it falls back to `$HOME`.
 4. Restart the terminal or run `. $PROFILE` to reload the profile and load the new settings.
 

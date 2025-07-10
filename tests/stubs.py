@@ -93,7 +93,9 @@ def create_stub_install_common(path: Path, log: Path) -> None:
         encoding="utf-8",
     )
     (helpers / "install_common.ps1").write_text(
-        f"#!/usr/bin/env bash\necho install_common >> '{log}'\n"
+        f"#!/usr/bin/env bash\n"
+        f"echo fix-path.ps1 >> '{log}'\n"
+        f"echo install_common >> '{log}'\n"
         "bash \"$(dirname \"${BASH_SOURCE[0]}\")/../setup-hooks.sh\"\n"
         "bash \"$(dirname \"${BASH_SOURCE[0]}\")/install_fonts.sh\"\n"
         "bash \"$(dirname \"${BASH_SOURCE[0]}\")/sync_palettes.sh\"\n",
@@ -102,7 +104,17 @@ def create_stub_install_common(path: Path, log: Path) -> None:
     for f in helpers.iterdir():
         f.chmod(0o755)
     path.write_text(
-        f"#!/usr/bin/env bash\necho install_common >> '{log}'\nbash \"$(dirname \"${{BASH_SOURCE[0]}}\")/setup-hooks.sh\"\nbash \"$(dirname \"${{BASH_SOURCE[0]}}\")/helpers/install_fonts.sh\"\nbash \"$(dirname \"${{BASH_SOURCE[0]}}\")/helpers/sync_palettes.sh\"\n",
+        f"#!/usr/bin/env bash\n"
+        f"echo fix-path.ps1 >> '{log}'\n"
+        f"echo install_common >> '{log}'\n"
+        "if command -v brew >/dev/null 2>&1; then\n"
+        "  brew install curl unzip git\n"
+        "elif command -v apt-get >/dev/null 2>&1; then\n"
+        "  sudo apt-get install -y curl unzip git\n"
+        "fi\n"
+        "bash \"$(dirname \"${BASH_SOURCE[0]}\")/setup-hooks.sh\"\n"
+        "bash \"$(dirname \"${BASH_SOURCE[0]}\")/helpers/install_fonts.sh\"\n"
+        "bash \"$(dirname \"${BASH_SOURCE[0]}\")/helpers/sync_palettes.sh\"\n",
         encoding="utf-8",
     )
     path.chmod(0o755)
