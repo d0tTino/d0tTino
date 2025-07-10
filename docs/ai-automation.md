@@ -33,7 +33,8 @@ Third-party packages may add new backends by exposing an entry point in the
 ``llm.plugins`` group. A plug-in module should import
 ``llm.backends.register_backend`` and call it when loaded.
 
-See [plugins.md](plugins.md) for a full template and interface description.
+See the [backend plug-in guide](plugins.md) for a full template and interface
+description.
 
 Example ``pyproject.toml`` snippet:
 
@@ -41,6 +42,13 @@ Example ``pyproject.toml`` snippet:
 [project.entry-points."llm.plugins"]
 my_backend = "my_package.plugins:backend"
 ```
+
+Install a community backend using the helper. For example:
+
+```bash
+python -m scripts.plugins install openrouter
+```
+
 
 ## LLM Routing CLI
 
