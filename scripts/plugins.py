@@ -47,6 +47,7 @@ RECIPE_REGISTRY: Dict[str, str] = {
 # Default directory for recipe packages downloaded via ``recipes sync``
 RECIPE_DOWNLOAD_DIR = Path(__file__).resolve().parent / "recipes" / "packages"
 
+
 # Cache file for the remote registry
 CACHE_PATH = Path.home() / ".cache" / "d0ttino" / "plugin_registry.json"
 
@@ -80,26 +81,25 @@ def _valid_registry(data: Dict[str, object]) -> bool:
 def load_registry(section: str = "plugins") -> Dict[str, str]:
     """Return the plug-in registry section from URL, cache or the built-in default."""
 
-    url = os.environ.get("PLUGIN_REGISTRY_URL")
-    if url:
-        try:
-            resp = requests.get(url, timeout=5)
-            resp.raise_for_status()
-            data = resp.json()
-            if isinstance(data, dict) and _valid_registry(data):
-                CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-                CACHE_PATH.write_text(json.dumps(data))
-                mapping = data.get(section) or {}
-                if isinstance(mapping, dict):
-                    return {str(k): str(v) for k, v in mapping.items()}
-        except requests.exceptions.RequestException as exc:
-            logger.warning(
-                "Failed to fetch plug-in registry from %s: %s. Using cached registry if available.",
-                url,
-                exc,
-            )
-        except Exception:
-            pass
+    url = os.environ.get("PLUGIN_REGISTRY_URL", DEFAULT_REGISTRY_URL)
+    try:
+        resp = requests.get(url, timeout=5)
+        resp.raise_for_status()
+        data = resp.json()
+        if isinstance(data, dict) and _valid_registry(data):
+            CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+            CACHE_PATH.write_text(json.dumps(data))
+            mapping = data.get(section) or {}
+            if isinstance(mapping, dict):
+                return {str(k): str(v) for k, v in mapping.items()}
+    except requests.exceptions.RequestException as exc:
+        logger.warning(
+            "Failed to fetch plug-in registry from %s: %s. Using cached registry if available.",
+            url,
+            exc,
+        )
+    except Exception:
+        pass
 
     if CACHE_PATH.exists():
         try:

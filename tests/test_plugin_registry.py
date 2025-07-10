@@ -67,6 +67,11 @@ def test_load_registry_defaults_when_missing(monkeypatch, tmp_path):
     monkeypatch.setattr(plugins, "CACHE_PATH", tmp_path / "missing.json")
     monkeypatch.delenv("PLUGIN_REGISTRY_URL", raising=False)
 
+    def fake_get(*args, **kwargs):
+        raise plugins.requests.exceptions.RequestException("boom")
+
+    monkeypatch.setattr(plugins.requests, "get", fake_get)
+
     registry = plugins.load_registry()
     assert registry == plugins.PLUGIN_REGISTRY
 
@@ -177,3 +182,27 @@ def test_load_registry_recipes_section(monkeypatch, tmp_path):
 
     registry = plugins.load_registry("recipes")
     assert registry == {"echo": "pkg"}
+
+
+def test_load_registry_uses_default_url(monkeypatch, tmp_path):
+    cached = tmp_path / "cache.json"
+    monkeypatch.setattr(plugins, "CACHE_PATH", cached)
+    monkeypatch.delenv("PLUGIN_REGISTRY_URL", raising=False)
+
+    data = {"plugins": {"z": "pkg"}}
+
+    class Resp:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return data
+
+    def fake_get(url, timeout=None):
+        assert url == plugins.DEFAULT_REGISTRY_URL
+        return Resp()
+
+    monkeypatch.setattr(plugins.requests, "get", fake_get)
+
+    registry = plugins.load_registry()
+    assert registry == {"z": "pkg"}
