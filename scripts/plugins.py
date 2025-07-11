@@ -47,6 +47,9 @@ RECIPE_REGISTRY: Dict[str, str] = {
 # Default directory for recipe packages downloaded via ``recipes sync``
 RECIPE_DOWNLOAD_DIR = Path(__file__).resolve().parent / "recipes" / "packages"
 
+# Default URL for downloading the plug-in registry
+DEFAULT_REGISTRY_URL = "https://raw.githubusercontent.com/d0tTino/d0tTino/main/plugin-registry.json"
+
 
 # Cache file for the remote registry
 CACHE_PATH = Path.home() / ".cache" / "d0ttino" / "plugin_registry.json"
