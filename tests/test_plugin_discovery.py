@@ -5,6 +5,7 @@ import types
 import pytest
 
 from llm import backends
+from plugins.utils import discover_entry_points  # noqa: F401
 
 
 def _reset_plugins():
@@ -70,7 +71,7 @@ def test_discover_plugins_loads_entry_points(monkeypatch):
 
     monkeypatch.setattr(
         backends.loader,
-        "iter_entry_points",
+        "discover_entry_points",
         lambda group: iter([entry]),
     )
 
@@ -107,7 +108,7 @@ def test_backends_import_loads_entry_point_plugins(monkeypatch):
 
     monkeypatch.setattr(
         backends.loader,
-        "iter_entry_points",
+        "discover_entry_points",
         lambda group: iter([entry]),
     )
     monkeypatch.setattr(importlib.metadata, "import_module", fake_import)
@@ -130,7 +131,7 @@ def test_backends_import_skips_unknown_entry_points(monkeypatch):
 
     monkeypatch.setattr(
         backends.loader,
-        "iter_entry_points",
+        "discover_entry_points",
         lambda group: iter([entry]),
     )
 

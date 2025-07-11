@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import importlib
-from plugins.discovery import iter_entry_points
+from plugins.utils import discover_entry_points
 import pkgutil
 from collections.abc import Callable
 from typing import Dict, List
@@ -41,7 +41,7 @@ def discover_recipes() -> Dict[str, Recipe]:
         if callable(func):
             recipes.setdefault(mod.name, func)
 
-    for entry in iter_entry_points(RECIPE_ENTRYPOINT_GROUP):
+    for entry in discover_entry_points(RECIPE_ENTRYPOINT_GROUP):
         try:
             func = entry.load()
         except Exception:  # pragma: no cover - optional dependency missing
