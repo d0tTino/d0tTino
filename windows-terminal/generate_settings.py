@@ -6,7 +6,7 @@ from pathlib import Path
 import argparse
 
 
-def load_json(path: Path) -> dict:
+def load_json(path: Path) -> dict[str, object]:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as ex:
@@ -14,7 +14,7 @@ def load_json(path: Path) -> dict:
         sys.exit(1)
 
 
-def merge_profiles(common: dict, override: dict) -> dict:
+def merge_profiles(common: dict[str, object], override: dict[str, object]) -> dict[str, object]:
     result = {
         "defaults": {
             **common.get("defaults", {}),

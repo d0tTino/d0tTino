@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Sequence
+from typing import Any, List, Sequence
 
 
 __all__ = [
@@ -51,7 +51,12 @@ def store_embeddings(
     return collection
 
 
-def register_retrieval_nodes(graph, collection, *, node_name: str = "retrieve"):
+def register_retrieval_nodes(
+    graph: Any,
+    collection: Any,
+    *,
+    node_name: str = "retrieve",
+) -> Any:
     """Register retrieval nodes on ``graph`` for ``collection`` using LangGraph."""
     try:
         from langgraph.prebuilt import retrieval

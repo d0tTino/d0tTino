@@ -16,7 +16,7 @@ DEFAULT_PROMPT = (
 )
 
 
-def generate(prompt: str) -> dict:
+def generate(prompt: str) -> dict[str, object]:
     """Return parsed workflow JSON for ``prompt``."""
     text = router.send_prompt(prompt)
     return json.loads(text)

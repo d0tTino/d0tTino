@@ -93,7 +93,7 @@ def create_default_chain() -> object:
     if os.environ.get("OPENAI_API_KEY") is None:
 
         class DummyChain:
-            def invoke(self, _data):
+            def invoke(self, _data: object) -> str:
                 return "ok"
 
         return DummyChain()

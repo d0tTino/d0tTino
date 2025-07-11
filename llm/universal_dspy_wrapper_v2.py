@@ -123,7 +123,7 @@ class LoggedFewShotWrapper(dspy.Module):
         self.__dict__.clear()
         self.__dict__.update(new_instance.__dict__)
 
-    def forward(self, **inputs):
+    def forward(self, **inputs: object) -> object:
         prediction = self.compiled(**inputs)
         serialisable_output = (
             prediction.as_dict() if hasattr(prediction, "as_dict") else str(prediction)
