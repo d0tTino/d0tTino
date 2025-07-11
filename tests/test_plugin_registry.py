@@ -5,6 +5,10 @@ import logging
 from scripts import plugins
 
 
+def test_default_registry_url_constant_exists():
+    assert isinstance(plugins.DEFAULT_REGISTRY_URL, str)
+
+
 def test_load_registry_fetches_and_caches(monkeypatch, tmp_path):
     cached = tmp_path / "cache.json"
     monkeypatch.setattr(plugins, "CACHE_PATH", cached)
