@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import importlib
-from plugins.discovery import iter_entry_points
+from plugins.utils import discover_entry_points
 import pkgutil
 
 import llm.backends as backends
@@ -30,7 +30,7 @@ def discover_plugins() -> None:
             if attr not in backends.__all__:
                 backends.__all__.append(attr)
 
-    for entry in iter_entry_points("llm.plugins"):
+    for entry in discover_entry_points("llm.plugins"):
         try:
             module = entry.load()
         except Exception:  # pragma: no cover - optional dependency missing

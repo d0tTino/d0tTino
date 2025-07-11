@@ -4,6 +4,7 @@ import sys
 import types
 
 from scripts import recipes
+from plugins.utils import discover_entry_points  # noqa: F401
 
 
 def test_discover_recipes_finds_builtin_sample():
@@ -28,7 +29,7 @@ def test_discover_recipes_loads_entry_points(monkeypatch):
 
     monkeypatch.setattr(
         recipes,
-        "iter_entry_points",
+        "discover_entry_points",
         lambda group: iter([entry]),
     )
 
