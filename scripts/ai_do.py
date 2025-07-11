@@ -6,9 +6,9 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import List, Optional
+from typing import Callable, List, Optional, Sequence
 
-from scripts import ai_exec, recipes
+from scripts import ai_exec
 from llm.backends import load_backends
 from scripts.cli_common import (
     execute_steps,
@@ -21,14 +21,18 @@ load_backends()
 
 
 def run_recipe(
-    name: str, goal: str, *, log_path: Path, analytics: bool = False
+    name: str,
+    goal: str,
+    steps_or_callable: Sequence[str] | Callable[[str], Sequence[str]],
+    *,
+    log_path: Path,
+    analytics: bool = False,
 ) -> int:
-    """Execute a recipe by name and record an event."""
-    mapping = recipes.discover_recipes()
-    func = mapping.get(name)
-    if func is None:
-        raise KeyError(name)
-    steps = func(goal)
+    """Execute a recipe given steps or a callable and record an event."""
+    if callable(steps_or_callable):
+        steps = list(steps_or_callable(goal))
+    else:
+        steps = list(steps_or_callable)
     exit_code = execute_steps(steps, log_path=log_path)
     record_event(
         "ai-do-recipe",

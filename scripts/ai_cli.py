@@ -85,9 +85,14 @@ def _cmd_recipe(args: argparse.Namespace) -> int:
     if args.name not in mapping:
         print(f"Unknown recipe: {args.name}", file=sys.stderr)
         return 1
-    steps = mapping[args.name](args.goal)
+    recipe_func = mapping[args.name]
+    steps = recipe_func(args.goal)
     exit_code = ai_do.run_recipe(
-        args.name, args.goal, log_path=args.log, analytics=args.analytics
+        args.name,
+        args.goal,
+        steps,
+        log_path=args.log,
+        analytics=args.analytics,
     )
     end = time.time()
     if exit_code == 0:

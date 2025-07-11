@@ -167,9 +167,10 @@ def test_recipe_subcommand(monkeypatch, tmp_path):
     )
     captured = {}
 
-    def fake_run_recipe(name, goal, *, log_path, analytics=False):
+    def fake_run_recipe(name, goal, steps, *, log_path, analytics=False):
         captured["name"] = name
         captured["goal"] = goal
+        captured["steps"] = steps
         captured["log"] = log_path
         captured["analytics"] = analytics
         return 0
@@ -180,6 +181,7 @@ def test_recipe_subcommand(monkeypatch, tmp_path):
     assert rc == 0
     assert captured["name"] == "dummy"
     assert captured["goal"] == "goal"
+    assert captured["steps"] == ["echo goal"]
     assert captured["log"] == log
 
 
