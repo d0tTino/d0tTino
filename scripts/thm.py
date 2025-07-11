@@ -19,7 +19,7 @@ REPO_ROOT = Path(os.environ.get("THM_REPO_ROOT", Path(__file__).resolve().parent
 PALETTES_DIR = REPO_ROOT / "palettes"
 
 
-def load_palette(palette_path: Path) -> dict:
+def load_palette(palette_path: Path) -> dict[str, dict[str, str]]:
     """Load and return the palette dict from ``palette_path``."""
     with palette_path.open("rb") as f:
         return tomllib.load(f)

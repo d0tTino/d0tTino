@@ -30,7 +30,7 @@ if TYPE_CHECKING:  # pragma: no cover - for type checkers only
     from .ai_router import get_preferred_models as _get_preferred_models  # noqa: F401
 
 
-def __getattr__(name: str):
+def __getattr__(name: str) -> object:
     if name == "get_preferred_models":
         from .ai_router import get_preferred_models as _get_preferred_models
 
