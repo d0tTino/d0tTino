@@ -100,7 +100,26 @@ containing your entry. The file must pass validation against
 `plugin-registry.schema.json`.
 
 Sample plug-in packages for the built-in backends are included under
-`examples/plugins`. Install them with:
+`examples/plugins`.
+
+Install them directly with `pip` while developing:
+
+```bash
+pip install -e examples/plugins/openrouter
+pip install -e examples/plugins/lobechat
+pip install -e examples/plugins/mindbridge
+pip install -e examples/plugins/echo_recipe
+```
+
+Alternatively set `PLUGIN_REGISTRY_URL` to the local registry file and
+use the helper script to install them:
+
+```bash
+PLUGIN_REGISTRY_URL=plugin-registry.json python -m scripts.plugins install openrouter
+```
+
+You can also use the helper script to install them from the
+registry:
 
 ```bash
 python -m scripts.plugins install openrouter
