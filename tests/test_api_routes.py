@@ -7,6 +7,7 @@ import os
 import sys
 import types
 from pathlib import Path
+from scripts import ai_exec
 
 def load_app(send_prompt=lambda p, local=False: f"resp-{p}", apply_palette=lambda n, r: None, state_path: Path | None = None):
     stub_router = types.SimpleNamespace(send_prompt=send_prompt)
@@ -99,3 +100,15 @@ def test_prompt_real_modules(monkeypatch, tmp_path):
     assert resp.status_code == 200
     assert resp.json() == {'response': 'ok-hello'}
     assert calls == ['hello']
+
+
+def test_exec_stream(monkeypatch, tmp_path):
+    monkeypatch.setattr(ai_exec, 'plan', lambda goal: ['echo hi'])
+    app = load_app(state_path=tmp_path / 'state.json')
+    client = TestClient(app)
+    with client.stream('GET', '/api/exec', params={'goal': 'echo hi'}) as r:
+        lines = [line for line in r.iter_lines() if line]
+
+    assert 'data: $ echo hi' in lines
+    assert 'data: hi' in lines
+    assert lines[-1] == 'data: (exit 0)'
