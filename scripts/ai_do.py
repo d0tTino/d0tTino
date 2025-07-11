@@ -7,6 +7,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 from typing import Callable, List, Optional, Sequence
+import time
 
 from scripts import ai_exec
 from llm.backends import load_backends
@@ -62,8 +63,10 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     analytics = args.analytics or analytics_default()
     cfg_path = Path(args.config) if args.config else None
-    steps = ai_exec.plan(args.goal, config_path=cfg_path)
+    start = time.time()
+    steps = ai_exec.plan(args.goal, config_path=cfg_path, analytics=analytics)
     exit_code = execute_steps(steps, log_path=args.log)
+    end = time.time()
     if args.notify:
         if exit_code == 0:
             send_notification("ai-do completed with exit code 0")
@@ -71,7 +74,12 @@ def main(argv: Optional[List[str]] = None) -> int:
             send_notification(f"ai-do failed with exit code {exit_code}")
     record_event(
         "ai-do",
-        {"goal": args.goal, "exit_code": exit_code},
+        {
+            "goal": args.goal,
+            "exit_code": exit_code,
+            "duration_ms": int((end - start) * 1000),
+            "model_source": "remote" if ai_exec.last_model_remote() else "local",
+        },
         enabled=analytics,
     )
 

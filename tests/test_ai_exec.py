@@ -97,7 +97,8 @@ def test_plan_records_event(monkeypatch):
     assert enabled is True
     assert payload["goal"] == "goal"
     assert payload["step_count"] == 1
-    assert "latency_ms" in payload and payload["latency_ms"] >= 0
+    assert "duration_ms" in payload and payload["duration_ms"] >= 0
+    assert payload["model_source"] == "remote"
 
 
 def create_exe(path: Path, contents: str = "#!/usr/bin/env bash\n") -> None:
