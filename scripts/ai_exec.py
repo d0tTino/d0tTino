@@ -20,36 +20,53 @@ from scripts.cli_common import (
 )
 import time
 
+_LAST_MODEL_REMOTE = True
+
+def last_model_remote() -> bool:
+    """Return ``True`` if the last plan used a remote model."""
+    return _LAST_MODEL_REMOTE
+
 load_backends()
 
 def plan(
     goal: str, *, config_path: Optional[Path] = None, analytics: bool = False
 ) -> List[str]:
     """Return planning steps for ``goal`` using preferred models."""
+    global _LAST_MODEL_REMOTE
     start = time.time()
     primary, fallback = get_preferred_models(
         router.DEFAULT_MODEL, router.DEFAULT_MODEL, config_path=config_path
 
     )
+    used_remote = True
+    exit_code = 0
+    steps: List[str] = []
     try:
-        text = router.run_gemini(goal, model=primary)
-    except (FileNotFoundError, subprocess.CalledProcessError):
-        text = router.run_ollama(goal, model=fallback or router.DEFAULT_MODEL)
+        try:
+            text = router.run_gemini(goal, model=primary)
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            used_remote = False
+            text = router.run_ollama(goal, model=fallback or router.DEFAULT_MODEL)
 
-    steps = [line.strip() for line in text.splitlines() if line.strip()]
-    end = time.time()
-    record_event(
-        "ai-exec-plan",
-        {
-            "goal": goal,
-            "step_count": len(steps),
-            "start_ts": start,
-            "end_ts": end,
-            "latency_ms": int((end - start) * 1000),
-        },
-        enabled=analytics,
-    )
-    return steps
+        steps = [line.strip() for line in text.splitlines() if line.strip()]
+        return steps
+    except Exception:
+        exit_code = 1
+        raise
+    finally:
+        end = time.time()
+        _LAST_MODEL_REMOTE = used_remote
+        record_event(
+            "ai-exec-plan",
+            {
+                "goal": goal,
+                "exit_code": exit_code,
+                "step_count": len(steps),
+                "duration_ms": int((end - start) * 1000),
+                "model_source": "remote" if used_remote else "local",
+            },
+            enabled=analytics,
+        )
 
 
 def main(argv: Optional[List[str]] = None) -> int:

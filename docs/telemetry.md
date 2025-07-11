@@ -4,6 +4,11 @@ The CLI tools can emit anonymous usage events when `EVENTS_ENABLED` is truthy or
 `--analytics` is passed. Events are sent as JSON to `EVENTS_URL` with optional
 authorization via `EVENTS_TOKEN`.
 
+## Opt-in Usage
+
+Telemetry is disabled by default. Set `EVENTS_ENABLED=true` in your environment
+or pass `--analytics` to individual commands to opt into sending events.
+
 ## Local Supabase Setup
 
 1. Install the Supabase CLI:

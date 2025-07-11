@@ -10,7 +10,7 @@ from scripts import ai_do, ai_exec
 
 
 def test_main_runs_and_logs(monkeypatch, tmp_path):
-    def fake_plan(goal: str, *, config_path=None):
+    def fake_plan(goal: str, *, config_path=None, analytics=False):
         assert goal == "goal"
         assert config_path is None
         return ["cmd1", "cmd2"]
@@ -150,7 +150,13 @@ def test_main_records_event(monkeypatch, tmp_path):
     rc = ai_do.main(["goal", "--log", str(log), "--analytics"])
 
     assert rc == 0
-    assert recorded == [("ai-do", {"goal": "goal", "exit_code": 0}, True)]
+    name, payload, enabled = recorded[0]
+    assert name == "ai-do"
+    assert enabled is True
+    assert payload["goal"] == "goal"
+    assert payload["exit_code"] == 0
+    assert "duration_ms" in payload and payload["duration_ms"] >= 0
+    assert payload["model_source"] == "remote"
 
 
 def test_main_records_failure(monkeypatch, tmp_path):
@@ -176,11 +182,17 @@ def test_main_records_failure(monkeypatch, tmp_path):
     rc = ai_do.main(["goal", "--log", str(log), "--analytics"])
 
     assert rc == 1
-    assert recorded == [("ai-do", {"goal": "goal", "exit_code": 1}, True)]
+    name, payload, enabled = recorded[0]
+    assert name == "ai-do"
+    assert enabled is True
+    assert payload["goal"] == "goal"
+    assert payload["exit_code"] == 1
+    assert "duration_ms" in payload and payload["duration_ms"] >= 0
+    assert payload["model_source"] == "remote"
 
 
 def test_main_accepts_config_path(monkeypatch):
-    def fake_plan(goal: str, *, config_path=None):
+    def fake_plan(goal: str, *, config_path=None, analytics=False):
         assert goal == "goal"
         assert config_path == Path("file.json")
         return []
@@ -194,7 +206,7 @@ def test_main_accepts_config_path(monkeypatch):
 
 
 def test_main_accepts_sample_config(monkeypatch):
-    def fake_plan(goal: str, *, config_path=None):
+    def fake_plan(goal: str, *, config_path=None, analytics=False):
         assert goal == "goal"
         assert isinstance(config_path, Path)
         assert config_path == Path("sample.json")
