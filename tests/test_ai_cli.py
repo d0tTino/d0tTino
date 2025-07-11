@@ -216,3 +216,35 @@ def test_recipe_records_event(monkeypatch, tmp_path):
     assert payload["exit_code"] == 0
     assert payload["step_count"] == 0
     assert "latency_ms" in payload and payload["latency_ms"] >= 0
+
+def test_recipe_executes_plugin_once_and_logs(monkeypatch, tmp_path):
+    count = {'n': 0}
+    def plugin(goal: str):
+        count['n'] += 1
+        return [f"echo {goal}"]
+
+    monkeypatch.setattr(ai_cli.recipes, 'discover_recipes', lambda: {'dummy': plugin})
+
+    inputs = iter(['y', 'y'])
+    monkeypatch.setattr('builtins.input', lambda _: next(inputs))
+
+    executed = {}
+    def fake_run(cmd, *, shell, capture_output, text):
+        executed['cmd'] = cmd
+        class Res:
+            def __init__(self):
+                self.stdout = 'out\n'
+                self.stderr = ''
+                self.returncode = 0
+        return Res()
+
+    monkeypatch.setattr(subprocess, 'run', fake_run)
+
+    log = tmp_path / 'log.txt'
+    rc = ai_cli.main(['recipe', 'dummy', 'goal', '--log', str(log)])
+    assert rc == 0
+    assert count['n'] == 1
+    assert executed['cmd'] == ['echo', 'goal']
+    log_text = log.read_text()
+    assert '$ echo goal' in log_text
+    assert 'out' in log_text
