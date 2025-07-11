@@ -6,11 +6,17 @@ scripts="$repo_root/scripts"
 
 # Determine the platform when OSTYPE is not provided
 if [[ -z "${OSTYPE:-}" ]]; then
-    OSTYPE="$(uname -s | tr '[:upper:]' '[:lower:]')"
-    case $OSTYPE in
-        mingw*) OSTYPE="msys" ;;
-    esac
+    OSTYPE="$(uname -s)"
 fi
+
+# Normalize Windows variants and lower-case the final value
+case $OSTYPE in
+    CYGWIN*|cygwin*) OSTYPE="cygwin" ;;
+    MINGW*|mingw*|MSYS*|msys*) OSTYPE="msys" ;;
+    Windows_NT*) OSTYPE="windows" ;;
+esac
+
+OSTYPE="${OSTYPE,,}"
 
 ensure_deps() {
     local missing=()
