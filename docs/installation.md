@@ -71,6 +71,9 @@ ruff check .
 
 ## Windows
 
+> Required tools: **PowerShell**, **curl**, **git** and **unzip**. The
+> script uses **winget** for package management when available.
+
 1. Install packages using `winget`. You can either import the full package list
    or run the provided helper script for the essentials:
    ```powershell
@@ -96,6 +99,10 @@ ruff check .
 4. Restart the terminal or run `. $PROFILE` to reload the profile and load the new settings.
 
 ## WSL
+
+> Required tools: **curl**, **git**, **unzip** and `sudo`. The helper
+> scripts rely on `winget` on the Windows side or `apt-get` inside Ubuntu
+> to install packages.
 
 Before installing packages in Ubuntu, enable the required Windows features and
 install WSL:
@@ -125,6 +132,10 @@ sudo bash scripts/setup-wsl.sh
 ```
 
 ## Linux / macOS
+
+> Required tools: **bash**, **curl**, **git**, and **unzip**. Homebrew or
+> a compatible package manager should be available to install missing
+> dependencies automatically.
 
 1. Clone the repository:
    ```bash
