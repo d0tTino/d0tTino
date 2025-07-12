@@ -18,3 +18,13 @@ The CI workflow installs the runtime requirements with
 `pip install -r requirements.txt` before running the tests.
 Running the same command locally ensures your environment matches the
 automated checks.
+
+## Tauri Tests
+
+The CI pipeline also compiles the Tauri application in release mode to run a
+basic window test. The test will be skipped if the required GTK libraries are
+missing. Build and test it locally with:
+
+```bash
+cargo test --manifest-path src-tauri/Cargo.toml --release
+```
