@@ -118,6 +118,8 @@ npm run smoke
 
 
 See the [installation guide](docs/installation.md) for setup instructions.
+Troubleshoot missing package managers in the
+[package manager section](docs/installation.md#troubleshooting-package-managers).
 After cloning the repository, run `./install.sh` (or `./bootstrap.ps1` from an
 elevated PowerShell window). Running it with elevation allows
 `scripts/fix-path.ps1` to modify your user PATH and enables the local Git
