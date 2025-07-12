@@ -21,3 +21,5 @@ __pycache__/
 node_modules/
 *.egg-info/
 .env
+src-tauri/target/
+src-tauri/Cargo.lock
