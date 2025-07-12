@@ -46,7 +46,7 @@ my_backend = "my_package.plugins:backend"
 Install a community backend using the helper. For example:
 
 ```bash
-python -m scripts.plugins install openrouter
+python -m scripts.plugins backends install openrouter
 ```
 
 

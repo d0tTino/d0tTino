@@ -8,7 +8,7 @@ def test_list_outputs_available_plugins(monkeypatch, capsys):
         plugins, "load_registry", lambda section="plugins": {"dummy": "dummy-pkg"}
     )
     monkeypatch.setattr(plugins, "_is_installed", lambda p: False)
-    rc = plugins.main(["list"])
+    rc = plugins.main(["backends", "list"])
     captured = capsys.readouterr().out
     assert rc == 0
     assert "dummy" in captured
@@ -26,7 +26,7 @@ def test_install_runs_pip(monkeypatch):
     monkeypatch.setattr(
         plugins, "load_registry", lambda section="plugins": {"dummy": "dummy-pkg"}
     )
-    rc = plugins.main(["install", "dummy"])
+    rc = plugins.main(["backends", "install", "dummy"])
     assert rc == 0
     assert called["cmd"][0] == sys.executable
     assert "dummy-pkg" in called["cmd"]
@@ -51,7 +51,7 @@ def test_remove_runs_pip(monkeypatch):
     monkeypatch.setattr(
         plugins, "load_registry", lambda section="plugins": {"dummy": "dummy-pkg"}
     )
-    rc = plugins.main(["remove", "dummy"])
+    rc = plugins.main(["backends", "remove", "dummy"])
     assert rc == 0
     assert called["cmd"][0] == sys.executable
     assert "dummy-pkg" in called["cmd"]
@@ -70,7 +70,7 @@ def test_install_failure_propagates(monkeypatch, capsys):
     monkeypatch.setattr(
         plugins, "load_registry", lambda section="plugins": {"dummy": "dummy-pkg"}
     )
-    rc = plugins.main(["install", "dummy"])
+    rc = plugins.main(["backends", "install", "dummy"])
     captured = capsys.readouterr()
     assert rc == 5
     assert "fail" in captured.err
@@ -84,7 +84,7 @@ def test_remove_failure_propagates(monkeypatch, capsys):
     monkeypatch.setattr(
         plugins, "load_registry", lambda section="plugins": {"dummy": "dummy-pkg"}
     )
-    rc = plugins.main(["remove", "dummy"])
+    rc = plugins.main(["backends", "remove", "dummy"])
     captured = capsys.readouterr()
     assert rc == 3
     assert "boom" in captured.err
@@ -108,7 +108,7 @@ def test_main_remove(monkeypatch, capsys, retcode):
     monkeypatch.setattr(
         plugins, "load_registry", lambda section="plugins": {"dummy": "dummy-pkg"}
     )
-    rc = plugins.main(["remove", "dummy"])
+    rc = plugins.main(["backends", "remove", "dummy"])
     captured = capsys.readouterr()
     assert called["cmd"][0] == sys.executable
     assert "dummy-pkg" in called["cmd"]
@@ -125,7 +125,7 @@ def test_main_warns_when_jsonschema_missing(monkeypatch, capsys):
         reloaded, "load_registry", lambda section="plugins": {"dummy": "pkg"}
     )
     monkeypatch.setattr(reloaded, "_is_installed", lambda p: False)
-    rc = reloaded.main(["list"])
+    rc = reloaded.main(["backends", "list"])
     out = capsys.readouterr()
     assert rc == 0
     assert "jsonschema is required" in out.err
