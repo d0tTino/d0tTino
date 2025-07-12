@@ -203,7 +203,7 @@ def _cmd_remove_recipes(args: argparse.Namespace) -> int:
 
 
 def _cmd_sync_recipes(args: argparse.Namespace) -> int:
-    """Download recipe packages listed in the registry."""
+    """Install recipe packages listed in the registry."""
     registry = load_registry("recipes")
     dest = Path(args.dest) if args.dest else RECIPE_DOWNLOAD_DIR
     dest.mkdir(parents=True, exist_ok=True)
@@ -214,9 +214,9 @@ def _cmd_sync_recipes(args: argparse.Namespace) -> int:
                     sys.executable,
                     "-m",
                     "pip",
-                    "download",
+                    "install",
                     "--no-deps",
-                    "-d",
+                    "--target",
                     str(dest),
                     pkg,
                 ],
@@ -264,11 +264,11 @@ def build_parser() -> argparse.ArgumentParser:
     r_remove.set_defaults(func=_cmd_remove_recipes)
 
     r_sync = recipe_sub.add_parser(
-        "sync", help="Download recipe packages from the registry"
+        "sync", help="Download and install recipe packages from the registry"
     )
     r_sync.add_argument(
         "--dest",
-        help="Directory to store downloaded packages",
+        help="Directory to install downloaded packages",
     )
     r_sync.set_defaults(func=_cmd_sync_recipes)
 
