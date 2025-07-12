@@ -44,3 +44,16 @@ or service key for `EVENTS_URL` and `EVENTS_TOKEN`.
 
 With `EVENTS_URL` and `EVENTS_TOKEN` set, enable analytics globally by exporting
 `EVENTS_ENABLED=true` or pass `--analytics` to individual commands.
+
+## Upload Aggregated Statistics
+
+Use `nsm_upload.py` to compute weekly totals and send them to `EVENTS_URL`:
+
+```bash
+python scripts/nsm_upload.py events.json
+```
+
+Provide a path or URL with raw NDJSON events. The script aggregates successful
+`ai-do` runs per developer using `nsm_stats.aggregate_successful_runs()` and
+posts the resulting JSON to `EVENTS_URL`. Authentication via `EVENTS_TOKEN` is
+supported just like `record_event`.
