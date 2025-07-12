@@ -176,11 +176,11 @@ pwsh -File scripts/export-winget.ps1
 
 ## Testing
 
-Before running the Python tests locally, install this repository in editable
-mode first and then install the rest of the dependencies:
+Install this repository in editable mode with the `[test]` extras to ensure
+`fastapi.testclient` and other utilities are available:
 
 ```bash
-pip install -e .[cli]
+pip install -e .[test]
 pip install -r requirements.txt
 # Optional: install `dspy` to run the complete suite
 pip install dspy-ai
