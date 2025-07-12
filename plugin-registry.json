@@ -6,6 +6,6 @@
     "mindbridge": "d0ttino-mindbridge-plugin"
   },
   "recipes": {
-    "echo": "d0ttino-echo-recipe"
+    "echo": "https://example.com/packages/d0ttino-echo-recipe.tar.gz"
   }
 }

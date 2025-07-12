@@ -212,12 +212,17 @@ def test_recipe_sync(monkeypatch, tmp_path):
     rc = plugins.main(["recipes", "sync", "--dest", str(tmp_path)])
     assert rc == 0
     assert called
+    assert "install" in called[0]
+    assert "--target" in called[0]
     assert str(tmp_path) in called[0]
     assert "pkg" in called[0]
 
 
 def test_recipe_sync_failure(monkeypatch, tmp_path, capsys):
+    called = []
+
     def fake_run(cmd, *a, **k):
+        called.append(cmd)
         raise plugins.subprocess.CalledProcessError(2, cmd, stderr="err\n")
 
     def fake_load(section="plugins"):
@@ -232,4 +237,7 @@ def test_recipe_sync_failure(monkeypatch, tmp_path, capsys):
     captured = capsys.readouterr()
     assert rc == 2
     assert "err" in captured.err
+    assert called
+    assert "install" in called[0]
+    assert "--target" in called[0]
 

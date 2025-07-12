@@ -65,6 +65,9 @@ python -m scripts.plugins recipes remove echo
 python -m scripts.plugins recipes sync
 ```
 
+`recipes sync` downloads and installs the recipe packages listed in the
+registry into `scripts/recipes/packages` so they can be used offline.
+
 ### Adding Your Plug-in
 
 Plug-ins listed by the helper come from a remote registry. Submit a pull

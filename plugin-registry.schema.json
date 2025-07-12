@@ -16,7 +16,8 @@
       "type": "object",
       "additionalProperties": {
         "type": "string",
-        "description": "Name of the pip package containing the recipe"
+        "format": "uri",
+        "description": "URL to the pip package containing the recipe"
       }
     }
   },
