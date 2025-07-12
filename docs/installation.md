@@ -17,6 +17,25 @@ Windows users can run the PowerShell variant:
 irm https://raw.githubusercontent.com/d0tTino/d0tTino/main/scripts/install.ps1 | iex
 ```
 
+### Common usage examples
+
+Invoke the wrapper scripts with additional options to enable platform-specific
+steps:
+
+```bash
+./install.sh --winget --windows-terminal --install-wsl --setup-wsl
+./install.sh --setup-docker --image dev-env
+```
+
+PowerShell equivalents:
+
+```powershell
+./bootstrap.ps1 -InstallWinget -InstallWindowsTerminal -InstallWSL -SetupWSL
+./bootstrap.ps1 -SetupDocker -DockerImageName dev-env
+```
+
+Running the script without options installs fonts, palettes and Git hooks only.
+
 ## Prerequisites
 
 The install scripts rely on `curl`, `unzip` and `git`. On macOS these
@@ -149,6 +168,34 @@ sudo bash scripts/setup-wsl.sh
    If you prefer PowerShell, you can run `./bootstrap.ps1` instead which invokes
    the same helper scripts.
 4. Launch a new shell to pick up the configuration.
+
+### Troubleshooting package managers
+
+The installer looks for Homebrew on macOS and `apt-get` on Debian-based
+distributions to install missing tools automatically. If the command is not
+found, install the package manager manually and ensure it is on your `PATH`.
+
+- **Homebrew missing** – install it with:
+
+  ```bash
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  ```
+
+  Then add Homebrew to your `PATH`:
+
+  ```bash
+  echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+  ```
+
+- **`apt-get` missing** – use your distribution's package manager:
+
+  ```bash
+  sudo dnf install curl git unzip    # Fedora
+  sudo pacman -S curl git unzip      # Arch
+  ```
+
+  Once the tools are installed, rerun `install.sh` or `bootstrap.ps1`.
 
 ## Local LLM tools
 
