@@ -38,7 +38,7 @@ The `[plugins]` extra installs `jsonschema` so you can manage plug-ins
 with `python -m scripts.plugins`. For example:
 
 ```bash
-python -m scripts.plugins install openrouter
+python -m scripts.plugins backends install openrouter
 ```
 
 See the [backend plug-in guide](docs/plugins.md) for details. If you

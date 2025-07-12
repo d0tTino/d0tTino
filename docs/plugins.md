@@ -47,13 +47,13 @@ Use the `plugins` helper to install or remove third-party backends and recipes.
 
 ```bash
 # List available plug-ins
-python -m scripts.plugins list
+python -m scripts.plugins backends list
 
 # Install a plug-in
-python -m scripts.plugins install sample
+python -m scripts.plugins backends install sample
 
 # Remove a plug-in
-python -m scripts.plugins remove sample
+python -m scripts.plugins backends remove sample
 ```
 
 Recipe packages are managed via the `recipes` subcommand:
@@ -115,16 +115,16 @@ Alternatively set `PLUGIN_REGISTRY_URL` to the local registry file and
 use the helper script to install them:
 
 ```bash
-PLUGIN_REGISTRY_URL=plugin-registry.json python -m scripts.plugins install openrouter
+PLUGIN_REGISTRY_URL=plugin-registry.json python -m scripts.plugins backends install openrouter
 ```
 
 You can also use the helper script to install them from the
 registry:
 
 ```bash
-python -m scripts.plugins install openrouter
-python -m scripts.plugins install lobechat
-python -m scripts.plugins install mindbridge
+python -m scripts.plugins backends install openrouter
+python -m scripts.plugins backends install lobechat
+python -m scripts.plugins backends install mindbridge
 python -m scripts.plugins recipes install echo
 ```
 

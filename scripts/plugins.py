@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Manage LLM backend plug-ins."""
+"""Manage LLM backend and recipe plug-ins."""
 
 from __future__ import annotations
 
@@ -136,7 +136,7 @@ def _cmd_list_impl(section: str) -> int:
     return 0
 
 
-def _cmd_list(args: argparse.Namespace) -> int:
+def _cmd_list_backends(args: argparse.Namespace) -> int:
     return _cmd_list_impl("plugins")
 
 
@@ -161,7 +161,7 @@ def _cmd_install_impl(args: argparse.Namespace, section: str) -> int:
         return e.returncode
 
 
-def _cmd_install(args: argparse.Namespace) -> int:
+def _cmd_install_backend(args: argparse.Namespace) -> int:
     return _cmd_install_impl(args, "plugins")
 
 
@@ -186,7 +186,7 @@ def _cmd_remove_impl(args: argparse.Namespace, section: str) -> int:
         return e.returncode
 
 
-def _cmd_remove(args: argparse.Namespace) -> int:
+def _cmd_remove_backend(args: argparse.Namespace) -> int:
     return _cmd_remove_impl(args, "plugins")
 
 
@@ -235,16 +235,19 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
 
-    list_cmd = sub.add_parser("list", help="List available plug-ins")
-    list_cmd.set_defaults(func=_cmd_list)
+    backends = sub.add_parser("backends", help="Manage backend plug-ins")
+    backend_sub = backends.add_subparsers(dest="backend_command", required=True)
 
-    install_cmd = sub.add_parser("install", help="Install a plug-in")
-    install_cmd.add_argument("name", help="Plug-in name")
-    install_cmd.set_defaults(func=_cmd_install)
+    b_list = backend_sub.add_parser("list", help="List available backends")
+    b_list.set_defaults(func=_cmd_list_backends)
 
-    remove_cmd = sub.add_parser("remove", help="Remove a plug-in")
-    remove_cmd.add_argument("name", help="Plug-in name")
-    remove_cmd.set_defaults(func=_cmd_remove)
+    b_install = backend_sub.add_parser("install", help="Install a backend")
+    b_install.add_argument("name", help="Backend name")
+    b_install.set_defaults(func=_cmd_install_backend)
+
+    b_remove = backend_sub.add_parser("remove", help="Remove a backend")
+    b_remove.add_argument("name", help="Backend name")
+    b_remove.set_defaults(func=_cmd_remove_backend)
 
     recipe = sub.add_parser("recipes", help="Manage recipe plug-ins")
     recipe_sub = recipe.add_subparsers(dest="recipe_command", required=True)
