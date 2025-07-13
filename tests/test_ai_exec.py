@@ -3,6 +3,8 @@ import os
 import sys
 import io
 import contextlib
+import threading
+import time
 import pytest
 from pathlib import Path
 
@@ -138,4 +140,39 @@ def test_script_runs(monkeypatch, tmp_path: Path) -> None:
 
     assert result.returncode == 0
     assert result.stdout.splitlines() == ["step1", "step2"]
+
+
+def test_last_model_remote_thread_safety(monkeypatch):
+    monkeypatch.setattr(ai_exec, "get_preferred_models", lambda *a, **k: ("g", "o"))
+
+    def fake_gemini(prompt, model=None):
+        if prompt == "remote":
+            time.sleep(0.1)
+            return "remote-step"
+        time.sleep(0.3)
+        raise subprocess.CalledProcessError(1, ["gemini"])
+
+    def fake_ollama(prompt, model):
+        time.sleep(0.1)
+        return "local-step"
+
+    monkeypatch.setattr(ai_exec.router, "run_gemini", fake_gemini)
+    monkeypatch.setattr(ai_exec.router, "run_ollama", fake_ollama)
+
+    results = {}
+
+    def run(goal):
+        steps = ai_exec.plan(goal)
+        results[goal] = (steps, ai_exec.last_model_remote())
+
+    t_remote = threading.Thread(target=run, args=("remote",))
+    t_local = threading.Thread(target=run, args=("local",))
+    t_remote.start()
+    t_local.start()
+    t_remote.join()
+    t_local.join()
+
+    assert results["remote"] == (["remote-step"], True)
+    assert results["local"] == (["local-step"], False)
+    assert ai_exec.last_model_remote() is False
 
