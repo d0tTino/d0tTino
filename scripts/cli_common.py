@@ -32,7 +32,12 @@ def execute_steps(steps: Iterable[str], *, log_path: Path) -> int:
             tokens = []
             needs_shell = True
         else:
-            needs_shell = any(ch in step for ch in "|&;><$`") or shlex.join(tokens) != step
+            special_chars = any(ch in step for ch in "|&;><$`")
+            if os.name == "nt":
+                # ``shlex.join`` uses POSIX quoting which breaks on Windows.
+                needs_shell = special_chars
+            else:
+                needs_shell = special_chars or shlex.join(tokens) != step
         cmd = step if needs_shell else tokens
         cmd_str = step if needs_shell else " ".join(tokens)
         answer = input(f"Run command: {cmd_str} [y/N]?").strip().lower()

@@ -138,3 +138,32 @@ def test_execute_steps_fallbacks_to_shell(monkeypatch, tmp_path):
 
     assert captured["cmd"] == "python -c \"print('hi')\""
     assert captured["shell"] is True
+
+
+def test_execute_steps_windows_path(monkeypatch, tmp_path):
+    inputs = iter(["y", "y"])
+    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
+    captured = {}
+
+    def fake_run(cmd, *, shell, capture_output, text):
+        captured["cmd"] = cmd
+        captured["shell"] = shell
+
+        class Result:
+            def __init__(self):
+                self.stdout = ""
+                self.stderr = ""
+                self.returncode = 0
+
+        return Result()
+
+    monkeypatch.setattr(cli_common.subprocess, "run", fake_run)
+    monkeypatch.setattr(cli_common.os, "name", "nt")
+
+    cli_common.execute_steps([
+        '"C:\\Program Files\\Foo Bar\\tool.exe" arg'
+    ], log_path=tmp_path / "log.txt")
+
+    assert captured["cmd"] == ["C:\\Program Files\\Foo Bar\\tool.exe", "arg"]
+    assert captured["shell"] is False
