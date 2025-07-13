@@ -56,7 +56,6 @@ def get_graph() -> dict[str, list]:
     return {"nodes": state["nodes"], "edges": state["edges"]}
 
 app = FastAPI()
-UME_API_URL = os.environ.get("UME_API_URL", "http://localhost:8000")
 
 class PromptRequest(BaseModel):
     prompt: str
