@@ -206,3 +206,4 @@ func CreateHardenedContext(pw *playwright.Playwright) (playwright.BrowserContext
 68. NIST. (2025). Biometrics and Browser Security. <https://www.nist.gov/biometrics-browser-security>
 69. Carnegie Mellon University. (2024). CAPTCHA Usability Studies. <https://www.cmu.edu/captcha-usability>
 70. Electronic Frontier Foundation. (2024). Ethics of Automation. <https://www.eff.org/automation-ethics>
+
