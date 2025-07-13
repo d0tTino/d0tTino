@@ -46,10 +46,13 @@ is available:
 brew install curl unzip git
 ```
 
-Debian based distributions use `apt-get` if present:
+Debian based distributions use `apt-get` if present. Fedora and Arch systems
+are detected automatically when `dnf` or `pacman` exist:
 
 ```bash
 sudo apt-get install curl unzip git
+sudo dnf install curl unzip git     # Fedora
+sudo pacman -S curl unzip git       # Arch
 ```
 
 If neither package manager is detected you'll need to install the tools
@@ -171,9 +174,10 @@ sudo bash scripts/setup-wsl.sh
 
 ### Troubleshooting package managers
 
-The installer looks for Homebrew on macOS and `apt-get` on Debian-based
-distributions to install missing tools automatically. If the command is not
-found, install the package manager manually and ensure it is on your `PATH`.
+The installer looks for Homebrew on macOS and uses `apt-get`, `dnf` or
+`pacman` on Linux to install missing tools automatically. If none of these
+commands are found, install a package manager manually and ensure it is on your
+`PATH`.
 
 - **Homebrew missing** – install it with:
 

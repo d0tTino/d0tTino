@@ -36,10 +36,21 @@ ensure_deps() {
                 echo "Install Homebrew from https://brew.sh and run: brew install ${missing[*]}" >&2
                 exit 1
             fi
-        elif [[ $OSTYPE == linux* ]] && command -v apt-get >/dev/null 2>&1; then
-            echo "Installing ${missing[*]} with apt-get" >&2
-            sudo apt-get update
-            sudo apt-get install -y "${missing[@]}"
+        elif [[ $OSTYPE == linux* ]]; then
+            if command -v apt-get >/dev/null 2>&1; then
+                echo "Installing ${missing[*]} with apt-get" >&2
+                sudo apt-get update
+                sudo apt-get install -y "${missing[@]}"
+            elif command -v dnf >/dev/null 2>&1; then
+                echo "Installing ${missing[*]} with dnf" >&2
+                sudo dnf install -y "${missing[@]}"
+            elif command -v pacman >/dev/null 2>&1; then
+                echo "Installing ${missing[*]} with pacman" >&2
+                sudo pacman -S --noconfirm "${missing[@]}"
+            else
+                echo "Missing ${missing[*]}. Please install them and re-run this script." >&2
+                exit 1
+            fi
         else
             echo "Missing ${missing[*]}. Please install them and re-run this script." >&2
             exit 1
