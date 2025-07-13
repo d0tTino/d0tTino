@@ -8,6 +8,7 @@ import argparse
 import subprocess
 from pathlib import Path
 from typing import List, Optional
+from threading import Lock
 
 from llm import router
 from llm.ai_router import get_preferred_models
@@ -21,10 +22,12 @@ from scripts.cli_common import (
 import time
 
 _LAST_MODEL_REMOTE = True
+_LAST_MODEL_LOCK = Lock()
 
 def last_model_remote() -> bool:
     """Return ``True`` if the last plan used a remote model."""
-    return _LAST_MODEL_REMOTE
+    with _LAST_MODEL_LOCK:
+        return _LAST_MODEL_REMOTE
 
 load_backends()
 
@@ -55,7 +58,8 @@ def plan(
         raise
     finally:
         end = time.time()
-        _LAST_MODEL_REMOTE = used_remote
+        with _LAST_MODEL_LOCK:
+            _LAST_MODEL_REMOTE = used_remote
         record_event(
             "ai-exec-plan",
             {
