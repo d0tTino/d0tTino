@@ -11,12 +11,8 @@ import time
 
 from scripts import ai_exec
 from llm.backends import load_backends
-from scripts.cli_common import (
-    execute_steps,
-    record_event,
-    send_notification,
-    analytics_default,
-)
+from scripts.cli_common import execute_steps, send_notification
+from telemetry import record_event, analytics_default
 
 load_backends()
 
