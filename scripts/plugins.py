@@ -81,39 +81,57 @@ def _valid_registry(data: Dict[str, object]) -> bool:
     )
 
 
-def load_registry(section: str = "plugins") -> Dict[str, str]:
-    """Return the plug-in registry section from URL, cache or the built-in default."""
+def load_registry(section: str = "plugins", update: bool = False) -> Dict[str, str]:
+    """Return the plug-in registry section from URL, cache or the built-in default.
+
+    ``update`` forces a fresh download of the registry before falling back to the
+    cached copy.
+    """
 
     url = os.environ.get("PLUGIN_REGISTRY_URL", DEFAULT_REGISTRY_URL)
-    try:
-        resp = requests.get(url, timeout=5)
-        resp.raise_for_status()
-        data = resp.json()
-        if isinstance(data, dict) and _valid_registry(data):
-            CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-            CACHE_PATH.write_text(json.dumps(data))
-            mapping = data.get(section) or {}
-            if isinstance(mapping, dict):
-                return {str(k): str(v) for k, v in mapping.items()}
-    except requests.exceptions.RequestException as exc:
-        logger.warning(
-            "Failed to fetch plug-in registry from %s: %s. Using cached registry if available.",
-            url,
-            exc,
-        )
-    except Exception:
-        pass
 
-    if CACHE_PATH.exists():
+    data: Dict[str, object] | None = None
+
+    if not update and CACHE_PATH.exists():
         try:
             with CACHE_PATH.open(encoding="utf-8") as fh:
-                data = json.load(fh)
-            if isinstance(data, dict) and _valid_registry(data):
-                mapping = data.get(section) or {}
-                if isinstance(mapping, dict):
-                    return {str(k): str(v) for k, v in mapping.items()}
+                cached = json.load(fh)
+            if isinstance(cached, dict) and _valid_registry(cached):
+                data = cached
         except Exception:
             pass
+
+    if data is None:
+        try:
+            resp = requests.get(url, timeout=5)
+            resp.raise_for_status()
+            fetched = resp.json()
+            if isinstance(fetched, dict) and _valid_registry(fetched):
+                CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+                CACHE_PATH.write_text(json.dumps(fetched))
+                data = fetched
+        except requests.exceptions.RequestException as exc:
+            logger.warning(
+                "Failed to fetch plug-in registry from %s: %s. Using cached registry if available.",
+                url,
+                exc,
+            )
+        except Exception:
+            pass
+
+    if data is None and CACHE_PATH.exists():
+        try:
+            with CACHE_PATH.open(encoding="utf-8") as fh:
+                cached = json.load(fh)
+            if isinstance(cached, dict) and _valid_registry(cached):
+                data = cached
+        except Exception:
+            pass
+
+    if isinstance(data, dict):
+        mapping = data.get(section) or {}
+        if isinstance(mapping, dict):
+            return {str(k): str(v) for k, v in mapping.items()}
 
     if section == "plugins":
         return PLUGIN_REGISTRY
@@ -128,8 +146,8 @@ def _is_installed(package: str) -> bool:
         return False
 
 
-def _cmd_list_impl(section: str) -> int:
-    registry = load_registry(section)
+def _cmd_list_impl(section: str, update: bool) -> int:
+    registry = load_registry(section, update=update)
     for name, package in sorted(registry.items()):
         status = "installed" if _is_installed(package) else "not installed"
         print(f"{name}\t({package}) - {status}")
@@ -137,11 +155,11 @@ def _cmd_list_impl(section: str) -> int:
 
 
 def _cmd_list_backends(args: argparse.Namespace) -> int:
-    return _cmd_list_impl("plugins")
+    return _cmd_list_impl("plugins", args.update)
 
 
 def _cmd_install_impl(args: argparse.Namespace, section: str) -> int:
-    registry = load_registry(section)
+    registry = load_registry(section, update=args.update)
     name = args.name
     if name not in registry:
         print(f"Unknown plug-in: {name}", file=sys.stderr)
@@ -166,7 +184,7 @@ def _cmd_install_backend(args: argparse.Namespace) -> int:
 
 
 def _cmd_remove_impl(args: argparse.Namespace, section: str) -> int:
-    registry = load_registry(section)
+    registry = load_registry(section, update=args.update)
     name = args.name
     if name not in registry:
         print(f"Unknown plug-in: {name}", file=sys.stderr)
@@ -191,7 +209,7 @@ def _cmd_remove_backend(args: argparse.Namespace) -> int:
 
 
 def _cmd_list_recipes(args: argparse.Namespace) -> int:
-    return _cmd_list_impl("recipes")
+    return _cmd_list_impl("recipes", args.update)
 
 
 def _cmd_install_recipes(args: argparse.Namespace) -> int:
@@ -204,7 +222,7 @@ def _cmd_remove_recipes(args: argparse.Namespace) -> int:
 
 def _cmd_sync_recipes(args: argparse.Namespace) -> int:
     """Install recipe packages listed in the registry."""
-    registry = load_registry("recipes")
+    registry = load_registry("recipes", update=args.update)
     dest = Path(args.dest) if args.dest else RECIPE_DOWNLOAD_DIR
     dest.mkdir(parents=True, exist_ok=True)
     for pkg in registry.values():
@@ -233,6 +251,11 @@ def _cmd_sync_recipes(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--update",
+        action="store_true",
+        help="Force fresh download of the plug-in registry",
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     backends = sub.add_parser("backends", help="Manage backend plug-ins")

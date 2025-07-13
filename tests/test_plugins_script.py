@@ -5,7 +5,9 @@ from scripts import plugins
 
 def test_list_outputs_available_plugins(monkeypatch, capsys):
     monkeypatch.setattr(
-        plugins, "load_registry", lambda section="plugins": {"dummy": "dummy-pkg"}
+        plugins,
+        "load_registry",
+        lambda section="plugins", update=False: {"dummy": "dummy-pkg"},
     )
     monkeypatch.setattr(plugins, "_is_installed", lambda p: False)
     rc = plugins.main(["backends", "list"])
@@ -24,7 +26,9 @@ def test_install_runs_pip(monkeypatch):
         return Result()
     monkeypatch.setattr(plugins.subprocess, "run", fake_run)
     monkeypatch.setattr(
-        plugins, "load_registry", lambda section="plugins": {"dummy": "dummy-pkg"}
+        plugins,
+        "load_registry",
+        lambda section="plugins", update=False: {"dummy": "dummy-pkg"},
     )
     rc = plugins.main(["backends", "install", "dummy"])
     assert rc == 0
@@ -49,7 +53,9 @@ def test_remove_runs_pip(monkeypatch):
 
     monkeypatch.setattr(plugins.subprocess, "run", fake_run)
     monkeypatch.setattr(
-        plugins, "load_registry", lambda section="plugins": {"dummy": "dummy-pkg"}
+        plugins,
+        "load_registry",
+        lambda section="plugins", update=False: {"dummy": "dummy-pkg"},
     )
     rc = plugins.main(["backends", "remove", "dummy"])
     assert rc == 0
@@ -68,7 +74,9 @@ def test_install_failure_propagates(monkeypatch, capsys):
 
     monkeypatch.setattr(plugins.subprocess, "run", fake_run)
     monkeypatch.setattr(
-        plugins, "load_registry", lambda section="plugins": {"dummy": "dummy-pkg"}
+        plugins,
+        "load_registry",
+        lambda section="plugins", update=False: {"dummy": "dummy-pkg"},
     )
     rc = plugins.main(["backends", "install", "dummy"])
     captured = capsys.readouterr()
@@ -82,7 +90,9 @@ def test_remove_failure_propagates(monkeypatch, capsys):
 
     monkeypatch.setattr(plugins.subprocess, "run", fake_run)
     monkeypatch.setattr(
-        plugins, "load_registry", lambda section="plugins": {"dummy": "dummy-pkg"}
+        plugins,
+        "load_registry",
+        lambda section="plugins", update=False: {"dummy": "dummy-pkg"},
     )
     rc = plugins.main(["backends", "remove", "dummy"])
     captured = capsys.readouterr()
@@ -106,7 +116,9 @@ def test_main_remove(monkeypatch, capsys, retcode):
 
     monkeypatch.setattr(plugins.subprocess, "run", fake_run)
     monkeypatch.setattr(
-        plugins, "load_registry", lambda section="plugins": {"dummy": "dummy-pkg"}
+        plugins,
+        "load_registry",
+        lambda section="plugins", update=False: {"dummy": "dummy-pkg"},
     )
     rc = plugins.main(["backends", "remove", "dummy"])
     captured = capsys.readouterr()
@@ -122,7 +134,7 @@ def test_main_warns_when_jsonschema_missing(monkeypatch, capsys):
     import importlib
     reloaded = importlib.reload(plugins)
     monkeypatch.setattr(
-        reloaded, "load_registry", lambda section="plugins": {"dummy": "pkg"}
+        reloaded, "load_registry", lambda section="plugins", update=False: {"dummy": "pkg"}
     )
     monkeypatch.setattr(reloaded, "_is_installed", lambda p: False)
     rc = reloaded.main(["backends", "list"])
@@ -131,8 +143,23 @@ def test_main_warns_when_jsonschema_missing(monkeypatch, capsys):
     assert "jsonschema is required" in out.err
 
 
+def test_cli_update_flag(monkeypatch):
+    called = {}
+
+    def fake_load(section="plugins", update=False):
+        called["update"] = update
+        return {}
+
+    monkeypatch.setattr(plugins, "load_registry", fake_load)
+    monkeypatch.setattr(plugins, "_is_installed", lambda p: False)
+
+    rc = plugins.main(["--update", "backends", "list"])
+    assert rc == 0
+    assert called.get("update") is True
+
+
 def test_recipe_list(monkeypatch, capsys):
-    def fake_load(section="plugins"):
+    def fake_load(section="plugins", update=False):
         if section == "recipes":
             return {"echo": "pkg"}
         return {}
@@ -155,7 +182,7 @@ def test_recipe_install(monkeypatch):
             returncode = 0
         return Res()
 
-    def fake_load(section="plugins"):
+    def fake_load(section="plugins", update=False):
         if section == "recipes":
             return {"echo": "pkg"}
         return {}
@@ -177,7 +204,7 @@ def test_recipe_remove(monkeypatch):
             returncode = 0
         return Res()
 
-    def fake_load(section="plugins"):
+    def fake_load(section="plugins", update=False):
         if section == "recipes":
             return {"echo": "pkg"}
         return {}
@@ -201,7 +228,7 @@ def test_recipe_sync(monkeypatch, tmp_path):
 
         return Res()
 
-    def fake_load(section="plugins"):
+    def fake_load(section="plugins", update=False):
         if section == "recipes":
             return {"echo": "pkg"}
         return {}
@@ -225,7 +252,7 @@ def test_recipe_sync_failure(monkeypatch, tmp_path, capsys):
         called.append(cmd)
         raise plugins.subprocess.CalledProcessError(2, cmd, stderr="err\n")
 
-    def fake_load(section="plugins"):
+    def fake_load(section="plugins", update=False):
         if section == "recipes":
             return {"echo": "pkg"}
         return {}
