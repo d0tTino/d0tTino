@@ -11,7 +11,7 @@ from typing import List, Optional
 
 from llm import router
 from llm.backends import load_backends
-from scripts import ai_exec, ai_do, recipes
+from scripts import ai_exec, ai_do, recipes, plugins
 from scripts.cli_common import execute_steps, read_prompt
 from telemetry import record_event, analytics_default
 import time
@@ -108,6 +108,10 @@ def _cmd_recipe(args: argparse.Namespace) -> int:
     return exit_code
 
 
+def _cmd_plugin(args: argparse.Namespace) -> int:
+    return plugins.main(args.plugin_args)
+
+
 def build_parser() -> argparse.ArgumentParser:
     analytics = argparse.ArgumentParser(add_help=False)
     analytics.add_argument(
@@ -142,6 +146,10 @@ def build_parser() -> argparse.ArgumentParser:
     recipe.add_argument("--log", type=Path, default=Path("ai_do.log"), help="Log file path (default: %(default)s)")
     recipe.set_defaults(func=_cmd_recipe)
 
+    plugin = sub.add_parser("plugin", help="Manage plug-ins")
+    plugin.add_argument("plugin_args", nargs=argparse.REMAINDER)
+    plugin.set_defaults(func=_cmd_plugin)
+
     return parser
 
 
@@ -169,6 +177,11 @@ def send_main(argv: Optional[List[str]] = None) -> int:
 
 def recipe_main(argv: Optional[List[str]] = None) -> int:
     argv = ["recipe", *(argv or [])]
+    return main(argv)
+
+
+def plugin_main(argv: Optional[List[str]] = None) -> int:
+    argv = ["plugin", *(argv or [])]
     return main(argv)
 
 
