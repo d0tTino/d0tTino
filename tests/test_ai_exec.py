@@ -90,6 +90,7 @@ def test_plan_records_event(monkeypatch):
 
     def fake_record(name, payload, *, enabled=False):
         recorded.append((name, payload, enabled))
+        return True
 
     monkeypatch.setattr(ai_exec, "record_event", fake_record)
     steps = ai_exec.plan("goal", analytics=True)

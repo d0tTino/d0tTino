@@ -9,6 +9,7 @@ import subprocess
 from pathlib import Path
 from typing import List, Optional
 from threading import Lock
+import logging
 
 from llm import router
 from llm.ai_router import get_preferred_models
@@ -56,7 +57,7 @@ def plan(
         end = time.time()
         with _LAST_MODEL_LOCK:
             _LAST_MODEL_REMOTE = used_remote
-        record_event(
+        success = record_event(
             "ai-exec-plan",
             {
                 "goal": goal,
@@ -67,6 +68,8 @@ def plan(
             },
             enabled=analytics,
         )
+        if not success:
+            logging.debug("Failed to record telemetry")
 
 
 def main(argv: Optional[List[str]] = None) -> int:

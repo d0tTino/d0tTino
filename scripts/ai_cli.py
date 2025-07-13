@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+import logging
 from pathlib import Path
 from typing import List, Optional
 
@@ -25,12 +26,16 @@ def _cmd_send(args: argparse.Namespace) -> int:
         output = router.send_prompt(prompt, local=args.local, model=args.model)
     except (FileNotFoundError, subprocess.CalledProcessError) as exc:
         print(exc, file=sys.stderr)
-        record_event("ai-cli-send", {"exit_code": 1}, enabled=args.analytics)
+        success = record_event("ai-cli-send", {"exit_code": 1}, enabled=args.analytics)
+        if not success:
+            logging.debug("Failed to record telemetry")
         return 1
     sys.stdout.write(output)
     if not output.endswith("\n"):
         sys.stdout.write("\n")
-    record_event("ai-cli-send", {"exit_code": 0}, enabled=args.analytics)
+    success = record_event("ai-cli-send", {"exit_code": 0}, enabled=args.analytics)
+    if not success:
+        logging.debug("Failed to record telemetry")
     return 0
 
 
@@ -40,7 +45,7 @@ def _cmd_plan(args: argparse.Namespace) -> int:
     for step in steps:
         print(step)
     end = time.time()
-    record_event(
+    success = record_event(
         "ai-cli-plan",
         {
             "goal": args.goal,
@@ -51,6 +56,8 @@ def _cmd_plan(args: argparse.Namespace) -> int:
         },
         enabled=args.analytics,
     )
+    if not success:
+        logging.debug("Failed to record telemetry")
     return 0
 
 
@@ -61,7 +68,7 @@ def _cmd_do(args: argparse.Namespace) -> int:
     )
     exit_code = execute_steps(steps, log_path=args.log)
     end = time.time()
-    record_event(
+    success = record_event(
         "ai-cli-do",
         {
             "goal": args.goal,
@@ -72,6 +79,8 @@ def _cmd_do(args: argparse.Namespace) -> int:
         },
         enabled=args.analytics,
     )
+    if not success:
+        logging.debug("Failed to record telemetry")
     return exit_code
 
 
@@ -92,7 +101,7 @@ def _cmd_recipe(args: argparse.Namespace) -> int:
     )
     end = time.time()
     if exit_code == 0:
-        record_event(
+        success = record_event(
             "ai-cli-recipe",
             {
                 "recipe": args.name,
@@ -105,6 +114,8 @@ def _cmd_recipe(args: argparse.Namespace) -> int:
             },
             enabled=args.analytics,
         )
+        if not success:
+            logging.debug("Failed to record telemetry")
     return exit_code
 
 
