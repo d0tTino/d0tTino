@@ -57,3 +57,13 @@ Provide a path or URL with raw NDJSON events. The script aggregates successful
 `ai-do` runs per developer using `nsm_stats.aggregate_successful_runs()` and
 posts the resulting JSON to `EVENTS_URL`. Authentication via `EVENTS_TOKEN` is
 supported just like `record_event`.
+
+## Tracking the North Star Metric
+
+Each call to `record_event()` writes a JSON payload to `EVENTS_URL`. The
+`nsm_stats.aggregate_successful_runs()` helper groups these raw events by
+hashed developer ID and ISO week, counting only entries where `exit_code` is
+`0`. Summing these weekly totals yields the “successful automated tasks per
+active developer per week” metric. `nsm_upload.py` can read NDJSON logs or fetch
+them from `EVENTS_URL`, compute the totals, and post the aggregated JSON back to
+the server.
