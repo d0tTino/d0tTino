@@ -197,6 +197,13 @@ found, install the package manager manually and ensure it is on your `PATH`.
 
   Once the tools are installed, rerun `install.sh` or `bootstrap.ps1`.
 
+### Common failures on macOS and Linux
+
+The install helper expects a working package manager and write access to your profile directory.
+
+- **Homebrew not found** – install Homebrew and ensure `brew` is on your `PATH` if the script prints `command not found: brew`.
+- **Permission denied** – rerun the command with `sudo` when the package manager or the installer reports insufficient permissions.
+
 ## Local LLM tools
 
 Install the Gemini CLI and pull the default Ollama model:
