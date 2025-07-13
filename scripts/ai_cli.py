@@ -11,13 +11,13 @@ from pathlib import Path
 from typing import List, Optional
 
 from llm import router
-from llm.backends import load_backends
+from llm.backends import initialize
 from scripts import ai_exec, ai_do, recipes, plugins
 from scripts.cli_common import execute_steps, read_prompt
 from telemetry import record_event, analytics_default
 import time
 
-load_backends()
+initialize()
 
 
 def _cmd_send(args: argparse.Namespace) -> int:
