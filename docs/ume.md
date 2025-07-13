@@ -27,7 +27,8 @@ Launch the API and supporting services:
 poetry run python ume_cli.py up
 ```
 
-The API will be available at <http://localhost:8000>.
+The API will be available at <http://localhost:8000>. You can set the
+`UME_API_URL` environment variable to connect to a remote instance.
 
 ## LangGraph Retrieval Demo
 

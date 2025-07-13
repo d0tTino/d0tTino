@@ -9,6 +9,7 @@ from threading import RLock
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+import requests
 import asyncio
 
 
@@ -47,16 +48,24 @@ def record_prompt(prompt: str) -> None:
 
 
 def get_stats() -> dict[str, int]:
+    if UME_API_URL:
+        resp = requests.get(f"{UME_API_URL}/dashboard/stats")
+        resp.raise_for_status()
+        return resp.json()
     state = _load_state()
     return {"queries": state["queries"], "memory": len(state["nodes"])}
 
 
 def get_graph() -> dict[str, list]:
+    if UME_API_URL:
+        resp = requests.get(f"{UME_API_URL}/graph")
+        resp.raise_for_status()
+        return resp.json()
     state = _load_state()
     return {"nodes": state["nodes"], "edges": state["edges"]}
 
 app = FastAPI()
-UME_API_URL = os.environ.get("UME_API_URL", "http://localhost:8000")
+UME_API_URL = os.environ.get("UME_API_URL")
 
 class PromptRequest(BaseModel):
     prompt: str
