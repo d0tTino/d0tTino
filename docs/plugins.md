@@ -78,7 +78,8 @@ The file must conform to
 [plugin-registry.schema.json](../plugin-registry.schema.json). The CLI fetches
 this file from `https://raw.githubusercontent.com/d0tTino/d0tTino/main/plugin-registry.json`
 and caches it in `~/.cache/d0ttino/plugin_registry.json`. Override the URL with
-`PLUGIN_REGISTRY_URL` during development to test your own registry.
+`PLUGIN_REGISTRY_URL` during development to test your own registry. Pass
+`--update` to the helper to refresh the cached copy.
 
 Example entry:
 

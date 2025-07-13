@@ -60,7 +60,7 @@ def test_load_registry_logs_warning(monkeypatch, tmp_path, caplog):
     monkeypatch.setenv("PLUGIN_REGISTRY_URL", "https://example.com")
 
     with caplog.at_level(logging.WARNING):
-        registry = plugins.load_registry()
+        registry = plugins.load_registry(update=True)
 
     assert registry == {"y": "pkg"}
     assert any("Failed to fetch" in r.message for r in caplog.records)
@@ -210,3 +210,39 @@ def test_load_registry_uses_default_url(monkeypatch, tmp_path):
 
     registry = plugins.load_registry()
     assert registry == {"z": "pkg"}
+
+
+def test_load_registry_update_skips_cache(monkeypatch, tmp_path):
+    cache = tmp_path / "cache.json"
+    cache.write_text(json.dumps({"plugins": {"x": "old"}}))
+    monkeypatch.setattr(plugins, "CACHE_PATH", cache)
+
+    data = {"plugins": {"x": "new"}}
+    called = {}
+
+    class Resp:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            called["called"] = True
+            return data
+
+    monkeypatch.setattr(plugins.requests, "get", lambda *a, **k: Resp())
+    registry = plugins.load_registry(update=True)
+    assert registry == {"x": "new"}
+    assert json.loads(cache.read_text()) == data
+    assert called.get("called")
+
+
+def test_load_registry_prefers_cache(monkeypatch, tmp_path):
+    cache = tmp_path / "cache.json"
+    cache.write_text(json.dumps({"plugins": {"x": "cached"}}))
+    monkeypatch.setattr(plugins, "CACHE_PATH", cache)
+
+    def fake_get(*a, **k):
+        raise AssertionError("network should not be called")
+
+    monkeypatch.setattr(plugins.requests, "get", fake_get)
+    registry = plugins.load_registry()
+    assert registry == {"x": "cached"}
