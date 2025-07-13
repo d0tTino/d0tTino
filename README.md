@@ -275,3 +275,6 @@ analytics enabled (via `--analytics` or `EVENTS_ENABLED=true`), an event is
 posted to `EVENTS_URL` and counted toward the developer's weekly total.
 Aggregating these numbers highlights adoption trends and guides future
 automation work.
+
+For details on how the weekly totals are calculated, see
+[docs/telemetry.md#tracking-the-north-star-metric](docs/telemetry.md#tracking-the-north-star-metric).
