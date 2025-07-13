@@ -1,4 +1,6 @@
 import sys
+from pathlib import Path
+
 import pytest
 from scripts import plugins
 
@@ -240,4 +242,31 @@ def test_recipe_sync_failure(monkeypatch, tmp_path, capsys):
     assert called
     assert "install" in called[0]
     assert "--target" in called[0]
+
+
+def test_recipe_sync_creates_packages(monkeypatch, tmp_path):
+    packages = {"echo": "echo-pkg", "foo": "foo-pkg"}
+
+    def fake_run(cmd, *a, **k):
+        dest = Path(cmd[cmd.index("--target") + 1])
+        pkg = cmd[-1]
+        (dest / pkg).write_text("installed")
+
+        class Res:
+            returncode = 0
+
+        return Res()
+
+    def fake_load(section="plugins"):
+        if section == "recipes":
+            return packages
+        return {}
+
+    monkeypatch.setattr(plugins.subprocess, "run", fake_run)
+    monkeypatch.setattr(plugins, "load_registry", fake_load)
+
+    rc = plugins.main(["recipes", "sync", "--dest", str(tmp_path)])
+    assert rc == 0
+    for pkg in packages.values():
+        assert (tmp_path / pkg).is_file()
 
