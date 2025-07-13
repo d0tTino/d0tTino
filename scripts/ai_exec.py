@@ -13,12 +13,8 @@ from threading import Lock
 from llm import router
 from llm.ai_router import get_preferred_models
 from llm.backends import load_backends
-from scripts.cli_common import (
-    read_prompt,
-    record_event,
-    send_notification,
-    analytics_default,
-)
+from scripts.cli_common import read_prompt, send_notification
+from telemetry import record_event, analytics_default
 import time
 
 _LAST_MODEL_REMOTE = True

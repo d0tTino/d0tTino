@@ -12,12 +12,8 @@ from typing import List, Optional
 from llm import router
 from llm.backends import load_backends
 from scripts import ai_exec, ai_do, recipes
-from scripts.cli_common import (
-    execute_steps,
-    read_prompt,
-    record_event,
-    analytics_default,
-)
+from scripts.cli_common import execute_steps, read_prompt
+from telemetry import record_event, analytics_default
 import time
 
 load_backends()
