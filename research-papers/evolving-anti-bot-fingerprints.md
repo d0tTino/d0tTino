@@ -190,7 +190,6 @@ func CreateHardenedContext(pw *playwright.Playwright) (playwright.BrowserContext
 - VideoSDK. WebRTC Leak Test. <https://videosdk.live/blog/webrtc-leak-test>
 - Vectra AI. (2023). C2 Evasion Techniques. <https://www.vectra.ai/blogpost/c2-evasion-techniques>
 - GeeLark. From Mouse Movement Emulation to Mobile Automation. <https://geelark.com/from-mouse-movement-emulation-to-mobile-automation>
-
 56. Cloudflare. (2024, December 5). Mitigating Modern Bots. <https://blog.cloudflare.com/mitigating-modern-bots>
 57. ResearchGate. (2025). The Economics of Bot Mitigation. <https://www.researchgate.net/publication/economics_bot_mitigation>
 58. Microsoft. (2024). WebDriver Anti-Detection Guidelines. <https://learn.microsoft.com/webdriver/detection-guidelines>
@@ -206,3 +205,4 @@ func CreateHardenedContext(pw *playwright.Playwright) (playwright.BrowserContext
 68. NIST. (2025). Biometrics and Browser Security. <https://www.nist.gov/biometrics-browser-security>
 69. Carnegie Mellon University. (2024). CAPTCHA Usability Studies. <https://www.cmu.edu/captcha-usability>
 70. Electronic Frontier Foundation. (2024). Ethics of Automation. <https://www.eff.org/automation-ethics>
+

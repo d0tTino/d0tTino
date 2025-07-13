@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import uuid
 from typing import Any
+import logging
 
 import requests
 
@@ -14,13 +15,16 @@ def analytics_default() -> bool:
     return str(val).lower() in {"1", "true", "yes", "y"}
 
 
-def record_event(name: str, payload: dict[str, Any], *, enabled: bool = False) -> None:
-    """Send ``payload`` to ``EVENTS_URL`` when ``enabled`` is ``True``."""
+def record_event(name: str, payload: dict[str, Any], *, enabled: bool = False) -> bool:
+    """Send ``payload`` to ``EVENTS_URL`` when ``enabled`` is ``True``.
+
+    Return ``True`` when the event is successfully posted.
+    """
     if not enabled:
-        return
+        return False
     url = os.environ.get("EVENTS_URL")
     if not url:
-        return
+        return False
     token = os.environ.get("EVENTS_TOKEN")
     headers = {}
     if token:
@@ -36,8 +40,10 @@ def record_event(name: str, payload: dict[str, Any], *, enabled: bool = False) -
     data = {"name": name, "developer": developer, **payload}
     try:
         requests.post(url, headers=headers, json=data, timeout=5)
-    except Exception:
-        pass
+    except Exception as exc:  # noqa: BLE001
+        logging.warning("Failed to record telemetry event: %s", exc)
+        return False
+    return True
 
 
 __all__ = ["analytics_default", "record_event"]
