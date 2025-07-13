@@ -43,26 +43,27 @@ See `llm/backends/plugins/sample.py` for a full example.
 
 ## Managing Plug-ins
 
-Use the `plugins` helper to install or remove third-party backends and recipes.
+Use the `ai-cli plugin` subcommand or the `plugins` helper to install or remove
+third-party backends and recipes.
 
 ```bash
 # List available plug-ins
-python -m scripts.plugins backends list
+ai-cli plugin backends list
 
 # Install a plug-in
-python -m scripts.plugins backends install sample
+ai-cli plugin backends install sample
 
 # Remove a plug-in
-python -m scripts.plugins backends remove sample
+ai-cli plugin backends remove sample
 ```
 
 Recipe packages are managed via the `recipes` subcommand:
 
 ```bash
-python -m scripts.plugins recipes list
-python -m scripts.plugins recipes install echo
-python -m scripts.plugins recipes remove echo
-python -m scripts.plugins recipes sync
+ai-cli plugin recipes list
+ai-cli plugin recipes install echo
+ai-cli plugin recipes remove echo
+ai-cli plugin recipes sync
 ```
 
 `recipes sync` downloads and installs the recipe packages listed in the
