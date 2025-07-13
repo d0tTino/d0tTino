@@ -66,6 +66,11 @@ def test_send_records_event(monkeypatch):
 
     def fake_record(name, payload, *, enabled=False):
         recorded.append((name, payload, enabled))
+        return True
+        return True
+        return True
+        return True
+        return True
 
     monkeypatch.setattr(ai_cli, "record_event", fake_record)
     out = io.StringIO()

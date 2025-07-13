@@ -8,6 +8,7 @@ import argparse
 from pathlib import Path
 from typing import Callable, List, Optional, Sequence
 import time
+import logging
 
 from scripts import ai_exec
 from llm.backends import load_backends
@@ -31,11 +32,13 @@ def run_recipe(
     else:
         steps = list(steps_or_callable)
     exit_code = execute_steps(steps, log_path=log_path)
-    record_event(
+    success = record_event(
         "ai-do-recipe",
         {"recipe": name, "goal": goal, "exit_code": exit_code},
         enabled=analytics,
     )
+    if not success:
+        logging.debug("Failed to record telemetry")
     return exit_code
 
 
@@ -68,7 +71,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             send_notification("ai-do completed with exit code 0")
         else:
             send_notification(f"ai-do failed with exit code {exit_code}")
-    record_event(
+    success = record_event(
         "ai-do",
         {
             "goal": args.goal,
@@ -78,6 +81,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         },
         enabled=analytics,
     )
+    if not success:
+        logging.debug("Failed to record telemetry")
 
     return exit_code
 
