@@ -13,7 +13,7 @@ import logging
 
 from llm import router
 from llm.ai_router import get_preferred_models
-from llm.backends import load_backends
+from llm.backends import initialize
 from scripts.cli_common import read_prompt, send_notification
 from telemetry import record_event, analytics_default
 import time
@@ -26,7 +26,7 @@ def last_model_remote() -> bool:
     with _LAST_MODEL_LOCK:
         return _LAST_MODEL_REMOTE
 
-load_backends()
+initialize()
 
 def plan(
     goal: str, *, config_path: Optional[Path] = None, analytics: bool = False

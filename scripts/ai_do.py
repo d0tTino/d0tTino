@@ -11,11 +11,11 @@ import time
 import logging
 
 from scripts import ai_exec
-from llm.backends import load_backends
+from llm.backends import initialize
 from scripts.cli_common import execute_steps, send_notification
 from telemetry import record_event, analytics_default
 
-load_backends()
+initialize()
 
 
 def run_recipe(

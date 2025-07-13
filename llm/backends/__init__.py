@@ -6,9 +6,10 @@ from collections.abc import Callable
 from typing import Dict
 
 from .loader import discover_plugins, load_backends
-
 from .base import Backend
 from .superclaude import SuperClaudeBackend as _RealSuperClaudeBackend
+
+_INITIALIZED = False
 
 
 _BACKEND_REGISTRY: Dict[str, Callable[[str, str], str]] = {}
@@ -44,6 +45,7 @@ __all__ = [
     "OpenRouterDSPyBackend",
     "LMQLBackend",
     "GuidanceBackend",
+    "initialize",
 ]
 
 
@@ -69,6 +71,14 @@ def available_backends() -> list[str]:
     """Return a list of registered backend names."""
 
     return sorted(_BACKEND_REGISTRY)
+
+
+def initialize() -> None:
+    """Load backends once and cache the result."""
+    global _INITIALIZED
+    if not _INITIALIZED:
+        load_backends()
+        _INITIALIZED = True
 
 
 
