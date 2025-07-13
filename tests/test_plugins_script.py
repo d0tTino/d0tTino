@@ -284,7 +284,7 @@ def test_recipe_sync_creates_packages(monkeypatch, tmp_path):
 
         return Res()
 
-    def fake_load(section="plugins"):
+    def fake_load(section="plugins", update=False):
         if section == "recipes":
             return packages
         return {}

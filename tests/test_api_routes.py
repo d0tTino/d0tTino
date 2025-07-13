@@ -8,6 +8,7 @@ import os
 import sys
 import types
 from pathlib import Path
+import requests
 from scripts import ai_exec
 
 def load_app(send_prompt=lambda p, local=False: f"resp-{p}", apply_palette=lambda n, r: None, state_path: Path | None = None):
@@ -34,7 +35,7 @@ def test_health(tmp_path):
     assert resp.json() == {'status': 'ok'}
 
 
-def test_stats(tmp_path):
+def test_stats_local(tmp_path):
     app = load_app(state_path=tmp_path / 'state.json')
     client = TestClient(app)
     resp = client.get('/api/stats')
@@ -43,7 +44,7 @@ def test_stats(tmp_path):
 
 
 
-def test_graph(tmp_path):
+def test_graph_local(tmp_path):
     app = load_app(state_path=tmp_path / 'state.json')
     client = TestClient(app)
     resp = client.post('/api/prompt', json={'prompt': 'one'})
@@ -55,6 +56,62 @@ def test_graph(tmp_path):
     data = resp.json()
     assert len(data['nodes']) == 2
     assert len(data['edges']) == 1
+
+
+def test_stats_remote(monkeypatch, tmp_path):
+    class FakeResponse:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {'queries': 1, 'memory': 2}
+
+        @staticmethod
+        def raise_for_status():
+            pass
+
+    calls = []
+
+    def fake_get(url):
+        calls.append(url)
+        return FakeResponse()
+
+    monkeypatch.setenv('UME_API_URL', 'http://ume')
+    monkeypatch.setattr(requests, 'get', fake_get)
+    app = load_app(state_path=tmp_path / 'state.json')
+    client = TestClient(app)
+    resp = client.get('/api/stats')
+    assert resp.status_code == 200
+    assert resp.json() == {'queries': 1, 'memory': 2}
+    assert calls == ['http://ume/dashboard/stats']
+
+
+def test_graph_remote(monkeypatch, tmp_path):
+    class FakeResponse:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {'nodes': ['n1'], 'edges': ['e1']}
+
+        @staticmethod
+        def raise_for_status():
+            pass
+
+    calls = []
+
+    def fake_get(url):
+        calls.append(url)
+        return FakeResponse()
+
+    monkeypatch.setenv('UME_API_URL', 'http://ume')
+    monkeypatch.setattr(requests, 'get', fake_get)
+    app = load_app(state_path=tmp_path / 'state.json')
+    client = TestClient(app)
+    resp = client.get('/api/graph')
+    assert resp.status_code == 200
+    assert resp.json() == {'nodes': ['n1'], 'edges': ['e1']}
+    assert calls == ['http://ume/graph']
 
 
 def test_prompt(tmp_path):
