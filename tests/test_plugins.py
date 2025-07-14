@@ -27,4 +27,3 @@ def test_cmd_sync_recipes_uses_default_dir(monkeypatch, tmp_path):
     for pkg in packages.values():
         assert (tmp_path / pkg).is_file()
 
-
