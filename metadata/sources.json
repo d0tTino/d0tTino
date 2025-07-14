@@ -2,21 +2,29 @@
   {
     "name": "Python Docs",
     "url": "https://docs.python.org/3/",
-    "category": "Reference"
+    "category": "Reference",
+    "tags": ["python", "reference"],
+    "license": "PSF"
   },
   {
     "name": "FastAPI",
     "url": "https://fastapi.tiangolo.com/",
-    "category": "Framework"
+    "category": "Framework",
+    "tags": ["python", "web"],
+    "license": "MIT"
   },
   {
     "name": "Rust Book",
     "url": "https://doc.rust-lang.org/book/",
-    "category": "Learning"
+    "category": "Learning",
+    "tags": ["rust", "learning"],
+    "license": "MIT"
   },
   {
     "name": "Docker Documentation",
     "url": "https://docs.docker.com/",
-    "category": "DevOps"
+    "category": "DevOps",
+    "tags": ["docker", "devops"],
+    "license": "Apache-2.0"
   }
 ]
