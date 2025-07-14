@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 from threading import RLock
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import requests
@@ -49,18 +49,24 @@ def record_prompt(prompt: str) -> None:
 
 def get_stats() -> dict[str, int]:
     if UME_API_URL:
-        resp = requests.get(f"{UME_API_URL}/dashboard/stats")
-        resp.raise_for_status()
-        return resp.json()
+        try:
+            resp = requests.get(f"{UME_API_URL}/dashboard/stats")
+            resp.raise_for_status()
+            return resp.json()
+        except requests.exceptions.RequestException as exc:
+            raise HTTPException(status_code=503, detail=str(exc))
     state = _load_state()
     return {"queries": state["queries"], "memory": len(state["nodes"])}
 
 
 def get_graph() -> dict[str, list]:
     if UME_API_URL:
-        resp = requests.get(f"{UME_API_URL}/graph")
-        resp.raise_for_status()
-        return resp.json()
+        try:
+            resp = requests.get(f"{UME_API_URL}/graph")
+            resp.raise_for_status()
+            return resp.json()
+        except requests.exceptions.RequestException as exc:
+            raise HTTPException(status_code=503, detail=str(exc))
     state = _load_state()
     return {"nodes": state["nodes"], "edges": state["edges"]}
 
