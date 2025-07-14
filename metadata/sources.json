@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Python Docs",
+    "url": "https://docs.python.org/3/",
+    "category": "Reference"
+  },
+  {
+    "name": "FastAPI",
+    "url": "https://fastapi.tiangolo.com/",
+    "category": "Framework"
+  },
+  {
+    "name": "Rust Book",
+    "url": "https://doc.rust-lang.org/book/",
+    "category": "Learning"
+  },
+  {
+    "name": "Docker Documentation",
+    "url": "https://docs.docker.com/",
+    "category": "DevOps"
+  }
+]
