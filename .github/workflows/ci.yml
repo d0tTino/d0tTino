@@ -75,6 +75,8 @@ jobs:
         run: pip install -r requirements.txt
       - name: Run tests
         run: pytest -n auto
+      - name: Verify awesome sources markdown
+        run: pytest tests/test_generate_sources_md.py -q
 
   extras-tests:
     needs: changes
