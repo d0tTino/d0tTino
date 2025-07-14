@@ -218,6 +218,19 @@ The [`link-check`](.github/workflows/link-check.yml) workflow runs
 It executes on every pull request and once per week, failing the job if any
 links are unreachable.
 
+## Awesome sources
+
+Add new resources to `metadata/sources.json` using `name`, `url` and
+`category` fields. After editing the JSON file regenerate the Markdown list
+with:
+
+```bash
+python scripts/generate_sources_md.py
+```
+
+Commit the updated `docs/awesome-sources.md` file. A GitHub Action and the
+pre-commit hook verify that the two files remain in sync.
+
 ## Telemetry and Metrics
 
 When invoked with the `--analytics` flag or when the `EVENTS_ENABLED`
