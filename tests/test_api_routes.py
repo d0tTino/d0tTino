@@ -72,8 +72,8 @@ def test_stats_remote(monkeypatch, tmp_path):
 
     calls = []
 
-    def fake_get(url):
-        calls.append(url)
+    def fake_get(url, *, timeout=None):
+        calls.append((url, timeout))
         return FakeResponse()
 
     monkeypatch.setenv('UME_API_URL', 'http://ume')
@@ -83,7 +83,7 @@ def test_stats_remote(monkeypatch, tmp_path):
     resp = client.get('/api/stats')
     assert resp.status_code == 200
     assert resp.json() == {'queries': 1, 'memory': 2}
-    assert calls == ['http://ume/dashboard/stats']
+    assert calls == [('http://ume/dashboard/stats', 5)]
 
 
 def test_graph_remote(monkeypatch, tmp_path):
@@ -100,8 +100,8 @@ def test_graph_remote(monkeypatch, tmp_path):
 
     calls = []
 
-    def fake_get(url):
-        calls.append(url)
+    def fake_get(url, *, timeout=None):
+        calls.append((url, timeout))
         return FakeResponse()
 
     monkeypatch.setenv('UME_API_URL', 'http://ume')
@@ -111,7 +111,7 @@ def test_graph_remote(monkeypatch, tmp_path):
     resp = client.get('/api/graph')
     assert resp.status_code == 200
     assert resp.json() == {'nodes': ['n1'], 'edges': ['e1']}
-    assert calls == ['http://ume/graph']
+    assert calls == [('http://ume/graph', 5)]
 
 
 def test_prompt(tmp_path):
@@ -170,3 +170,31 @@ def test_exec_stream(monkeypatch, tmp_path):
     assert 'data: $ echo hi' in lines
     assert 'data: hi' in lines
     assert lines[-1] == 'data: (exit 0)'
+
+
+def test_stats_remote_timeout(monkeypatch, tmp_path):
+    monkeypatch.setenv('UME_API_URL', 'http://ume')
+
+    def fake_get(url, *, timeout=None):
+        raise requests.exceptions.Timeout
+
+    monkeypatch.setattr(requests, 'get', fake_get)
+    app = load_app(state_path=tmp_path / 'state.json')
+    client = TestClient(app)
+    resp = client.get('/api/stats')
+    assert resp.status_code == 200
+    assert resp.json() == {'queries': 0, 'memory': 0}
+
+
+def test_graph_remote_timeout(monkeypatch, tmp_path):
+    monkeypatch.setenv('UME_API_URL', 'http://ume')
+
+    def fake_get(url, *, timeout=None):
+        raise requests.exceptions.Timeout
+
+    monkeypatch.setattr(requests, 'get', fake_get)
+    app = load_app(state_path=tmp_path / 'state.json')
+    client = TestClient(app)
+    resp = client.get('/api/graph')
+    assert resp.status_code == 200
+    assert resp.json() == {'nodes': [], 'edges': []}
