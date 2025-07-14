@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 from threading import RLock
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import requests
@@ -55,6 +55,7 @@ def get_stats() -> dict[str, int]:
             return resp.json()
         except requests.exceptions.RequestException:
             pass
+
     state = _load_state()
     return {"queries": state["queries"], "memory": len(state["nodes"])}
 
@@ -67,6 +68,7 @@ def get_graph() -> dict[str, list]:
             return resp.json()
         except requests.exceptions.RequestException:
             pass
+
     state = _load_state()
     return {"nodes": state["nodes"], "edges": state["edges"]}
 

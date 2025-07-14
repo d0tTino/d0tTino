@@ -114,6 +114,30 @@ def test_graph_remote(monkeypatch, tmp_path):
     assert calls == [('http://ume/graph', 5)]
 
 
+def test_stats_remote_connection_error(monkeypatch, tmp_path):
+    def fake_get(url):
+        raise requests.exceptions.ConnectionError('boom')
+
+    monkeypatch.setenv('UME_API_URL', 'http://ume')
+    monkeypatch.setattr(requests, 'get', fake_get)
+    app = load_app(state_path=tmp_path / 'state.json')
+    client = TestClient(app)
+    resp = client.get('/api/stats')
+    assert resp.status_code == 503
+
+
+def test_graph_remote_connection_error(monkeypatch, tmp_path):
+    def fake_get(url):
+        raise requests.exceptions.ConnectionError('boom')
+
+    monkeypatch.setenv('UME_API_URL', 'http://ume')
+    monkeypatch.setattr(requests, 'get', fake_get)
+    app = load_app(state_path=tmp_path / 'state.json')
+    client = TestClient(app)
+    resp = client.get('/api/graph')
+    assert resp.status_code == 503
+
+
 def test_prompt(tmp_path):
     calls = []
     def fake(prompt: str, local: bool = False):

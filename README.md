@@ -211,6 +211,13 @@ mypy --install-types --non-interactive
 After fixing any errors, rerun the commands and verify they report zero issues.
 The `pre-commit` hook runs the same checks automatically.
 
+## Link checking
+
+The [`link-check`](.github/workflows/link-check.yml) workflow runs
+[lychee](https://github.com/lycheeverse/lychee) against all Markdown files.
+It executes on every pull request and once per week, failing the job if any
+links are unreachable.
+
 ## Telemetry and Metrics
 
 When invoked with the `--analytics` flag or when the `EVENTS_ENABLED`
