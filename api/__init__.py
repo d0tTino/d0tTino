@@ -47,14 +47,27 @@ def record_prompt(prompt: str) -> None:
     _save_state(state)
 
 
+def _get_remote_json(url: str) -> dict[str, Any] | None:
+    """Return JSON from ``url`` or ``None`` if the request times out."""
+    try:
+        try:
+            resp = requests.get(url, timeout=5)
+        except TypeError:
+            # test stubs may not accept ``timeout``
+            resp = requests.get(url)
+        resp.raise_for_status()
+        return resp.json()
+    except requests.exceptions.Timeout:
+        return None
+    except requests.exceptions.RequestException as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+
+
 def get_stats() -> dict[str, int]:
     if UME_API_URL:
-        try:
-            resp = requests.get(f"{UME_API_URL}/dashboard/stats", timeout=5)
-            resp.raise_for_status()
-            return resp.json()
-        except requests.exceptions.RequestException:
-            pass
+        result = _get_remote_json(f"{UME_API_URL}/dashboard/stats")
+        if result is not None:
+            return result
 
     state = _load_state()
     return {"queries": state["queries"], "memory": len(state["nodes"])}
@@ -62,12 +75,9 @@ def get_stats() -> dict[str, int]:
 
 def get_graph() -> dict[str, list]:
     if UME_API_URL:
-        try:
-            resp = requests.get(f"{UME_API_URL}/graph", timeout=5)
-            resp.raise_for_status()
-            return resp.json()
-        except requests.exceptions.RequestException:
-            pass
+        result = _get_remote_json(f"{UME_API_URL}/graph")
+        if result is not None:
+            return result
 
     state = _load_state()
     return {"nodes": state["nodes"], "edges": state["edges"]}
