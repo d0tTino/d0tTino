@@ -67,7 +67,18 @@ ai-cli plugin recipes sync
 ```
 
 `recipes sync` downloads and installs the recipe packages listed in the
-registry into `scripts/recipes/packages` so they can be used offline.
+registry into `scripts/recipes/packages` so they can be used offline. Run the
+helper directly to sync packages to the default location:
+
+```bash
+python -m scripts.plugins recipes sync
+```
+
+Use `--dest` to specify a custom download directory:
+
+```bash
+python -m scripts.plugins recipes sync --dest /tmp/recipe_pkgs
+```
 
 ### Adding Your Plug-in
 
