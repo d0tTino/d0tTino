@@ -10,13 +10,13 @@ SOURCES_JSON = Path("metadata/sources.json")
 OUTPUT_MD = Path("docs/awesome-sources.md")
 
 
-def load_sources(path: Path = SOURCES_JSON) -> list[dict[str, str]]:
+def load_sources(path: Path = SOURCES_JSON) -> list[dict[str, object]]:
     """Return the list of source dictionaries from ``path``."""
     with path.open(encoding="utf-8") as f:
         return json.load(f)
 
 
-def generate_markdown(sources: list[dict[str, str]]) -> str:
+def generate_markdown(sources: list[dict[str, object]]) -> str:
     """Return Markdown content for ``sources``."""
     lines: list[str] = ["# Awesome Sources", "", "A curated list of useful resources.", ""]
     categories: dict[str, list[dict[str, str]]] = {}
@@ -25,7 +25,11 @@ def generate_markdown(sources: list[dict[str, str]]) -> str:
     for category in sorted(categories):
         lines.append(f"## {category}")
         for src in categories[category]:
-            lines.append(f"- [{src['name']}]({src['url']})")
+            tags = ", ".join(src.get("tags", []))
+            license = src.get("license", "Unknown")
+            lines.append(
+                f"- [{src['name']}]({src['url']}) — *License:* {license} — *Tags:* {tags}"
+            )
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
 
