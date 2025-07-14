@@ -114,6 +114,7 @@ pip install -e examples/plugins/openrouter
 pip install -e examples/plugins/lobechat
 pip install -e examples/plugins/mindbridge
 pip install -e examples/plugins/echo_recipe
+pip install -e examples/plugins/sample_recipe
 ```
 
 Alternatively set `PLUGIN_REGISTRY_URL` to the local registry file and
@@ -177,7 +178,8 @@ register_recipe("my_recipe", run)
 ```
 
 Expose the callable via the `d0ttino.recipes` entry point group so the
-loader can discover it:
+loader can discover it. The loader iterates
+`importlib.metadata.entry_points(group="d0ttino.recipes")` to find recipes:
 
 ```toml
 [project.entry-points."d0ttino.recipes"]
@@ -185,6 +187,7 @@ my_recipe = "my_package.recipes:run"
 ```
 
 See `scripts/recipes/plugins/sample.py` for a simple example.
+An installable package is available under `examples/plugins/sample_recipe`.
 
 ## Running a Recipe
 
