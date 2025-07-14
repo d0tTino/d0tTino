@@ -50,11 +50,12 @@ def record_prompt(prompt: str) -> None:
 def get_stats() -> dict[str, int]:
     if UME_API_URL:
         try:
-            resp = requests.get(f"{UME_API_URL}/dashboard/stats")
+            resp = requests.get(f"{UME_API_URL}/dashboard/stats", timeout=5)
             resp.raise_for_status()
             return resp.json()
-        except requests.exceptions.RequestException as exc:
-            raise HTTPException(status_code=503, detail=str(exc))
+        except requests.exceptions.RequestException:
+            pass
+
     state = _load_state()
     return {"queries": state["queries"], "memory": len(state["nodes"])}
 
@@ -62,11 +63,12 @@ def get_stats() -> dict[str, int]:
 def get_graph() -> dict[str, list]:
     if UME_API_URL:
         try:
-            resp = requests.get(f"{UME_API_URL}/graph")
+            resp = requests.get(f"{UME_API_URL}/graph", timeout=5)
             resp.raise_for_status()
             return resp.json()
-        except requests.exceptions.RequestException as exc:
-            raise HTTPException(status_code=503, detail=str(exc))
+        except requests.exceptions.RequestException:
+            pass
+
     state = _load_state()
     return {"nodes": state["nodes"], "edges": state["edges"]}
 
