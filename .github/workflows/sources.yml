@@ -1,0 +1,28 @@
+name: Generate Sources Markdown
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - metadata/sources.json
+      - .github/workflows/sources.yml
+  pull_request:
+    paths:
+      - metadata/sources.json
+      - .github/workflows/sources.yml
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Generate docs/awesome-sources.md
+        run: python scripts/generate_sources_md.py
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: awesome-sources-md
+          path: docs/awesome-sources.md

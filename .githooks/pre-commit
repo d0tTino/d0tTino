@@ -1,6 +1,10 @@
 #!/bin/sh
 set -e
 ruff check .
+if git diff --cached --name-only | grep -q '^metadata/sources.json$'; then
+    python3 scripts/generate_sources_md.py
+    git add docs/awesome-sources.md
+fi
 python3 windows-terminal/generate_settings.py \
   windows-terminal/settings.base.json \
   windows-terminal/settings.json \
