@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import importlib.metadata
 from plugins.utils import discover_entry_points
 import pkgutil
 
@@ -14,7 +15,7 @@ def discover_plugins() -> None:
     package = f"{backends.__name__}.plugins"
     paths: list[str] = []
     try:
-        pkg = importlib.import_module(package)
+        pkg = importlib.metadata.import_module(package)  # type: ignore[attr-defined]
         paths = list(pkg.__path__)
     except Exception:  # pragma: no cover - plugins package missing
         pass
@@ -22,7 +23,7 @@ def discover_plugins() -> None:
     for mod in pkgutil.iter_modules(paths):
         name = f"{package}.{mod.name}"
         try:
-            module = importlib.import_module(name)
+            module = importlib.metadata.import_module(name)  # type: ignore[attr-defined]
         except Exception:  # pragma: no cover - optional dependency missing
             continue
         for attr in getattr(module, "__all__", []):
@@ -32,7 +33,7 @@ def discover_plugins() -> None:
 
     for entry in discover_entry_points("llm.plugins"):
         try:
-            module = entry.load()
+            module = importlib.metadata.import_module(entry.value)  # type: ignore[attr-defined]
         except Exception:  # pragma: no cover - optional dependency missing
             continue
         for attr in getattr(module, "__all__", []):
