@@ -23,15 +23,16 @@ def generate_markdown(sources: list[dict[str, object]]) -> str:
     lines: list[str] = ["# Awesome Sources", "", "A curated list of useful resources.", ""]
     categories: dict[str, list[dict[str, object]]] = {}
     for item in sources:
-        category = str(item.get("category", ""))
+        category = str(item["category"])
 
         categories.setdefault(category, []).append(item)
     for category in sorted(categories):
         lines.append(f"## {category}")
         for src in categories[category]:
-            tags_iter = cast(Iterable[str], src.get("tags", []))
-            tags = ", ".join(tags_iter)
-            license = str(src.get("license", "Unknown"))
+            raw_tags = src.get("tags", [])
+            tags_list = list(raw_tags) if isinstance(raw_tags, list) else []
+            tags = ", ".join(str(t) for t in tags_list)
+            license = src.get("license", "Unknown")
 
             lines.append(
                 f"- [{src['name']}]({src['url']}) — " + " — ".join(details)
