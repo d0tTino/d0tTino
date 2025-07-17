@@ -19,6 +19,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Validate sources.json
+        run: python scripts/validate_sources.py
       - name: Generate docs/awesome-sources.md
         run: python scripts/generate_sources_md.py
       - name: Upload artifact

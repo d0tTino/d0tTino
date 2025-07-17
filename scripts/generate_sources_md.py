@@ -19,13 +19,16 @@ def load_sources(path: Path = SOURCES_JSON) -> list[dict[str, object]]:
 def generate_markdown(sources: list[dict[str, object]]) -> str:
     """Return Markdown content for ``sources``."""
     lines: list[str] = ["# Awesome Sources", "", "A curated list of useful resources.", ""]
-    categories: dict[str, list[dict[str, str]]] = {}
+    categories: dict[str, list[dict[str, object]]] = {}
     for item in sources:
-        categories.setdefault(item["category"], []).append(item)
+        category = str(item["category"])
+        categories.setdefault(category, []).append(item)
     for category in sorted(categories):
         lines.append(f"## {category}")
         for src in categories[category]:
-            tags = ", ".join(src.get("tags", []))
+            raw_tags = src.get("tags", [])
+            tags_list = list(raw_tags) if isinstance(raw_tags, list) else []
+            tags = ", ".join(str(t) for t in tags_list)
             license = src.get("license", "Unknown")
             lines.append(
                 f"- [{src['name']}]({src['url']}) — *License:* {license} — *Tags:* {tags}"
