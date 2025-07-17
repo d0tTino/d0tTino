@@ -7,6 +7,8 @@ from typing import Iterable, cast
 
 import json
 from pathlib import Path
+from typing import Iterable, cast
+
 
 SOURCES_JSON = Path("metadata/sources.json")
 OUTPUT_MD = Path("docs/awesome-sources.md")
@@ -24,15 +26,18 @@ def generate_markdown(sources: list[dict[str, object]]) -> str:
     categories: dict[str, list[dict[str, object]]] = {}
     for item in sources:
         category = str(item["category"])
+
         categories.setdefault(category, []).append(item)
     for category in sorted(categories):
         lines.append(f"## {category}")
         for src in categories[category]:
             tags_list = cast(Iterable[str], src.get("tags", []))
             tags = ", ".join(tags_list)
+
             license = src.get("license", "Unknown")
+
             lines.append(
-                f"- [{src['name']}]({src['url']}) — *License:* {license} — *Tags:* {tags}"
+                f"- [{src['name']}]({src['url']}) — " + " — ".join(details)
             )
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"

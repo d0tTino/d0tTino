@@ -231,8 +231,14 @@ links are unreachable.
 ## Awesome sources
 
 Add new resources to `metadata/sources.json` using `name`, `url` and
-`category` fields. After editing the JSON file regenerate the Markdown list
-with:
+`category` fields. Optionally enrich the entries with GitHub star counts and
+API information:
+
+```bash
+python scripts/enrich_sources.py
+```
+
+After editing the JSON file regenerate the Markdown list with:
 
 ```bash
 python scripts/generate_sources_md.py
