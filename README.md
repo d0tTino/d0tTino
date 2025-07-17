@@ -178,13 +178,23 @@ pwsh -File scripts/export-winget.ps1
 
 ## Testing
 
-Install this repository in editable mode with the `[test]` extras to ensure
-`fastapi.testclient` and other utilities are available:
+Install all required packages using the helper file so `pytest` and runtime
+dependencies like `requests` are available:
+
+```bash
+pip install -r requirements-dev.txt
+```
+If `pytest` reports missing modules, consult `/tmp/pytest.log` to see which
+packages are required and ensure they are installed.
+To install everything manually use:
 
 ```bash
 pip install -e .[test]
 pip install -r requirements.txt
+```
+
 # Optional: install `dspy` to run the complete suite
+```bash
 pip install dspy-ai
 # Optional: enable the LMQL backend
 pip install lmql

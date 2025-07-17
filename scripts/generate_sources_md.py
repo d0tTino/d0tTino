@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from typing import Iterable, cast
+
 import json
 from pathlib import Path
 
@@ -19,13 +21,15 @@ def load_sources(path: Path = SOURCES_JSON) -> list[dict[str, object]]:
 def generate_markdown(sources: list[dict[str, object]]) -> str:
     """Return Markdown content for ``sources``."""
     lines: list[str] = ["# Awesome Sources", "", "A curated list of useful resources.", ""]
-    categories: dict[str, list[dict[str, str]]] = {}
+    categories: dict[str, list[dict[str, object]]] = {}
     for item in sources:
-        categories.setdefault(item["category"], []).append(item)
+        category = str(item["category"])
+        categories.setdefault(category, []).append(item)
     for category in sorted(categories):
         lines.append(f"## {category}")
         for src in categories[category]:
-            tags = ", ".join(src.get("tags", []))
+            tags_list = cast(Iterable[str], src.get("tags", []))
+            tags = ", ".join(tags_list)
             license = src.get("license", "Unknown")
             lines.append(
                 f"- [{src['name']}]({src['url']}) — *License:* {license} — *Tags:* {tags}"
