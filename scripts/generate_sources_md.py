@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import cast, Iterable
 
 SOURCES_JSON = Path("metadata/sources.json")
 OUTPUT_MD = Path("docs/awesome-sources.md")
@@ -19,16 +20,25 @@ def load_sources(path: Path = SOURCES_JSON) -> list[dict[str, object]]:
 def generate_markdown(sources: list[dict[str, object]]) -> str:
     """Return Markdown content for ``sources``."""
     lines: list[str] = ["# Awesome Sources", "", "A curated list of useful resources.", ""]
-    categories: dict[str, list[dict[str, str]]] = {}
+    categories: dict[str, list[dict[str, object]]] = {}
     for item in sources:
-        categories.setdefault(item["category"], []).append(item)
+        category = cast(str, item["category"])
+        categories.setdefault(category, []).append(item)
     for category in sorted(categories):
         lines.append(f"## {category}")
         for src in categories[category]:
-            tags = ", ".join(src.get("tags", []))
+            tags_list = cast(Iterable[str], src.get("tags", []))
+            tags = ", ".join(tags_list)
             license = src.get("license", "Unknown")
+            details = [f"*License:* {license}", f"*Tags:* {tags}"]
+            api_type = src.get("api_type")
+            if api_type:
+                details.append(f"*API:* {api_type}")
+            stars = src.get("stars")
+            if stars is not None:
+                details.append(f"*Stars:* {stars}")
             lines.append(
-                f"- [{src['name']}]({src['url']}) — *License:* {license} — *Tags:* {tags}"
+                f"- [{src['name']}]({src['url']}) — " + " — ".join(details)
             )
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
