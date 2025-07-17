@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from typing import Iterable, cast
+
 import json
 from pathlib import Path
 from typing import Iterable, cast
@@ -29,9 +31,9 @@ def generate_markdown(sources: list[dict[str, object]]) -> str:
     for category in sorted(categories):
         lines.append(f"## {category}")
         for src in categories[category]:
-            raw_tags = src.get("tags", [])
-            tags_list = list(raw_tags) if isinstance(raw_tags, list) else []
-            tags = ", ".join(str(t) for t in tags_list)
+            tags_list = cast(Iterable[str], src.get("tags", []))
+            tags = ", ".join(tags_list)
+
             license = src.get("license", "Unknown")
 
             lines.append(
