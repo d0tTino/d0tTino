@@ -21,6 +21,27 @@ jobs:
           python-version: "3.12"
       - name: Generate docs/awesome-sources.md
         run: python scripts/generate_sources_md.py
+      - name: Check for differences
+        id: diff
+        run: |
+          if git diff --quiet docs/awesome-sources.md; then
+            echo "diff=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "diff=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Commit updated file
+        if: steps.diff.outputs.diff == 'true' && github.event_name == 'pull_request'
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@users.noreply.github.com
+          git add docs/awesome-sources.md
+          git commit -m "Update generated sources" || exit 0
+          git push
+      - name: Fail if sources differ
+        if: steps.diff.outputs.diff == 'true'
+        run: |
+          echo "::error::docs/awesome-sources.md is outdated. Run 'python scripts/generate_sources_md.py' and commit the result."
+          exit 1
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
