@@ -32,10 +32,10 @@ def generate_markdown(sources: list[dict[str, object]]) -> str:
         for src in categories[category]:
             tags_list = cast(Iterable[str], src.get("tags", []))
             tags = ", ".join(tags_list)
-
             license = src.get("license", "Unknown")
 
             details: list[str] = [f"*License:* {license}", f"*Tags:* {tags}"]
+
             api_type = src.get("api_type")
             if api_type:
                 details.append(f"*API:* {api_type}")
