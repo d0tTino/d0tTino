@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Iterable, cast
 
 
 SOURCES_JSON = Path("metadata/sources.json")
@@ -35,16 +36,6 @@ def generate_markdown(sources: list[dict[str, object]]) -> str:
                 details.append(f"*API:* {api_type}")
             stars = src.get("stars")
             if stars is not None:
-                details.append(f"*Stars:* {stars}")
-
-
-            details: list[str] = [f"*License:* {license}", f"*Tags:* {tags}"]
-
-            api_type = src.get("api_type")
-            if api_type:
-                details.append(f"*API:* {api_type}")
-            stars = src.get("stars")
-            if stars:
                 details.append(f"*Stars:* {stars}")
 
             lines.append(
