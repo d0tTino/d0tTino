@@ -34,7 +34,8 @@ def generate_markdown(sources: list[dict[str, object]]) -> str:
             tags = ", ".join(tags_list)
             license = src.get("license", "Unknown")
 
-            details = [f"*License:* {license}", f"*Tags:* {tags}"]
+            details: list[str] = [f"*License:* {license}", f"*Tags:* {tags}"]
+
             api_type = src.get("api_type")
             if api_type:
                 details.append(f"*API:* {api_type}")
