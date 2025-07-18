@@ -1,5 +1,7 @@
 import pytest
 
+pytest.importorskip("requests")
+
 from llm import backends
 backends.load_backends()
 LMQLBackend = backends.LMQLBackend

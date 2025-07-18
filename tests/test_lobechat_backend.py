@@ -1,3 +1,7 @@
+import pytest
+
+pytest.importorskip("requests")
+
 from llm.backends.plugins.lobechat import LobeChatBackend, run_lobechat
 
 

@@ -3,6 +3,10 @@ from __future__ import annotations
 import uuid
 import logging
 
+import pytest
+
+pytest.importorskip("requests")
+
 import telemetry
 
 

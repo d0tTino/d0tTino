@@ -1,3 +1,7 @@
+import pytest
+
+pytest.importorskip("jsonschema")
+
 from scripts import validate_sources
 
 

@@ -2,6 +2,10 @@ import os
 import subprocess
 from pathlib import Path
 
+import pytest
+
+pytest.importorskip("requests")
+
 
 def create_exe(path: Path, contents: str = "#!/usr/bin/env bash\n") -> None:
     path.write_text(contents)

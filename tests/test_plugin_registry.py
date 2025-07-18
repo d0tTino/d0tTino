@@ -2,6 +2,10 @@ import json
 
 import logging
 
+import pytest
+
+pytest.importorskip("requests")
+
 from scripts import plugins
 
 

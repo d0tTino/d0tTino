@@ -2,6 +2,9 @@ import sys
 from pathlib import Path
 
 import pytest
+
+pytest.importorskip("requests")
+
 from scripts import plugins
 
 
