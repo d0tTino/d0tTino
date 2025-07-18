@@ -6,7 +6,7 @@ A curated list of useful resources.
 - [Docker Documentation](https://docs.docker.com/) — *License:* Apache-2.0 — *Tags:* docker, devops
 
 ## Framework
-- [FastAPI](https://github.com/tiangolo/fastapi) — *License:* MIT — *Tags:* python, web — *API:* REST — *Stars:* 87359
+- [FastAPI](https://github.com/tiangolo/fastapi) — *License:* MIT — *Tags:* python, web
 
 ## Learning
 - [Rust Book](https://doc.rust-lang.org/book/) — *License:* MIT — *Tags:* rust, learning
