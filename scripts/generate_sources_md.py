@@ -20,28 +20,34 @@ def load_sources(path: Path = SOURCES_JSON) -> list[dict[str, object]]:
 
 def generate_markdown(sources: list[dict[str, object]]) -> str:
     """Return Markdown content for ``sources``."""
-    lines: list[str] = ["# Awesome Sources", "", "A curated list of useful resources.", ""]
+    lines: list[str] = [
+        "# Awesome Sources",
+        "",
+        "A curated list of useful resources.",
+        "",
+    ]
+
     categories: dict[str, list[dict[str, object]]] = {}
     for item in sources:
-        category = str(item["category"])
+        categories.setdefault(str(item["category"]), []).append(item)
 
-        categories.setdefault(category, []).append(item)
     for category in sorted(categories):
         lines.append(f"## {category}")
         for src in categories[category]:
             tags = ", ".join(cast(Iterable[str], src.get("tags", [])))
-            details = [f"*License:* {src.get('license', 'Unknown')}", f"*Tags:* {tags}"]
+            details = f"*License:* {src.get('license', 'Unknown')} — *Tags:* {tags}"
+
             api_type = src.get("api_type")
             if api_type:
-                details.append(f"*API:* {api_type}")
+                details += f" — *API:* {api_type}"
+
             stars = src.get("stars")
             if stars is not None:
-                details.append(f"*Stars:* {stars}")
+                details += f" — *Stars:* {stars}"
 
-            lines.append(
-                f"- [{src['name']}]({src['url']}) — " + " — ".join(details)
-            )
+            lines.append(f"- [{src['name']}]({src['url']}) — {details}")
         lines.append("")
+
     return "\n".join(lines).rstrip() + "\n"
 
 
