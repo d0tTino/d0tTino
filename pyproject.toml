@@ -35,6 +35,7 @@ ai-do = "scripts.ai_cli:do_main"
 ai-cli = "scripts.ai_cli:main"
 etl = "scripts.etl:main"
 plugins = "scripts.plugins:main"
+query-sources = "scripts.query_sources:main"
 
 [project.entry-points."llm.plugins"]
 # Third-party packages can expose backends here

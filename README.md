@@ -12,6 +12,7 @@ Key directories:
 - `vscode/` – VS Code user settings
 - `llm/` – prompts and other LLM-related files. The optional `llm/llm_config.json` file stores preferred model names used by `llm.ai_router`. Set the `LLM_CONFIG_PATH` environment variable to override the location. Configure it with Claude model names when using the `superclaude` backend.
 - `scripts/thm.py` – Terminal Harmony Manager for palette and profile sync (installs as `thm` when using `pip install -e .[cli]`)
+- `scripts/query_sources.py` – search `metadata/sources.json` by name or tag (installs as `query-sources` with the `cli` extra)
 - `research-papers/` – space to store research PDFs, links, and notes
 
 Get the fonts, palettes and Git hooks in one step:
@@ -247,6 +248,13 @@ python scripts/generate_sources_md.py
 
 Commit the updated `docs/awesome-sources.md` file. A GitHub Action and the
 pre-commit hook verify that the two files remain in sync.
+
+Query the list from the command line:
+
+```bash
+python scripts/query_sources.py --tag python
+python scripts/query_sources.py --name Docker
+```
 
 ## Telemetry and Metrics
 
