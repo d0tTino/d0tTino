@@ -1,3 +1,7 @@
+import pytest
+
+pytest.importorskip("requests")
+
 from llm.backends.plugins.mindbridge import MindBridgeBackend, run_mindbridge
 
 

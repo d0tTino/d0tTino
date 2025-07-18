@@ -179,7 +179,8 @@ pwsh -File scripts/export-winget.ps1
 ## Testing
 
 Install all required packages using the helper file so `pytest` and runtime
-dependencies like `requests` are available:
+dependencies like `requests` are available. Running the command below ensures
+every dependency needed for the tests is installed:
 
 ```bash
 pip install -r requirements-dev.txt

@@ -1,3 +1,7 @@
+import pytest
+
+pytest.importorskip("requests")
+
 from llm import backends
 
 

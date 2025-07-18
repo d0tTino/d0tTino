@@ -1,5 +1,9 @@
 from datetime import datetime
 
+import pytest
+
+pytest.importorskip("requests")
+
 from scripts import nsm_stats
 
 

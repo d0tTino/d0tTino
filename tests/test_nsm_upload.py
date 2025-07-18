@@ -1,3 +1,7 @@
+import pytest
+
+pytest.importorskip("requests")
+
 from scripts import nsm_upload, nsm_stats
 
 

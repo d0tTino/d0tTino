@@ -4,6 +4,8 @@ import sys
 import types
 import pytest
 
+pytest.importorskip("requests")
+
 from llm import backends
 from plugins.utils import discover_entry_points  # noqa: F401
 
