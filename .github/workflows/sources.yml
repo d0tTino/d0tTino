@@ -5,11 +5,9 @@ on:
     branches: ["**"]
     paths:
       - metadata/sources.json
-      - .github/workflows/sources.yml
   pull_request:
     paths:
       - metadata/sources.json
-      - .github/workflows/sources.yml
 
 jobs:
   generate:
