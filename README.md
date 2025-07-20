@@ -35,7 +35,7 @@ they are missing:
 ```bash
 pip install -e .[cli,plugins] -r requirements.txt
 ```
-The `[plugins]` extra installs `jsonschema` so you can manage plug-ins
+The `[plugins]` and `[test]` extras install `jsonschema` so you can manage plug-ins
 with `python -m scripts.plugins`. For example:
 
 ```bash
@@ -43,7 +43,7 @@ python -m scripts.plugins backends install openrouter
 ```
 
 See the [backend plug-in guide](docs/plugins.md) for details. If you
-prefer not to install the extras, install `jsonschema` separately with:
+prefer not to install any extras, install `jsonschema` separately with:
 
 ```bash
 pip install jsonschema
