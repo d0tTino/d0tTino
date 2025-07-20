@@ -249,6 +249,12 @@ python scripts/generate_sources_md.py
 Commit the updated `docs/awesome-sources.md` file. A GitHub Action and the
 pre-commit hook verify that the two files remain in sync.
 
+These scripts make up the JSON → Markdown workflow. Whenever
+`metadata/sources.json` changes, the **Generate Sources Markdown** workflow
+(`.github/workflows/sources.yml`) runs the validation and generation scripts.
+The action commits an updated `docs/awesome-sources.md` to the pull request or
+fails if the files diverge.
+
 Query the list from the command line:
 
 ```bash
