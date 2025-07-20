@@ -7,10 +7,11 @@ import json
 import re
 from pathlib import Path
 from typing import Any, List
-
 import requests
 
-SOURCES_JSON = Path("metadata/sources.json")
+REPO_ROOT = Path(__file__).resolve().parent.parent
+SOURCES_JSON = REPO_ROOT / "metadata" / "sources.json"
+
 
 
 def load_sources(path: Path = SOURCES_JSON) -> List[dict[str, Any]]:

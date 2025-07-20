@@ -28,8 +28,9 @@ def test_run_script_help_invokes_docker(
     repo.mkdir()
     scripts_dir = repo / "scripts"
     scripts_dir.mkdir()
-    shutil.copy(Path("scripts") / script_name, scripts_dir / script_name)
-    shutil.copy(Path("scripts") / "run-service.sh", scripts_dir / "run-service.sh")
+    repo_root = Path(__file__).resolve().parents[1]
+    shutil.copy(repo_root / "scripts" / script_name, scripts_dir / script_name)
+    shutil.copy(repo_root / "scripts" / "run-service.sh", scripts_dir / "run-service.sh")
 
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
@@ -67,8 +68,9 @@ def test_run_script_requires_docker(tmp_path: Path, script_name: str, args: list
     repo.mkdir()
     scripts_dir = repo / "scripts"
     scripts_dir.mkdir()
-    shutil.copy(Path("scripts") / script_name, scripts_dir / script_name)
-    shutil.copy(Path("scripts") / "run-service.sh", scripts_dir / "run-service.sh")
+    repo_root = Path(__file__).resolve().parents[1]
+    shutil.copy(repo_root / "scripts" / script_name, scripts_dir / script_name)
+    shutil.copy(repo_root / "scripts" / "run-service.sh", scripts_dir / "run-service.sh")
 
     env = {"PATH": str(tmp_path / "bin")}
     (tmp_path / "bin").mkdir()

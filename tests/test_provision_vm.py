@@ -1,8 +1,9 @@
 import os
 import subprocess
 from pathlib import Path
-
 import pytest
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 pytest.importorskip("requests")
 
@@ -26,7 +27,7 @@ def test_provision_vm_wsl_import(tmp_path: Path) -> None:
     subprocess.run(
         [
             "python",
-            "scripts/provision_vm.py",
+            str(REPO_ROOT / "scripts" / "provision_vm.py"),
             "wsl",
             "--name",
             "Dev",
@@ -62,7 +63,7 @@ def test_provision_vm_hyperv(tmp_path: Path) -> None:
     subprocess.run(
         [
             "python",
-            "scripts/provision_vm.py",
+            str(REPO_ROOT / "scripts" / "provision_vm.py"),
             "hyperv",
             "--name",
             "TestVM",

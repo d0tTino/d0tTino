@@ -2,8 +2,9 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-
 import pytest
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def create_exe(path: Path, contents: str = "#!/usr/bin/env bash\n") -> None:
@@ -32,7 +33,7 @@ def test_create_hyperv_vm_invokes_new_vm(tmp_path: Path) -> None:
             "-Command",
             (
                 "Set-Variable -Name IsWindows -Value $true -Force; "
-                f"& '{Path('scripts/create-hyperv-vm.ps1')}' -Name TestVM"
+                f"& '{REPO_ROOT / 'scripts' / 'create-hyperv-vm.ps1'}' -Name TestVM"
             ),
         ],
         check=True,
@@ -76,7 +77,7 @@ def test_create_hyperv_vm_parses_iso_and_cloudinit(tmp_path: Path) -> None:
             "-Command",
             (
                 "Set-Variable -Name IsWindows -Value $true -Force; "
-                f"& '{Path('scripts/create-hyperv-vm.ps1')}' -Name TestVM "
+                f"& '{REPO_ROOT / 'scripts' / 'create-hyperv-vm.ps1'}' -Name TestVM "
                 f"-IsoUrl http://example.com/os.iso -CloudInit {cloud_iso}"
             ),
         ],

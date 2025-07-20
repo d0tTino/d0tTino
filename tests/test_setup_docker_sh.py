@@ -3,6 +3,8 @@ import subprocess
 import shutil
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
 
 def test_setup_docker_sh_requires_docker(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
@@ -10,7 +12,7 @@ def test_setup_docker_sh_requires_docker(tmp_path: Path) -> None:
     (repo / "Dockerfile").write_text("FROM scratch\n")
     scripts_dir = repo / "scripts"
     scripts_dir.mkdir()
-    shutil.copy(Path('scripts/setup-docker.sh'), scripts_dir / 'setup-docker.sh')
+    shutil.copy(REPO_ROOT / 'scripts' / 'setup-docker.sh', scripts_dir / 'setup-docker.sh')
 
     env = {"PATH": str(tmp_path / 'bin')}
     (tmp_path / 'bin').mkdir()
@@ -33,7 +35,7 @@ def test_setup_docker_sh_custom_image(tmp_path: Path) -> None:
     (repo / "Dockerfile").write_text("FROM scratch\n")
     scripts_dir = repo / "scripts"
     scripts_dir.mkdir()
-    shutil.copy(Path("scripts/setup-docker.sh"), scripts_dir / "setup-docker.sh")
+    shutil.copy(REPO_ROOT / "scripts" / "setup-docker.sh", scripts_dir / "setup-docker.sh")
 
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()

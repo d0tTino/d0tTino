@@ -2,8 +2,9 @@ import os
 import subprocess
 import shutil
 from pathlib import Path
-
 import pytest
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def create_exe(path: Path, contents: str = "#!/usr/bin/env bash\n") -> None:
@@ -34,7 +35,7 @@ def test_setup_winget_installs_packages(tmp_path: Path) -> None:
             "-Command",
             (
                 "Set-Variable -Name IsWindows -Value $true -Force; "
-                f"& '{Path('scripts/setup-winget.ps1')}'"
+                f"& '{REPO_ROOT / 'scripts' / 'setup-winget.ps1'}'"
             ),
         ],
         check=True,

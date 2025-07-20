@@ -6,8 +6,9 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 from typing import Any, Optional
-
 from llm import etl
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 def build_graph(collection: Any):
@@ -26,7 +27,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument(
         "--persist",
         type=Path,
-        default=Path("chroma_db"),
+        default=REPO_ROOT / "chroma_db",
         help="Chroma persistence directory (default: %(default)s)",
     )
     parser.add_argument(

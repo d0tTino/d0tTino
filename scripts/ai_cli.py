@@ -17,6 +17,8 @@ from scripts.cli_common import execute_steps, read_prompt
 from telemetry import record_event, analytics_default
 import time
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
 initialize()
 
 
@@ -148,13 +150,23 @@ def build_parser() -> argparse.ArgumentParser:
     do = sub.add_parser("do", help="Interactively execute a goal", parents=[analytics])
     do.add_argument("goal")
     do.add_argument("--config")
-    do.add_argument("--log", type=Path, default=Path("ai_do.log"), help="Log file path (default: %(default)s)")
+    do.add_argument(
+        "--log",
+        type=Path,
+        default=REPO_ROOT / "ai_do.log",
+        help="Log file path (default: %(default)s)",
+    )
     do.set_defaults(func=_cmd_do)
 
     recipe = sub.add_parser("recipe", help="Execute a named recipe", parents=[analytics])
     recipe.add_argument("name", help="Recipe name")
     recipe.add_argument("goal", help="High level description of the task")
-    recipe.add_argument("--log", type=Path, default=Path("ai_do.log"), help="Log file path (default: %(default)s)")
+    recipe.add_argument(
+        "--log",
+        type=Path,
+        default=REPO_ROOT / "ai_do.log",
+        help="Log file path (default: %(default)s)",
+    )
     recipe.set_defaults(func=_cmd_recipe)
 
     plugin = sub.add_parser("plugin", help="Manage plug-ins")

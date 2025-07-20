@@ -8,7 +8,9 @@ import re
 import sys
 import pytest
 
-SCRIPT = Path('scripts/fix-path.ps1')
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+SCRIPT = REPO_ROOT / 'scripts' / 'fix-path.ps1'
 
 
 def win(path: str) -> str:

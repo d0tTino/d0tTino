@@ -2,8 +2,9 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-
 import pytest
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.mark.skipif(
@@ -15,7 +16,13 @@ def test_install_windows_terminal_copies_settings(tmp_path: Path) -> None:
     env = os.environ.copy()
     env["LOCALAPPDATA"] = str(tmp_path)
     subprocess.run(
-        [pwsh, "-NoLogo", "-NoProfile", "-File", "scripts/install-windows-terminal.ps1"],
+        [
+            pwsh,
+            "-NoLogo",
+            "-NoProfile",
+            "-File",
+            str(REPO_ROOT / "scripts" / "install-windows-terminal.ps1"),
+        ],
         check=True,
         env=env,
     )
@@ -27,5 +34,5 @@ def test_install_windows_terminal_copies_settings(tmp_path: Path) -> None:
         / "settings.json"
     )
     assert dest.is_file(), "settings.json should be copied"
-    expected = Path("windows-terminal/settings.json").read_text(encoding="utf-8")
+    expected = (REPO_ROOT / "windows-terminal" / "settings.json").read_text(encoding="utf-8")
     assert dest.read_text(encoding="utf-8") == expected
