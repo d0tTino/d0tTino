@@ -7,17 +7,15 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 from typing import Callable, List, Optional, Sequence
-import time
-import logging
 
 from scripts import ai_exec
 from llm.backends import initialize
 from scripts.cli_common import (
-    execute_steps,
     send_notification,
     build_analytics_parser,
 )
-from telemetry import record_event, analytics_default
+from scripts import cli_actions
+from telemetry import analytics_default
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -33,19 +31,13 @@ def run_recipe(
     analytics: bool = False,
 ) -> int:
     """Execute a recipe given steps or a callable and record an event."""
-    if callable(steps_or_callable):
-        steps = list(steps_or_callable(goal))
-    else:
-        steps = list(steps_or_callable)
-    exit_code = execute_steps(steps, log_path=log_path)
-    success = record_event(
-        "ai-do-recipe",
-        {"recipe": name, "goal": goal, "exit_code": exit_code},
-        enabled=analytics,
+    return cli_actions.run_recipe(
+        name,
+        goal,
+        steps_or_callable,
+        log_path=log_path,
+        analytics=analytics,
     )
-    if not success:
-        logging.debug("Failed to record telemetry")
-    return exit_code
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -64,28 +56,23 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     analytics = getattr(args, "analytics", analytics_default())
     cfg_path = Path(args.config) if args.config else None
-    start = time.time()
     steps = ai_exec.plan(args.goal, config_path=cfg_path, analytics=analytics)
-    exit_code = execute_steps(steps, log_path=args.log)
-    end = time.time()
+    exit_code = cli_actions.run_steps(
+        "ai-do",
+        steps,
+        log_path=args.log,
+        analytics=analytics,
+        payload={
+            "goal": args.goal,
+            "model_source": "remote" if ai_exec.last_model_remote() else "local",
+        },
+        duration_key="duration_ms",
+    )
     if args.notify:
         if exit_code == 0:
             send_notification("ai-do completed with exit code 0")
         else:
             send_notification(f"ai-do failed with exit code {exit_code}")
-    success = record_event(
-        "ai-do",
-        {
-            "goal": args.goal,
-            "exit_code": exit_code,
-            "duration_ms": int((end - start) * 1000),
-            "model_source": "remote" if ai_exec.last_model_remote() else "local",
-        },
-        enabled=analytics,
-    )
-    if not success:
-        logging.debug("Failed to record telemetry")
-
     return exit_code
 
 

@@ -6,7 +6,7 @@ import pytest
 
 pytest.importorskip("requests")
 
-from scripts import ai_do, ai_exec
+from scripts import ai_do, ai_exec, cli_actions
 
 
 def test_main_runs_and_logs(monkeypatch, tmp_path):
@@ -146,7 +146,7 @@ def test_main_records_event(monkeypatch, tmp_path):
         recorded.append((name, payload, enabled))
         return True
 
-    monkeypatch.setattr(ai_do, "record_event", fake_record)
+    monkeypatch.setattr(cli_actions, "record_event_logged", fake_record)
     log = tmp_path / "log.txt"
     rc = ai_do.main(["goal", "--log", str(log), "--analytics"])
 
@@ -179,7 +179,7 @@ def test_main_records_failure(monkeypatch, tmp_path):
         recorded.append((name, payload, enabled))
         return True
 
-    monkeypatch.setattr(ai_do, "record_event", fake_record)
+    monkeypatch.setattr(cli_actions, "record_event_logged", fake_record)
     log = tmp_path / "log.txt"
     rc = ai_do.main(["goal", "--log", str(log), "--analytics"])
 
