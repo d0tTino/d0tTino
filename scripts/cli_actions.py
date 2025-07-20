@@ -1,0 +1,65 @@
+from __future__ import annotations
+
+import logging
+import time
+from pathlib import Path
+from typing import Iterable, Callable, Sequence, Any
+
+from scripts.cli_common import execute_steps
+from telemetry import record_event
+
+
+def record_event_logged(name: str, payload: dict[str, Any], *, enabled: bool = False) -> None:
+    """Record an analytics event and log failures."""
+    success = record_event(name, payload, enabled=enabled)
+    if not success:
+        logging.debug("Failed to record telemetry")
+
+
+def run_steps(
+    event_name: str,
+    steps: Iterable[str],
+    *,
+    log_path: Path,
+    analytics: bool = False,
+    payload: dict[str, Any] | None = None,
+    duration_key: str = "latency_ms",
+) -> int:
+    """Execute ``steps`` and record an analytics event."""
+    start = time.time()
+    exit_code = execute_steps(steps, log_path=log_path)
+    end = time.time()
+    data = {
+        "exit_code": exit_code,
+        "start_ts": start,
+        "end_ts": end,
+        duration_key: int((end - start) * 1000),
+    }
+    if payload:
+        data.update(payload)
+    record_event_logged(event_name, data, enabled=analytics)
+    return exit_code
+
+
+def run_recipe(
+    name: str,
+    goal: str,
+    steps_or_callable: Sequence[str] | Callable[[str], Sequence[str]],
+    *,
+    log_path: Path,
+    analytics: bool = False,
+) -> int:
+    """Execute a recipe and record an analytics event."""
+    if callable(steps_or_callable):
+        steps = list(steps_or_callable(goal))
+    else:
+        steps = list(steps_or_callable)
+    return run_steps(
+        "ai-do-recipe",
+        steps,
+        log_path=log_path,
+        analytics=analytics,
+        payload={"recipe": name, "goal": goal, "step_count": len(steps)},
+    )
+
+__all__ = ["record_event_logged", "run_steps", "run_recipe"]

@@ -10,7 +10,7 @@ from pathlib import Path
 
 pytest.importorskip("requests")
 
-from scripts import ai_exec
+from scripts import ai_exec, cli_actions
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -94,7 +94,7 @@ def test_plan_records_event(monkeypatch):
         recorded.append((name, payload, enabled))
         return True
 
-    monkeypatch.setattr(ai_exec, "record_event", fake_record)
+    monkeypatch.setattr(cli_actions, "record_event_logged", fake_record)
     steps = ai_exec.plan("goal", analytics=True)
     assert steps == ["step"]
     name, payload, enabled = recorded[0]
@@ -195,7 +195,7 @@ def test_main_env_enables_analytics(monkeypatch):
         recorded.append(enabled)
         return True
 
-    monkeypatch.setattr(ai_exec, "record_event", fake_record)
+    monkeypatch.setattr(cli_actions, "record_event_logged", fake_record)
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
         rc = ai_exec.main(["goal"])

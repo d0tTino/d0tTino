@@ -6,6 +6,7 @@ import pytest
 pytest.importorskip("requests")
 
 from scripts import ai_cli
+from scripts import cli_actions
 
 
 def test_send_subcommand(monkeypatch):
@@ -68,7 +69,7 @@ def test_send_records_event(monkeypatch):
         recorded.append((name, payload, enabled))
         return True
 
-    monkeypatch.setattr(ai_cli, "record_event", fake_record)
+    monkeypatch.setattr(cli_actions, "record_event_logged", fake_record)
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
         rc = ai_cli.main(["send", "msg", "--analytics"])
@@ -85,7 +86,7 @@ def test_plan_records_event(monkeypatch):
         recorded.append((name, payload, enabled))
         return True
 
-    monkeypatch.setattr(ai_cli, "record_event", fake_record)
+    monkeypatch.setattr(cli_actions, "record_event_logged", fake_record)
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
         rc = ai_cli.main(["plan", "goal", "--analytics"])
@@ -118,7 +119,7 @@ def test_do_records_event(monkeypatch, tmp_path):
         recorded.append((name, payload, enabled))
         return True
 
-    monkeypatch.setattr(ai_cli, "record_event", fake_record)
+    monkeypatch.setattr(cli_actions, "record_event_logged", fake_record)
     log = tmp_path / "log.txt"
     rc = ai_cli.main(["do", "goal", "--log", str(log), "--analytics"])
 
@@ -150,7 +151,7 @@ def test_do_records_failure(monkeypatch, tmp_path):
         recorded.append((name, payload, enabled))
         return True
 
-    monkeypatch.setattr(ai_cli, "record_event", fake_record)
+    monkeypatch.setattr(cli_actions, "record_event_logged", fake_record)
     log = tmp_path / "log.txt"
     rc = ai_cli.main(["do", "goal", "--log", str(log), "--analytics"])
 
@@ -179,7 +180,7 @@ def test_recipe_subcommand(monkeypatch, tmp_path):
         captured["analytics"] = analytics
         return 0
 
-    monkeypatch.setattr(ai_cli.ai_do, "run_recipe", fake_run_recipe)
+    monkeypatch.setattr(cli_actions, "run_recipe", fake_run_recipe)
     log = tmp_path / "log.txt"
     rc = ai_cli.main(["recipe", "dummy", "goal", "--log", str(log)])
     assert rc == 0
@@ -193,15 +194,14 @@ def test_recipe_records_event(monkeypatch, tmp_path):
     monkeypatch.setattr(
         ai_cli.recipes, "discover_recipes", lambda: {"dummy": lambda g: []}
     )
-    monkeypatch.setattr(ai_cli, "execute_steps", lambda *a, **k: 0)
-    monkeypatch.setattr(ai_cli.ai_do, "run_recipe", lambda *a, **k: 0)
+    monkeypatch.setattr(cli_actions, "run_recipe", lambda *a, **k: 0)
     recorded = []
 
     def fake_record(name, payload, *, enabled=False):
         recorded.append((name, payload, enabled))
         return True
 
-    monkeypatch.setattr(ai_cli, "record_event", fake_record)
+    monkeypatch.setattr(cli_actions, "record_event_logged", fake_record)
     log = tmp_path / "log.txt"
     rc = ai_cli.main([
         "recipe",
