@@ -177,3 +177,24 @@ def test_last_model_remote_thread_safety(monkeypatch):
     assert results["local"] == (["local-step"], False)
     assert ai_exec.last_model_remote() is False
 
+
+def test_main_env_enables_analytics(monkeypatch):
+    monkeypatch.setenv("EVENTS_ENABLED", "1")
+    monkeypatch.setattr(ai_exec.router, "run_gemini", lambda *a, **k: "step")
+    monkeypatch.setattr(ai_exec.router, "run_ollama", lambda *a, **k: "step")
+    monkeypatch.setattr(ai_exec, "get_preferred_models", lambda *a, **k: ("g", "o"))
+
+    recorded = []
+
+    def fake_record(name, payload, *, enabled=False):
+        recorded.append(enabled)
+        return True
+
+    monkeypatch.setattr(ai_exec, "record_event", fake_record)
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        rc = ai_exec.main(["goal"])
+    assert rc == 0
+    assert out.getvalue().splitlines() == ["step"]
+    assert recorded == [True]
+
