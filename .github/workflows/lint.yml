@@ -3,7 +3,13 @@ name: Lint
 on:
   push:
     branches: ["**"]
+    paths:
+      - 'scripts/**'
+      - 'metadata/**'
   pull_request:
+    paths:
+      - 'scripts/**'
+      - 'metadata/**'
 
 jobs:
   changes:
