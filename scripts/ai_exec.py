@@ -80,6 +80,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument(
         "--analytics",
         action="store_true",
+        default=argparse.SUPPRESS,
         help="Record anonymous usage events",
     )
     args = parser.parse_args(argv)
