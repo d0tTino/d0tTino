@@ -82,43 +82,34 @@ def _valid_registry(data: Dict[str, object]) -> bool:
     )
 
 
-def load_registry(section: str = "plugins", update: bool = False) -> Dict[str, str]:
-    """Return the plug-in registry section from URL, cache or the built-in default.
+def _fetch_registry(url: str) -> Dict[str, object] | None:
+    """Return registry data fetched from ``url`` and update the cache."""
 
-    ``update`` forces a fresh download of the registry before falling back to the
-    cached copy.
-    """
+    try:
+        resp = requests.get(url, timeout=5)
+        resp.raise_for_status()
+        fetched = resp.json()
+        if isinstance(fetched, dict) and _valid_registry(fetched):
+            CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+            CACHE_PATH.write_text(json.dumps(fetched))
+            return fetched
+    except requests.exceptions.RequestException as exc:
+        logger.warning(
+            "Failed to fetch plug-in registry from %s: %s. Using cached registry if available.",
+            url,
+            exc,
+        )
+    except Exception:
+        pass
+    return None
+
+
+def load_registry(section: str = "plugins", update: bool = False) -> Dict[str, str]:
+    """Return the registry section with network → cache → default fallback."""
 
     url = os.environ.get("PLUGIN_REGISTRY_URL", DEFAULT_REGISTRY_URL)
 
-    data: Dict[str, object] | None = None
-
-    if not update and CACHE_PATH.exists():
-        try:
-            with CACHE_PATH.open(encoding="utf-8") as fh:
-                cached = json.load(fh)
-            if isinstance(cached, dict) and _valid_registry(cached):
-                data = cached
-        except Exception:
-            pass
-
-    if data is None:
-        try:
-            resp = requests.get(url, timeout=5)
-            resp.raise_for_status()
-            fetched = resp.json()
-            if isinstance(fetched, dict) and _valid_registry(fetched):
-                CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-                CACHE_PATH.write_text(json.dumps(fetched))
-                data = fetched
-        except requests.exceptions.RequestException as exc:
-            logger.warning(
-                "Failed to fetch plug-in registry from %s: %s. Using cached registry if available.",
-                url,
-                exc,
-            )
-        except Exception:
-            pass
+    data: Dict[str, object] | None = _fetch_registry(url)
 
     if data is None and CACHE_PATH.exists():
         try:
