@@ -3,6 +3,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
 def create_exe(path: Path, contents: str = "#!/usr/bin/env bash\n") -> None:
     path.write_text(contents)
     path.chmod(0o755)
@@ -13,7 +15,7 @@ def test_setup_ghostty_requires_cargo(tmp_path: Path) -> None:
     repo.mkdir()
     scripts_dir = repo / "scripts"
     scripts_dir.mkdir()
-    shutil.copy(Path("scripts/setup-ghostty.sh"), scripts_dir / "setup-ghostty.sh")
+    shutil.copy(REPO_ROOT / "scripts" / "setup-ghostty.sh", scripts_dir / "setup-ghostty.sh")
 
     env = {
         "PATH": str(tmp_path / "bin"),
@@ -39,8 +41,8 @@ def test_setup_ghostty_installs_and_copies(tmp_path: Path) -> None:
     repo.mkdir()
     scripts_dir = repo / "scripts"
     scripts_dir.mkdir()
-    shutil.copy(Path("scripts/setup-ghostty.sh"), scripts_dir / "setup-ghostty.sh")
-    shutil.copytree(Path("dotfiles"), repo / "dotfiles")
+    shutil.copy(REPO_ROOT / "scripts" / "setup-ghostty.sh", scripts_dir / "setup-ghostty.sh")
+    shutil.copytree(REPO_ROOT / "dotfiles", repo / "dotfiles")
 
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()

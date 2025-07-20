@@ -6,8 +6,9 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 from typing import List, Optional
-
 from llm import etl
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -16,7 +17,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument(
         "--persist",
         type=Path,
-        default=Path("chroma_db"),
+        default=REPO_ROOT / "chroma_db",
         help="Chroma persistence directory (default: %(default)s)",
     )
     parser.add_argument(

@@ -11,8 +11,9 @@ from pathlib import Path
 import jsonschema
 from jsonschema import FormatChecker
 
-SCHEMA_PATH = Path("metadata/sources.schema.json")
-SOURCES_JSON = Path("metadata/sources.json")
+REPO_ROOT = Path(__file__).resolve().parent.parent
+SCHEMA_PATH = REPO_ROOT / "metadata" / "sources.schema.json"
+SOURCES_JSON = REPO_ROOT / "metadata" / "sources.json"
 
 
 def validate(path: Path = SOURCES_JSON, schema_path: Path = SCHEMA_PATH) -> bool:

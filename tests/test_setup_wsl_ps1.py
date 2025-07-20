@@ -2,8 +2,9 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-
 import pytest
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def create_exe(path: Path, contents: str = "#!/usr/bin/env bash\n") -> None:
@@ -32,7 +33,7 @@ def test_setup_wsl_ps1_invokes_wsl(tmp_path: Path) -> None:
             "-Command",
             (
                 "Set-Variable -Name IsWindows -Value $true -Force; "
-                f"& '{Path('scripts/setup-wsl.ps1')}'"
+                f"& '{REPO_ROOT / 'scripts' / 'setup-wsl.ps1'}'"
             ),
         ],
         check=True,
@@ -61,7 +62,7 @@ def test_setup_wsl_ps1_falls_back_to_bash(tmp_path: Path) -> None:
     env = os.environ.copy()
     env["PATH"] = str(bin_dir)
     subprocess.run(
-        [pwsh, "-NoLogo", "-NoProfile", "-File", "scripts/setup-wsl.ps1"],
+        [pwsh, "-NoLogo", "-NoProfile", "-File", str(REPO_ROOT / "scripts" / "setup-wsl.ps1")],
         check=True,
         env=env,
     )
@@ -88,7 +89,7 @@ def test_setup_wsl_ps1_requires_wsl(tmp_path: Path) -> None:
             "-Command",
             (
                 "Set-Variable -Name IsWindows -Value $true -Force; "
-                f"& '{Path('scripts/setup-wsl.ps1')}'"
+                f"& '{REPO_ROOT / 'scripts' / 'setup-wsl.ps1'}'"
             ),
         ],
         capture_output=True,

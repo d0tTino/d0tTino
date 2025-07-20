@@ -15,6 +15,8 @@ from llm.backends import initialize
 from scripts.cli_common import execute_steps, send_notification
 from telemetry import record_event, analytics_default
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
 initialize()
 
 
@@ -55,7 +57,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument(
         "--log",
         type=Path,
-        default=Path("ai_do.log"),
+        default=REPO_ROOT / "ai_do.log",
         help="Log file path (default: %(default)s)",
     )
     args = parser.parse_args(argv)

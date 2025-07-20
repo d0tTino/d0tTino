@@ -3,12 +3,14 @@ import subprocess
 from pathlib import Path
 import sys
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
 
 def test_validate_winget_malformed(tmp_path: Path) -> None:
     bad_json = tmp_path / "bad.json"
     bad_json.write_text("{ invalid json }", encoding="utf-8")
     result = subprocess.run(
-        [sys.executable, "scripts/validate_winget.py", str(bad_json)],
+        [sys.executable, str(REPO_ROOT / "scripts" / "validate_winget.py"), str(bad_json)],
         capture_output=True,
         text=True,
     )
@@ -23,7 +25,7 @@ def test_validate_winget_success(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     result = subprocess.run(
-        [sys.executable, "scripts/validate_winget.py", str(valid_json)],
+        [sys.executable, str(REPO_ROOT / "scripts" / "validate_winget.py"), str(valid_json)],
         capture_output=True,
         text=True,
     )

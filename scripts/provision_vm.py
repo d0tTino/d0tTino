@@ -9,10 +9,12 @@ import subprocess
 from pathlib import Path
 import sys
 
-if __package__ is None or __package__ == "":
-    sys.path.append(str(Path(__file__).resolve().parent.parent))
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
-from scripts.cli_common import send_notification
+if __package__ is None or __package__ == "":
+    sys.path.append(str(REPO_ROOT))
+
+from scripts.cli_common import send_notification  # noqa: E402
 
 
 def _find_powershell() -> str:
@@ -24,7 +26,7 @@ def _find_powershell() -> str:
 
 def _run_hyperv(name: str, quick: bool, iso: str | None, cloud_init: Path | None) -> None:
     ps = _find_powershell()
-    script = Path(__file__).with_name("create-hyperv-vm.ps1")
+    script = REPO_ROOT / "scripts" / "create-hyperv-vm.ps1"
     cmd = [
         ps,
         "-NoLogo",

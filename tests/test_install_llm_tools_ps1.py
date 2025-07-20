@@ -2,8 +2,9 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-
 import pytest
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
 def create_exe(path: Path, contents: str = "#!/usr/bin/env bash\n") -> None:
@@ -34,7 +35,7 @@ def test_install_llm_tools_uses_pipx(tmp_path: Path) -> None:
             "-Command",
             (
                 "Set-Variable -Name IsWindows -Value $true -Force; "
-                f"& '{Path('scripts/install-llm-tools.ps1')}'"
+                f"& '{REPO_ROOT / 'scripts' / 'install-llm-tools.ps1'}'"
             ),
         ],
         check=True,
@@ -68,7 +69,7 @@ def test_install_llm_tools_uses_pip(tmp_path: Path) -> None:
             "-Command",
             (
                 "Set-Variable -Name IsWindows -Value $true -Force; "
-                f"& '{Path('scripts/install-llm-tools.ps1')}'"
+                f"& '{REPO_ROOT / 'scripts' / 'install-llm-tools.ps1'}'"
             ),
         ],
         check=True,

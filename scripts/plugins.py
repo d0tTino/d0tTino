@@ -19,7 +19,8 @@ try:
 except ImportError:  # pragma: no cover - optional dependency
     jsonschema = None
 
-SCHEMA_PATH = Path(__file__).resolve().parent.parent / "plugin-registry.schema.json"
+REPO_ROOT = Path(__file__).resolve().parent.parent
+SCHEMA_PATH = REPO_ROOT / "plugin-registry.schema.json"
 if jsonschema is not None:
     try:
         with SCHEMA_PATH.open(encoding="utf-8") as fh:
@@ -45,7 +46,7 @@ RECIPE_REGISTRY: Dict[str, str] = {
 }
 
 # Default directory for recipe packages downloaded via ``recipes sync``
-RECIPE_DOWNLOAD_DIR = Path(__file__).resolve().parent / "recipes" / "packages"
+RECIPE_DOWNLOAD_DIR = REPO_ROOT / "scripts" / "recipes" / "packages"
 
 # Default URL for downloading the plug-in registry
 DEFAULT_REGISTRY_URL = "https://raw.githubusercontent.com/d0tTino/d0tTino/main/plugin-registry.json"
