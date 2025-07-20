@@ -13,7 +13,11 @@ from typing import List, Optional
 from llm import router
 from llm.backends import initialize
 from scripts import ai_exec, ai_do, recipes, plugins
-from scripts.cli_common import execute_steps, read_prompt
+from scripts.cli_common import (
+    execute_steps,
+    read_prompt,
+    build_analytics_parser,
+)
 from telemetry import record_event, analytics_default
 import time
 
@@ -126,13 +130,7 @@ def _cmd_plugin(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    analytics = argparse.ArgumentParser(add_help=False)
-    analytics.add_argument(
-        "--analytics",
-        action="store_true",
-        default=argparse.SUPPRESS,
-        help="Record anonymous usage events",
-    )
+    analytics = build_analytics_parser()
 
     parser = argparse.ArgumentParser(description=__doc__, parents=[analytics])
     sub = parser.add_subparsers(dest="command", required=True)
