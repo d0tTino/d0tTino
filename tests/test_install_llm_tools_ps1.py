@@ -40,6 +40,7 @@ def test_install_llm_tools_uses_pipx(tmp_path: Path) -> None:
         ],
         check=True,
         env=env,
+        cwd=tmp_path,
     )
 
     assert pipx_log.read_text().strip() == "install gemini-cli"
@@ -74,6 +75,7 @@ def test_install_llm_tools_uses_pip(tmp_path: Path) -> None:
         ],
         check=True,
         env=env,
+        cwd=tmp_path,
     )
 
     assert pip_log.read_text().strip() == "install --user gemini-cli"

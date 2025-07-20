@@ -38,6 +38,7 @@ def test_install_wsl_invokes_command(tmp_path: Path) -> None:
         ],
         check=True,
         env=env,
+        cwd=tmp_path,
     )
 
     assert log_file.read_text().strip() == "--install"

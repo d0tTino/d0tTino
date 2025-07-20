@@ -137,6 +137,7 @@ def test_script_runs(monkeypatch, tmp_path: Path) -> None:
         capture_output=True,
         text=True,
         env=env,
+        cwd=tmp_path,
     )
 
     assert result.returncode == 0

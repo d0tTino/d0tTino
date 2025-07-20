@@ -39,6 +39,7 @@ def test_provision_vm_wsl_import(tmp_path: Path) -> None:
         ],
         check=True,
         env=env,
+        cwd=tmp_path,
     )
 
     args = log_file.read_text().strip().split()
@@ -72,6 +73,7 @@ def test_provision_vm_hyperv(tmp_path: Path) -> None:
         ],
         check=True,
         env=env,
+        cwd=tmp_path,
     )
 
     contents = ps_log.read_text()

@@ -38,6 +38,7 @@ def test_setup_wsl_ps1_invokes_wsl(tmp_path: Path) -> None:
         ],
         check=True,
         env=env,
+        cwd=tmp_path,
     )
 
     args = log_file.read_text().strip().split()
@@ -65,6 +66,7 @@ def test_setup_wsl_ps1_falls_back_to_bash(tmp_path: Path) -> None:
         [pwsh, "-NoLogo", "-NoProfile", "-File", str(REPO_ROOT / "scripts" / "setup-wsl.ps1")],
         check=True,
         env=env,
+        cwd=tmp_path,
     )
 
     args = log_file.read_text().strip().split()
@@ -95,6 +97,7 @@ def test_setup_wsl_ps1_requires_wsl(tmp_path: Path) -> None:
         capture_output=True,
         text=True,
         env=env,
+        cwd=tmp_path,
     )
 
     assert result.returncode != 0
