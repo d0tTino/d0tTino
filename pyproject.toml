@@ -20,6 +20,7 @@ test = [
     "fastapi",
     "uvicorn",
     "httpx",
+    "jsonschema",
 ]
 cli = ["tomli_w", "jsonschema"]
 lmql = ["lmql"]
