@@ -48,7 +48,12 @@ fi
         "HOME": str(fake_root),
     })
 
-    subprocess.run(["bash", str(REPO_ROOT / "scripts" / "setup-wsl.sh")], check=True, env=env)
+    subprocess.run(
+        ["bash", str(REPO_ROOT / "scripts" / "setup-wsl.sh")],
+        check=True,
+        env=env,
+        cwd=tmp_path,
+    )
 
     bat_link = usr_local_bin / "bat"
     fd_link = usr_local_bin / "fd"
@@ -105,6 +110,7 @@ def test_setup_wsl_requires_sudo(tmp_path):
         env=env,
         capture_output=True,
         text=True,
+        cwd=tmp_path,
     )
 
     assert result.returncode != 0
@@ -130,7 +136,12 @@ def test_setup_wsl_root_without_sudo(tmp_path):
         "PATH": str(bin_dir),
     })
 
-    subprocess.run(["/bin/bash", str(REPO_ROOT / "scripts" / "setup-wsl.sh")], check=True, env=env)
+    subprocess.run(
+        ["/bin/bash", str(REPO_ROOT / "scripts" / "setup-wsl.sh")],
+        check=True,
+        env=env,
+        cwd=tmp_path,
+    )
 
 
 def test_setup_wsl_requires_apt_get(tmp_path):
@@ -160,6 +171,7 @@ def test_setup_wsl_requires_apt_get(tmp_path):
         env=env,
         capture_output=True,
         text=True,
+        cwd=tmp_path,
     )
 
     assert result.returncode != 0
@@ -194,6 +206,7 @@ def test_setup_wsl_starship_install_failure(tmp_path):
         env=env,
         capture_output=True,
         text=True,
+        cwd=tmp_path,
     )
 
     assert result.returncode != 0
@@ -229,6 +242,7 @@ def test_setup_wsl_zoxide_install_failure(tmp_path):
         env=env,
         capture_output=True,
         text=True,
+        cwd=tmp_path,
     )
 
     assert result.returncode != 0

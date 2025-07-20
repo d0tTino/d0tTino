@@ -26,7 +26,12 @@ def test_setup_screenshot_env_apt(tmp_path: Path) -> None:
     create_exe(bin_dir / "dpkg", "#!/usr/bin/env bash\n:")
     env = os.environ.copy()
     env["PATH"] = f"{bin_dir}:{env['PATH']}"
-    subprocess.run(["/bin/bash", str(REPO_ROOT / "scripts" / "setup-screenshot-env.sh")], check=True, env=env)
+    subprocess.run(
+        ["/bin/bash", str(REPO_ROOT / "scripts" / "setup-screenshot-env.sh")],
+        check=True,
+        env=env,
+        cwd=tmp_path,
+    )
     lines = apt_log.read_text().splitlines()
     assert lines and lines[0] == "update"
     assert any("install" in line for line in lines)
@@ -47,7 +52,12 @@ def test_setup_screenshot_env_pacman(tmp_path: Path) -> None:
     (bin_dir / "bash").symlink_to("/bin/bash")
     env = os.environ.copy()
     env["PATH"] = str(bin_dir)
-    subprocess.run(["/bin/bash", str(REPO_ROOT / "scripts" / "setup-screenshot-env.sh")], check=True, env=env)
+    subprocess.run(
+        ["/bin/bash", str(REPO_ROOT / "scripts" / "setup-screenshot-env.sh")],
+        check=True,
+        env=env,
+        cwd=tmp_path,
+    )
     lines = pac_log.read_text().splitlines()
     assert lines and lines[0].startswith("-Sy")
     assert any("nushell" in line for line in lines)
@@ -65,7 +75,12 @@ def test_setup_screenshot_env_brew(tmp_path: Path) -> None:
     create_exe(bin_dir / "uname", "#!/usr/bin/env bash\necho Darwin\n")
     env = os.environ.copy()
     env["PATH"] = f"{bin_dir}:{env['PATH']}"
-    subprocess.run(["/bin/bash", str(REPO_ROOT / "scripts" / "setup-screenshot-env.sh")], check=True, env=env)
+    subprocess.run(
+        ["/bin/bash", str(REPO_ROOT / "scripts" / "setup-screenshot-env.sh")],
+        check=True,
+        env=env,
+        cwd=tmp_path,
+    )
     lines = brew_log.read_text().splitlines()
     assert any("install" in line for line in lines)
     assert any("nushell" in line for line in lines)
@@ -97,6 +112,7 @@ def test_setup_screenshot_env_ps1(tmp_path: Path) -> None:
         ],
         check=True,
         env=env,
+        cwd=tmp_path,
     )
     content = winget_log.read_text().splitlines()
     assert content, "winget should be invoked"

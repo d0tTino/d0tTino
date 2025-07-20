@@ -66,6 +66,7 @@ fi
         capture_output=True,
         text=True,
         env=env,
+        cwd=tmp_path,
     )
 
     assert result.returncode == 0

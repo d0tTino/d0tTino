@@ -25,6 +25,7 @@ def test_install_windows_terminal_copies_settings(tmp_path: Path) -> None:
         ],
         check=True,
         env=env,
+        cwd=tmp_path,
     )
     dest = (
         tmp_path
