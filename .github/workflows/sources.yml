@@ -19,6 +19,13 @@ jobs:
           python-version: "3.12"
       - name: Validate sources.json
         run: python scripts/validate_sources.py
+      - name: Enrich sources
+        run: python scripts/enrich_sources.py
+      - name: Link Check
+        uses: lycheeverse/lychee-action@v2.4.1
+        with:
+          args: --no-progress --verbose './**/*.md' './metadata/sources.json'
+          fail: true
       - name: Generate docs/awesome-sources.md
         run: python scripts/generate_sources_md.py
       - name: Check for differences
