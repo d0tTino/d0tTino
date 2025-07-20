@@ -38,7 +38,25 @@ def validate(path: Path = SOURCES_JSON, schema_path: Path = SCHEMA_PATH) -> bool
     except jsonschema.ValidationError as exc:
         print(f"{path} failed validation: {exc.message}", file=sys.stderr)
         return False
-    return True
+
+    duplicate = False
+    seen_names: set[str] = set()
+    seen_urls: set[str] = set()
+    for entry in data:
+        name = entry.get("name")
+        url = entry.get("url")
+        if name in seen_names:
+            print(f"{path} has duplicate name: {name}", file=sys.stderr)
+            duplicate = True
+        else:
+            seen_names.add(name)
+        if url in seen_urls:
+            print(f"{path} has duplicate url: {url}", file=sys.stderr)
+            duplicate = True
+        else:
+            seen_urls.add(url)
+
+    return not duplicate
 
 
 def main(argv: list[str] | None = None) -> int:
