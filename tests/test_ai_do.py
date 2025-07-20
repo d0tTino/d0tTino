@@ -145,7 +145,6 @@ def test_main_records_event(monkeypatch, tmp_path):
     def fake_record(name, payload, *, enabled=False):
         recorded.append((name, payload, enabled))
         return True
-        return True
 
     monkeypatch.setattr(ai_do, "record_event", fake_record)
     log = tmp_path / "log.txt"
@@ -178,6 +177,7 @@ def test_main_records_failure(monkeypatch, tmp_path):
 
     def fake_record(name, payload, *, enabled=False):
         recorded.append((name, payload, enabled))
+        return True
 
     monkeypatch.setattr(ai_do, "record_event", fake_record)
     log = tmp_path / "log.txt"
