@@ -14,7 +14,11 @@ import logging
 from llm import router
 from llm.ai_router import get_preferred_models
 from llm.backends import initialize
-from scripts.cli_common import read_prompt, send_notification
+from scripts.cli_common import (
+    read_prompt,
+    send_notification,
+    build_analytics_parser,
+)
 from telemetry import record_event, analytics_default
 import time
 
@@ -73,16 +77,11 @@ def plan(
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    analytics = build_analytics_parser()
+    parser = argparse.ArgumentParser(description=__doc__, parents=[analytics])
     parser.add_argument("goal")
     parser.add_argument("--config")
     parser.add_argument("--notify", action="store_true", help="Send notification when done")
-    parser.add_argument(
-        "--analytics",
-        action="store_true",
-        default=argparse.SUPPRESS,
-        help="Record anonymous usage events",
-    )
     args = parser.parse_args(argv)
     args.analytics = getattr(args, "analytics", analytics_default())
     cfg_path = Path(args.config) if args.config else None

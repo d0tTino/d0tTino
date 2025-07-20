@@ -12,7 +12,11 @@ import logging
 
 from scripts import ai_exec
 from llm.backends import initialize
-from scripts.cli_common import execute_steps, send_notification
+from scripts.cli_common import (
+    execute_steps,
+    send_notification,
+    build_analytics_parser,
+)
 from telemetry import record_event, analytics_default
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -45,15 +49,11 @@ def run_recipe(
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+    analytics_group = build_analytics_parser()
+    parser = argparse.ArgumentParser(description=__doc__, parents=[analytics_group])
     parser.add_argument("goal", help="High level description of the task")
     parser.add_argument("--config")
     parser.add_argument("--notify", action="store_true", help="Send notification when done")
-    parser.add_argument(
-        "--analytics",
-        action="store_true",
-        help="Record anonymous usage events",
-    )
     parser.add_argument(
         "--log",
         type=Path,
@@ -62,7 +62,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    analytics = args.analytics or analytics_default()
+    analytics = getattr(args, "analytics", analytics_default())
     cfg_path = Path(args.config) if args.config else None
     start = time.time()
     steps = ai_exec.plan(args.goal, config_path=cfg_path, analytics=analytics)

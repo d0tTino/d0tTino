@@ -1,6 +1,7 @@
 """Shared utilities for CLI modules."""
 from __future__ import annotations
 
+import argparse
 import os
 import shlex
 import subprocess
@@ -64,12 +65,25 @@ def send_notification(message: str) -> None:
     subprocess.run(["ntfy", "send", message], check=False)
 
 
+def build_analytics_parser() -> argparse.ArgumentParser:
+    """Return an argument parser handling the ``--analytics`` flag."""
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument(
+        "--analytics",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help="Record anonymous usage events",
+    )
+    return parser
+
+
 
 
 __all__ = [
     "read_prompt",
     "execute_steps",
     "send_notification",
+    "build_analytics_parser",
     "analytics_default",
     "record_event",
 ]
