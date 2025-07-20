@@ -17,7 +17,9 @@
       "python",
       "web"
     ],
-    "license": "MIT"
+    "license": "MIT",
+    "api_type": "REST",
+    "stars": 87420
   },
   {
     "name": "Rust Book",
