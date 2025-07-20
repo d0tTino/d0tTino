@@ -240,6 +240,9 @@ API information:
 python scripts/enrich_sources.py
 ```
 
+Set `GITHUB_TOKEN` to a personal access token to avoid GitHub API rate
+limits when enriching sources.
+
 After editing the JSON file regenerate the Markdown list with:
 
 ```bash

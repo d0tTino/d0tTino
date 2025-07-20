@@ -14,7 +14,7 @@ def test_enrich_sources_adds_fields(monkeypatch):
         def json():
             return {"stargazers_count": 42}
 
-    def fake_get(url, *, timeout):
+    def fake_get(url, *, timeout, headers=None):
         assert url == "https://api.github.com/repos/owner/api"
         assert timeout == 5
         return FakeResponse()

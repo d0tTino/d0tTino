@@ -12,6 +12,8 @@ pytest.importorskip("requests")
 
 from scripts import ai_exec
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
 
 def test_plan_uses_primary(monkeypatch):
     calls = []
@@ -121,7 +123,9 @@ def test_script_runs(monkeypatch, tmp_path: Path) -> None:
     (stub_dir / "dspy" / "__init__.py").write_text("raise ImportError('stub')")
 
     env = os.environ.copy()
-    env["PYTHONPATH"] = f"{stub_dir}:{env.get('PYTHONPATH', '')}"
+    env["PYTHONPATH"] = (
+        f"{REPO_ROOT}:{stub_dir}:{env.get('PYTHONPATH', '')}"
+    )
 
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
