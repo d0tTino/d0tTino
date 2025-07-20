@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from pathlib import Path
 from typing import Any, List
@@ -36,8 +37,12 @@ def fetch_github_stars(url: str) -> int | None:
     if not match:
         return None
     api_url = f"https://api.github.com/repos/{match.group(1)}/{match.group(2)}"
+    headers = None
+    token = os.getenv("GITHUB_TOKEN")
+    if token:
+        headers = {"Authorization": f"Bearer {token}"}
     try:
-        resp = requests.get(api_url, timeout=5)
+        resp = requests.get(api_url, headers=headers, timeout=5)
         resp.raise_for_status()
         data = resp.json()
         stars = data.get("stargazers_count")

@@ -19,6 +19,8 @@ jobs:
           pip install requests
       - name: Enrich sources.json
         run: python scripts/enrich_sources.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Check for differences
         id: diff
         run: |
