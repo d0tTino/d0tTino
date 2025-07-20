@@ -34,3 +34,18 @@ def test_tauri_build_release() -> None:
     print(result.stderr)
     assert result.returncode == 0
 
+
+
+@pytest.mark.skipif(not _has_tauri_deps(), reason="missing Tauri system dependencies")
+def test_tauri_cargo_check() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    manifest = repo_root / "src-tauri" / "Cargo.toml"
+    result = subprocess.run(
+        ["cargo", "check", "--manifest-path", str(manifest)],
+        capture_output=True,
+        text=True,
+    )
+    print(result.stdout)
+    print(result.stderr)
+    assert result.returncode == 0
+
