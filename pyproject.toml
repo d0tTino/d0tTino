@@ -49,4 +49,4 @@ where = ["."]
 include = ["llm*", "scripts*", "plugins*"]
 
 [tool.ruff]
-src = ["llm", "scripts", "plugins"]
+src = ["llm", "scripts", "plugins", "api", "ui"]
