@@ -16,6 +16,7 @@ import asyncio
 from llm import backends
 from llm.router import send_prompt
 from scripts.thm import apply_palette, REPO_ROOT
+from ume import load_sources
 from scripts import ai_exec
 
 backends.load_backends()
@@ -84,6 +85,16 @@ def get_graph() -> dict[str, list]:
 
 app = FastAPI()
 UME_API_URL = os.environ.get("UME_API_URL")
+
+# list of curated sources loaded on startup
+SOURCES: list[dict[str, Any]] = []
+
+
+@app.on_event("startup")
+def _load_sources() -> None:
+    """Populate :data:`SOURCES` from ``metadata/sources.json``."""
+    global SOURCES
+    SOURCES = load_sources()
 
 class PromptRequest(BaseModel):
     prompt: str
@@ -156,4 +167,5 @@ __all__ = [
     "get_graph",
     "plan",
     "exec_stream",
+    "SOURCES",
 ]
