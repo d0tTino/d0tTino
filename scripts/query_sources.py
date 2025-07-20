@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Search ``metadata/sources.json`` by name or tag."""
+"""Search ``metadata/sources.json`` by name, category or tags."""
 
 from __future__ import annotations
 
@@ -19,18 +19,24 @@ def load_sources(path: Path = SOURCES_JSON) -> List[Dict[str, Any]]:
 
 
 def find_sources(
-    *, name: str | None = None,
-    tag: str | None = None,
+    *,
+    name: str | None = None,
+    category: str | None = None,
+    tags: List[str] | None = None,
     path: Path = SOURCES_JSON,
 ) -> List[Dict[str, Any]]:
-    """Return sources matching ``name`` and/or ``tag``."""
+    """Return sources matching ``name``, ``category`` and/or ``tags``."""
     sources = load_sources(path)
     results: List[Dict[str, Any]] = []
     for src in sources:
         if name and name.lower() not in str(src.get("name", "")).lower():
             continue
-        if tag and tag.lower() not in [t.lower() for t in src.get("tags", [])]:
+        if category and category.lower() != str(src.get("category", "")).lower():
             continue
+        if tags:
+            src_tags = [t.lower() for t in src.get("tags", [])]
+            if any(tag.lower() not in src_tags for tag in tags):
+                continue
         results.append(src)
     return results
 
@@ -38,14 +44,26 @@ def find_sources(
 def main(argv: List[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--name", "-n", help="Filter by name substring")
-    parser.add_argument("--tag", "-t", help="Filter by tag")
+    parser.add_argument("--category", "-c", help="Filter by category")
+    parser.add_argument(
+        "--tag",
+        "-t",
+        action="append",
+        dest="tags",
+        help="Filter by tag (repeatable)",
+    )
     parser.add_argument(
         "--path",
         default=str(SOURCES_JSON),
         help=argparse.SUPPRESS,
     )
     args = parser.parse_args(argv)
-    matches = find_sources(name=args.name, tag=args.tag, path=Path(args.path))
+    matches = find_sources(
+        name=args.name,
+        category=args.category,
+        tags=args.tags,
+        path=Path(args.path),
+    )
     for item in matches:
         print(f"{item['name']} - {item['url']}")
     return 0 if matches else 1
