@@ -38,6 +38,7 @@ def test_create_hyperv_vm_invokes_new_vm(tmp_path: Path) -> None:
         ],
         check=True,
         env=env,
+        cwd=tmp_path,
     )
 
     assert log_file.read_text().strip()
@@ -83,6 +84,7 @@ def test_create_hyperv_vm_parses_iso_and_cloudinit(tmp_path: Path) -> None:
         ],
         check=True,
         env=env,
+        cwd=tmp_path,
     )
 
     assert "http://example.com/os.iso" in request_log.read_text()

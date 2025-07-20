@@ -4,6 +4,8 @@ import sys
 from pathlib import Path
 import importlib.util
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
 
 def _load_generate_settings():
     spec = importlib.util.spec_from_file_location(
@@ -16,19 +18,25 @@ def _load_generate_settings():
 
 
 def test_generated_settings_up_to_date(tmp_path):
-    script = Path('windows-terminal/generate_settings.py')
-    base = Path('windows-terminal/settings.base.json')
-    common = Path('windows-terminal/common-profiles.json')
+    script = REPO_ROOT / 'windows-terminal' / 'generate_settings.py'
+    base = REPO_ROOT / 'windows-terminal' / 'settings.base.json'
+    common = REPO_ROOT / 'windows-terminal' / 'common-profiles.json'
     output = tmp_path / 'settings.json'
-    subprocess.run([
-        sys.executable,
-        str(script),
-        str(base),
-        str(output),
-        '--common',
-        str(common),
-    ], check=True)
-    expected = Path('windows-terminal/settings.json').read_text(encoding='utf-8')
+    subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            str(base),
+            str(output),
+            '--common',
+            str(common),
+        ],
+        check=True,
+        cwd=tmp_path,
+    )
+    expected = (REPO_ROOT / 'windows-terminal' / 'settings.json').read_text(
+        encoding='utf-8'
+    )
     generated = output.read_text(encoding='utf-8')
     assert generated == expected, (
         "windows-terminal/settings.json is out of date; run generate_settings.py"
@@ -36,7 +44,7 @@ def test_generated_settings_up_to_date(tmp_path):
 
 
 def test_generate_settings_invalid_json(tmp_path: Path) -> None:
-    script = Path("windows-terminal/generate_settings.py")
+    script = REPO_ROOT / "windows-terminal" / "generate_settings.py"
     bad_base = tmp_path / "bad.json"
     bad_base.write_text("{ invalid json", encoding="utf-8")
     output = tmp_path / "out.json"
@@ -49,6 +57,7 @@ def test_generate_settings_invalid_json(tmp_path: Path) -> None:
         ],
         capture_output=True,
         text=True,
+        cwd=tmp_path,
     )
     assert result.returncode == 1
     assert f"Failed to parse JSON from {bad_base}" in result.stderr

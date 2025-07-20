@@ -40,6 +40,7 @@ def test_setup_winget_installs_packages(tmp_path: Path) -> None:
         ],
         check=True,
         env=env,
+        cwd=tmp_path,
     )
     lines = winget_log.read_text().splitlines()
     ids = [line.split()[line.split().index("--id") + 1] for line in lines]

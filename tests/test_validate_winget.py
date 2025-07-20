@@ -13,6 +13,7 @@ def test_validate_winget_malformed(tmp_path: Path) -> None:
         [sys.executable, str(REPO_ROOT / "scripts" / "validate_winget.py"), str(bad_json)],
         capture_output=True,
         text=True,
+        cwd=tmp_path,
     )
     assert result.returncode != 0
     assert "Failed to parse" in result.stderr
@@ -28,6 +29,7 @@ def test_validate_winget_success(tmp_path: Path) -> None:
         [sys.executable, str(REPO_ROOT / "scripts" / "validate_winget.py"), str(valid_json)],
         capture_output=True,
         text=True,
+        cwd=tmp_path,
     )
     assert result.returncode == 0
 

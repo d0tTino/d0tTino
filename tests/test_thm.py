@@ -16,6 +16,7 @@ def test_list_palettes_outputs_available_palettes(tmp_path):
         capture_output=True,
         text=True,
         check=True,
+        cwd=tmp_path,
     )
     output = result.stdout.strip().splitlines()
     assert "blacklight" in output
@@ -37,12 +38,17 @@ def test_apply_updates_configs(tmp_path):
 
     env = os.environ.copy()
     env["THM_REPO_ROOT"] = str(dest)
-    subprocess.run([
-        sys.executable,
-        str(script),
-        "apply",
-        "dracula",
-    ], check=True, env=env)
+    subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "apply",
+            "dracula",
+        ],
+        check=True,
+        env=env,
+        cwd=tmp_path,
+    )
 
     import tomllib
     data = tomllib.loads((dest / "starship.toml").read_text())
@@ -74,6 +80,7 @@ def test_apply_unknown_palette_errors(tmp_path):
             [sys.executable, str(script), "apply", "missing"],
             check=True,
             env=env,
+            cwd=tmp_path,
         )
 
 
@@ -103,6 +110,7 @@ def test_apply_missing_starship_errors(tmp_path):
         capture_output=True,
         text=True,
         env=env,
+        cwd=tmp_path,
     )
     assert result.returncode == 1
     assert "starship.toml" in result.stderr
@@ -128,6 +136,7 @@ def test_apply_missing_wt_settings_errors(tmp_path):
         capture_output=True,
         text=True,
         env=env,
+        cwd=tmp_path,
     )
     assert result.returncode == 1
     assert "windows-terminal" in result.stderr or "settings.json" in result.stderr

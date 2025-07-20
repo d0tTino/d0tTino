@@ -3,12 +3,15 @@ import subprocess
 from pathlib import Path
 
 
-def _run_script(env):
+def _run_script(env, cwd: Path):
     script = Path(__file__).resolve().parents[1] / "scripts" / "helpers" / "install_fonts.sh"
-    return subprocess.run([
-        "/bin/bash",
-        str(script)
-    ], env=env, capture_output=True, text=True)
+    return subprocess.run(
+        ["/bin/bash", str(script)],
+        env=env,
+        capture_output=True,
+        text=True,
+        cwd=cwd,
+    )
 
 
 def test_missing_curl(tmp_path):
@@ -19,7 +22,7 @@ def test_missing_curl(tmp_path):
     (stub_bin / "uname").write_text("#!/usr/bin/env bash\necho Linux\n")
     (stub_bin / "uname").chmod(0o755)
     env["PATH"] = str(stub_bin)
-    result = _run_script(env)
+    result = _run_script(env, tmp_path)
     assert result.returncode
     assert "curl is required" in result.stderr
 
@@ -34,6 +37,6 @@ def test_missing_unzip(tmp_path):
     (stub_bin / "uname").write_text("#!/usr/bin/env bash\necho Linux\n")
     (stub_bin / "uname").chmod(0o755)
     env["PATH"] = str(stub_bin)
-    result = _run_script(env)
+    result = _run_script(env, tmp_path)
     assert result.returncode
     assert "unzip is required" in result.stderr
