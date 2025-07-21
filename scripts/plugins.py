@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import time
 from typing import Dict, List, Optional
 
 import requests
@@ -55,6 +56,9 @@ DEFAULT_REGISTRY_URL = "https://raw.githubusercontent.com/d0tTino/d0tTino/main/p
 # Cache file for the remote registry
 CACHE_PATH = Path.home() / ".cache" / "d0ttino" / "plugin_registry.json"
 
+# Default TTL for the cached registry (24 hours)
+DEFAULT_CACHE_TTL = int(os.environ.get("PLUGIN_REGISTRY_TTL", "86400"))
+
 # Logger for plug-in management utilities
 logger = logging.getLogger(__name__)
 
@@ -91,7 +95,9 @@ def _fetch_registry(url: str) -> Dict[str, object] | None:
         fetched = resp.json()
         if isinstance(fetched, dict) and _valid_registry(fetched):
             CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-            CACHE_PATH.write_text(json.dumps(fetched))
+            CACHE_PATH.write_text(
+                json.dumps({"timestamp": int(time.time()), "registry": fetched})
+            )
             return fetched
     except requests.exceptions.RequestException as exc:
         logger.warning(
@@ -104,23 +110,44 @@ def _fetch_registry(url: str) -> Dict[str, object] | None:
     return None
 
 
-def load_registry(section: str = "plugins", update: bool = False) -> Dict[str, str]:
+def load_registry(
+    section: str = "plugins", update: bool = False, ttl: int = DEFAULT_CACHE_TTL
+) -> Dict[str, str]:
     """Return the registry section with network → cache → default fallback."""
 
     url = os.environ.get("PLUGIN_REGISTRY_URL", DEFAULT_REGISTRY_URL)
 
-    data: Dict[str, object] | None = None
-    if update or not CACHE_PATH.exists():
-        data = _fetch_registry(url)
+    cached_ts: int | None = None
+    cached_data: Dict[str, object] | None = None
 
-    if data is None and CACHE_PATH.exists():
+    if CACHE_PATH.exists():
         try:
             with CACHE_PATH.open(encoding="utf-8") as fh:
-                cached = json.load(fh)
-            if isinstance(cached, dict) and _valid_registry(cached):
-                data = cached
+                cached_raw = json.load(fh)
+            if (
+                isinstance(cached_raw, dict)
+                and "registry" in cached_raw
+                and "timestamp" in cached_raw
+            ):
+                ts = cached_raw.get("timestamp")
+                reg = cached_raw.get("registry")
+                if isinstance(ts, int) and isinstance(reg, dict) and _valid_registry(reg):
+                    cached_ts = ts
+                    cached_data = reg
+            elif isinstance(cached_raw, dict) and _valid_registry(cached_raw):
+                cached_ts = int(CACHE_PATH.stat().st_mtime)
+                cached_data = cached_raw
         except Exception:
             pass
+
+    data: Dict[str, object] | None = None
+
+    if update or cached_ts is None or time.time() - cached_ts > ttl:
+        data = _fetch_registry(url)
+        if data is None:
+            data = cached_data
+    else:
+        data = cached_data
 
     if isinstance(data, dict):
         mapping = data.get(section) or {}
