@@ -40,21 +40,16 @@ def validate(path: Path = SOURCES_JSON, schema_path: Path = SCHEMA_PATH) -> bool
         return False
 
     duplicate = False
-    seen_names: set[str] = set()
-    seen_urls: set[str] = set()
+    unique_props = schema.get("uniqueItemProperties", [])
+    seen: dict[str, set] = {prop: set() for prop in unique_props}
     for entry in data:
-        name = entry.get("name")
-        url = entry.get("url")
-        if name in seen_names:
-            print(f"{path} has duplicate name: {name}", file=sys.stderr)
-            duplicate = True
-        else:
-            seen_names.add(name)
-        if url in seen_urls:
-            print(f"{path} has duplicate url: {url}", file=sys.stderr)
-            duplicate = True
-        else:
-            seen_urls.add(url)
+        for prop in unique_props:
+            value = entry.get(prop)
+            if value in seen[prop]:
+                print(f"{path} has duplicate {prop}: {value}", file=sys.stderr)
+                duplicate = True
+            else:
+                seen[prop].add(value)
 
     return not duplicate
 
