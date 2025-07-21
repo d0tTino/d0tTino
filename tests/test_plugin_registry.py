@@ -99,3 +99,36 @@ def test_load_registry_uses_default_url(monkeypatch, tmp_path):
     registry = plugins.load_registry()
     assert registry == {"z": "pkg"}
 
+
+def test_load_registry_skips_network_with_cache(monkeypatch, tmp_path):
+    cache = tmp_path / "cache.json"
+    cache.write_text(json.dumps({"plugins": {"y": "pkg"}}))
+    monkeypatch.setattr(plugins, "CACHE_PATH", cache)
+
+    def fail_fetch(url):  # pragma: no cover - should not be called
+        raise AssertionError("network called")
+
+    monkeypatch.setattr(plugins, "_fetch_registry", fail_fetch)
+
+    registry = plugins.load_registry()
+    assert registry == {"y": "pkg"}
+
+
+def test_load_registry_update_forces_fetch(monkeypatch, tmp_path):
+    cache = tmp_path / "cache.json"
+    cache.write_text(json.dumps({"plugins": {"y": "pkg"}}))
+    monkeypatch.setattr(plugins, "CACHE_PATH", cache)
+
+    called = False
+
+    def fake_fetch(url):
+        nonlocal called
+        called = True
+        return {"plugins": {"z": "pkg"}}
+
+    monkeypatch.setattr(plugins, "_fetch_registry", fake_fetch)
+
+    registry = plugins.load_registry(update=True)
+    assert called
+    assert registry == {"z": "pkg"}
+
