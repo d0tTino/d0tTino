@@ -4,7 +4,7 @@ import json
 import os
 from pathlib import Path
 from typing import Any
-from threading import RLock
+
 
 from fastapi import FastAPI, HTTPException
 from contextlib import asynccontextmanager
@@ -23,30 +23,30 @@ from scripts import ai_exec
 backends.load_backends()
 
 STATE_PATH = Path(os.environ.get("API_STATE_PATH", REPO_ROOT / "api_state.json"))
-STATE_LOCK = RLock()
+STATE_LOCK = asyncio.Lock()
 
 
-def _load_state() -> dict[str, Any]:
-    with STATE_LOCK:
+async def _load_state() -> dict[str, Any]:
+    async with STATE_LOCK:
         if STATE_PATH.exists():
             with STATE_PATH.open("r", encoding="utf-8") as f:
                 return json.load(f)
         return {"queries": 0, "nodes": [], "edges": []}
 
 
-def _save_state(state: dict[str, Any]) -> None:
-    with STATE_LOCK:
+async def _save_state(state: dict[str, Any]) -> None:
+    async with STATE_LOCK:
         STATE_PATH.write_text(json.dumps(state), encoding="utf-8")
 
 
-def record_prompt(prompt: str) -> None:
-    state = _load_state()
+async def record_prompt(prompt: str) -> None:
+    state = await _load_state()
     state["queries"] += 1
     node_id = state["queries"]
     state["nodes"].append({"id": node_id, "text": prompt})
     if node_id > 1:
         state["edges"].append({"source": node_id - 1, "target": node_id})
-    _save_state(state)
+    await _save_state(state)
 
 
 def _get_remote_json(url: str) -> dict[str, Any] | None:
@@ -65,23 +65,23 @@ def _get_remote_json(url: str) -> dict[str, Any] | None:
         raise HTTPException(status_code=503, detail=str(exc))
 
 
-def get_stats() -> dict[str, int]:
+async def get_stats() -> dict[str, int]:
     if UME_API_URL:
         result = _get_remote_json(f"{UME_API_URL}/dashboard/stats")
         if result is not None:
             return result
 
-    state = _load_state()
+    state = await _load_state()
     return {"queries": state["queries"], "memory": len(state["nodes"])}
 
 
-def get_graph() -> dict[str, list]:
+async def get_graph() -> dict[str, list]:
     if UME_API_URL:
         result = _get_remote_json(f"{UME_API_URL}/graph")
         if result is not None:
             return result
 
-    state = _load_state()
+    state = await _load_state()
     return {"nodes": state["nodes"], "edges": state["edges"]}
 
 # list of curated sources loaded on startup
@@ -114,8 +114,7 @@ async def health() -> dict[str, str]:
 
 @app.post("/api/prompt")
 async def prompt(req: PromptRequest) -> dict[str, str]:
-    with STATE_LOCK:
-        record_prompt(req.prompt)
+    await record_prompt(req.prompt)
     result = send_prompt(req.prompt, local=req.local)
     return {"response": result}
 
@@ -151,11 +150,11 @@ async def exec_stream(goal: str):
 
 @app.get("/api/stats")
 async def stats() -> dict[str, int]:
-    return get_stats()
+    return await get_stats()
 
 @app.get("/api/graph")
 async def graph() -> dict[str, list]:
-    return get_graph()
+    return await get_graph()
 
 
 if __name__ == "__main__":  # pragma: no cover - manual launch
