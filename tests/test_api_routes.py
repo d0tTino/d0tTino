@@ -3,6 +3,8 @@ import pytest
 pytest.importorskip("fastapi")
 pytest.importorskip("httpx")
 from fastapi.testclient import TestClient
+import httpx
+import asyncio
 import importlib
 import os
 import sys
@@ -222,3 +224,21 @@ def test_graph_remote_timeout(monkeypatch, tmp_path):
         resp = client.get('/api/graph')
         assert resp.status_code == 200
         assert resp.json() == {'nodes': [], 'edges': []}
+
+
+@pytest.mark.asyncio
+async def test_prompt_concurrent(tmp_path):
+    app = load_app(state_path=tmp_path / 'state.json')
+    async with httpx.AsyncClient(
+        base_url="http://test",
+        transport=httpx.ASGITransport(app=app),
+    ) as client:
+        responses = await asyncio.gather(
+            client.post('/api/prompt', json={'prompt': 'one'}),
+            client.post('/api/prompt', json={'prompt': 'two'}),
+        )
+
+    assert all(r.status_code == 200 for r in responses)
+    with TestClient(app) as sync_client:
+        stats_resp = sync_client.get('/api/stats')
+        assert stats_resp.json() == {'queries': 2, 'memory': 2}
