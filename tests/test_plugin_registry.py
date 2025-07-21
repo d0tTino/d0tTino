@@ -3,6 +3,8 @@ import pytest
 
 pytest.importorskip("requests")
 
+import time
+
 from scripts import plugins
 
 
@@ -27,12 +29,16 @@ def test_fetch_registry_saves_cache(monkeypatch, tmp_path):
 
     data = plugins._fetch_registry("https://example.com")
     assert data == result
-    assert json.loads(cache.read_text()) == result
+    cached = json.loads(cache.read_text())
+    assert isinstance(cached.get("timestamp"), int)
+    assert cached.get("registry") == result
 
 
 def test_load_registry_uses_cache_when_offline(monkeypatch, tmp_path):
     cache = tmp_path / "cache.json"
-    cache.write_text(json.dumps({"plugins": {"y": "pkg"}}))
+    cache.write_text(
+        json.dumps({"timestamp": int(time.time()), "registry": {"plugins": {"y": "pkg"}}})
+    )
     monkeypatch.setattr(plugins, "CACHE_PATH", cache)
 
     def raise_exc(*a, **k):
@@ -102,7 +108,9 @@ def test_load_registry_uses_default_url(monkeypatch, tmp_path):
 
 def test_load_registry_skips_network_with_cache(monkeypatch, tmp_path):
     cache = tmp_path / "cache.json"
-    cache.write_text(json.dumps({"plugins": {"y": "pkg"}}))
+    cache.write_text(
+        json.dumps({"timestamp": int(time.time()), "registry": {"plugins": {"y": "pkg"}}})
+    )
     monkeypatch.setattr(plugins, "CACHE_PATH", cache)
 
     def fail_fetch(url):  # pragma: no cover - should not be called
@@ -110,13 +118,15 @@ def test_load_registry_skips_network_with_cache(monkeypatch, tmp_path):
 
     monkeypatch.setattr(plugins, "_fetch_registry", fail_fetch)
 
-    registry = plugins.load_registry()
+    registry = plugins.load_registry(ttl=3600)
     assert registry == {"y": "pkg"}
 
 
 def test_load_registry_update_forces_fetch(monkeypatch, tmp_path):
     cache = tmp_path / "cache.json"
-    cache.write_text(json.dumps({"plugins": {"y": "pkg"}}))
+    cache.write_text(
+        json.dumps({"timestamp": int(time.time()), "registry": {"plugins": {"y": "pkg"}}})
+    )
     monkeypatch.setattr(plugins, "CACHE_PATH", cache)
 
     called = False
@@ -129,6 +139,28 @@ def test_load_registry_update_forces_fetch(monkeypatch, tmp_path):
     monkeypatch.setattr(plugins, "_fetch_registry", fake_fetch)
 
     registry = plugins.load_registry(update=True)
+    assert called
+    assert registry == {"z": "pkg"}
+
+
+def test_load_registry_fetches_when_cache_expired(monkeypatch, tmp_path):
+    cache = tmp_path / "cache.json"
+    old_ts = int(time.time()) - 100
+    cache.write_text(
+        json.dumps({"timestamp": old_ts, "registry": {"plugins": {"y": "pkg"}}})
+    )
+    monkeypatch.setattr(plugins, "CACHE_PATH", cache)
+
+    called = False
+
+    def fake_fetch(url):
+        nonlocal called
+        called = True
+        return {"plugins": {"z": "pkg"}}
+
+    monkeypatch.setattr(plugins, "_fetch_registry", fake_fetch)
+
+    registry = plugins.load_registry(ttl=10)
     assert called
     assert registry == {"z": "pkg"}
 
