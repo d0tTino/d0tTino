@@ -253,3 +253,10 @@ def test_recipe_executes_plugin_once_and_logs(monkeypatch, tmp_path):
     log_text = log.read_text()
     assert '$ echo goal' in log_text
     assert 'out' in log_text
+
+
+def test_sources_subcommand(capsys):
+    rc = ai_cli.main(["sources", "--tag", "python"])
+    output = capsys.readouterr().out
+    assert rc == 0
+    assert "Python Docs" in output
