@@ -210,6 +210,13 @@ Then invoke `pytest`:
 pytest
 ```
 
+If you have the `pytest-xdist` plugin installed (included with the `[test]`
+extra) you can run the suite in parallel:
+
+```bash
+pytest -n auto || pytest
+```
+
 ## Contributing
 
 Run `ruff` and `mypy` before committing to ensure the code is lint and type

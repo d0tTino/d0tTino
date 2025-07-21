@@ -1,2 +1,9 @@
 -e .[test]
+# Optional extras to enable full functionality
+# CLI tools and plugin management
+-e .[cli,plugins]
+# Advanced backends
+# -e .[lmql]
+# -e .[guidance]
+# -e .[etl]
 -r requirements.txt
