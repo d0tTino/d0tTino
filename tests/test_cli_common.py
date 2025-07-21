@@ -28,6 +28,11 @@ def test_record_event_posts(monkeypatch):
         sent["headers"] = headers
         sent["data"] = json
 
+        class Resp:
+            status_code = 200
+
+        return Resp()
+
     monkeypatch.setattr(cli_common.requests, "post", fake_post)
     cli_common.record_event("name", {"a": 1}, enabled=True)
 
@@ -69,6 +74,11 @@ def test_record_event_accepts_invalid_timestamps(monkeypatch):
 
     def fake_post(url, headers=None, json=None, timeout=None):
         sent.update({"url": url, "data": json})
+
+        class Resp:
+            status_code = 200
+
+        return Resp()
 
     monkeypatch.setattr(cli_common.requests, "post", fake_post)
     cli_common.record_event(

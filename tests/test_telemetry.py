@@ -34,6 +34,11 @@ def test_record_event_posts(monkeypatch):
         sent["headers"] = headers
         sent["data"] = json
 
+        class Resp:
+            status_code = 200
+
+        return Resp()
+
     monkeypatch.setattr(telemetry.requests, "post", fake_post)
     success = telemetry.record_event("name", {"a": 1}, enabled=True)
 
@@ -79,6 +84,11 @@ def test_record_event_accepts_invalid_timestamps(monkeypatch):
     def fake_post(url, headers=None, json=None, timeout=None):
         sent.update({"url": url, "data": json})
 
+        class Resp:
+            status_code = 200
+
+        return Resp()
+
     monkeypatch.setattr(telemetry.requests, "post", fake_post)
     success = telemetry.record_event(
         "ai-do",
@@ -103,6 +113,21 @@ def test_record_event_logs_warning(monkeypatch, caplog):
 
     assert success is False
     assert any("boom" in r.message for r in caplog.records)
+
+
+def test_record_event_non_200_response(monkeypatch):
+    monkeypatch.setenv("EVENTS_URL", "https://example.com")
+
+    def fake_post(url, headers=None, json=None, timeout=None):
+        class Resp:
+            status_code = 500
+
+        return Resp()
+
+    monkeypatch.setattr(telemetry.requests, "post", fake_post)
+    success = telemetry.record_event("name", {"a": 1}, enabled=True)
+
+    assert success is False
 
 
 def test_analytics_default(monkeypatch):
