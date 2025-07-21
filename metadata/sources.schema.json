@@ -2,6 +2,8 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Source Entry",
   "type": "array",
+  "uniqueItems": true,
+  "uniqueItemProperties": ["name", "url"],
   "items": {
     "type": "object",
     "properties": {
