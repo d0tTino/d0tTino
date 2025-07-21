@@ -11,7 +11,7 @@ from typing import List, Optional
 
 from llm import router
 from llm.backends import initialize
-from scripts import ai_exec, recipes, plugins
+from scripts import ai_exec, recipes, plugins, query_sources
 from scripts.cli_common import (
     read_prompt,
     build_analytics_parser,
@@ -114,6 +114,17 @@ def _cmd_plugin(args: argparse.Namespace) -> int:
     return plugins.main(args.plugin_args)
 
 
+def _cmd_sources(args: argparse.Namespace) -> int:
+    matches = query_sources.find_sources(
+        name=args.name,
+        category=args.category,
+        tags=args.tags,
+    )
+    for item in matches:
+        print(f"{item['name']} - {item['url']}")
+    return 0 if matches else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     analytics = build_analytics_parser()
 
@@ -156,6 +167,21 @@ def build_parser() -> argparse.ArgumentParser:
     plugin.add_argument("plugin_args", nargs=argparse.REMAINDER)
     plugin.set_defaults(func=_cmd_plugin)
 
+    sources = sub.add_parser(
+        "sources",
+        help="List or search entries in metadata/sources.json",
+    )
+    sources.add_argument("--name", "-n", help="Filter by name substring")
+    sources.add_argument("--category", "-c", help="Filter by category")
+    sources.add_argument(
+        "--tag",
+        "-t",
+        action="append",
+        dest="tags",
+        help="Filter by tag (repeatable)",
+    )
+    sources.set_defaults(func=_cmd_sources)
+
     return parser
 
 
@@ -188,6 +214,11 @@ def recipe_main(argv: Optional[List[str]] = None) -> int:
 
 def plugin_main(argv: Optional[List[str]] = None) -> int:
     argv = ["plugin", *(argv or [])]
+    return main(argv)
+
+
+def sources_main(argv: Optional[List[str]] = None) -> int:
+    argv = ["sources", *(argv or [])]
     return main(argv)
 
 
