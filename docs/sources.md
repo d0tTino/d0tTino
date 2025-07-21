@@ -26,3 +26,24 @@ The `ai-cli` tool can list or filter entries from the JSON file using the
 python -m scripts.ai_cli sources --tag python
 python -m scripts.ai_cli sources --category Framework --tag python
 ```
+## Enriching Source Information
+
+`scripts/enrich_sources.py` augments `sources.json` with details such as
+GitHub star counts and a guessed API type. Run it whenever you want to refresh
+this metadata locally:
+
+```bash
+python scripts/enrich_sources.py
+python scripts/generate_sources_md.py
+```
+
+Both the JSON file and the generated Markdown should be committed after running
+the enrichment script.
+
+## Scheduled Enrichment Workflow
+
+The `.github/workflows/enrich-sources.yml` workflow performs this enrichment
+automatically every Sunday at 00:00&nbsp;UTC. It installs Python, runs the
+enrichment script with the repository's `GITHUB_TOKEN`, and commits any
+resulting updates to `sources.json` and `docs/awesome-sources.md`. You can also
+trigger the workflow manually from the Actions tab.
