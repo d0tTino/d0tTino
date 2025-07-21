@@ -109,7 +109,9 @@ def load_registry(section: str = "plugins", update: bool = False) -> Dict[str, s
 
     url = os.environ.get("PLUGIN_REGISTRY_URL", DEFAULT_REGISTRY_URL)
 
-    data: Dict[str, object] | None = _fetch_registry(url)
+    data: Dict[str, object] | None = None
+    if update or not CACHE_PATH.exists():
+        data = _fetch_registry(url)
 
     if data is None and CACHE_PATH.exists():
         try:
