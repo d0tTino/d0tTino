@@ -7,6 +7,7 @@ from typing import Any
 from threading import RLock
 
 from fastapi import FastAPI, HTTPException
+from contextlib import asynccontextmanager
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import requests
@@ -83,18 +84,19 @@ def get_graph() -> dict[str, list]:
     state = _load_state()
     return {"nodes": state["nodes"], "edges": state["edges"]}
 
-app = FastAPI()
-UME_API_URL = os.environ.get("UME_API_URL")
-
 # list of curated sources loaded on startup
 SOURCES: list[dict[str, Any]] = []
 
 
-@app.on_event("startup")
-def _load_sources() -> None:
-    """Populate :data:`SOURCES` from ``metadata/sources.json``."""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Load curated sources during application startup."""
     global SOURCES
     SOURCES = load_sources()
+    yield
+
+app = FastAPI(lifespan=lifespan)
+UME_API_URL = os.environ.get("UME_API_URL")
 
 class PromptRequest(BaseModel):
     prompt: str
