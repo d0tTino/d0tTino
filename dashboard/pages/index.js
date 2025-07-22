@@ -8,7 +8,7 @@ export default function Home() {
   const [palette, setPalette] = useState('');
   const [status, setStatus] = useState('');
   const [goal, setGoal] = useState('');
-  const [steps, setSteps] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [logs, setLogs] = useState('');
 
   useEffect(() => {
@@ -34,6 +34,16 @@ export default function Home() {
       .catch(() => setResponse('error'));
   };
 
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => setPrompt(ev.target.result);
+      reader.readAsText(file);
+    }
+  };
+
   const applyPalette = () => {
     fetch('/api/palette', {
       method: 'POST',
@@ -51,7 +61,7 @@ export default function Home() {
       body: JSON.stringify({ goal })
     })
       .then((res) => res.json())
-      .then((data) => setSteps(data.steps || []));
+      .then((data) => setTasks(data.steps || []));
   };
 
   const runExec = () => {
@@ -76,6 +86,9 @@ export default function Home() {
       )}
       <div>
         <input value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="prompt" />
+        <div onDrop={handleDrop} onDragOver={(e) => e.preventDefault()} style={{ border: '1px dashed #ccc', padding: '0.5em', marginTop: '0.5em' }}>
+          Drag prompt file here
+        </div>
         <button onClick={sendPrompt}>Send</button>
         {response && <p>{response}</p>}
       </div>
@@ -88,8 +101,12 @@ export default function Home() {
         <input value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="goal" />
         <button onClick={getPlan}>Plan</button>
         <button onClick={runExec}>Run</button>
-        {steps.length > 0 && (
-          <pre>{steps.join('\n')}</pre>
+        {tasks.length > 0 && (
+          <ul>
+            {tasks.map((t, i) => (
+              <li key={i}>{t}</li>
+            ))}
+          </ul>
         )}
         {logs && (
           <pre>{logs}</pre>
