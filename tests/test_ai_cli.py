@@ -260,3 +260,30 @@ def test_sources_subcommand(capsys):
     output = capsys.readouterr().out
     assert rc == 0
     assert "Python Docs" in output
+
+
+def test_stats_subcommand(monkeypatch):
+    events = [
+        {"exit_code": 0, "latency_ms": 100},
+        {"exit_code": 1, "latency_ms": 200},
+        {"exit_code": 0, "latency_ms": 300},
+    ]
+    monkeypatch.setenv("EVENTS_URL", "https://example.com")
+    monkeypatch.setattr(ai_cli.nsm_stats, "iter_events", lambda src: iter(events))
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        rc = ai_cli.main(["stats"])
+    assert rc == 0
+    text = out.getvalue()
+    assert "Total runs: 3" in text
+    assert "Success rate: 66.7%" in text
+    assert "Average latency" in text
+
+
+def test_stats_requires_url(monkeypatch):
+    monkeypatch.delenv("EVENTS_URL", raising=False)
+    monkeypatch.setattr(ai_cli.nsm_stats, "iter_events", lambda src: iter(()))
+    err = io.StringIO()
+    with contextlib.redirect_stderr(err):
+        rc = ai_cli.main(["stats"])
+    assert rc == 1
