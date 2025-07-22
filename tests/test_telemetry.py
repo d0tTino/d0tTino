@@ -135,3 +135,41 @@ def test_analytics_default(monkeypatch):
     assert telemetry.analytics_default() is True
     monkeypatch.setenv("EVENTS_ENABLED", "0")
     assert telemetry.analytics_default() is False
+
+def test_record_event_success_201(monkeypatch):
+    monkeypatch.setenv("EVENTS_URL", "https://example.com")
+
+    def fake_post(url, headers=None, json=None, timeout=None):
+        class Resp:
+            status_code = 201
+        return Resp()
+
+    monkeypatch.setattr(telemetry.requests, "post", fake_post)
+    success = telemetry.record_event("name", {}, enabled=True)
+    assert success is True
+
+
+def test_record_event_success_204(monkeypatch):
+    monkeypatch.setenv("EVENTS_URL", "https://example.com")
+
+    def fake_post(url, headers=None, json=None, timeout=None):
+        class Resp:
+            status_code = 204
+        return Resp()
+
+    monkeypatch.setattr(telemetry.requests, "post", fake_post)
+    success = telemetry.record_event("name", {}, enabled=True)
+    assert success is True
+
+
+def test_record_event_http_error(monkeypatch):
+    monkeypatch.setenv("EVENTS_URL", "https://example.com")
+
+    def fake_post(url, headers=None, json=None, timeout=None):
+        class Resp:
+            status_code = 404
+        return Resp()
+
+    monkeypatch.setattr(telemetry.requests, "post", fake_post)
+    success = telemetry.record_event("name", {}, enabled=True)
+    assert success is False

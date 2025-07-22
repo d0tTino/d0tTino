@@ -4,6 +4,7 @@ import pytest
 pytest.importorskip("requests")
 
 import time
+import importlib
 
 from scripts import plugins
 
@@ -164,3 +165,46 @@ def test_load_registry_fetches_when_cache_expired(monkeypatch, tmp_path):
     assert called
     assert registry == {"z": "pkg"}
 
+
+def test_load_registry_uses_env_ttl(monkeypatch, tmp_path):
+    cache = tmp_path / "cache.json"
+    cache.write_text(
+        json.dumps({"timestamp": int(time.time()) - 5, "registry": {"plugins": {"x": "pkg"}}})
+    )
+    monkeypatch.setenv("PLUGIN_REGISTRY_TTL", "1")
+    reloaded = importlib.reload(plugins)
+    monkeypatch.setattr(reloaded, "CACHE_PATH", cache)
+
+    called = False
+
+    def fake_fetch(url):
+        nonlocal called
+        called = True
+        return {"plugins": {"y": "pkg"}}
+
+    monkeypatch.setattr(reloaded, "_fetch_registry", fake_fetch)
+
+    registry = reloaded.load_registry()
+    assert called
+    assert registry == {"y": "pkg"}
+
+
+def test_load_registry_fetches_with_zero_ttl(monkeypatch, tmp_path):
+    cache = tmp_path / "cache.json"
+    cache.write_text(
+        json.dumps({"timestamp": int(time.time()), "registry": {"plugins": {"x": "pkg"}}})
+    )
+    monkeypatch.setattr(plugins, "CACHE_PATH", cache)
+
+    called = False
+
+    def fake_fetch(url):
+        nonlocal called
+        called = True
+        return {"plugins": {"y": "pkg"}}
+
+    monkeypatch.setattr(plugins, "_fetch_registry", fake_fetch)
+
+    registry = plugins.load_registry(ttl=0)
+    assert called
+    assert registry == {"y": "pkg"}
