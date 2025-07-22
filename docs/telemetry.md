@@ -67,3 +67,15 @@ hashed developer ID and ISO week, counting only entries where `exit_code` is
 active developer per week” metric. `nsm_upload.py` can read NDJSON logs or fetch
 them from `EVENTS_URL`, compute the totals, and post the aggregated JSON back to
 the server.
+
+## Viewing Basic Stats
+
+Run `ai-cli stats` to retrieve events from `EVENTS_URL` and print a short
+summary:
+
+```bash
+EVENTS_URL=https://example.com ai-cli stats
+```
+
+The command displays the total number of recorded runs, the overall success
+rate, and the average latency in milliseconds.

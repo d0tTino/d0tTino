@@ -6,12 +6,13 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+import os
 from pathlib import Path
 from typing import List, Optional
 
 from llm import router
 from llm.backends import initialize
-from scripts import ai_exec, recipes, plugins, query_sources
+from scripts import ai_exec, recipes, plugins, query_sources, nsm_stats
 from scripts.cli_common import (
     read_prompt,
     build_analytics_parser,
@@ -125,6 +126,31 @@ def _cmd_sources(args: argparse.Namespace) -> int:
     return 0 if matches else 1
 
 
+def _cmd_stats(args: argparse.Namespace) -> int:
+    url = os.environ.get("EVENTS_URL")
+    if not url:
+        print("EVENTS_URL is not set", file=sys.stderr)
+        return 1
+    try:
+        events = list(nsm_stats.iter_events(url))
+    except Exception as exc:  # noqa: BLE001
+        print(f"failed to fetch events: {exc}", file=sys.stderr)
+        return 1
+    total = len(events)
+    successes = sum(1 for ev in events if ev.get("exit_code") == 0)
+    success_rate = successes / total * 100 if total else 0.0
+    latencies = []
+    for ev in events:
+        val = ev.get("latency_ms")
+        if isinstance(val, (int, float)):
+            latencies.append(float(val))
+    avg_latency = sum(latencies) / len(latencies) if latencies else 0.0
+    print(f"Total runs: {total}")
+    print(f"Success rate: {success_rate:.1f}%")
+    print(f"Average latency: {avg_latency:.2f} ms")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     analytics = build_analytics_parser()
 
@@ -181,6 +207,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Filter by tag (repeatable)",
     )
     sources.set_defaults(func=_cmd_sources)
+
+    stats = sub.add_parser(
+        "stats",
+        help="Show aggregated event stats from EVENTS_URL",
+    )
+    stats.set_defaults(func=_cmd_stats)
 
     return parser
 
