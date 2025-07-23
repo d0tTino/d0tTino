@@ -21,6 +21,8 @@ initialize()
 run_gemini = router.run_gemini
 run_ollama = router.run_ollama
 run_openrouter = router.run_openrouter
+run_anthropic = router.run_anthropic
+run_mistral = router.run_mistral
 create_default_chain = router.create_default_chain
 run_langchain = router.run_langchain
 _run_backend = router._run_backend
@@ -83,6 +85,8 @@ __all__ = [
     "run_gemini",
     "run_ollama",
     "run_openrouter",
+    "run_anthropic",
+    "run_mistral",
     "run_langchain",
     "_run_backend",
     "send_prompt",

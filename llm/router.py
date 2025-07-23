@@ -70,6 +70,26 @@ def run_openrouter(prompt: str, model: str) -> str:
     return func(prompt, model)
 
 
+def run_anthropic(prompt: str, model: str) -> str:
+    """Return Anthropic response for ``prompt`` using ``model`` and registered backend."""
+
+    func = get_backend("anthropic")
+    if func is run_anthropic:
+        from llm.backends.plugins import anthropic as plugin
+        func = plugin.run_anthropic
+    return func(prompt, model)
+
+
+def run_mistral(prompt: str, model: str) -> str:
+    """Return Mistral response for ``prompt`` using ``model`` and registered backend."""
+
+    func = get_backend("mistral")
+    if func is run_mistral:
+        from llm.backends.plugins import mistral as plugin
+        func = plugin.run_mistral
+    return func(prompt, model)
+
+
 def run_superclaude(prompt: str, model: str) -> str:
     """Return SuperClaude response for ``prompt`` using ``model``."""
     backend = cast(Any, SuperClaudeBackend)(model)
@@ -203,6 +223,8 @@ __all__ = [
     "run_gemini",
     "run_ollama",
     "run_openrouter",
+    "run_anthropic",
+    "run_mistral",
     "run_superclaude",
     "create_default_chain",
     "run_langchain",
