@@ -4,6 +4,26 @@ Third-party packages can add new LLM backends without modifying this repository.
 A plug-in must call `llm.backends.plugin_sdk.register_backend` when it is imported so the
 backend becomes available to the routing utilities.
 
+## Quick-start: Write your first Tino plug-in in 10 min
+
+1. Create a Python package for your plug-in.
+2. Expose a callable under the `llm.plugins` entry point in `pyproject.toml`.
+3. Register the callable using `register_backend`:
+
+   ```python
+   from llm.backends.plugin_sdk import register_backend
+
+   def run(prompt: str) -> str:
+       return "hello"  # replace with your logic
+
+   register_backend("my_backend", run)
+   ```
+4. Install the package with `pip install -e .` and run `ai-cli plugin backends list`
+   to confirm it loads.
+5. Submit a pull request adding your package to the public
+   [plugin registry](../plugin-registry.json) so others can discover it. See
+   "Adding Your Plug-in" below for details.
+
 ## Required Entry Point
 
 Expose the plug-in module via the `llm.plugins` entry point group in your
