@@ -1,5 +1,20 @@
 #!/usr/bin/env python3
-"""Manage LLM backend and recipe plug-ins."""
+"""Manage LLM backend and recipe plug-ins.
+
+The plug-in registry is a JSON object with optional ``plugins`` and ``recipes``
+mappings. Each mapping associates a plug-in or recipe name with the pip package
+that provides it::
+
+    {
+        "plugins": {"my_backend": "my-package"},
+        "recipes": {"my_recipe": "my-recipe-package"}
+    }
+
+The registry is fetched from :data:`DEFAULT_REGISTRY_URL` or the
+``PLUGIN_REGISTRY_URL`` environment variable and cached at
+:data:`CACHE_PATH`. The cache time-to-live defaults to 24 hours and can be
+customized via the ``PLUGIN_REGISTRY_TTL`` environment variable.
+"""
 
 from __future__ import annotations
 
@@ -116,7 +131,13 @@ def _fetch_registry(url: str) -> Dict[str, object] | None:
 def load_registry(
     section: str = "plugins", update: bool = False, ttl: int = DEFAULT_CACHE_TTL
 ) -> Dict[str, str]:
-    """Return the registry section with network → cache → default fallback."""
+    """Return the registry section with network → cache → default fallback.
+
+    The registry URL is taken from ``PLUGIN_REGISTRY_URL`` when set and
+    otherwise defaults to :data:`DEFAULT_REGISTRY_URL`. Cached registry data is
+    stored at :data:`CACHE_PATH` and expires after ``ttl`` seconds. The default
+    TTL is derived from ``PLUGIN_REGISTRY_TTL``.
+    """
 
     url = os.environ.get("PLUGIN_REGISTRY_URL", DEFAULT_REGISTRY_URL)
     ttl = max(0, ttl)
@@ -189,7 +210,9 @@ def _cmd_list_backends(args: argparse.Namespace) -> int:
     return _cmd_list_impl("plugins", args.update)
 
 
-def _cmd_install_impl(args: argparse.Namespace, section: str) -> int:
+def _run_pip_action(args: argparse.Namespace, section: str, pip_args: List[str]) -> int:
+    """Lookup package from ``section`` and run ``pip`` with ``pip_args``."""
+
     registry = load_registry(section, update=args.update)
     name = args.name
     if name not in registry:
@@ -198,7 +221,7 @@ def _cmd_install_impl(args: argparse.Namespace, section: str) -> int:
     pkg = registry[name]
     try:
         subprocess.run(
-            [sys.executable, "-m", "pip", "install", pkg],
+            [sys.executable, "-m", "pip", *pip_args, pkg],
             check=True,
             capture_output=True,
             text=True,
@@ -208,6 +231,10 @@ def _cmd_install_impl(args: argparse.Namespace, section: str) -> int:
         if e.stderr:
             print(e.stderr, file=sys.stderr, end="")
         return e.returncode
+
+
+def _cmd_install_impl(args: argparse.Namespace, section: str) -> int:
+    return _run_pip_action(args, section, ["install"])
 
 
 def _cmd_install_backend(args: argparse.Namespace) -> int:
@@ -215,24 +242,7 @@ def _cmd_install_backend(args: argparse.Namespace) -> int:
 
 
 def _cmd_remove_impl(args: argparse.Namespace, section: str) -> int:
-    registry = load_registry(section, update=args.update)
-    name = args.name
-    if name not in registry:
-        print(f"Unknown plug-in: {name}", file=sys.stderr)
-        return 1
-    pkg = registry[name]
-    try:
-        subprocess.run(
-            [sys.executable, "-m", "pip", "uninstall", "-y", pkg],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        return 0
-    except subprocess.CalledProcessError as e:
-        if e.stderr:
-            print(e.stderr, file=sys.stderr, end="")
-        return e.returncode
+    return _run_pip_action(args, section, ["uninstall", "-y"])
 
 
 def _cmd_remove_backend(args: argparse.Namespace) -> int:
