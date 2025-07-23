@@ -1,5 +1,7 @@
+#[cfg(feature = "gui")]
 use tauri::Manager;
 
+#[cfg(feature = "gui")]
 #[tauri::test]
 async fn main_window_title() {
     let context = tauri::generate_context!();

@@ -1,39 +1,58 @@
-use reqwest::Client;
-use serde::Deserialize;
+#[cfg(feature = "gui")]
+use std::fs;
+#[cfg(feature = "gui")]
+use tauri::{FileDropEvent, Manager, RunEvent, WindowEvent};
 
-#[derive(Deserialize)]
-struct PlanResponse {
-    steps: Option<Vec<String>>,
-}
-
+#[cfg(feature = "gui")]
 #[tauri::command]
 async fn plan(goal: String) -> Result<Vec<String>, String> {
-    let client = Client::new();
-    let resp = client
-        .post("http://localhost:8000/api/plan")
-        .json(&serde_json::json!({ "goal": goal }))
-        .send()
-        .await
-        .map_err(|e| e.to_string())?;
-    let plan: PlanResponse = resp.json().await.map_err(|e| e.to_string())?;
-    Ok(plan.steps.unwrap_or_default())
+    ume_tauri::commands::plan(goal).await
 }
 
+#[cfg(feature = "gui")]
 #[tauri::command]
 async fn exec(goal: String) -> Result<String, String> {
-    let client = Client::new();
-    let resp = client
-        .get("http://localhost:8000/api/exec")
-        .query(&[("goal", goal)])
-        .send()
-        .await
-        .map_err(|e| e.to_string())?;
-    resp.text().await.map_err(|e| e.to_string())
+    ume_tauri::commands::exec(goal).await
 }
 
+#[cfg(feature = "gui")]
+#[tauri::command]
+async fn list_recipes() -> Result<Vec<String>, String> {
+    ume_tauri::commands::list_recipes().await
+}
+
+#[cfg(feature = "gui")]
+#[tauri::command]
+async fn open_prompt_file(path: String) -> Result<String, String> {
+    ume_tauri::commands::open_prompt_file(path).await
+}
+
+#[cfg(feature = "gui")]
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![plan, exec])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .invoke_handler(tauri::generate_handler![
+            plan,
+            exec,
+            list_recipes,
+            open_prompt_file,
+        ])
+        .build(tauri::generate_context!())
+        .expect("error while running tauri application")
+        .run(|app_handle, event| match event {
+            RunEvent::WindowEvent { label, event, .. } => {
+                if let WindowEvent::FileDrop(FileDropEvent::Dropped(paths)) = event {
+                    if let Some(path) = paths.get(0) {
+                        if let Ok(content) = fs::read_to_string(path) {
+                            if let Some(window) = app_handle.get_window(&label) {
+                                let _ = window.emit("prompt-file", content);
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {}
+        });
 }
+
+#[cfg(not(feature = "gui"))]
+fn main() {}
