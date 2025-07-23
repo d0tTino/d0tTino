@@ -44,7 +44,9 @@ def test_record_event_posts(monkeypatch):
 
     assert sent["url"] == "https://example.com"
     expected_dev = uuid.uuid5(uuid.NAMESPACE_DNS, "alice").hex
-    assert sent["data"] == {"name": "name", "a": 1, "developer": expected_dev}
+    assert sent["data"] == {
+        "payload": {"name": "name", "a": 1, "developer": expected_dev}
+    }
     assert sent["headers"]["Authorization"] == "Bearer tok"
     assert success is True
 
@@ -96,7 +98,7 @@ def test_record_event_accepts_invalid_timestamps(monkeypatch):
         enabled=True,
     )
 
-    assert sent["data"]["end_ts"] == "not-a-number"
+    assert sent["data"]["payload"]["end_ts"] == "not-a-number"
     assert success is True
 
 
