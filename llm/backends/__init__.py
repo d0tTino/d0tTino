@@ -18,6 +18,8 @@ OllamaBackend: type[Backend] | None = None
 OpenRouterBackend: type[Backend] | None = None
 LobeChatBackend: type[Backend] | None = None
 MindBridgeBackend: type[Backend] | None = None
+AnthropicBackend: type[Backend] | None = None
+MistralBackend: type[Backend] | None = None
 SuperClaudeBackend: type[Backend] | None = _RealSuperClaudeBackend  # noqa: F811
 
 GeminiDSPyBackend = None
@@ -39,6 +41,8 @@ __all__ = [
     "OpenRouterBackend",
     "LobeChatBackend",
     "MindBridgeBackend",
+    "AnthropicBackend",
+    "MistralBackend",
     "SuperClaudeBackend",
     "GeminiDSPyBackend",
     "OllamaDSPyBackend",
