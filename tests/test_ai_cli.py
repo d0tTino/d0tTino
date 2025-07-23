@@ -312,10 +312,11 @@ def test_plan_posts_event(monkeypatch):
     assert rc == 0
     assert sent["url"] == "https://example.com"
     assert sent["headers"]["Authorization"] == "Bearer tok"
-    assert sent["data"]["name"] == "ai-cli-plan"
-    assert sent["data"]["goal"] == "goal"
-    assert sent["data"]["step_count"] == 1
-    assert "latency_ms" in sent["data"]
+    payload = sent["data"]["payload"]
+    assert payload["name"] == "ai-cli-plan"
+    assert payload["goal"] == "goal"
+    assert payload["step_count"] == 1
+    assert "latency_ms" in payload
 
 
 def test_do_posts_event(monkeypatch, tmp_path):
@@ -348,11 +349,12 @@ def test_do_posts_event(monkeypatch, tmp_path):
     log = tmp_path / "log.txt"
     rc = ai_cli.main(["do", "goal", "--log", str(log), "--analytics"])
     assert rc == 0
-    assert sent["data"]["name"] == "ai-cli-do"
-    assert sent["data"]["goal"] == "goal"
-    assert sent["data"]["exit_code"] == 0
-    assert sent["data"]["step_count"] == 1
-    assert "latency_ms" in sent["data"]
+    payload = sent["data"]["payload"]
+    assert payload["name"] == "ai-cli-do"
+    assert payload["goal"] == "goal"
+    assert payload["exit_code"] == 0
+    assert payload["step_count"] == 1
+    assert "latency_ms" in payload
 
 
 def test_stats_fetches_events(monkeypatch):

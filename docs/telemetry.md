@@ -24,12 +24,13 @@ or pass `--analytics` to individual commands to opt into sending events.
    ```bash
    supabase db shell <<'SQL'
    create extension if not exists "uuid-ossp";
-   create table if not exists events (
-       id uuid primary key default uuid_generate_v4(),
-       payload jsonb
-   );
-   SQL
-   ```
+ create table if not exists events (
+      id uuid primary key default uuid_generate_v4(),
+      payload jsonb
+  );
+  SQL
+  ```
+   The API accepts objects with a `payload` field containing the event JSON.
 4. Copy the anonymous API key from `.env` and point the scripts at the REST
    endpoint:
    ```bash
@@ -52,6 +53,12 @@ export EVENTS_URL=https://example.supabase.co/rest/v1/events
 export EVENTS_TOKEN=your-anon-key
 export EVENTS_ENABLED=true
 ```
+
+### Environment Variables
+
+- `EVENTS_URL` – Supabase REST endpoint to insert rows into the `events` table.
+- `EVENTS_TOKEN` – API key (anon or service role) used for authentication.
+- `EVENTS_ENABLED` – when set to a truthy value, enables event recording.
 
 ## Upload Aggregated Statistics
 

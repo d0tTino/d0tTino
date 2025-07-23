@@ -26,10 +26,11 @@ def record_event(name: str, payload: dict[str, Any], *, enabled: bool = False) -
     if not url:
         return False
     token = os.environ.get("EVENTS_TOKEN")
-    headers = {}
+    headers = {"Content-Type": "application/json"}
     if token:
         headers["apikey"] = token
         headers["Authorization"] = f"Bearer {token}"
+    headers.setdefault("Prefer", "return=minimal")
     dev_src = (
         os.environ.get("GIT_AUTHOR_EMAIL")
         or os.environ.get("EMAIL")
@@ -37,7 +38,7 @@ def record_event(name: str, payload: dict[str, Any], *, enabled: bool = False) -
         or "unknown"
     )
     developer = uuid.uuid5(uuid.NAMESPACE_DNS, dev_src).hex
-    data = {"name": name, "developer": developer, **payload}
+    data = {"payload": {"name": name, "developer": developer, **payload}}
     try:
         response = requests.post(url, headers=headers, json=data, timeout=5)
     except Exception as exc:  # noqa: BLE001
