@@ -38,6 +38,9 @@ PLUGIN_REGISTRY: Dict[str, str] = {
     "openrouter": "d0ttino-openrouter-plugin",
     "lobechat": "d0ttino-lobechat-plugin",
     "mindbridge": "d0ttino-mindbridge-plugin",
+    "anthropic": "d0ttino-anthropic-plugin",
+    "mistral": "d0ttino-mistral-plugin",
+    "lmql": "d0ttino-lmql-plugin",
 }
 
 # Mapping of recipe name to pip package used as a fallback when a registry

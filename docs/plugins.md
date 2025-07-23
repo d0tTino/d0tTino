@@ -52,6 +52,9 @@ ai-cli plugin backends list
 
 # Install a plug-in
 ai-cli plugin backends install sample
+ai-cli plugin backends install anthropic
+ai-cli plugin backends install mistral
+ai-cli plugin backends install lmql
 
 # Remove a plug-in
 ai-cli plugin backends remove sample
@@ -103,6 +106,17 @@ Example entry:
 }
 ```
 
+Placeholder packages for future backends follow the same format. Entries for
+Anthropic, Mistral and LMQL will look like:
+
+```json
+{
+  "anthropic": "d0ttino-anthropic-plugin",
+  "mistral": "d0ttino-mistral-plugin",
+  "lmql": "d0ttino-lmql-plugin"
+}
+```
+
 Add recipe packages under the `recipes` key:
 
 ```json
@@ -144,6 +158,9 @@ registry:
 python -m scripts.plugins backends install openrouter
 python -m scripts.plugins backends install lobechat
 python -m scripts.plugins backends install mindbridge
+python -m scripts.plugins backends install anthropic
+python -m scripts.plugins backends install mistral
+python -m scripts.plugins backends install lmql
 python -m scripts.plugins recipes install echo
 ```
 

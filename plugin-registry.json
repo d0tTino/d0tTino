@@ -3,7 +3,10 @@
     "sample": "d0ttino-sample-plugin",
     "openrouter": "d0ttino-openrouter-plugin",
     "lobechat": "d0ttino-lobechat-plugin",
-    "mindbridge": "d0ttino-mindbridge-plugin"
+    "mindbridge": "d0ttino-mindbridge-plugin",
+    "anthropic": "d0ttino-anthropic-plugin",
+    "mistral": "d0ttino-mistral-plugin",
+    "lmql": "d0ttino-lmql-plugin"
   },
   "recipes": {
     "echo": "https://example.com/packages/d0ttino-echo-recipe.tar.gz"
