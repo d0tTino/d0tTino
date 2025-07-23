@@ -5,7 +5,8 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "d0ttino-lmql-plugin"
 version = "0.1.0"
-dependencies = ["llm"]
+dependencies = ["lmql"]
+
 
 [project.entry-points."llm.plugins"]
 lmql = "d0ttino_lmql_plugin"

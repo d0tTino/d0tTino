@@ -5,7 +5,6 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "d0ttino-mistral-plugin"
 version = "0.1.0"
-dependencies = ["llm"]
 
 [project.entry-points."llm.plugins"]
 mistral = "d0ttino_mistral_plugin"
