@@ -290,6 +290,20 @@ following fields:
 See [docs/telemetry.md](docs/telemetry.md) for a quick Supabase setup and
 configuration of `EVENTS_URL` and `EVENTS_TOKEN`.
 
+Enable telemetry globally by exporting `EVENTS_ENABLED=true` before running the
+commands:
+
+```bash
+export EVENTS_ENABLED=true
+ai-cli do "Refactor the codebase"
+```
+
+To emit events for a single invocation pass `--analytics`:
+
+```bash
+ai-cli plan "Add tests" --analytics
+```
+
 These events record whether a command sequence completed successfully and can be
 aggregated per user. Summing successful executions for each developer over a
 calendar week yields the “successful automated tasks per active developer per
@@ -308,10 +322,12 @@ CSV rows for each successful `ai-do` run per developer per ISO week.
 
 ### Viewing Aggregated Statistics
 
-Run the script and pipe the output through `column -t` for a quick view:
+Run the script and pipe the output through `column -t` for a quick view or use
+the built-in metrics subcommand:
 
 ```bash
 EVENTS_URL=https://example.com python scripts/nsm_stats.py | column -t -s ,
+EVENTS_URL=https://example.com ai-cli metrics
 ```
 
 Each row shows the anonymized developer identifier, ISO week, and the number of

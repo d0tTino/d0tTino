@@ -240,4 +240,26 @@ Then query the collection using the retrieval graph:
 python scripts/rag_example.py "small document" --persist examples/chroma --collection demo
 ```
 
+## Telemetry
+
+The CLI tools can emit anonymous usage events when analytics is enabled. Opt in
+globally by exporting `EVENTS_ENABLED=true`:
+
+```bash
+export EVENTS_ENABLED=true
+ai-cli do "Refactor the codebase"
+```
+
+To send events for a single command use `--analytics`:
+
+```bash
+ai-cli plan "Add tests" --analytics
+```
+
+Aggregated weekly totals are available via the `metrics` subcommand:
+
+```bash
+EVENTS_URL=https://example.com ai-cli metrics
+```
+
 
