@@ -1,0 +1,11 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "{{ cookiecutter.project_slug }}"
+version = "0.1.0"
+dependencies = ["llm"]
+
+[project.entry-points."{{ cookiecutter.entry_point_group }}"]
+{{ cookiecutter.plugin_name }} = "{{ cookiecutter.package_name }}:run"
