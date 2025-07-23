@@ -28,6 +28,12 @@ async fn open_prompt_file(path: String) -> Result<String, String> {
 }
 
 #[cfg(feature = "gui")]
+#[tauri::command]
+async fn run_recipe(name: String, goal: String) -> Result<String, String> {
+    ume_tauri::commands::run_recipe(name, goal).await
+}
+
+#[cfg(feature = "gui")]
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
@@ -35,6 +41,7 @@ fn main() {
             exec,
             list_recipes,
             open_prompt_file,
+            run_recipe,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
