@@ -10,6 +10,7 @@ install_windows_terminal=false
 install_wsl=false
 setup_wsl=false
 setup_docker=false
+dry_run=false
 docker_image=""
 
 while [[ $# -gt 0 ]]; do
@@ -28,6 +29,9 @@ while [[ $# -gt 0 ]]; do
             ;;
         --setup-docker)
             setup_docker=true
+            ;;
+        --dry-run)
+            dry_run=true
             ;;
         --image)
             docker_image=$2
@@ -48,9 +52,16 @@ if $install_wsl; then args+=(--install-wsl); fi
 if $setup_wsl; then args+=(--setup-wsl); fi
 if $setup_docker; then args+=(--setup-docker); fi
 if [[ -n $docker_image ]]; then args+=(--image "$docker_image"); fi
+if $dry_run; then args+=(--dry-run); fi
 
 if command -v pwsh >/dev/null 2>&1; then
-    pwsh -NoLogo -NoProfile -File "$scripts/helpers/install_common.ps1" "${args[@]}"
+    cmd=(pwsh -NoLogo -NoProfile -File "$scripts/helpers/install_common.ps1" "${args[@]}")
 else
-    bash "$scripts/install_common.sh" "${args[@]}"
+    cmd=(bash "$scripts/install_common.sh" "${args[@]}")
+fi
+
+if $dry_run; then
+    echo "Dry run: ${cmd[*]}"
+else
+    "${cmd[@]}"
 fi

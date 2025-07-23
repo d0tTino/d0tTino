@@ -106,5 +106,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Dry run install script
-        run: bash install.sh --dry-run
+        run: |
+          bash install.sh --dry-run
+          bash scripts/install_common.sh --dry-run
         shell: bash

@@ -21,3 +21,11 @@ def test_install_ps1_dry_run() -> None:
     script = (REPO_ROOT / 'scripts' / 'install.ps1').resolve()
     command = f"[System.Management.Automation.Language.Parser]::ParseFile('{script}',[ref]\$null,[ref]\$null) | Out-Null"
     subprocess.run([pwsh, '-NoLogo', '-NoProfile', '-Command', command], check=True)
+
+
+def test_install_sh_exec_dry_run() -> None:
+    subprocess.run(['/bin/bash', 'install.sh', '--dry-run'], cwd=REPO_ROOT, check=True)
+
+
+def test_install_common_sh_exec_dry_run() -> None:
+    subprocess.run(['/bin/bash', 'scripts/install_common.sh', '--dry-run'], cwd=REPO_ROOT, check=True)
