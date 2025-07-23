@@ -1,5 +1,7 @@
 import argparse
 from pathlib import Path
+import json
+import time
 
 import pytest
 
@@ -30,4 +32,65 @@ def test_cmd_sync_recipes_uses_default_dir(monkeypatch, tmp_path):
     assert rc == 0
     for pkg in packages.values():
         assert (tmp_path / pkg).is_file()
+
+
+def test_load_registry_cache_miss(monkeypatch, tmp_path):
+    """Fetching occurs and cache file is written when missing."""
+    cache = tmp_path / "cache.json"
+    monkeypatch.setattr(plugins, "CACHE_PATH", cache)
+
+    result = {"plugins": {"a": "pkg"}}
+
+    class Resp:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return result
+
+    monkeypatch.setattr(plugins.requests, "get", lambda *a, **k: Resp())
+
+    reg = plugins.load_registry()
+    assert reg == {"a": "pkg"}
+    saved = json.loads(cache.read_text())
+    assert saved["registry"] == result
+
+
+def test_load_registry_cache_hit(monkeypatch, tmp_path):
+    """Cached registry is used when TTL has not expired."""
+    cache = tmp_path / "cache.json"
+    now = int(time.time())
+    cache.write_text(json.dumps({"timestamp": now, "registry": {"plugins": {"a": "pkg"}}}))
+    monkeypatch.setattr(plugins, "CACHE_PATH", cache)
+
+    def fail_fetch(url):  # pragma: no cover - should not run
+        raise AssertionError("fetch")
+
+    monkeypatch.setattr(plugins, "_fetch_registry", fail_fetch)
+
+    reg = plugins.load_registry(ttl=3600)
+    assert reg == {"a": "pkg"}
+
+
+def test_load_registry_corrupt_cache(monkeypatch, tmp_path):
+    """Corrupt cache triggers fetch and gets replaced."""
+    cache = tmp_path / "cache.json"
+    cache.write_text("{invalid")
+    monkeypatch.setattr(plugins, "CACHE_PATH", cache)
+
+    result = {"plugins": {"b": "pkg"}}
+
+    class Resp:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return result
+
+    monkeypatch.setattr(plugins.requests, "get", lambda *a, **k: Resp())
+
+    reg = plugins.load_registry()
+    assert reg == {"b": "pkg"}
+    loaded = json.loads(cache.read_text())
+    assert loaded["registry"] == result
 

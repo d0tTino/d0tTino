@@ -57,7 +57,7 @@ DEFAULT_REGISTRY_URL = "https://raw.githubusercontent.com/d0tTino/d0tTino/main/p
 CACHE_PATH = Path.home() / ".cache" / "d0ttino" / "plugin_registry.json"
 
 # Default TTL for the cached registry (24 hours)
-DEFAULT_CACHE_TTL = int(os.environ.get("PLUGIN_REGISTRY_TTL", "86400"))
+DEFAULT_CACHE_TTL = max(0, int(os.environ.get("PLUGIN_REGISTRY_TTL", "86400")))
 
 # Logger for plug-in management utilities
 logger = logging.getLogger(__name__)
@@ -116,6 +116,7 @@ def load_registry(
     """Return the registry section with network → cache → default fallback."""
 
     url = os.environ.get("PLUGIN_REGISTRY_URL", DEFAULT_REGISTRY_URL)
+    ttl = max(0, ttl)
 
     cached_ts: int | None = None
     cached_data: Dict[str, object] | None = None
@@ -137,12 +138,18 @@ def load_registry(
             elif isinstance(cached_raw, dict) and _valid_registry(cached_raw):
                 cached_ts = int(CACHE_PATH.stat().st_mtime)
                 cached_data = cached_raw
+        except json.JSONDecodeError:
+            logger.warning("Ignoring corrupt registry cache: %s", CACHE_PATH)
+            try:
+                CACHE_PATH.unlink()
+            except Exception:
+                pass
         except Exception:
             pass
 
     data: Dict[str, object] | None = None
 
-    if update or cached_ts is None or time.time() - cached_ts > ttl:
+    if update or cached_ts is None or ttl == 0 or time.time() - cached_ts > ttl:
         data = _fetch_registry(url)
         if data is None:
             data = cached_data

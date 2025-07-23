@@ -147,6 +147,17 @@ python -m scripts.plugins backends install mindbridge
 python -m scripts.plugins recipes install echo
 ```
 
+### Registry Environment Variables
+
+Configure how the helper script fetches and caches the plug-in registry using
+the following variables:
+
+- `PLUGIN_REGISTRY_URL` – Override the registry URL.
+- `PLUGIN_REGISTRY_TTL` – Cache time-to-live in seconds (defaults to 86400).
+
+The registry is cached at `~/.cache/d0ttino/plugin_registry.json`. Set the TTL
+to `0` to always fetch a fresh copy.
+
 ## Built-in Backends
 
 `llm` includes HTTP clients for OpenRouter, LobeChat and MindBridge. Set the
