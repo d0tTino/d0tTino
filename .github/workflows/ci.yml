@@ -112,6 +112,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Dry run install script
         run: |
-          bash install.sh --dry-run
+          bash install.sh --dry-run | sed "s#${PWD}/##" > install_output.txt
+          diff -u tests/expected/install_dry_run_${{ matrix.os }}.txt install_output.txt
           bash scripts/install_common.sh --dry-run
         shell: bash
