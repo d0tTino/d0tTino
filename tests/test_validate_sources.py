@@ -1,10 +1,6 @@
 import json
 from pathlib import Path
 
-import pytest
-
-pytest.importorskip("jsonschema")
-
 from scripts import validate_sources
 
 
