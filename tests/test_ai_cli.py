@@ -7,6 +7,7 @@ pytest.importorskip("requests")
 
 from scripts import ai_cli
 from scripts import cli_actions
+import telemetry
 
 
 def test_send_subcommand(monkeypatch):
@@ -287,3 +288,93 @@ def test_stats_requires_url(monkeypatch):
     with contextlib.redirect_stderr(err):
         rc = ai_cli.main(["stats"])
     assert rc == 1
+
+
+def test_plan_posts_event(monkeypatch):
+    monkeypatch.setenv("EVENTS_URL", "https://example.com")
+    monkeypatch.setenv("EVENTS_TOKEN", "tok")
+    monkeypatch.setenv("USER", "alice")
+    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: ["one"])
+    sent = {}
+
+    def fake_post(url, headers=None, json=None, timeout=None):
+        sent["url"] = url
+        sent["headers"] = headers
+        sent["data"] = json
+
+        class Resp:
+            status_code = 200
+
+        return Resp()
+
+    monkeypatch.setattr(telemetry.requests, "post", fake_post)
+    rc = ai_cli.main(["plan", "goal", "--analytics"])
+    assert rc == 0
+    assert sent["url"] == "https://example.com"
+    assert sent["headers"]["Authorization"] == "Bearer tok"
+    assert sent["data"]["name"] == "ai-cli-plan"
+    assert sent["data"]["goal"] == "goal"
+    assert sent["data"]["step_count"] == 1
+    assert "latency_ms" in sent["data"]
+
+
+def test_do_posts_event(monkeypatch, tmp_path):
+    monkeypatch.setenv("EVENTS_URL", "https://example.com")
+    monkeypatch.setenv("EVENTS_TOKEN", "tok")
+    monkeypatch.setenv("USER", "alice")
+    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: ["echo hi"])
+    monkeypatch.setattr("builtins.input", lambda _: "y")
+
+    class Result:
+        def __init__(self):
+            self.stdout = ""
+            self.stderr = ""
+            self.returncode = 0
+
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: Result())
+    sent = {}
+
+    def fake_post(url, headers=None, json=None, timeout=None):
+        sent["url"] = url
+        sent["headers"] = headers
+        sent["data"] = json
+
+        class Resp:
+            status_code = 200
+
+        return Resp()
+
+    monkeypatch.setattr(telemetry.requests, "post", fake_post)
+    log = tmp_path / "log.txt"
+    rc = ai_cli.main(["do", "goal", "--log", str(log), "--analytics"])
+    assert rc == 0
+    assert sent["data"]["name"] == "ai-cli-do"
+    assert sent["data"]["goal"] == "goal"
+    assert sent["data"]["exit_code"] == 0
+    assert sent["data"]["step_count"] == 1
+    assert "latency_ms" in sent["data"]
+
+
+def test_stats_fetches_events(monkeypatch):
+    ndjson = "{""exit_code"": 0, ""latency_ms"": 100}\n{""exit_code"": 1, ""latency_ms"": 200}\n"
+    monkeypatch.setenv("EVENTS_URL", "https://example.com/events")
+
+    called = {}
+
+    def fake_get(url, timeout=None):
+        called["url"] = url
+
+        class Resp:
+            text = ndjson
+
+            def raise_for_status(self):
+                pass
+
+        return Resp()
+
+    monkeypatch.setattr(ai_cli.nsm_stats.requests, "get", fake_get)
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        rc = ai_cli.main(["stats"])
+    assert rc == 0
+    assert called["url"] == "https://example.com/events"

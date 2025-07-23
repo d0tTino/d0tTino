@@ -45,6 +45,14 @@ or service key for `EVENTS_URL` and `EVENTS_TOKEN`.
 With `EVENTS_URL` and `EVENTS_TOKEN` set, enable analytics globally by exporting
 `EVENTS_ENABLED=true` or pass `--analytics` to individual commands.
 
+Example environment configuration:
+
+```bash
+export EVENTS_URL=https://example.supabase.co/rest/v1/events
+export EVENTS_TOKEN=your-anon-key
+export EVENTS_ENABLED=true
+```
+
 ## Upload Aggregated Statistics
 
 Use `nsm_upload.py` to compute weekly totals and send them to `EVENTS_URL`:
