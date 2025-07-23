@@ -94,3 +94,13 @@ EVENTS_URL=https://example.com ai-cli stats
 
 The command displays the total number of recorded runs, the overall success
 rate, and the average latency in milliseconds.
+
+## Viewing Aggregated Metrics
+
+Run `ai-cli metrics` to fetch weekly totals of successful `ai-do` runs:
+
+```bash
+EVENTS_URL=https://example.com ai-cli metrics
+```
+
+The output mirrors `nsm_stats.py` and prints `developer,week,count` CSV rows.

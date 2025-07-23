@@ -151,6 +151,24 @@ def _cmd_stats(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_metrics(args: argparse.Namespace) -> int:
+    """Show weekly totals of successful ai-do runs."""
+    source = args.source or os.environ.get("EVENTS_URL")
+    if not source:
+        print("EVENTS_URL or source required", file=sys.stderr)
+        return 1
+    try:
+        events = list(nsm_stats.iter_events(source))
+    except Exception as exc:  # noqa: BLE001
+        print(f"failed to fetch events: {exc}", file=sys.stderr)
+        return 1
+    counts = nsm_stats.aggregate_successful_runs(events)
+    for dev in sorted(counts):
+        for week in sorted(counts[dev]):
+            print(f"{dev},{week},{counts[dev][week]}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     analytics = build_analytics_parser()
 
@@ -214,6 +232,18 @@ def build_parser() -> argparse.ArgumentParser:
     )
     stats.set_defaults(func=_cmd_stats)
 
+    metrics = sub.add_parser(
+        "metrics",
+        help="Show weekly north star metrics from EVENTS_URL",
+    )
+    metrics.add_argument(
+        "source",
+        nargs="?",
+        default=None,
+        help="EVENTS_URL or path to local file",
+    )
+    metrics.set_defaults(func=_cmd_metrics)
+
     return parser
 
 
@@ -251,6 +281,11 @@ def plugin_main(argv: Optional[List[str]] = None) -> int:
 
 def sources_main(argv: Optional[List[str]] = None) -> int:
     argv = ["sources", *(argv or [])]
+    return main(argv)
+
+
+def metrics_main(argv: Optional[List[str]] = None) -> int:
+    argv = ["metrics", *(argv or [])]
     return main(argv)
 
 
