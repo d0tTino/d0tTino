@@ -59,6 +59,10 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
+      - name: Verify required schema tests
+        run: |
+          test -f tests/test_sources_schema.py
+          test -f tests/test_plugin_registry_schema.py
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -89,6 +93,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Verify required schema tests
+        run: |
+          test -f tests/test_sources_schema.py
+          test -f tests/test_plugin_registry_schema.py
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
