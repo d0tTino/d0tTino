@@ -18,6 +18,14 @@ esac
 
 OSTYPE="${OSTYPE,,}"
 
+run_cmd() {
+    if $dry_run; then
+        echo "$*"
+    else
+        "$@"
+    fi
+}
+
 ensure_deps() {
     local missing=()
     for cmd in "$@"; do
@@ -30,7 +38,7 @@ ensure_deps() {
         if [[ $OSTYPE == darwin* ]]; then
             if command -v brew >/dev/null 2>&1; then
                 echo "Installing ${missing[*]} with Homebrew" >&2
-                brew install "${missing[@]}"
+                run_cmd brew install "${missing[@]}"
             else
                 echo "Missing ${missing[*]}" >&2
                 echo "Install Homebrew from https://brew.sh and run: brew install ${missing[*]}" >&2
@@ -39,14 +47,14 @@ ensure_deps() {
         elif [[ $OSTYPE == linux* ]]; then
             if command -v apt-get >/dev/null 2>&1; then
                 echo "Installing ${missing[*]} with apt-get" >&2
-                sudo apt-get update
-                sudo apt-get install -y "${missing[@]}"
+                run_cmd sudo apt-get update
+                run_cmd sudo apt-get install -y "${missing[@]}"
             elif command -v dnf >/dev/null 2>&1; then
                 echo "Installing ${missing[*]} with dnf" >&2
-                sudo dnf install -y "${missing[@]}"
+                run_cmd sudo dnf install -y "${missing[@]}"
             elif command -v pacman >/dev/null 2>&1; then
                 echo "Installing ${missing[*]} with pacman" >&2
-                sudo pacman -S --noconfirm "${missing[@]}"
+                run_cmd sudo pacman -S --noconfirm "${missing[@]}"
             else
                 echo "Missing ${missing[*]}. Please install them and re-run this script." >&2
                 exit 1
@@ -61,7 +69,11 @@ ensure_deps() {
 run_pwsh() {
     local script=$1
     shift
-    pwsh -NoLogo -NoProfile -File "$scripts/$script" "$@"
+    if $dry_run; then
+        echo pwsh -NoLogo -NoProfile -File "$scripts/$script" "$@"
+    else
+        pwsh -NoLogo -NoProfile -File "$scripts/$script" "$@"
+    fi
 }
 
 install_winget=false
@@ -69,6 +81,7 @@ install_windows_terminal=false
 install_wsl=false
 setup_wsl=false
 setup_docker=false
+dry_run=false
 docker_image=""
 
 while [[ $# -gt 0 ]]; do
@@ -88,6 +101,9 @@ while [[ $# -gt 0 ]]; do
         --setup-docker)
             setup_docker=true
             ;;
+        --dry-run)
+            dry_run=true
+            ;;
         --image)
             docker_image=$2
             shift
@@ -105,9 +121,9 @@ if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == 
     run_pwsh fix-path.ps1
     run_pwsh helpers/install_common.ps1
 else
-    bash "$scripts/setup-hooks.sh"
-    bash "$scripts/helpers/install_fonts.sh"
-    bash "$scripts/helpers/sync_palettes.sh"
+    run_cmd bash "$scripts/setup-hooks.sh"
+    run_cmd bash "$scripts/helpers/install_fonts.sh"
+    run_cmd bash "$scripts/helpers/sync_palettes.sh"
 fi
 
 if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == windows* ]]; then
@@ -121,10 +137,10 @@ if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == 
         run_pwsh setup-docker.ps1 "${args[@]}"
     fi
 else
-    if $setup_wsl; then bash "$scripts/setup-wsl.sh"; fi
+    if $setup_wsl; then run_cmd bash "$scripts/setup-wsl.sh"; fi
     if $setup_docker; then
         args=()
         [[ -n $docker_image ]] && args+=("--image" "$docker_image")
-        bash "$scripts/setup-docker.sh" "${args[@]}"
+        run_cmd bash "$scripts/setup-docker.sh" "${args[@]}"
     fi
 fi
