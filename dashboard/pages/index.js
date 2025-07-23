@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { invoke } from '@tauri-apps/api/tauri';
+import { listen } from '@tauri-apps/api/event';
 
 export default function Home() {
   const [health, setHealth] = useState(null);
@@ -10,6 +12,8 @@ export default function Home() {
   const [goal, setGoal] = useState('');
   const [tasks, setTasks] = useState([]);
   const [logs, setLogs] = useState('');
+  const [recipes, setRecipes] = useState([]);
+  const [selected, setSelected] = useState('');
 
   useEffect(() => {
     fetch('/api/health')
@@ -21,6 +25,17 @@ export default function Home() {
       .then((res) => res.json())
       .then(setStats)
       .catch(() => {});
+
+    if (window && window.__TAURI__) {
+      invoke('list_recipes').then(setRecipes).catch(() => {});
+      listen('prompt-file', (e) => {
+        setPrompt(e.payload);
+      }).then((unsub) => {
+        return () => {
+          unsub();
+        };
+      });
+    }
   }, []);
 
   const sendPrompt = () => {
@@ -75,6 +90,13 @@ export default function Home() {
     };
   };
 
+  const runRecipe = () => {
+    if (!selected || !window.__TAURI__) return;
+    invoke('run_recipe', { name: selected, goal })
+      .then((out) => setLogs(out))
+      .catch(() => setLogs('error'));
+  };
+
   return (
     <div>
       <h1>UME Dashboard</h1>
@@ -97,6 +119,17 @@ export default function Home() {
         <button onClick={applyPalette}>Apply</button>
         {status && <p>{status}</p>}
       </div>
+      {recipes.length > 0 && (
+        <div>
+          <select value={selected} onChange={(e) => setSelected(e.target.value)}>
+            <option value="">Select recipe</option>
+            {recipes.map((r) => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+          <button onClick={runRecipe}>Run Recipe</button>
+        </div>
+      )}
       <div>
         <input value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="goal" />
         <button onClick={getPlan}>Plan</button>
