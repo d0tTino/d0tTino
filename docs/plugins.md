@@ -230,6 +230,19 @@ my_recipe = "my_package.recipes:run"
 See `scripts/recipes/plugins/sample.py` for a simple example.
 An installable package is available under `examples/plugins/sample_recipe`.
 
+## Cookiecutter Template
+
+A cookiecutter project under `examples/plugin_template` generates new
+backend or recipe packages. Install cookiecutter and run the template:
+
+```bash
+pip install cookiecutter
+cookiecutter examples/plugin_template
+```
+
+Answer the prompts to create a minimal package that registers your plug‑in
+via the appropriate entry point.
+
 ## Running a Recipe
 
 Use the ``ai-cli recipe`` subcommand to execute a named recipe. The command
