@@ -160,6 +160,9 @@ Install them directly with `pip` while developing:
 pip install -e examples/plugins/openrouter
 pip install -e examples/plugins/lobechat
 pip install -e examples/plugins/mindbridge
+pip install -e examples/plugins/anthropic
+pip install -e examples/plugins/mistral
+pip install -e examples/plugins/lmql
 pip install -e examples/plugins/echo_recipe
 pip install -e examples/plugins/sample_recipe
 ```

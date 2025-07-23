@@ -208,3 +208,21 @@ def test_load_registry_fetches_with_zero_ttl(monkeypatch, tmp_path):
     registry = plugins.load_registry(ttl=0)
     assert called
     assert registry == {"y": "pkg"}
+
+
+def test_builtin_plugins_present(monkeypatch, tmp_path):
+    monkeypatch.setattr(plugins, "CACHE_PATH", tmp_path / "missing.json")
+
+    def raise_exc(*a, **k):
+        raise plugins.requests.exceptions.RequestException("boom")
+
+    monkeypatch.setattr(plugins.requests, "get", raise_exc)
+
+    registry = plugins.load_registry()
+    expected = {
+        "anthropic": "d0ttino-anthropic-plugin",
+        "mistral": "d0ttino-mistral-plugin",
+        "lmql": "d0ttino-lmql-plugin",
+    }
+    for name, pkg in expected.items():
+        assert registry[name] == pkg
