@@ -20,13 +20,13 @@ test = [
     "fastapi",
     "uvicorn",
     "httpx",
-    "jsonschema",
+    "jsonschema>=4",
 ]
-cli = ["tomli_w", "jsonschema"]
+cli = ["tomli_w", "jsonschema>=4"]
 lmql = ["lmql"]
 guidance = ["guidance"]
 etl = ["unstructured", "chromadb"]
-plugins = ["jsonschema"]
+plugins = ["jsonschema>=4"]
 
 [project.scripts]
 thm = "scripts.thm:main"
