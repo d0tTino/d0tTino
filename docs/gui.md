@@ -10,4 +10,4 @@ The Tauri application offers a minimal interface for sending prompts, reviewing 
 4. Click **Plan** to list the shell commands for your goal.
 5. Hit **Run** to execute the steps or choose a recipe from the drop-down and run it.
 
-Dropped files trigger the `prompt-file` event and populate the prompt field.
+Dropped files trigger the `prompt-file` event and populate the prompt field. The loaded file path is shown below the drop zone so you can confirm which prompt was imported.
