@@ -7,3 +7,4 @@
 # -e .[guidance]
 # -e .[etl]
 -r requirements.txt
+jsonschema
