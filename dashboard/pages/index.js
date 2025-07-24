@@ -87,24 +87,36 @@ export default function Home() {
   };
 
   const getPlan = () => {
-    fetch('/api/plan', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ goal })
-    })
-      .then((res) => res.json())
-      .then((data) => setTasks(data.steps || []));
+    if (window && window.__TAURI__) {
+      invoke('plan', { goal })
+        .then((steps) => setTasks(steps))
+        .catch(() => setTasks([]));
+    } else {
+      fetch('/api/plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ goal })
+      })
+        .then((res) => res.json())
+        .then((data) => setTasks(data.steps || []));
+    }
   };
 
   const runExec = () => {
     setLogs('');
-    const es = new EventSource(`/api/exec?goal=${encodeURIComponent(goal)}`);
-    es.onmessage = (e) => {
-      setLogs((prev) => prev + e.data + '\n');
-    };
-    es.onerror = () => {
-      es.close();
-    };
+    if (window && window.__TAURI__) {
+      invoke('exec', { goal })
+        .then((out) => setLogs(out))
+        .catch(() => setLogs('error'));
+    } else {
+      const es = new EventSource(`/api/exec?goal=${encodeURIComponent(goal)}`);
+      es.onmessage = (e) => {
+        setLogs((prev) => prev + e.data + '\n');
+      };
+      es.onerror = () => {
+        es.close();
+      };
+    }
   };
 
   const runRecipe = () => {
