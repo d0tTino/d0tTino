@@ -434,3 +434,23 @@ def test_metrics_requires_url(monkeypatch):
     with contextlib.redirect_stderr(err):
         rc = ai_cli.main(["metrics"])
     assert rc == 1
+
+
+def test_metrics_main(monkeypatch):
+    events = [
+        {"name": "ai-do", "exit_code": 0, "developer": "alice", "end_ts": 1693516800},
+        {"name": "ai-do", "exit_code": 0, "developer": "bob", "end_ts": 1693603200},
+    ]
+    monkeypatch.setenv("EVENTS_URL", "https://example.com")
+    monkeypatch.setattr(ai_cli.nsm_stats, "iter_events", lambda src: iter(events))
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        rc = ai_cli.metrics_main([])
+    assert rc == 0
+    expected = ai_cli.nsm_stats.aggregate_successful_runs(events)
+    lines = out.getvalue().splitlines()
+    exp_lines = []
+    for dev in sorted(expected):
+        for week in sorted(expected[dev]):
+            exp_lines.append(f"{dev},{week},{expected[dev][week]}")
+    assert lines == exp_lines
