@@ -208,6 +208,46 @@ The install helper expects a working package manager and write access to your pr
 - **Homebrew not found** – install Homebrew and ensure `brew` is on your `PATH` if the script prints `command not found: brew`.
 - **Permission denied** – rerun the command with `sudo` when the package manager or the installer reports insufficient permissions.
 
+### Installing via Homebrew (macOS)
+
+On macOS you can install the required tools with Homebrew before running
+`install.sh`:
+
+```bash
+brew install git curl unzip stow
+./install.sh
+```
+
+Expected output:
+
+```text
+Installing curl unzip git with Homebrew
+==> Downloading https://...
+🍺  git was successfully installed!
+```
+
+If the script prints `command not found: brew`, install Homebrew using the
+instructions above and make sure `brew` is on your `PATH`.
+
+### Installing with Nix
+
+Nix users can spin up a temporary environment containing all dependencies:
+
+```bash
+nix-shell -p git curl unzip stow
+./install.sh
+```
+
+Expected output:
+
+```text
+these paths will be fetched (0.05 MiB download, 0.25 MiB unpacked)
+copying path '/nix/store/...-stow'
+```
+
+If `nix-shell` complains about missing channels, run `nix-channel --update`.
+Install Nix from <https://nixos.org/nix/> when `nix-shell` is unavailable.
+
 ## Local LLM tools
 
 Install the Gemini CLI and pull the default Ollama model:
