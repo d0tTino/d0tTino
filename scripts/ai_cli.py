@@ -17,6 +17,7 @@ from scripts.cli_common import (
     read_prompt,
     build_analytics_parser,
 )
+import requests
 from scripts import cli_actions
 from telemetry import analytics_default
 import time
@@ -153,16 +154,29 @@ def _cmd_stats(args: argparse.Namespace) -> int:
 
 def _cmd_metrics(args: argparse.Namespace) -> int:
     """Show weekly totals of successful ai-do runs."""
-    source = args.source or os.environ.get("EVENTS_URL")
-    if not source:
-        print("EVENTS_URL or source required", file=sys.stderr)
-        return 1
-    try:
-        events = list(nsm_stats.iter_events(source))
-    except Exception as exc:  # noqa: BLE001
-        print(f"failed to fetch events: {exc}", file=sys.stderr)
-        return 1
-    counts = nsm_stats.aggregate_successful_runs(events)
+    if args.aggregates_url:
+        url = args.aggregates_url or os.environ.get("NSM_URL")
+        if not url:
+            print("NSM_URL or --aggregates-url required", file=sys.stderr)
+            return 1
+        try:
+            resp = requests.get(url, timeout=10)
+            resp.raise_for_status()
+            counts = resp.json()
+        except Exception as exc:  # noqa: BLE001
+            print(f"failed to fetch aggregates: {exc}", file=sys.stderr)
+            return 1
+    else:
+        source = args.source or os.environ.get("EVENTS_URL")
+        if not source:
+            print("EVENTS_URL or source required", file=sys.stderr)
+            return 1
+        try:
+            events = list(nsm_stats.iter_events(source))
+        except Exception as exc:  # noqa: BLE001
+            print(f"failed to fetch events: {exc}", file=sys.stderr)
+            return 1
+        counts = nsm_stats.aggregate_successful_runs(events)
     for dev in sorted(counts):
         for week in sorted(counts[dev]):
             print(f"{dev},{week},{counts[dev][week]}")
@@ -234,13 +248,19 @@ def build_parser() -> argparse.ArgumentParser:
 
     metrics = sub.add_parser(
         "metrics",
-        help="Show weekly north star metrics from EVENTS_URL",
+        help="Show weekly north star metrics",
     )
     metrics.add_argument(
         "source",
         nargs="?",
         default=None,
         help="EVENTS_URL or path to local file",
+    )
+    metrics.add_argument(
+        "--aggregates-url",
+        dest="aggregates_url",
+        default=None,
+        help="URL for precomputed weekly aggregates (default: NSM_URL)",
     )
     metrics.set_defaults(func=_cmd_metrics)
 

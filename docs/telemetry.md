@@ -52,6 +52,7 @@ Example environment configuration:
 export EVENTS_URL=https://example.supabase.co/rest/v1/events
 export EVENTS_TOKEN=your-anon-key
 export EVENTS_ENABLED=true
+export NSM_URL=https://example.supabase.co/rest/v1/nsm
 ```
 
 ### Environment Variables
@@ -59,10 +60,11 @@ export EVENTS_ENABLED=true
 - `EVENTS_URL` – Supabase REST endpoint to insert rows into the `events` table.
 - `EVENTS_TOKEN` – API key (anon or service role) used for authentication.
 - `EVENTS_ENABLED` – when set to a truthy value, enables event recording.
+- `NSM_URL` – endpoint used by `nsm_upload.py` to store weekly aggregates.
 
 ## Upload Aggregated Statistics
 
-Use `nsm_upload.py` to compute weekly totals and send them to `EVENTS_URL`:
+Use `nsm_upload.py` to compute weekly totals and send them to `NSM_URL`:
 
 ```bash
 python scripts/nsm_upload.py events.json
@@ -70,7 +72,7 @@ python scripts/nsm_upload.py events.json
 
 Provide a path or URL with raw NDJSON events. The script aggregates successful
 `ai-do` runs per developer using `nsm_stats.aggregate_successful_runs()` and
-posts the resulting JSON to `EVENTS_URL`. Authentication via `EVENTS_TOKEN` is
+posts the resulting JSON to `NSM_URL`. Authentication via `EVENTS_TOKEN` is
 supported just like `record_event`.
 
 ## Tracking the North Star Metric
@@ -97,10 +99,11 @@ rate, and the average latency in milliseconds.
 
 ## Viewing Aggregated Metrics
 
-Run `ai-cli metrics` to fetch weekly totals of successful `ai-do` runs:
+Run `ai-cli metrics` to fetch weekly totals of successful `ai-do` runs.
+Use `--aggregates-url` (or set `NSM_URL`) to read precomputed totals:
 
 ```bash
-EVENTS_URL=https://example.com ai-cli metrics
+NSM_URL=https://example.com/nsm ai-cli metrics --aggregates-url https://example.com/nsm
 ```
 
 The output mirrors `nsm_stats.py` and prints `developer,week,count` CSV rows.

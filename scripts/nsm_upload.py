@@ -20,6 +20,11 @@ def main(argv: Iterable[str] | None = None) -> int:
         default=os.environ.get("EVENTS_URL"),
         help="EVENTS_URL or path to local file",
     )
+    parser.add_argument(
+        "--dest",
+        default=os.environ.get("NSM_URL"),
+        help="URL to post weekly aggregates (default: NSM_URL or EVENTS_URL)",
+    )
     args = parser.parse_args(list(argv) if argv is not None else None)
     if not args.source:
         parser.error("source or EVENTS_URL required")
@@ -27,9 +32,9 @@ def main(argv: Iterable[str] | None = None) -> int:
     events = list(nsm_stats.iter_events(args.source))
     counts = nsm_stats.aggregate_successful_runs(events)
 
-    url = os.environ.get("EVENTS_URL")
+    url = args.dest or os.environ.get("NSM_URL") or os.environ.get("EVENTS_URL")
     if not url:
-        parser.error("EVENTS_URL required for upload")
+        parser.error("destination URL required for upload")
     token = os.environ.get("EVENTS_TOKEN")
     headers = {}
     if token:

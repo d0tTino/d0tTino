@@ -20,14 +20,14 @@ def test_nsm_upload_posts_counts(monkeypatch):
         sent["json"] = json
 
     monkeypatch.setattr(nsm_upload.requests, "post", fake_post)
-    monkeypatch.setenv("EVENTS_URL", "https://example.com")
+    monkeypatch.setenv("NSM_URL", "https://example.com/nsm")
     monkeypatch.setenv("EVENTS_TOKEN", "tok")
 
     rc = nsm_upload.main(["dummy.json"])
     expected = nsm_stats.aggregate_successful_runs(events)
 
     assert rc == 0
-    assert sent["url"] == "https://example.com"
+    assert sent["url"] == "https://example.com/nsm"
     assert sent["json"] == expected
     assert sent["headers"]["Authorization"] == "Bearer tok"
 
@@ -39,6 +39,6 @@ def test_nsm_upload_handles_error(monkeypatch):
         raise RuntimeError("nope")
 
     monkeypatch.setattr(nsm_upload.requests, "post", fake_post)
-    monkeypatch.setenv("EVENTS_URL", "https://example.com")
+    monkeypatch.setenv("NSM_URL", "https://example.com/nsm")
     rc = nsm_upload.main(["dummy.json"])
     assert rc == 1
