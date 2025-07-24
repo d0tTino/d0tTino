@@ -290,6 +290,34 @@ def _cmd_sync_recipes(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_publish_recipes(args: argparse.Namespace) -> int:
+    """Upload a recipe package to a registry."""
+    url = args.url or os.environ.get("PLUGIN_REGISTRY_UPLOAD_URL")
+    if not url:
+        print("Upload URL required (--url or PLUGIN_REGISTRY_UPLOAD_URL)", file=sys.stderr)
+        return 1
+    try:
+        subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "upload",
+                "--repository-url",
+                url,
+                args.path,
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return 0
+    except subprocess.CalledProcessError as exc:
+        if exc.stderr:
+            print(exc.stderr, file=sys.stderr, end="")
+        return exc.returncode
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -335,6 +363,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory to install downloaded packages",
     )
     r_sync.set_defaults(func=_cmd_sync_recipes)
+
+    r_publish = recipe_sub.add_parser(
+        "publish", help="Upload a recipe package to a registry"
+    )
+    r_publish.add_argument("path", help="Path to recipe package")
+    r_publish.add_argument(
+        "--url",
+        default=os.environ.get("PLUGIN_REGISTRY_UPLOAD_URL"),
+        help="Registry URL for upload (default: PLUGIN_REGISTRY_UPLOAD_URL)",
+    )
+    r_publish.set_defaults(func=_cmd_publish_recipes)
 
     return parser
 

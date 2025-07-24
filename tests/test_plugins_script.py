@@ -300,3 +300,33 @@ def test_recipe_sync_creates_packages(monkeypatch, tmp_path):
     for pkg in packages.values():
         assert (tmp_path / pkg).is_file()
 
+
+def test_recipe_publish(monkeypatch):
+    called = {}
+
+    def fake_run(cmd, *a, **k):
+        called["cmd"] = cmd
+
+        class Res:
+            returncode = 0
+
+        return Res()
+
+    monkeypatch.setattr(plugins.subprocess, "run", fake_run)
+
+    rc = plugins.main(
+        [
+            "recipes",
+            "publish",
+            "package.whl",
+            "--url",
+            "https://example.com/simple",
+        ]
+    )
+    assert rc == 0
+    assert called["cmd"][0] == sys.executable
+    assert "upload" in called["cmd"]
+    assert "--repository-url" in called["cmd"]
+    assert "https://example.com/simple" in called["cmd"]
+    assert "package.whl" in called["cmd"]
+

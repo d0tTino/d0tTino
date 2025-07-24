@@ -106,6 +106,7 @@ ai-cli plugin recipes list
 ai-cli plugin recipes install echo
 ai-cli plugin recipes remove echo
 ai-cli plugin recipes sync
+ai-cli plugin recipes publish dist/my_recipe-0.1-py3-none-any.whl --url https://example.com/simple
 ```
 
 `recipes sync` downloads and installs the recipe packages listed in the
@@ -121,6 +122,14 @@ Use `--dest` to specify a custom download directory:
 ```bash
 python -m scripts.plugins recipes sync --dest /tmp/recipe_pkgs
 ```
+
+Use `recipes publish` to upload a built recipe package to a registry:
+
+```bash
+python -m scripts.plugins recipes publish dist/my_recipe-0.1-py3-none-any.whl --url https://example.com/simple
+```
+
+Set `PLUGIN_REGISTRY_UPLOAD_URL` to configure the default upload target.
 
 ### Adding Your Plug-in
 
