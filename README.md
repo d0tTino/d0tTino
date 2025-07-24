@@ -93,7 +93,8 @@ is considered complex.
 `ai-do` exits with the code of the first failing command, making it suitable for
 automation scripts.
 
-Next, install the Git hooks so `pre-commit` runs automatically:
+Next, install the Git hooks so `pre-commit` runs automatically. The script
+invokes `pre-commit install` after the common setup:
 
 ```bash
 ./install.sh
@@ -103,7 +104,9 @@ Next, install the Git hooks so `pre-commit` runs automatically:
 
 `install.sh` sets up the hooks for you. It detects your platform and calls
 `scripts/setup-hooks.ps1` on Windows or `scripts/setup-hooks.sh` elsewhere so
-`pre-commit` runs on each commit.
+`pre-commit` runs on each commit. The hook uses `.pre-commit-config.yaml` to
+run `ruff check` and `mypy` automatically.
+Install the development dependencies with `pip install -r requirements-dev.txt` before running the hook or tests.
 
 You can then run the test suite to verify the configuration:
 
@@ -155,8 +158,8 @@ Additional guides:
 Run `scripts/setup-hooks.sh` to enable the local hooks automatically
 (equivalent to running `git config core.hooksPath .githooks`). `install.sh`
 and `bootstrap.ps1` call the appropriate script for you (`scripts/setup-hooks.ps1`
-on Windows and `scripts/setup-hooks.sh` elsewhere), so you usually don't need to
-run it manually:
+on Windows and `scripts/setup-hooks.sh` elsewhere) and then execute
+`pre-commit install`, so you usually don't need to run it manually:
 
 ```bash
 ./scripts/setup-hooks.sh
@@ -164,9 +167,10 @@ run it manually:
 
 Once enabled, the `pre-commit` hook first runs `winget upgrade --all` and then
 automatically exports your current `winget` package list to
-`winget-packages.json` whenever you commit on Windows. Be sure to commit the
-updated file so your package list stays in sync. On Linux or WSL the export is
-skipped unless `winget` is available.
+`winget-packages.json` whenever you commit on Windows. In addition, it invokes
+`pre-commit` to run `ruff` and `mypy` as defined in `.pre-commit-config.yaml`.
+Be sure to commit the updated file so your package list stays in sync. On Linux
+or WSL the export is skipped unless `winget` is available.
 
 If the hook is disabled, run the following commands manually to upgrade and
 export your package list:
@@ -220,11 +224,12 @@ pytest -n auto || pytest
 ## Contributing
 
 Run `ruff` and `mypy` before committing to ensure the code is lint and type
-error free:
+error free. You can run them directly or via `pre-commit`:
 
 ```bash
 ruff check .
 mypy --install-types --non-interactive
+pre-commit run --files <changed files>
 ```
 
 After fixing any errors, rerun the commands and verify they report zero issues.

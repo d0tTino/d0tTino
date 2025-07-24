@@ -64,4 +64,9 @@ if $dry_run; then
     echo "Dry run: ${cmd[*]}"
 else
     "${cmd[@]}"
+    if command -v pre-commit >/dev/null 2>&1; then
+        pre-commit install
+    else
+        echo "pre-commit not found; skipping hook installation" >&2
+    fi
 fi
