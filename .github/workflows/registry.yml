@@ -1,0 +1,46 @@
+name: Update Plugin Registry
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - plugin-registry.json
+      - plugin-registry.schema.json
+      - scripts/plugins.py
+  pull_request:
+    paths:
+      - plugin-registry.json
+      - plugin-registry.schema.json
+      - scripts/plugins.py
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Update registry file
+        run: python scripts/update_registry.py
+      - name: Check for differences
+        id: diff
+        run: |
+          if git diff --quiet plugin-registry.json; then
+            echo "diff=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "diff=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Commit updated file
+        if: steps.diff.outputs.diff == 'true' && github.event_name == 'pull_request'
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@users.noreply.github.com
+          git add plugin-registry.json
+          git commit -m "Update plugin registry" || exit 0
+          git push
+      - name: Fail if registry differs
+        if: steps.diff.outputs.diff == 'true'
+        run: |
+          echo "::error::plugin-registry.json is outdated. Run 'python scripts/update_registry.py' and commit the result." \
+          && exit 1
