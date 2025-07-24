@@ -301,7 +301,7 @@ def _cmd_publish_recipes(args: argparse.Namespace) -> int:
             [
                 sys.executable,
                 "-m",
-                "pip",
+                "twine",
                 "upload",
                 "--repository-url",
                 url,
