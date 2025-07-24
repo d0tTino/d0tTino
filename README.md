@@ -42,6 +42,12 @@ with `python -m scripts.plugins`. For example:
 python -m scripts.plugins backends install openrouter
 ```
 
+For development and testing install everything using the development requirements file:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
 See the [backend plug-in guide](docs/plugins.md) for details. If you
 prefer not to install any extras, install `jsonschema` separately with:
 
@@ -179,13 +185,14 @@ pwsh -File scripts/export-winget.ps1
 
 ## Testing
 
-Install all required packages using the helper file so `pytest` and runtime
+Install all required packages using the development requirements file so `pytest` and runtime
 dependencies like `requests` are available. Running the command below ensures
 every dependency needed for the tests is installed:
 
 ```bash
 pip install -r requirements-dev.txt
 ```
+This installs `jsonschema`, which the schema validation tests require.
 If `pytest` reports missing modules, consult `/tmp/pytest.log` to see which
 packages are required and ensure they are installed.
 To install everything manually use:
