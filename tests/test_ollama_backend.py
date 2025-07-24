@@ -2,6 +2,7 @@ import subprocess
 import pytest
 
 from llm import router as ai_router
+from llm.backends import register_backend
 from llm.backends.plugins import ollama as plugin
 
 
@@ -40,6 +41,7 @@ def test_run_ollama_uses_dspy_backend(monkeypatch):
             return 'dspy'
 
     monkeypatch.setattr(plugin, 'OllamaDSPyBackend', Dummy)
+    register_backend('ollama', plugin.run_ollama)
     out = ai_router.run_ollama('hi', 'm')
 
     assert out == 'dspy'
@@ -59,6 +61,7 @@ def test_run_ollama_without_dspy(monkeypatch):
 
     monkeypatch.setattr(plugin, 'OllamaDSPyBackend', None)
     monkeypatch.setattr(plugin, 'OllamaBackend', Dummy)
+    register_backend('ollama', plugin.run_ollama)
 
     out = ai_router.run_ollama('yo', 'm')
 

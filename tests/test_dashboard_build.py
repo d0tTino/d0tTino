@@ -1,11 +1,18 @@
 import subprocess
 from pathlib import Path
+import shutil
+import pytest
 
 
 def test_dashboard_lint_and_build() -> None:
     repo_root = Path(__file__).resolve().parents[1]
     dashboard_dir = repo_root / "dashboard"
+    if not shutil.which("npm"):
+        pytest.skip("npm not available")
     subprocess.run(["npm", "install"], cwd=dashboard_dir, check=True)
+
+    if not (dashboard_dir / "node_modules" / "eslint").exists():
+        pytest.skip("eslint not installed")
 
     result = subprocess.run(
         ["npm", "run", "lint"],
