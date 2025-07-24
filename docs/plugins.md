@@ -123,7 +123,8 @@ Use `--dest` to specify a custom download directory:
 python -m scripts.plugins recipes sync --dest /tmp/recipe_pkgs
 ```
 
-Use `recipes publish` to upload a built recipe package to a registry:
+Use `recipes publish` to upload a built recipe package to a registry. The helper
+invokes `twine upload` under the hood, so make sure `twine` is installed:
 
 ```bash
 python -m scripts.plugins recipes publish dist/my_recipe-0.1-py3-none-any.whl --url https://example.com/simple

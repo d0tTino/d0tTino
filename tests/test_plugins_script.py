@@ -325,6 +325,7 @@ def test_recipe_publish(monkeypatch):
     )
     assert rc == 0
     assert called["cmd"][0] == sys.executable
+    assert "twine" in called["cmd"]
     assert "upload" in called["cmd"]
     assert "--repository-url" in called["cmd"]
     assert "https://example.com/simple" in called["cmd"]
