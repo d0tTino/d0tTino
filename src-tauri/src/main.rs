@@ -52,6 +52,10 @@ fn main() {
                         if let Ok(content) = fs::read_to_string(path) {
                             if let Some(window) = app_handle.get_window(&label) {
                                 let _ = window.emit("prompt-file", content);
+                                let _ = window.emit(
+                                    "prompt-file-path",
+                                    path.to_string_lossy().to_string(),
+                                );
                             }
                         }
                     }

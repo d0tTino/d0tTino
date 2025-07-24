@@ -14,6 +14,7 @@ export default function Home() {
   const [logs, setLogs] = useState('');
   const [recipes, setRecipes] = useState([]);
   const [selected, setSelected] = useState('');
+  const [promptFile, setPromptFile] = useState('');
 
   useEffect(() => {
     fetch('/api/health')
@@ -30,6 +31,13 @@ export default function Home() {
       invoke('list_recipes').then(setRecipes).catch(() => {});
       listen('prompt-file', (e) => {
         setPrompt(e.payload);
+      }).then((unsub) => {
+        return () => {
+          unsub();
+        };
+      });
+      listen('prompt-file-path', (e) => {
+        setPromptFile(e.payload);
       }).then((unsub) => {
         return () => {
           unsub();
@@ -55,12 +63,16 @@ export default function Home() {
     if (!file) return;
     if (window && window.__TAURI__ && file.path) {
       invoke('open_prompt_file', { path: file.path })
-        .then((content) => setPrompt(content))
+        .then((content) => {
+          setPrompt(content);
+          setPromptFile(file.path);
+        })
         .catch(() => {});
     } else {
       const reader = new FileReader();
       reader.onload = (ev) => setPrompt(ev.target.result);
       reader.readAsText(file);
+      setPromptFile(file.name);
     }
   };
 
@@ -116,6 +128,7 @@ export default function Home() {
         <div onDrop={handleDrop} onDragOver={(e) => e.preventDefault()} style={{ border: '1px dashed #ccc', padding: '0.5em', marginTop: '0.5em' }}>
           Drag prompt file here
         </div>
+        {promptFile && <p>Loaded: {promptFile}</p>}
         <button onClick={sendPrompt}>Send</button>
         {response && <p>{response}</p>}
       </div>
