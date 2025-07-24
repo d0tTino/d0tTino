@@ -61,6 +61,25 @@ register_backend("my_backend", run)
 
 See `llm/backends/plugins/sample.py` for a full example.
 
+## Contributing new back-ends
+
+1. Package your implementation as a normal Python distribution with a
+   `pyproject.toml` file.
+2. Expose the backend via the `llm.plugins` entry point:
+
+   ```toml
+   [project.entry-points."llm.plugins"]
+   my_backend = "my_package.plugins:backend"
+   ```
+
+   The referenced module must call
+   `llm.backends.plugin_sdk.register_backend("my_backend", run)` to register
+   your callable.
+3. Publish the package to PyPI or install it locally with `pip install -e .`.
+4. Add your backend to
+   [plugin-registry.json](../plugin-registry.json) and open a pull request so
+   others can install it using `ai-cli plugin backends install`.
+
 ## Managing Plug-ins
 
 Use the `ai-cli plugin` subcommand or the `plugins` helper to install or remove
