@@ -65,3 +65,19 @@ async fn run_recipe_executes_sample() {
     assert!(out.contains("$ echo hello"));
     assert!(out.contains("hello"));
 }
+
+#[tokio::test]
+async fn list_recipes_detects_new_file() {
+    use std::fs;
+    use std::path::Path;
+
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../scripts/recipes/plugins");
+    let file = dir.join("temp_test.py");
+    fs::write(&file, "# temp").expect("write file");
+
+    let recipes = list_recipes().await.expect("list");
+    fs::remove_file(&file).expect("cleanup");
+
+    assert!(recipes.contains(&"temp_test".to_string()));
+}
