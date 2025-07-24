@@ -52,7 +52,12 @@ export default function Home() {
   const handleDrop = (e) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
-    if (file) {
+    if (!file) return;
+    if (window && window.__TAURI__ && file.path) {
+      invoke('open_prompt_file', { path: file.path })
+        .then((content) => setPrompt(content))
+        .catch(() => {});
+    } else {
       const reader = new FileReader();
       reader.onload = (ev) => setPrompt(ev.target.result);
       reader.readAsText(file);

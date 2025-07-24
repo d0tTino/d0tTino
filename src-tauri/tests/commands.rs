@@ -3,7 +3,7 @@ use std::convert::Infallible;
 use std::net::SocketAddr;
 use hyper::{service::{make_service_fn, service_fn}, Body, Method, Request, Response, Server};
 use tokio::task::JoinHandle;
-use ume_tauri::commands::{list_recipes, open_prompt_file, plan, exec};
+use ume_tauri::commands::{list_recipes, open_prompt_file, plan, exec, run_recipe};
 
 async fn spawn_server() -> JoinHandle<()> {
     async fn handler(req: Request<Body>) -> Result<Response<Body>, Infallible> {
@@ -53,4 +53,15 @@ async fn plan_and_exec_use_server() {
     assert_eq!(out, "ok".to_string());
 
     srv.abort();
+}
+
+#[tokio::test]
+async fn run_recipe_executes_sample() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+    std::env::set_var("PYTHONPATH", root);
+    let out = run_recipe("sample".to_string(), "hello".to_string())
+        .await
+        .expect("run recipe");
+    assert!(out.contains("$ echo hello"));
+    assert!(out.contains("hello"));
 }
