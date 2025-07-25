@@ -41,9 +41,13 @@ def sync_registry(data: dict[str, object]) -> bool:
     Returns ``True`` if ``data`` was modified.
     """
     expected_plugins = plugins.PLUGIN_REGISTRY
+    expected_recipes = plugins.RECIPE_REGISTRY
     changed = False
     if data.get("plugins") != expected_plugins:
         data["plugins"] = expected_plugins
+        changed = True
+    if data.get("recipes") != expected_recipes:
+        data["recipes"] = expected_recipes
         changed = True
     return changed
 

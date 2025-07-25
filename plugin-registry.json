@@ -9,6 +9,6 @@
     "lmql": "d0ttino-lmql-plugin"
   },
   "recipes": {
-    "echo": "https://example.com/packages/d0ttino-echo-recipe.tar.gz"
+    "echo": "d0ttino-echo-recipe"
   }
 }
