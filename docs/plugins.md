@@ -6,23 +6,29 @@ backend becomes available to the routing utilities.
 
 ## Quick-start: Write your first Tino plug-in in 10 min
 
-1. Create a Python package for your plug-in.
-2. Expose a callable under the `llm.plugins` entry point in `pyproject.toml`.
-3. Register the callable using `register_backend`:
+1. Copy one of the packages under `examples/plugins/*` to bootstrap your project.
+   Each template contains a minimal `pyproject.toml` and plug-in module.
+2. In your `pyproject.toml` expose a callable under the `llm.plugins` entry point:
+
+   ```toml
+   [project.entry-points."llm.plugins"]
+   my_backend = "my_package.plugin:backend"
+   ```
+3. Implement `backend` and register it using `register_backend`:
 
    ```python
    from llm.backends.plugin_sdk import register_backend
 
-   def run(prompt: str) -> str:
-       return "hello"  # replace with your logic
+   def backend(prompt: str) -> str:
+       return "hello"  # your logic here
 
-   register_backend("my_backend", run)
+   register_backend("my_backend", backend)
    ```
 4. Install the package with `pip install -e .` and run `ai-cli plugin backends list`
-   to confirm it loads.
-5. Submit a pull request adding your package to the public
-   [plugin registry](../plugin-registry.json) so others can discover it. See
-   "Adding Your Plug-in" below for details.
+   to ensure it loads.
+5. Open a pull request adding your package to
+   [plugin-registry.json](../plugin-registry.json) so others can install it via
+   the registry.
 
 ## Required Entry Point
 
