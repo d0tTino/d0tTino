@@ -43,6 +43,9 @@ query-sources = "scripts.query_sources:main"
 
 [project.entry-points."d0ttino.recipes"]
 sample = "scripts.recipes.plugins.sample:run"
+build = "scripts.recipes.plugins.build:run"
+test = "scripts.recipes.plugins.test:run"
+deploy = "scripts.recipes.plugins.deploy:run"
 
 
 [tool.setuptools.packages.find]

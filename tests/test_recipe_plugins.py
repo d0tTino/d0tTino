@@ -14,6 +14,12 @@ def test_discover_recipes_finds_builtin_sample():
     mapping = recipes.discover_recipes()
     assert "sample" in mapping
     assert mapping["sample"]("goal") == ["echo goal"]
+    assert "build" in mapping
+    assert mapping["build"]("app") == ["echo build app"]
+    assert "test" in mapping
+    assert mapping["test"]("app") == ["echo test app"]
+    assert "deploy" in mapping
+    assert mapping["deploy"]("app") == ["echo deploy app"]
 
 
 def test_discover_recipes_loads_entry_points(monkeypatch):
