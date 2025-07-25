@@ -263,6 +263,27 @@ def test_sources_subcommand(capsys):
     assert "Python Docs" in output
 
 
+def test_sources_filter_category(capsys):
+    rc = ai_cli.main(["sources", "--category", "DevOps"])
+    output = capsys.readouterr().out
+    assert rc == 0
+    assert "Docker Documentation" in output
+
+
+def test_sources_name_and_tag_filters(capsys):
+    rc = ai_cli.main(["sources", "--name", "fastapi", "--tag", "python"])
+    output = capsys.readouterr().out
+    assert rc == 0
+    assert "FastAPI" in output
+
+
+def test_sources_no_matches(capsys):
+    rc = ai_cli.main(["sources", "--category", "missing"])
+    output = capsys.readouterr().out
+    assert rc == 1
+    assert output == ""
+
+
 def test_stats_subcommand(monkeypatch):
     events = [
         {"exit_code": 0, "latency_ms": 100},
