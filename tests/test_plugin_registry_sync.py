@@ -13,3 +13,7 @@ def test_plugin_registry_up_to_date() -> None:
         "plugin-registry.json is outdated. "
         "Run 'python scripts/update_registry.py' and commit the result."
     )
+    assert data.get("recipes") == plugins.RECIPE_REGISTRY, (
+        "plugin-registry.json is outdated. "
+        "Run 'python scripts/update_registry.py' and commit the result."
+    )
