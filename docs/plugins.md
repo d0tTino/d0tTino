@@ -279,8 +279,17 @@ loader can discover it. The loader iterates
 my_recipe = "my_package.recipes:run"
 ```
 
-See `scripts/recipes/plugins/sample.py` for a simple example.
+See `scripts/recipes/plugins/sample.py` for a simple example. Additional
+examples for common automation tasks are provided in the same directory with
+`build`, `test` and `deploy` recipes.
 An installable package is available under `examples/plugins/sample_recipe`.
+Publish a built wheel with `recipes publish` and sync recipes from a registry
+with `recipes sync`:
+
+```bash
+python -m scripts.plugins recipes publish dist/build_recipe-0.1-py3-none-any.whl --url https://example.com/simple
+python -m scripts.plugins recipes sync
+```
 
 ## Cookiecutter Template
 
@@ -303,4 +312,5 @@ it returns interactively.
 
 ```bash
 ai-cli recipe sample "Show my goal"
+ai-cli recipe build "Project"
 ```
