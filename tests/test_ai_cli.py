@@ -173,12 +173,13 @@ def test_recipe_subcommand(monkeypatch, tmp_path):
     )
     captured = {}
 
-    def fake_run_recipe(name, goal, steps, *, log_path, analytics=False):
+    def fake_run_recipe(name, goal, steps, *, log_path, analytics=False, nats_url=None):
         captured["name"] = name
         captured["goal"] = goal
         captured["steps"] = steps
         captured["log"] = log_path
         captured["analytics"] = analytics
+        captured["nats_url"] = nats_url
         return 0
 
     monkeypatch.setattr(cli_actions, "run_recipe", fake_run_recipe)
@@ -189,6 +190,7 @@ def test_recipe_subcommand(monkeypatch, tmp_path):
     assert captured["goal"] == "goal"
     assert captured["steps"] == ["echo goal"]
     assert captured["log"] == log
+    assert captured["nats_url"] is None
 
 
 def test_recipe_records_event(monkeypatch, tmp_path):
@@ -376,6 +378,30 @@ def test_do_posts_event(monkeypatch, tmp_path):
     assert payload["exit_code"] == 0
     assert payload["step_count"] == 1
     assert "latency_ms" in payload
+
+
+def test_plan_nats_publish(monkeypatch):
+    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: ["one"])
+    published = []
+
+    def fake_publish(url, name, payload):
+        published.append((url, name, payload))
+        return True
+
+    monkeypatch.setattr(ai_cli.ume_events, "publish_event", fake_publish)
+    rc = ai_cli.main([
+        "plan",
+        "goal",
+        "--analytics",
+        "--nats-url",
+        "nats://example.com",
+    ])
+
+    assert rc == 0
+    url, name, payload = published[0]
+    assert url == "nats://example.com"
+    assert name == "ai-cli-plan"
+    assert payload["goal"] == "goal"
 
 
 def test_stats_fetches_events(monkeypatch):

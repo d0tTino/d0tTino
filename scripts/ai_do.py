@@ -29,6 +29,7 @@ def run_recipe(
     *,
     log_path: Path,
     analytics: bool = False,
+    nats_url: str | None = None,
 ) -> int:
     """Execute a recipe given steps or a callable and record an event."""
     return cli_actions.run_recipe(
@@ -37,6 +38,7 @@ def run_recipe(
         steps_or_callable,
         log_path=log_path,
         analytics=analytics,
+        nats_url=nats_url,
     )
 
 
@@ -67,6 +69,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             "model_source": "remote" if ai_exec.last_model_remote() else "local",
         },
         duration_key="duration_ms",
+        nats_url=args.nats_url if hasattr(args, "nats_url") else None,
     )
     if args.notify:
         if exit_code == 0:
