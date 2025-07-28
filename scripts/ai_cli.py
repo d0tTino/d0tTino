@@ -8,7 +8,7 @@ import subprocess
 import sys
 import os
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Any
 
 from llm import router
 from llm.backends import initialize
@@ -20,11 +20,23 @@ from scripts.cli_common import (
 import requests
 from scripts import cli_actions
 from telemetry import analytics_default
+from ume import events as ume_events
+import logging
 import time
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 initialize()
+
+
+def _publish_event(args: argparse.Namespace, name: str, payload: dict[str, Any]) -> None:
+    """Record analytics and publish to NATS when configured."""
+    cli_actions.record_event_logged(name, payload, enabled=args.analytics)
+    if args.analytics and getattr(args, "nats_url", None):
+        try:
+            ume_events.publish_event(args.nats_url, name, payload)
+        except Exception as exc:  # noqa: BLE001
+            logging.debug("Failed to publish NATS event: %s", exc)
 
 
 def _cmd_send(args: argparse.Namespace) -> int:
@@ -33,16 +45,12 @@ def _cmd_send(args: argparse.Namespace) -> int:
         output = router.send_prompt(prompt, local=args.local, model=args.model)
     except (FileNotFoundError, subprocess.CalledProcessError) as exc:
         print(exc, file=sys.stderr)
-        cli_actions.record_event_logged(
-            "ai-cli-send", {"exit_code": 1}, enabled=args.analytics
-        )
+        _publish_event(args, "ai-cli-send", {"exit_code": 1})
         return 1
     sys.stdout.write(output)
     if not output.endswith("\n"):
         sys.stdout.write("\n")
-    cli_actions.record_event_logged(
-        "ai-cli-send", {"exit_code": 0}, enabled=args.analytics
-    )
+    _publish_event(args, "ai-cli-send", {"exit_code": 0})
     return 0
 
 
@@ -52,7 +60,8 @@ def _cmd_plan(args: argparse.Namespace) -> int:
     for step in steps:
         print(step)
     end = time.time()
-    cli_actions.record_event_logged(
+    _publish_event(
+        args,
         "ai-cli-plan",
         {
             "goal": args.goal,
@@ -61,7 +70,6 @@ def _cmd_plan(args: argparse.Namespace) -> int:
             "end_ts": end,
             "latency_ms": int((end - start) * 1000),
         },
-        enabled=args.analytics,
     )
     return 0
 
@@ -76,6 +84,7 @@ def _cmd_do(args: argparse.Namespace) -> int:
         log_path=args.log,
         analytics=args.analytics,
         payload={"goal": args.goal, "step_count": len(steps)},
+        nats_url=args.nats_url,
     )
 
 
@@ -93,10 +102,12 @@ def _cmd_recipe(args: argparse.Namespace) -> int:
         steps,
         log_path=args.log,
         analytics=args.analytics,
+        nats_url=args.nats_url,
     )
     end = time.time()
     if exit_code == 0:
-        cli_actions.record_event_logged(
+        _publish_event(
+            args,
             "ai-cli-recipe",
             {
                 "recipe": args.name,
@@ -107,7 +118,6 @@ def _cmd_recipe(args: argparse.Namespace) -> int:
                 "end_ts": end,
                 "latency_ms": int((end - start) * 1000),
             },
-            enabled=args.analytics,
         )
     return exit_code
 
@@ -186,6 +196,12 @@ def _cmd_metrics(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     analytics = build_analytics_parser()
 
+    analytics.add_argument(
+        "--nats-url",
+        dest="nats_url",
+        default=None,
+        help="NATS server URL for telemetry",
+    )
     parser = argparse.ArgumentParser(description=__doc__, parents=[analytics])
     sub = parser.add_subparsers(dest="command", required=True)
     send = sub.add_parser("send", help="Send a prompt to the LLM backend", parents=[analytics])

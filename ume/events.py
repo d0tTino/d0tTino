@@ -6,6 +6,7 @@ import logging
 import os
 from typing import Any, AsyncIterator
 
+
 from nats.aio.client import Client as NATS
 
 logger = logging.getLogger(__name__)
@@ -82,3 +83,4 @@ __all__ = [
     "DEFAULT_NATS_URL",
     "DEFAULT_SUBJECT",
 ]
+
