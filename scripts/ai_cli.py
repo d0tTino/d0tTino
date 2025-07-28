@@ -12,6 +12,7 @@ from typing import List, Optional, Any
 
 from llm import router
 from llm.backends import initialize
+import asyncio
 from scripts import ai_exec, recipes, plugins, query_sources, nsm_stats
 from scripts.cli_common import (
     read_prompt,
@@ -34,7 +35,7 @@ def _publish_event(args: argparse.Namespace, name: str, payload: dict[str, Any])
     cli_actions.record_event_logged(name, payload, enabled=args.analytics)
     if args.analytics and getattr(args, "nats_url", None):
         try:
-            ume_events.publish_event(args.nats_url, name, payload)
+            asyncio.run(ume_events.publish_event(name, payload, url=args.nats_url))
         except Exception as exc:  # noqa: BLE001
             logging.debug("Failed to publish NATS event: %s", exc)
 
