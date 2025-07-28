@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
+import asyncio
 from pathlib import Path
 from typing import Iterable, Callable, Sequence, Any
 
@@ -45,7 +46,7 @@ def run_steps(
     record_event_logged(event_name, data, enabled=analytics)
     if analytics and nats_url:
         try:
-            ume_events.publish_event(nats_url, event_name, data)
+            asyncio.run(ume_events.publish_event(event_name, data, url=nats_url))
         except Exception as exc:  # noqa: BLE001
             logging.debug("Failed to publish NATS event: %s", exc)
     return exit_code
