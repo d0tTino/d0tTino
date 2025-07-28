@@ -163,7 +163,8 @@ sudo bash scripts/setup-wsl.sh
    ```bash
    git clone https://github.com/d0tTino/d0tTino.git
    ```
-2. Use `stow` or your preferred method to symlink the dotfiles into place.
+2. Run `scripts/install_dotfiles.sh` to link the packages with GNU Stow. Pass
+   `--dry-run` to preview the commands or `--target DIR` to change the destination.
 3. Run `install.sh` to clean up your PATH and install the shared resources:
    ```bash
    ./install.sh
