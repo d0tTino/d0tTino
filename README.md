@@ -15,6 +15,13 @@ Key directories:
 - `scripts/query_sources.py` – search `metadata/sources.json` by name or tag (installs as `query-sources` with the `cli` extra)
 - `research-papers/` – space to store research PDFs, links, and notes
 
+Link the dotfiles into place with GNU Stow:
+
+```bash
+scripts/install_dotfiles.sh
+```
+Use `--dry-run` to preview the changes or `--target DIR` to specify an alternative location.
+
 Get the fonts, palettes and Git hooks in one step:
 
 ```bash
