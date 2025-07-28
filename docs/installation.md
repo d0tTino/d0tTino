@@ -408,11 +408,20 @@ Hyper-V is useful for testing scripts in clean environments.
 3. Mount a local directory to `/home/node/.n8n` to persist workflows between runs.
 4. A simple test flow watches a folder and sends new files to Nextcloud using the built-in nodes.
 
+## API Docker image
+
+Build the container image using the new Dockerfile at the repository root and start the service with Docker Compose:
+
+```bash
+docker compose build api
+docker compose up api
+```
+
 ## API service
 
 The compose file includes a FastAPI backend used by the upcoming dashboard.
 
-1. Start the API service:
+1. After building the image, launch the API service:
    ```bash
    docker compose up api
    ```
