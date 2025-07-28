@@ -47,6 +47,7 @@ def run_steps(
     if analytics and nats_url:
         try:
             asyncio.run(ume_events.publish_event(nats_url, event_name, data))  # type: ignore[misc,arg-type]
+
         except Exception as exc:  # noqa: BLE001
             logging.debug("Failed to publish NATS event: %s", exc)
     return exit_code
