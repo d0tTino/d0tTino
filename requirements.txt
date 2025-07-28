@@ -13,3 +13,4 @@ httpx
 fastapi
 uvicorn
 jsonschema
+nats-py
