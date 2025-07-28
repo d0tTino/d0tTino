@@ -7,6 +7,7 @@ from typing import Iterable, Callable, Sequence, Any
 
 from scripts.cli_common import execute_steps
 from telemetry import record_event
+from ume.events import publish_event_sync
 
 
 def record_event_logged(name: str, payload: dict[str, Any], *, enabled: bool = False) -> None:
@@ -14,6 +15,7 @@ def record_event_logged(name: str, payload: dict[str, Any], *, enabled: bool = F
     success = record_event(name, payload, enabled=enabled)
     if not success:
         logging.debug("Failed to record telemetry")
+    publish_event_sync(name, payload, enabled=enabled)
 
 
 def run_steps(
