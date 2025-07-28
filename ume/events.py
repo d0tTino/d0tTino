@@ -73,7 +73,11 @@ def publish_event_sync(name: str, payload: dict[str, Any], *, enabled: bool = Fa
     """Synchronous helper used by CLI tools."""
     if not enabled:
         return False
-    return asyncio.run(publish_event(name, payload))
+    try:
+        return asyncio.run(publish_event(name, payload))
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Failed to publish telemetry event: %s", exc)
+        return False
 
 
 __all__ = [

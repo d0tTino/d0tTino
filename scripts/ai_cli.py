@@ -21,6 +21,7 @@ import requests
 from scripts import cli_actions
 from telemetry import analytics_default
 from ume import events as ume_events
+import asyncio
 import logging
 import time
 
@@ -34,7 +35,7 @@ def _publish_event(args: argparse.Namespace, name: str, payload: dict[str, Any])
     cli_actions.record_event_logged(name, payload, enabled=args.analytics)
     if args.analytics and getattr(args, "nats_url", None):
         try:
-            ume_events.publish_event(args.nats_url, name, payload)
+            asyncio.run(ume_events.publish_event(args.nats_url, name, payload))  # type: ignore[misc,arg-type]
         except Exception as exc:  # noqa: BLE001
             logging.debug("Failed to publish NATS event: %s", exc)
 
