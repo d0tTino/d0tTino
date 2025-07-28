@@ -14,8 +14,8 @@ Key directories:
 - `scripts/thm.py` – Terminal Harmony Manager for palette and profile sync (installs as `thm` when using `pip install -e .[cli]`)
 - `scripts/query_sources.py` – search `metadata/sources.json` by name or tag (installs as `query-sources` with the `cli` extra)
 - `research-papers/` – space to store research PDFs, links, and notes
-
-Link the dotfiles into place with GNU Stow:
+ 
+After cloning the repository, run the helper script to link the packages using GNU Stow:
 
 ```bash
 scripts/install_dotfiles.sh
