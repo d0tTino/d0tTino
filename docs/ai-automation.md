@@ -274,4 +274,32 @@ Aggregated weekly totals are available via the `metrics` subcommand:
 EVENTS_URL=https://example.com ai-cli metrics
 ```
 
+### Local NATS Server
+
+The event utilities in `ume/events.py` rely on a running
+[NATS](https://nats.io) server. Launch one locally with Docker:
+
+```bash
+docker run --rm -p 4222:4222 nats:latest
+```
+
+Alternatively install `nats-server` via your package manager and run
+`nats-server` directly. The CLI publishes to the server defined by the
+`NATS_URL` environment variable (default: `nats://127.0.0.1:4222`) and uses
+`NATS_SUBJECT` to choose the subject (default: `telemetry.events`). Export these
+variables along with `EVENTS_ENABLED=true` to enable streaming:
+
+```bash
+export NATS_URL=nats://127.0.0.1:4222
+export NATS_SUBJECT=telemetry.events
+export EVENTS_ENABLED=true
+```
+
+Pass `--nats-url` to `ai-cli` to override the server per command:
+
+```bash
+ai-cli do "Refactor the codebase" --analytics --nats-url "$NATS_URL"
+```
+
+
 
