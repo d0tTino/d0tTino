@@ -91,6 +91,18 @@ The React dashboard connects to the same host, typically started with
 `pnpm dev` on <http://localhost:3000>. The Tauri build uses the same
 React code so both environments share a consistent interface.
 
+### Docker image
+
+Build the container image and launch the API with Docker Compose:
+
+```bash
+docker-compose build api
+docker-compose up api
+```
+
+The compose file uses the repository `Dockerfile` which installs
+`requirements.txt` and runs `uvicorn api:app` on port 8000.
+
 ### Legacy Streamlit interface
 
 Earlier versions provided a Streamlit UI located at `ui/web_app.py`. It remains
