@@ -74,6 +74,11 @@ When the mode is `auto` the router now sorts available backends by the
 estimated cost of running the prompt and ignores models that cannot fit the
 input within their context window.
 
+Set `LLM_PRIMARY_BACKEND` to define which backend the router tries first. Use
+`LLM_FALLBACK_BACKEND` to specify a secondary option. These variables override
+the `DEFAULT_PRIMARY_BACKEND` and `DEFAULT_FALLBACK_BACKEND` constants in
+`llm/router.py`, which default to `gemini` and `ollama` respectively.
+
 ## FastAPI/Next.js Dashboard
 
 The project ships with a small FastAPI backend that exposes routes for sending
