@@ -9,16 +9,27 @@ from typing import Iterable, Callable, Sequence, Any
 from ume import events as ume_events
 
 from scripts.cli_common import execute_steps
-from telemetry import record_event
+from telemetry import record_event, async_record_event
 from ume.events import publish_event_sync
 
 
 def record_event_logged(name: str, payload: dict[str, Any], *, enabled: bool = False) -> None:
     """Record an analytics event and log failures."""
-    success = record_event(name, payload, enabled=enabled)
+    if not enabled:
+        publish_event_sync(name, payload, enabled=enabled)
+        return
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+    if loop and loop.is_running():
+        loop.create_task(async_record_event(name, payload, enabled=True))
+        success = True
+    else:
+        success = record_event(name, payload, enabled=True)
     if not success:
         logging.debug("Failed to record telemetry")
-    publish_event_sync(name, payload, enabled=enabled)
+    publish_event_sync(name, payload, enabled=True)
 
 
 def run_steps(
