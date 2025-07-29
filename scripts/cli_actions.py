@@ -1,3 +1,4 @@
+"""Helper routines for executing CLI recipes with analytics support."""
 from __future__ import annotations
 
 import logging
