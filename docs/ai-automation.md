@@ -333,3 +333,20 @@ ai-cli do "Refactor the codebase" --analytics --nats-url "$NATS_URL"
 
 
 
+
+## CLI RLHF Prototype
+
+The repository includes `cli_rlhf.py`, an experimental script for training a language model to produce shell commands. It relies on optional packages that are not installed with the default requirements:
+
+```bash
+pip install torch transformers datasets trl
+```
+
+Run the script directly to launch a short PPO training session:
+
+```bash
+python cli_rlhf.py
+```
+
+Training logs are written to `cli_rlhf_rewards.csv` and the final model weights are saved under the `cli_rlhf_model/` directory.
+Refer to [tests/test_cli_rlhf.py](../tests/test_cli_rlhf.py) for a minimal test exercising the training loop with stubs.

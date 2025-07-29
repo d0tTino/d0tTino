@@ -22,7 +22,6 @@ import requests
 from scripts import cli_actions
 from telemetry import analytics_default
 from ume import events as ume_events
-import asyncio
 import logging
 import time
 
