@@ -250,6 +250,20 @@ detects Debian/Ubuntu, Arch and macOS automatically:
 ./scripts/setup-screenshot-env.sh
 ```
 
+#### Step-by-step
+
+1. **Install Fastfetch and Bottom** using the script above. It also installs
+   Nushell and the Zed editor.
+2. **Link the Starship configuration** so the prompt uses this repository's
+   theme:
+   ```bash
+   ln -sf $(pwd)/starship.toml ~/.config/starship.toml
+   ```
+   ```powershell
+   New-Item -ItemType SymbolicLink -Path $Env:USERPROFILE\.config\starship.toml `
+     -Target (Join-Path $PWD 'starship.toml')
+   ```
+
 ### Example profile entries
 
 Add the following to your PowerShell profile
@@ -276,7 +290,7 @@ screenshot:
 mkdir -p ~/.config/fastfetch ~/.config/bottom
 cp dotfiles/fastfetch/config.conf ~/.config/fastfetch/
 cp dotfiles/btm/config.toml ~/.config/bottom/bottom.toml
-cp starship.toml ~/.config/starship.toml
+ln -sf $(pwd)/starship.toml ~/.config/starship.toml
 ```
 
 Zed's preferences include several built-in color themes. Select the dark theme
@@ -293,7 +307,7 @@ that most closely matches the screenshot from **Settings → Appearance**.
    into the Windows Terminal LocalState folder.
 2. **Link the Starship configuration** so the prompt matches the screenshot:
    ```bash
-   cp starship.toml ~/.config/starship.toml
+   ln -sf $(pwd)/starship.toml ~/.config/starship.toml
    ```
    Make sure `~/.config/nushell/config.nu` sets `\$env.STARSHIP_CONFIG` to this
    path so Starship loads the file automatically.
