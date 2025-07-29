@@ -107,3 +107,15 @@ NSM_URL=https://example.com/nsm ai-cli metrics --aggregates-url https://example.
 ```
 
 The output mirrors `nsm_stats.py` and prints `developer,week,count` CSV rows.
+
+## Streaming Events with NATS
+
+Set `NATS_URL` to the address of your NATS server and choose a subject with `NATS_SUBJECT`. Export `EVENTS_ENABLED=true` or pass `--analytics` to send events.
+
+```bash
+export NATS_URL=nats://127.0.0.1:4222
+export NATS_SUBJECT=telemetry.events
+export EVENTS_ENABLED=true
+ai-cli do "task" --analytics --nats-url "$NATS_URL"
+```
+
