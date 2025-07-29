@@ -9,6 +9,12 @@ pytest.importorskip("fastapi")
 
 import httpx
 from fastapi.testclient import TestClient
+from fastapi import FastAPI
+import asyncio
+import threading
+import requests
+import json
+import api
 from api import app
 from scripts import ai_exec
 
@@ -79,4 +85,90 @@ async def test_exec_stream_async(monkeypatch):
         'data: two',
         'data: (exit 0)',
     ]
+
+
+@pytest.mark.asyncio
+async def test_get_stats_and_graph_local(monkeypatch, tmp_path):
+    monkeypatch.setattr(api, 'UME_API_URL', None)
+    state_file = tmp_path / 'state.json'
+    monkeypatch.setattr(api, 'STATE_PATH', state_file)
+    state = {
+        'queries': 2,
+        'nodes': [{'id': 1, 'text': 'a'}, {'id': 2, 'text': 'b'}],
+        'edges': [{'source': 1, 'target': 2}],
+    }
+    state_file.write_text(json.dumps(state), encoding='utf-8')
+
+    stats = await api.get_stats()
+    graph = await api.get_graph()
+
+    assert stats == {'queries': 2, 'memory': 2}
+    assert graph == {'nodes': state['nodes'], 'edges': state['edges']}
+
+
+@pytest.mark.asyncio
+async def test_get_stats_and_graph_remote(monkeypatch, tmp_path):
+    remote = FastAPI()
+
+    @remote.get('/dashboard/stats')
+    async def _stats():
+        return {'queries': 5, 'memory': 42}
+
+    @remote.get('/graph')
+    async def _graph():
+        return {'nodes': ['n'], 'edges': ['e']}
+
+    transport = httpx.ASGITransport(app=remote)
+    async_client = httpx.AsyncClient(base_url='http://ume', transport=transport)
+
+    def fake_get(url, timeout=None):
+        result: httpx.Response | None = None
+        exc: Exception | None = None
+
+        def _run() -> None:
+            nonlocal result, exc
+            try:
+                result = asyncio.run(async_client.get(url, timeout=timeout))
+            except Exception as e:  # pragma: no cover - debug helper
+                exc = e
+
+        thread = threading.Thread(target=_run)
+        thread.start()
+        thread.join()
+        if exc:
+            raise exc
+        assert result is not None
+        return result
+
+    monkeypatch.setattr(api, 'UME_API_URL', 'http://ume')
+    monkeypatch.setattr(requests, 'get', fake_get)
+    state_file = tmp_path / 'state.json'
+    monkeypatch.setattr(api, 'STATE_PATH', state_file)
+    state_file.write_text(json.dumps({'queries': 1, 'nodes': [], 'edges': []}), encoding='utf-8')
+
+    stats = await api.get_stats()
+    graph = await api.get_graph()
+
+    assert stats == {'queries': 5, 'memory': 42}
+    assert graph == {'nodes': ['n'], 'edges': ['e']}
+    await async_client.aclose()
+    
+
+@pytest.mark.asyncio
+async def test_get_stats_and_graph_remote_timeout(monkeypatch, tmp_path):
+    def fake_get(url, timeout=None):
+        raise requests.exceptions.Timeout
+
+    monkeypatch.setattr(api, 'UME_API_URL', 'http://ume')
+    monkeypatch.setattr(requests, 'get', fake_get)
+    state_file = tmp_path / 'state.json'
+    monkeypatch.setattr(api, 'STATE_PATH', state_file)
+    state = {'queries': 3, 'nodes': [{'id': 1}], 'edges': []}
+    state_file.write_text(json.dumps(state), encoding='utf-8')
+
+    stats = await api.get_stats()
+    graph = await api.get_graph()
+
+    assert stats == {'queries': 3, 'memory': 1}
+    assert graph == {'nodes': state['nodes'], 'edges': state['edges']}
 
