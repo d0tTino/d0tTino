@@ -4,7 +4,9 @@ Follow these steps to set up the configuration files on a new system. The
 `install.sh` and `bootstrap.ps1` wrappers now only parse command line options
 and delegate all work to the shared helpers. These helpers detect the
 environment, fix your `PATH`, install fonts, sync color palettes and configure
-Git hooks. Fetch and run the cross-platform installer with a single command:
+Git hooks. After cloning the repository run `scripts/install_dotfiles.sh` to
+link the packages, then fetch and run the cross-platform installer with a
+single command:
 
 
 ```bash
@@ -103,13 +105,15 @@ ruff check .
    # Or install just the core tools
    ./scripts/setup-winget.ps1
    ```
-2. Copy or symlink the files from this repository to your profile directory.
+2. Copy or symlink the files from this repository to your profile directory and
+   run `bash scripts/install_dotfiles.sh` to link the packages with GNU Stow.
 3. From an elevated PowerShell window, run `bootstrap.ps1` (or call
    `install.sh` from a regular shell). The wrappers simply forward their
-   arguments to the common installer which cleans up your PATH, installs fonts
-   and sets up Git hooks. You must run the PowerShell script from an
-   **elevated** window so that the helper can modify the user PATH.
-   Pass the appropriate flags to install the core tools automatically. The
+   arguments to the common installer which cleans up your PATH, installs fonts,
+   syncs palettes and sets up Git hooks. The helper also runs `pre-commit install`
+   automatically. You must run the PowerShell script from an **elevated** window
+   so that it can modify the user PATH. Pass the appropriate flags to install
+   the core tools automatically. The
    equivalent command using `install.sh` is shown below:
    ```bash
    ./install.sh --winget --windows-terminal --install-wsl --setup-wsl
@@ -162,15 +166,19 @@ sudo bash scripts/setup-wsl.sh
 1. Clone the repository:
    ```bash
    git clone https://github.com/d0tTino/d0tTino.git
+   cd d0tTino
    ```
 2. Run `scripts/install_dotfiles.sh` to link the packages with GNU Stow. Pass
    `--dry-run` to preview the commands or `--target DIR` to change the destination.
-3. Run `install.sh` to clean up your PATH and install the shared resources:
+3. Run `install.sh` to clean up your PATH and install the shared resources. This
+   also executes `pre-commit install` so the hooks run automatically:
    ```bash
    ./install.sh
    ```
-   If you prefer PowerShell, you can run `./bootstrap.ps1` instead which invokes
-   the same helper scripts.
+   Windows users can run the PowerShell variant from an elevated session:
+   ```powershell
+   ./bootstrap.ps1
+   ```
 4. Launch a new shell to pick up the configuration.
 
 ### Troubleshooting package managers
