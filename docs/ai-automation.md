@@ -326,5 +326,8 @@ Pass `--nats-url` to `ai-cli` to override the server per command:
 ai-cli do "Refactor the codebase" --analytics --nats-url "$NATS_URL"
 ```
 
+See [Streaming Events with NATS](telemetry.md#streaming-events-with-nats) in the
+telemetry guide for more details on these variables.
+
 
 
