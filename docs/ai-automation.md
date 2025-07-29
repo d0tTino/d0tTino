@@ -152,6 +152,31 @@ model names accordingly:
 }
 ```
 
+### Customizing `llm_config.json`
+
+Set the `LLM_CONFIG_PATH` environment variable to point at a different
+configuration file. All CLI helpers such as `ai`, `ai-plan`, `ai-do` and the
+`ai-cli` subcommands read this file via `get_preferred_models()` and
+`send_prompt()`.
+
+Example `llm_config.json` with custom pricing and context sizes:
+
+```json
+{
+  "primary_model": "llama3",
+  "fallback_model": "gpt-3.5-turbo",
+  "models": {
+    "llama3": {"price_per_1k_tokens": 0.0, "max_tokens": 8192},
+    "gpt-3.5-turbo": {"price_per_1k_tokens": 0.02, "max_tokens": 4096}
+  }
+}
+```
+
+```bash
+export LLM_CONFIG_PATH=/path/to/llm_config.json
+ai "Summarize the document"
+```
+
 ## Shell Command Planning
 
 `scripts/ai_exec.py` converts a high level goal into individual shell commands
