@@ -350,3 +350,23 @@ python cli_rlhf.py
 
 Training logs are written to `cli_rlhf_rewards.csv` and the final model weights are saved under the `cli_rlhf_model/` directory.
 Refer to [tests/test_cli_rlhf.py](../tests/test_cli_rlhf.py) for a minimal test exercising the training loop with stubs.
+
+## TaskCascadence Integration
+
+[`D0tTinoTask`](https://github.com/mcandeia/taskcascadence) orchestrates the CLI helpers. It first invokes `ai-plan` to generate a plan of shell commands and then executes the approved steps with `ai`. Telemetry works the same as any other CLI command—export the analytics environment variables before running the workflow:
+
+```bash
+export EVENTS_ENABLED=true
+export EVENTS_URL=https://example.com/events
+export EVENTS_TOKEN=your-anon-key
+```
+
+Example TaskCascadence step:
+
+```yaml
+steps:
+  - uses: d0tTino/tasks/D0tTinoTask@v1
+    with:
+      goal: "Update dependencies"
+```
+
