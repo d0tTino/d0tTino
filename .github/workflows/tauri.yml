@@ -1,0 +1,29 @@
+name: Tauri Build
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - 'src-tauri/**'
+  pull_request:
+    paths:
+      - 'src-tauri/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-rust@v1
+        with:
+          rust-version: stable
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli
+      - name: Build application
+        working-directory: src-tauri
+        run: cargo tauri build
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tauri-build
+          path: src-tauri/target/release/bundle
