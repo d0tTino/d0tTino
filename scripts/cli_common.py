@@ -1,4 +1,9 @@
-"""Shared utilities for CLI modules."""
+"""Utilities shared by various command-line interfaces.
+
+These helpers provide common functionality for reading prompts from
+``STDIN``, executing interactive shell steps with logging, posting
+notifications and building analytics argument parsers.
+"""
 from __future__ import annotations
 
 import argparse
