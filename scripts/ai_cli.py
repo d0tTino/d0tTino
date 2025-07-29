@@ -22,7 +22,6 @@ import requests
 from scripts import cli_actions
 from telemetry import analytics_default
 from ume import events as ume_events
-import asyncio
 import logging
 import time
 
@@ -167,11 +166,8 @@ def _cmd_stats(args: argparse.Namespace) -> int:
 
 def _cmd_metrics(args: argparse.Namespace) -> int:
     """Show weekly totals of successful ai-do runs."""
-    if args.aggregates_url:
-        url = args.aggregates_url or os.environ.get("NSM_URL")
-        if not url:
-            print("NSM_URL or --aggregates-url required", file=sys.stderr)
-            return 1
+    url = args.aggregates_url or os.environ.get("NSM_URL")
+    if url:
         try:
             resp = requests.get(url, timeout=10)
             resp.raise_for_status()
@@ -182,7 +178,10 @@ def _cmd_metrics(args: argparse.Namespace) -> int:
     else:
         source = args.source or os.environ.get("EVENTS_URL")
         if not source:
-            print("EVENTS_URL or source required", file=sys.stderr)
+            print(
+                "NSM_URL or --aggregates-url or EVENTS_URL or source required",
+                file=sys.stderr,
+            )
             return 1
         try:
             events = list(nsm_stats.iter_events(source))

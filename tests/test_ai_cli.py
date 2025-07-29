@@ -474,6 +474,31 @@ def test_metrics_aggregates_url(monkeypatch):
     assert out.getvalue().splitlines() == ["alice,2023-W01,2"]
 
 
+def test_metrics_env_aggregates_url(monkeypatch):
+    monkeypatch.setenv("NSM_URL", "https://example.com/nsm")
+    called = {}
+
+    def fake_get(url, timeout=None):
+        called["url"] = url
+
+        class Resp:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {"alice": {"2023-W01": 2}}
+
+        return Resp()
+
+    monkeypatch.setattr(ai_cli.requests, "get", fake_get)
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        rc = ai_cli.main(["metrics"])
+    assert rc == 0
+    assert called["url"] == "https://example.com/nsm"
+    assert out.getvalue().splitlines() == ["alice,2023-W01,2"]
+
+
 def test_metrics_requires_url(monkeypatch):
     monkeypatch.delenv("EVENTS_URL", raising=False)
     monkeypatch.setattr(ai_cli.nsm_stats, "iter_events", lambda src: iter(()))
