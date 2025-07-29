@@ -1,5 +1,6 @@
 import types
 import contextlib
+
 from pathlib import Path
 
 import pytest
@@ -70,3 +71,4 @@ def test_cli_rlhf_train_creates_log(monkeypatch, tmp_path):
     cli_rlhf.train_cli_agent()
 
     assert log_path.exists()
+
