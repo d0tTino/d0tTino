@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Ensure GNU Stow is available before proceeding
+if ! command -v stow >/dev/null 2>&1; then
+    echo "Error: GNU Stow is required but not installed." >&2
+    exit 1
+fi
+
 usage() {
     cat <<'USAGE'
 Usage: $(basename "$0") [--dry-run] [--target DIR]
