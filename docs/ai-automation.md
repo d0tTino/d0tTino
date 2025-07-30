@@ -96,6 +96,12 @@ The React dashboard connects to the same host, typically started with
 `pnpm dev` on <http://localhost:3000>. The Tauri build uses the same
 React code so both environments share a consistent interface.
 
+The API now performs any LLM calls in a background thread. Routes such as
+`/api/prompt` wrap `send_prompt()` with `asyncio.to_thread`, keeping the
+event loop responsive while a model generates a response. The total
+runtime is unchanged, but other requests can be served concurrently and
+streaming endpoints may begin slightly later than before.
+
 ### Docker image
 
 Build the container image and launch the API with Docker Compose:
