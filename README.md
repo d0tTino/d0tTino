@@ -15,7 +15,7 @@ Key directories:
 - `scripts/query_sources.py` – search `metadata/sources.json` by name or tag (installs as `query-sources` with the `cli` extra)
 - `research-papers/` – space to store research PDFs, links, and notes
  
-After cloning the repository, run the helper script to link the packages using GNU Stow:
+After cloning the repository, install `stow` and run the helper script to link the packages using GNU Stow. If `stow` is missing the script prints `Error: GNU Stow is required`:
 
 ```bash
 scripts/install_dotfiles.sh
