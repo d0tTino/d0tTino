@@ -115,7 +115,7 @@ async def health() -> dict[str, str]:
 @app.post("/api/prompt")
 async def prompt(req: PromptRequest) -> dict[str, str]:
     await record_prompt(req.prompt)
-    result = send_prompt(req.prompt, local=req.local)
+    result = await asyncio.to_thread(send_prompt, req.prompt, local=req.local)
     return {"response": result}
 
 @app.post("/api/palette")
@@ -125,7 +125,7 @@ async def palette(req: PaletteRequest) -> dict[str, str]:
 
 @app.post("/api/plan")
 async def plan(req: ExecRequest) -> dict[str, list[str]]:
-    steps = ai_exec.plan(req.goal)
+    steps = await asyncio.to_thread(ai_exec.plan, req.goal)
     return {"steps": steps}
 
 @app.get("/api/exec")
@@ -138,7 +138,7 @@ async def exec_stream(goal: str) -> StreamingResponse:
     ``data: (exit <code>)`` line.
     """
 
-    steps = ai_exec.plan(goal)
+    steps = await asyncio.to_thread(ai_exec.plan, goal)
 
     async def streamer():
         for step in steps:
