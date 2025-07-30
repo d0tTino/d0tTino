@@ -3,11 +3,15 @@ import subprocess
 import time
 
 from scripts import ai_cli
+import shutil
+import pytest
 
 import ume.events as events
 
 
 def _start_nats_server() -> tuple[subprocess.Popen, str]:
+    if not shutil.which("nats-server"):
+        pytest.skip("nats-server not installed")
     sock = socket.socket()
     sock.bind(("127.0.0.1", 0))
     port = sock.getsockname()[1]

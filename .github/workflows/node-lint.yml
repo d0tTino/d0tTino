@@ -67,3 +67,6 @@ jobs:
       - name: Run ESLint
         working-directory: dashboard
         run: npx eslint .
+      - name: Run tests
+        working-directory: dashboard
+        run: npm test --silent
