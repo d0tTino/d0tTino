@@ -4,8 +4,10 @@ Follow these steps to set up the configuration files on a new system. The
 `install.sh` and `bootstrap.ps1` wrappers now only parse command line options
 and delegate all work to the shared helpers. These helpers detect the
 environment, fix your `PATH`, install fonts, sync color palettes and configure
-Git hooks. After cloning the repository run `scripts/install_dotfiles.sh` to
-link the packages, then fetch and run the cross-platform installer with a
+Git hooks. After cloning the repository **install `stow`** and run
+`scripts/install_dotfiles.sh` to link the packages. If `stow` is missing the
+script now prints `Error: GNU Stow is required`. Then fetch and run the
+cross-platform installer with a
 single command:
 
 
@@ -40,21 +42,22 @@ Running the script without options installs fonts, palettes and Git hooks only.
 
 ## Prerequisites
 
-The install scripts rely on `curl`, `unzip` and `git`. On macOS these
+The install scripts rely on `curl`, `unzip`, `git` and
+[`stow`](https://www.gnu.org/software/stow/). On macOS these
 dependencies are installed automatically when [Homebrew](https://brew.sh)
 is available:
 
 ```bash
-brew install curl unzip git
+brew install curl unzip git stow
 ```
 
 Debian based distributions use `apt-get` if present. Fedora and Arch systems
 are detected automatically when `dnf` or `pacman` exist:
 
 ```bash
-sudo apt-get install curl unzip git
-sudo dnf install curl unzip git     # Fedora
-sudo pacman -S curl unzip git       # Arch
+sudo apt-get install curl unzip git stow
+sudo dnf install curl unzip git stow     # Fedora
+sudo pacman -S curl unzip git stow       # Arch
 ```
 
 If neither package manager is detected you'll need to install the tools
@@ -107,6 +110,8 @@ ruff check .
    ```
 2. Copy or symlink the files from this repository to your profile directory and
    run `bash scripts/install_dotfiles.sh` to link the packages with GNU Stow.
+   Ensure `stow` is installed first or the script will exit with
+   `Error: GNU Stow is required`.
 3. From an elevated PowerShell window, run `bootstrap.ps1` (or call
    `install.sh` from a regular shell). The wrappers simply forward their
    arguments to the common installer which cleans up your PATH, installs fonts,
@@ -168,8 +173,9 @@ sudo bash scripts/setup-wsl.sh
    git clone https://github.com/d0tTino/d0tTino.git
    cd d0tTino
    ```
-2. Run `scripts/install_dotfiles.sh` to link the packages with GNU Stow. Pass
-   `--dry-run` to preview the commands or `--target DIR` to change the destination.
+2. Run `scripts/install_dotfiles.sh` to link the packages with GNU Stow. Ensure
+   `stow` is installed, otherwise the script prints `Error: GNU Stow is required`.
+   Pass `--dry-run` to preview the commands or `--target DIR` to change the destination.
 3. Run `install.sh` to clean up your PATH and install the shared resources. This
    also executes `pre-commit install` so the hooks run automatically:
    ```bash
@@ -215,6 +221,7 @@ commands are found, install a package manager manually and ensure it is on your
 The install helper expects a working package manager and write access to your profile directory.
 
 - **Homebrew not found** – install Homebrew and ensure `brew` is on your `PATH` if the script prints `command not found: brew`.
+- **GNU Stow not found** – install Stow if `scripts/install_dotfiles.sh` prints `Error: GNU Stow is required`.
 - **Permission denied** – rerun the command with `sudo` when the package manager or the installer reports insufficient permissions.
 
 ### Installing via Homebrew (macOS)
