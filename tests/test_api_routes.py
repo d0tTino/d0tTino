@@ -12,6 +12,7 @@ import sys
 import types
 from pathlib import Path
 import requests
+import time
 from scripts import ai_exec
 
 def load_app(send_prompt=lambda p, local=False: f"resp-{p}", apply_palette=lambda n, r: None, state_path: Path | None = None):
@@ -252,3 +253,54 @@ async def test_exec_stream_return_type(monkeypatch, tmp_path):
     api = importlib.import_module('api')
     response = await api.exec_stream('x')
     assert isinstance(response, StreamingResponse)
+
+
+@pytest.mark.anyio
+async def test_prompt_event_loop_not_blocked(monkeypatch, tmp_path, anyio_backend):
+    if anyio_backend != "asyncio":
+        pytest.skip("asyncio backend only")
+    app = load_app(state_path=tmp_path / 'state.json')
+    api = importlib.import_module('api')
+
+    async def fake_record(prompt: str) -> None:
+        await asyncio.sleep(0.1)
+
+    monkeypatch.setattr(api, 'record_prompt', fake_record)
+
+    async with httpx.AsyncClient(
+        base_url="http://test",
+        transport=httpx.ASGITransport(app=app),
+    ) as client:
+        start = time.perf_counter()
+        response, _ = await asyncio.gather(
+            client.post('/api/prompt', json={'prompt': 'hi'}),
+            asyncio.sleep(0.1),
+        )
+        elapsed = time.perf_counter() - start
+
+    assert response.status_code == 200
+    assert response.json() == {'response': 'resp-hi'}
+    assert elapsed < 0.2
+
+
+@pytest.mark.anyio
+async def test_plan_event_loop_not_blocked(monkeypatch, tmp_path, anyio_backend):
+    if anyio_backend != "asyncio":
+        pytest.skip("asyncio backend only")
+    monkeypatch.setattr(ai_exec, 'plan', lambda goal: ['step'])
+    app = load_app(state_path=tmp_path / 'state.json')
+
+    async with httpx.AsyncClient(
+        base_url="http://test",
+        transport=httpx.ASGITransport(app=app),
+    ) as client:
+        start = time.perf_counter()
+        response, _ = await asyncio.gather(
+            client.post('/api/plan', json={'goal': 'x'}),
+            asyncio.sleep(0.1),
+        )
+        elapsed = time.perf_counter() - start
+
+    assert response.status_code == 200
+    assert response.json() == {'steps': ['step']}
+    assert elapsed < 0.2
