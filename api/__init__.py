@@ -129,7 +129,15 @@ async def plan(req: ExecRequest) -> dict[str, list[str]]:
     return {"steps": steps}
 
 @app.get("/api/exec")
-async def exec_stream(goal: str):
+async def exec_stream(goal: str) -> StreamingResponse:
+    """Return an SSE stream of shell command execution.
+
+    The response yields lines prefixed with ``data:`` and terminated by a
+    blank line as required by the Server-Sent Events specification. Commands
+    are emitted as ``data: $ <command>`` followed by their output and a final
+    ``data: (exit <code>)`` line.
+    """
+
     steps = ai_exec.plan(goal)
 
     async def streamer():

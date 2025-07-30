@@ -3,6 +3,7 @@ import pytest
 pytest.importorskip("fastapi")
 pytest.importorskip("httpx")
 from fastapi.testclient import TestClient
+from fastapi.responses import StreamingResponse
 import httpx
 import asyncio
 import importlib
@@ -242,3 +243,12 @@ async def test_prompt_concurrent(tmp_path):
     with TestClient(app) as sync_client:
         stats_resp = sync_client.get('/api/stats')
         assert stats_resp.json() == {'queries': 2, 'memory': 2}
+
+
+@pytest.mark.asyncio
+async def test_exec_stream_return_type(monkeypatch, tmp_path):
+    monkeypatch.setattr(ai_exec, 'plan', lambda goal: [])
+    load_app(state_path=tmp_path / 'state.json')
+    api = importlib.import_module('api')
+    response = await api.exec_stream('x')
+    assert isinstance(response, StreamingResponse)
