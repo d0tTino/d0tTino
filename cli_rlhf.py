@@ -176,12 +176,4 @@ def train_cli_agent() -> None:
 
 
 if __name__ == "__main__":
-    with open("cli_rlhf.py", "a", encoding="utf-8") as f:
-        f.write("\n# SUCCESS\n")
-
     train_cli_agent()
-
-    with open("cli_rlhf.py", "r", encoding="utf-8") as f:
-        lines = f.readlines()
-    with open("cli_rlhf.py", "w", encoding="utf-8") as f:
-        f.writelines(lines[:-2])
