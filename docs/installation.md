@@ -40,6 +40,27 @@ PowerShell equivalents:
 
 Running the script without options installs fonts, palettes and Git hooks only.
 
+### Quick start for new developers
+
+Follow these steps to set up the dotfiles using
+[`scripts/install_dotfiles.sh`](../scripts/install_dotfiles.sh) and GNU
+Stow:
+
+1. Clone the repository and enter the project directory.
+2. Install `stow` with your package manager if it is not already
+   available.
+3. Execute `bash scripts/install_dotfiles.sh` to symlink the packages.
+4. Run `./install.sh` to install fonts, palettes and Git hooks.
+5. Restart your shell to load the new configuration.
+
+```bash
+git clone https://github.com/d0tTino/d0tTino.git
+cd d0tTino
+sudo apt-get install stow   # or brew install stow
+bash scripts/install_dotfiles.sh
+./install.sh
+```
+
 ## Prerequisites
 
 The install scripts rely on `curl`, `unzip`, `git` and
