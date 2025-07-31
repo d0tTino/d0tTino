@@ -38,6 +38,24 @@ or pass `--analytics` to individual commands to opt into sending events.
    export EVENTS_TOKEN=$(grep ANON_KEY .env | cut -d '=' -f2)
    ```
 
+## JetStream Setup
+
+1. Start a local NATS server with JetStream enabled. Docker works well:
+   ```bash
+   docker run --rm -p 4222:4222 nats:latest -js
+   ```
+   Alternatively install `nats-server` and run `nats-server --jetstream`.
+2. Create a stream for telemetry events:
+   ```bash
+   nats --server "$NATS_URL" stream add telemetry --subjects "$NATS_SUBJECT"
+   ```
+3. Point the CLI at your server and subject:
+   ```bash
+   export NATS_URL=nats://127.0.0.1:4222
+   export NATS_SUBJECT=telemetry.events
+   export EVENTS_ENABLED=true
+   ```
+
 Events posted to `EVENTS_URL` will be stored in the `events` table.
 
 Hosted Supabase projects work the same way. Use the project's REST URL and anon
@@ -61,6 +79,8 @@ export NSM_URL=https://example.supabase.co/rest/v1/nsm
 - `EVENTS_TOKEN` – API key (anon or service role) used for authentication.
 - `EVENTS_ENABLED` – when set to a truthy value, enables event recording.
 - `NSM_URL` – endpoint used by `nsm_upload.py` to store weekly aggregates.
+- `NATS_URL` – address of the JetStream-enabled NATS server.
+- `NATS_SUBJECT` – subject name for publishing telemetry events.
 
 ## Upload Aggregated Statistics
 
