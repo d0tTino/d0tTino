@@ -166,6 +166,15 @@ Additional guides:
 - [UME Quickstart](docs/ume.md)
 - [Backend plug-in guide](docs/plugins.md)
 
+## LLM Configuration
+
+`get_preferred_models()` reads model names from `llm/llm_config.json`.
+Copy `examples/llm_config.json` and adjust the `primary_model`,
+`fallback_model`, and per-model pricing or context limits to match your setup.
+Set `LLM_CONFIG_PATH` to override the default location. See
+[docs/ai-automation.md#llm-configuration](docs/ai-automation.md#llm-configuration)
+for details.
+
 ## Git hooks
 
 Run `scripts/setup-hooks.sh` to enable the local hooks automatically

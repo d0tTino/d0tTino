@@ -148,6 +148,7 @@ Example configuration:
   }
 }
 ```
+Copy `examples/llm_config.json` and tweak the values as needed.
 The optional `models` section defines per-model pricing and maximum context
 size. When present, `send_prompt()` ranks available backends by the estimated
 cost of processing the prompt and discards any model whose context window is too
