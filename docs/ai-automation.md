@@ -354,6 +354,8 @@ Run the script directly to launch a short PPO training session:
 python cli_rlhf.py
 ```
 
+Once the dependencies above are installed, execute the script from the repository root using the same command. The prototype used to overwrite its own source file to track parameters, but it no longer modifies itself, so repeated runs leave `cli_rlhf.py` unchanged.
+
 Training logs are written to `cli_rlhf_rewards.csv` and the final model weights are saved under the `cli_rlhf_model/` directory.
 Refer to [tests/test_cli_rlhf.py](../tests/test_cli_rlhf.py) for a minimal test exercising the training loop with stubs.
 
