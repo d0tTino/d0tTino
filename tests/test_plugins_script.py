@@ -331,3 +331,22 @@ def test_recipe_publish(monkeypatch):
     assert "https://example.com/simple" in called["cmd"]
     assert "package.whl" in called["cmd"]
 
+
+def test_recipe_publish_without_url(monkeypatch, capsys):
+    called = {}
+
+    def fake_run(cmd, *a, **k):
+        called["cmd"] = cmd
+        class Res:
+            returncode = 0
+        return Res()
+
+    monkeypatch.setattr(plugins.subprocess, "run", fake_run)
+    monkeypatch.delenv("PLUGIN_REGISTRY_UPLOAD_URL", raising=False)
+
+    rc = plugins.main(["recipes", "publish", "package.whl"])
+    captured = capsys.readouterr()
+    assert rc == 1
+    assert "Upload URL required" in captured.err
+    assert "cmd" not in called
+
