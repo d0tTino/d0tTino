@@ -9,3 +9,10 @@ repos:
     hooks:
       - id: mypy
         args: [--install-types, --non-interactive]
+  - repo: local
+    hooks:
+      - id: update-plugin-registry
+        name: Check plugin registry
+        entry: python -m scripts.update_registry --check
+        language: system
+        pass_filenames: false
