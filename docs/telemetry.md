@@ -40,11 +40,12 @@ or pass `--analytics` to individual commands to opt into sending events.
 
 ## JetStream Setup
 
-1. Start a local NATS server with JetStream enabled. Docker works well:
+1. Start a local NATS server with JetStream enabled:
    ```bash
-   docker run --rm -p 4222:4222 nats:latest -js
+   scripts/start_nats.sh
    ```
-   Alternatively install `nats-server` and run `nats-server --jetstream`.
+   Pass a port number as an argument to expose an alternate port. You can also
+   install `nats-server` and run `nats-server --jetstream` directly.
 2. Create a stream for telemetry events:
    ```bash
    nats --server "$NATS_URL" stream add telemetry --subjects "$NATS_SUBJECT"

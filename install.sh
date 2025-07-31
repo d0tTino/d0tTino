@@ -65,7 +65,12 @@ if $dry_run; then
 else
     "${cmd[@]}"
     if command -v pre-commit >/dev/null 2>&1; then
-        pre-commit install
+        hooks_path=$(git config --get core.hooksPath || true)
+        if [[ -z "$hooks_path" || "$hooks_path" == ".git/hooks" ]]; then
+            pre-commit install
+        else
+            pre-commit install --install-hooks || true
+        fi
     else
         echo "pre-commit not found; skipping hook installation" >&2
     fi

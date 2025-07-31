@@ -54,8 +54,15 @@ __all__ = [
 
 
 def register_backend(name: str, func: Callable[[str, str], str]) -> None:
-    """Register ``func`` to handle ``name``."""
+    """Register ``func`` to handle ``name`` and mirror to ``ai_router``."""
     _BACKEND_REGISTRY[name.lower()] = func
+    try:  # pragma: no cover - tests may not import ai_router
+        from llm import ai_router as _ai_router
+        attr = f"run_{name.lower()}"
+        if hasattr(_ai_router, attr):
+            setattr(_ai_router, attr, func)
+    except Exception:
+        pass
 
 
 def get_backend(name: str) -> Callable[[str, str], str]:
