@@ -143,8 +143,13 @@ def _preferred_backends() -> tuple[str, str | None]:
 
 def _run_backend(name: str, prompt: str, model: str) -> str:
     """Return response for ``prompt`` using backend ``name``."""
-    if name.lower() == "langchain":
+    name_l = name.lower()
+    if name_l == "langchain":
         return run_langchain(prompt)
+
+    direct = globals().get(f"run_{name_l}")
+    if callable(direct):
+        return direct(prompt, model)
 
     func = get_backend(name)
     return func(prompt, model)
