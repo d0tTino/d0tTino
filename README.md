@@ -351,7 +351,17 @@ EVENTS_URL=https://example.com python scripts/nsm_stats.py | column -t -s ,
 EVENTS_URL=https://example.com ai-cli metrics
 ```
 
-Each row shows the anonymized developer identifier, ISO week, and the number of
+Set `EVENTS_URL` to the endpoint serving raw events. `ai-cli metrics` downloads
+these records, calculates weekly totals, and prints `developer,week,count`
+rows. If aggregates are available separately, pass `--aggregates-url` or set
+`NSM_URL`:
+
+```bash
+NSM_URL=https://example.com/nsm ai-cli metrics --aggregates-url https://example.com/nsm
+```
+
+See [docs/telemetry.md](docs/telemetry.md) for additional details. Each row
+shows the anonymized developer identifier, ISO week, and the number of
 successful `ai-do` runs.
 
 
