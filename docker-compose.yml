@@ -1,5 +1,10 @@
 version: "3.8"
 services:
+  nats:
+    image: nats:latest
+    command: -js
+    ports:
+      - "4222:4222"
   n8n:
     image: n8nio/n8n
     ports:
@@ -51,3 +56,6 @@ services:
       - .:/app
     ports:
       - "8000:8000"
+    environment:
+      - NATS_URL=${NATS_URL:-nats://nats:4222}
+      - NATS_SUBJECT=${NATS_SUBJECT:-telemetry.events}
