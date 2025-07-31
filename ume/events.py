@@ -8,6 +8,7 @@ from typing import Any, AsyncIterator
 
 
 from nats.aio.client import Client as NATS
+from nats.js import JetStreamContext
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +70,59 @@ async def iter_events(
             await nc.drain()
 
 
+async def publish_event_js(
+    name: str,
+    payload: dict[str, Any],
+    *,
+    subject: str = DEFAULT_SUBJECT,
+    url: str = DEFAULT_NATS_URL,
+    nc: NATS | None = None,
+) -> bool:
+    """Publish ``payload`` to JetStream and return ``True`` when successful."""
+    data = json.dumps({"name": name, **payload}).encode("utf-8")
+    close = False
+    if nc is None:
+        close = True
+        nc = await _connect(url)
+    js: JetStreamContext = nc.jetstream()
+    try:
+        await js.publish(subject, data)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Failed to publish telemetry event to JetStream: %s", exc)
+        return False
+    finally:
+        if close:
+            await nc.drain()
+    return True
+
+
+async def iter_events_js(
+    *,
+    subject: str = DEFAULT_SUBJECT,
+    url: str = DEFAULT_NATS_URL,
+    nc: NATS | None = None,
+    durable: str = "ume_iter",
+    batch: int = 1,
+) -> AsyncIterator[dict[str, Any]]:
+    """Yield events from JetStream ``subject`` as dictionaries."""
+    close = False
+    if nc is None:
+        close = True
+        nc = await _connect(url)
+    js: JetStreamContext = nc.jetstream()
+    sub = await js.pull_subscribe(subject, durable=durable)
+    try:
+        while True:
+            msgs = await sub.fetch(batch)
+            for msg in msgs:
+                yield json.loads(msg.data.decode("utf-8"))
+                await msg.ack()
+    finally:
+        await sub.unsubscribe()
+        if close:
+            await nc.drain()
+
+
 def publish_event_sync(name: str, payload: dict[str, Any], *, enabled: bool = False) -> bool:
     """Synchronous helper used by CLI tools."""
     if not enabled:
@@ -83,7 +137,9 @@ def publish_event_sync(name: str, payload: dict[str, Any], *, enabled: bool = Fa
 __all__ = [
     "publish_event",
     "publish_event_sync",
+    "publish_event_js",
     "iter_events",
+    "iter_events_js",
     "DEFAULT_NATS_URL",
     "DEFAULT_SUBJECT",
 ]
