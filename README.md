@@ -237,12 +237,14 @@ pytest -n auto || pytest
 
 ## Contributing
 
-Run `ruff` and `mypy` before committing to ensure the code is lint and type
-error free. You can run them directly or via `pre-commit`:
+Run `ruff`, `mypy`, and the plugin registry check before committing to ensure
+the code is lint and type error free and that `plugin-registry.json` is up to
+date. You can run them directly or via `pre-commit`:
 
 ```bash
 ruff check .
 mypy --install-types --non-interactive
+python scripts/update_registry.py --check
 pre-commit run --files <changed files>
 ```
 
