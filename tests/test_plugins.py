@@ -94,3 +94,23 @@ def test_load_registry_corrupt_cache(monkeypatch, tmp_path):
     loaded = json.loads(cache.read_text())
     assert loaded["registry"] == result
 
+
+def test_load_registry_force_refresh(monkeypatch, tmp_path):
+    """Setting ttl=0 forces a refresh even when cache is fresh."""
+    cache = tmp_path / "cache.json"
+    now = int(time.time())
+    cache.write_text(json.dumps({"timestamp": now, "registry": {"plugins": {"a": "pkg"}}}))
+    monkeypatch.setattr(plugins, "CACHE_PATH", cache)
+
+    called = {}
+
+    def fake_fetch(url):
+        called["called"] = True
+        return {"plugins": {"b": "pkg"}}
+
+    monkeypatch.setattr(plugins, "_fetch_registry", fake_fetch)
+
+    reg = plugins.load_registry(ttl=0)
+    assert called.get("called") is True
+    assert reg == {"b": "pkg"}
+
