@@ -27,8 +27,12 @@ except ImportError as exc:  # pragma: no cover - import guard
 
 _REPO_ROOT = get_repo_root()
 
+_ROOT_POSIX = _REPO_ROOT.as_posix()
+if os.name == "nt":
+    _ROOT_POSIX = _ROOT_POSIX.casefold()
+
 _PATH_REGEX = re.compile(
-    rf"^(?P<root>{re.escape(_REPO_ROOT.as_posix())})/.+(?P<data>[^/]+\.(?:ya?ml|json))$",
+    rf"^(?P<root>{re.escape(_ROOT_POSIX)})/.+(?P<data>[^/]+\.(?:ya?ml|json))$",
     re.IGNORECASE if os.name == "nt" else 0,
 )
 
@@ -36,6 +40,8 @@ _PATH_REGEX = re.compile(
 def is_repo_data_path(path: str | Path) -> bool:
     """Return True if ``path`` is within the repo and ends with an allowed extension."""
     normalised = Path(path).as_posix().replace("\\", "/")
+    if os.name == "nt":
+        normalised = normalised.casefold()
     return bool(_PATH_REGEX.match(normalised))
 
 

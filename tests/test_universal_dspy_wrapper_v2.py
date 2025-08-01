@@ -49,7 +49,7 @@ def test_is_repo_data_path_windows_and_posix():
 
 def test_is_repo_data_path_mixed_case(monkeypatch):
     """Paths should be case-insensitive on Windows."""
-    mixed = Path(f"{_REPO_ROOT.as_posix().upper()}/FiLe.JsOn")
+    mixed = Path(f"{_REPO_ROOT.as_posix().swapcase()}/FiLe.JsOn")
 
     if os.name == "nt":
         assert is_repo_data_path(mixed)
