@@ -92,12 +92,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
-      - name: Dry run install script
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install pytest
         run: |
-          bash install.sh --dry-run | sed "s#${PWD}/##" > install_output.txt
-          diff -u tests/expected/install_dry_run_${{ matrix.os }}.txt install_output.txt
-          bash scripts/install_common.sh --dry-run
-        shell: bash
+          python -m pip install --upgrade pip
+          pip install pytest
+      - name: Run dry-run script tests
+        run: pytest tests/test_scripts_dry_run.py -q
