@@ -14,6 +14,28 @@ pip install dspy-ai
 pytest
 ```
 
+## Selecting Tests
+
+Use the `-k` flag to run only tests matching a given expression. This lets you
+focus on a single module or feature:
+
+```bash
+pytest -k "cli or registry"
+```
+
+Running a subset can dramatically reduce runtimes when resources are limited.
+
+## Low Resource Tips
+
+If `pytest-xdist` is installed the suite can run in parallel:
+
+```bash
+pytest -n auto
+```
+
+Limit the number of workers (e.g. `-n 1`) or combine it with `-k` to keep CPU
+and memory usage under control.
+
 The CI workflow installs the runtime requirements with
 `pip install -r requirements.txt` before running the tests.
 Running the same command locally ensures your environment matches the
