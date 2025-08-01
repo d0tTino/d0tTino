@@ -173,7 +173,16 @@ def test_recipe_subcommand(monkeypatch, tmp_path):
     )
     captured = {}
 
-    def fake_run_recipe(name, goal, steps, *, log_path, analytics=False, nats_url=None):
+    def fake_run_recipe(
+        name,
+        goal,
+        steps,
+        *,
+        log_path,
+        analytics=False,
+        nats_url=None,
+        jetstream=False,
+    ):
         captured["name"] = name
         captured["goal"] = goal
         captured["steps"] = steps
