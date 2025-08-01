@@ -39,6 +39,16 @@ def test_health(tmp_path):
         assert resp.json() == {'status': 'ok'}
 
 
+def test_health_bad_state(tmp_path):
+    state_path = tmp_path / 'state.json'
+    app = load_app(state_path=state_path)
+    # load_app removes the file; write invalid JSON afterward
+    state_path.write_text('{')
+    with TestClient(app) as client:
+        resp = client.get('/api/health')
+        assert resp.status_code == 200
+
+
 def test_stats_local(tmp_path):
     app = load_app(state_path=tmp_path / 'state.json')
     with TestClient(app) as client:
