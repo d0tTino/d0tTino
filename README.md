@@ -55,6 +55,9 @@ For development and testing install everything using the development requirement
 pip install -r requirements-dev.txt
 ```
 
+If you use [nvm](https://github.com/nvm-sh/nvm), run `nvm use` to switch to the
+version defined in `.nvmrc`.
+
 See the [backend plug-in guide](docs/plugins.md) for details. If you
 prefer not to install any extras, install `jsonschema` separately with:
 
