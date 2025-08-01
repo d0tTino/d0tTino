@@ -31,6 +31,7 @@ def run_steps(
     payload: dict[str, Any] | None = None,
     duration_key: str = "latency_ms",
     nats_url: str | None = None,
+    jetstream: bool = False,
 ) -> int:
     """Execute ``steps`` and record an analytics event."""
     start = time.time()
@@ -47,7 +48,10 @@ def run_steps(
     record_event_logged(event_name, data, enabled=analytics)
     if analytics and nats_url:
         try:
-            asyncio.run(ume_events.publish_event(nats_url, event_name, data))  # type: ignore[misc,arg-type]
+            if jetstream:
+                asyncio.run(ume_events.publish_event_js(nats_url, event_name, data))  # type: ignore[misc,arg-type]
+            else:
+                asyncio.run(ume_events.publish_event(nats_url, event_name, data))  # type: ignore[misc,arg-type]
 
         except Exception as exc:  # noqa: BLE001
             logging.debug("Failed to publish NATS event: %s", exc)
@@ -62,6 +66,7 @@ def run_recipe(
     log_path: Path,
     analytics: bool = False,
     nats_url: str | None = None,
+    jetstream: bool = False,
 ) -> int:
     """Execute a recipe and record an analytics event."""
     if callable(steps_or_callable):
@@ -75,6 +80,7 @@ def run_recipe(
         analytics=analytics,
         payload={"recipe": name, "goal": goal, "step_count": len(steps)},
         nats_url=nats_url,
+        jetstream=jetstream,
     )
 
 __all__ = ["record_event_logged", "run_steps", "run_recipe"]

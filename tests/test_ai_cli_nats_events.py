@@ -3,6 +3,7 @@ import subprocess
 import time
 
 from scripts import ai_cli
+from scripts import cli_actions
 import shutil
 import pytest
 
@@ -60,3 +61,42 @@ def test_ai_cli_plan_nats_events(monkeypatch):
     assert name_arg == "ai-cli-plan"
     assert payload_arg["goal"] == "echo"
     assert payload_arg["step_count"] == 1
+
+
+def test_ai_cli_do_jetstream_events(monkeypatch, tmp_path):
+    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: ["echo hi"])
+    monkeypatch.setattr(cli_actions, "execute_steps", lambda *a, **k: 0)
+
+    captured = []
+
+    async def fake_publish_event_js(url_arg, name_arg, payload_arg):
+        captured.append((url_arg, name_arg, payload_arg))
+        return True
+
+    class FakeNATS:
+        async def connect(self, servers=None):
+            pass
+
+    async def fake_connect(url=events.DEFAULT_NATS_URL):
+        return FakeNATS()
+
+    monkeypatch.setattr(events, "publish_event_js", fake_publish_event_js)
+    monkeypatch.setattr(events, "_connect", fake_connect)
+
+    log = tmp_path / "log.txt"
+    rc = ai_cli.main([
+        "do",
+        "goal",
+        "--analytics",
+        "--nats-url",
+        "nats://example.com:4222",
+        "--jetstream",
+        "--log",
+        str(log),
+    ])
+
+    assert rc == 0
+    url_arg, name_arg, payload_arg = captured[0]
+    assert url_arg == "nats://example.com:4222"
+    assert name_arg == "ai-cli-do"
+    assert payload_arg["goal"] == "goal"
