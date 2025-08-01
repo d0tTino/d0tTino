@@ -89,11 +89,15 @@ See `llm/backends/plugins/sample.py` for a full example.
 ## Managing Plug-ins
 
 Use the `ai-cli plugin` subcommand or the `plugins` helper to install or remove
-third-party backends and recipes.
+third-party backends and recipes. The helper script mirrors the CLI commands
+and can be invoked with `python -m scripts.plugins`.
 
 ```bash
 # List available plug-ins
 ai-cli plugin backends list
+
+# The helper script exposes the same subcommands
+python -m scripts.plugins backends list
 
 # Install a plug-in
 ai-cli plugin backends install sample
@@ -101,8 +105,14 @@ ai-cli plugin backends install anthropic
 ai-cli plugin backends install mistral
 ai-cli plugin backends install lmql
 
+# Install a built-in backend with the helper script
+python -m scripts.plugins backends install openrouter
+
 # Remove a plug-in
 ai-cli plugin backends remove sample
+
+# Or remove it via the helper
+python -m scripts.plugins backends remove openrouter
 ```
 
 Recipe packages are managed via the `recipes` subcommand:
@@ -113,6 +123,10 @@ ai-cli plugin recipes install echo
 ai-cli plugin recipes remove echo
 ai-cli plugin recipes sync
 ai-cli plugin recipes publish dist/my_recipe-0.1-py3-none-any.whl --url https://example.com/simple
+
+# The same actions are available via the helper script
+python -m scripts.plugins recipes sync
+python -m scripts.plugins recipes publish dist/my_recipe-0.1-py3-none-any.whl --url https://example.com/simple
 ```
 
 `recipes sync` downloads and installs the recipe packages listed in the
