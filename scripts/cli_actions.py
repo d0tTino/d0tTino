@@ -35,6 +35,7 @@ def run_steps(
 ) -> int:
     """Execute ``steps`` and record an analytics event."""
     start = time.time()
+    log_path.parent.mkdir(parents=True, exist_ok=True)
     exit_code = execute_steps(steps, log_path=log_path)
     end = time.time()
     data = {

@@ -62,6 +62,24 @@ def test_do_subcommand(monkeypatch, tmp_path):
     assert log.exists()
 
 
+def test_do_creates_log_dir(monkeypatch, tmp_path):
+    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: ["echo hi"])
+    monkeypatch.setattr("builtins.input", lambda _: "y")
+
+    class Result:
+        def __init__(self):
+            self.stdout = ""
+            self.stderr = ""
+            self.returncode = 0
+
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: Result())
+
+    log = tmp_path / "logs" / "log.txt"
+    rc = ai_cli.main(["do", "goal", "--log", str(log)])
+    assert rc == 0
+    assert log.exists()
+
+
 def test_send_records_event(monkeypatch):
     monkeypatch.setattr(ai_cli.router, "send_prompt", lambda *a, **k: "ok")
     recorded = []
