@@ -87,6 +87,7 @@ def _cmd_do(args: argparse.Namespace) -> int:
         analytics=args.analytics,
         payload={"goal": args.goal, "step_count": len(steps)},
         nats_url=args.nats_url,
+        jetstream=getattr(args, "jetstream", False),
     )
 
 
@@ -105,6 +106,7 @@ def _cmd_recipe(args: argparse.Namespace) -> int:
         log_path=args.log,
         analytics=args.analytics,
         nats_url=args.nats_url,
+        jetstream=getattr(args, "jetstream", False),
     )
     end = time.time()
     if exit_code == 0:
@@ -226,6 +228,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=REPO_ROOT / "ai_do.log",
         help="Log file path (default: %(default)s)",
     )
+    do.add_argument(
+        "--jetstream",
+        action="store_true",
+        help="Publish events via JetStream",
+    )
     do.set_defaults(func=_cmd_do)
 
     recipe = sub.add_parser("recipe", help="Execute a named recipe", parents=[analytics])
@@ -236,6 +243,11 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=REPO_ROOT / "ai_do.log",
         help="Log file path (default: %(default)s)",
+    )
+    recipe.add_argument(
+        "--jetstream",
+        action="store_true",
+        help="Publish events via JetStream",
     )
     recipe.set_defaults(func=_cmd_recipe)
 
