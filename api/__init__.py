@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Any
@@ -30,7 +31,11 @@ async def _load_state() -> dict[str, Any]:
     async with STATE_LOCK:
         if STATE_PATH.exists():
             with STATE_PATH.open("r", encoding="utf-8") as f:
-                return json.load(f)
+                try:
+                    return json.load(f)
+                except json.JSONDecodeError:
+                    logging.exception("Failed to decode state JSON")
+                    return {"queries": 0, "nodes": [], "edges": []}
         return {"queries": 0, "nodes": [], "edges": []}
 
 
