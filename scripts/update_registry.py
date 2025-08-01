@@ -19,9 +19,15 @@ SCHEMA_PATH = REPO_ROOT / "plugin-registry.schema.json"
 
 
 def load_registry(path: Path = REGISTRY_PATH) -> dict[str, object]:
-    """Return registry data from ``path``."""
-    with path.open(encoding="utf-8") as fh:
-        return json.load(fh)
+    """Return registry data from ``path``.
+
+    When ``path`` does not exist, return an empty registry dictionary.
+    """
+    try:
+        with path.open(encoding="utf-8") as fh:
+            return json.load(fh)
+    except FileNotFoundError:
+        return {"plugins": {}, "recipes": {}}
 
 
 def load_schema(path: Path = SCHEMA_PATH) -> dict[str, object]:
@@ -64,7 +70,10 @@ def main(argv: list[str] | None = None) -> int:
     try:
         data = load_registry()
     except json.JSONDecodeError as exc:
-        print(f"Failed to parse {REGISTRY_PATH}: {exc}", file=sys.stderr)
+        print(
+            f"Failed to parse JSON from {REGISTRY_PATH}: {exc}",
+            file=sys.stderr,
+        )
         return 1
 
     schema = load_schema()
