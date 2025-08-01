@@ -260,8 +260,16 @@ python scripts/update_registry.py --check
 pre-commit run --files <changed files>
 ```
 
+Run `pre-commit install` once after cloning to register the Git hook. The
+`install.sh` and `scripts/setup-hooks.sh` helpers call it automatically, so you
+usually only need to run it when customizing the hooks.
+
 After fixing any errors, rerun the commands and verify they report zero issues.
-The `pre-commit` hook runs the same checks automatically.
+The `pre-commit` hook runs the same checks automatically. CI determines whether
+tests need to run by executing `scripts/check-changed-code.sh`. If the script
+reports that only documentation or comment lines changed, the workflow sets
+`code_changed=false` and skips the test jobs, so documentation-only updates
+bypass the heavy CI stages.
 
 ## Link checking
 
