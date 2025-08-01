@@ -317,6 +317,8 @@ following fields:
 - `start_ts` and `end_ts` – Unix timestamps capturing the plan duration
 - `latency_ms` – computed from the timestamps
 
+- See [docs/telemetry.md#troubleshooting](docs/telemetry.md#troubleshooting) for help resolving common Supabase connection issues.
+
 See [docs/telemetry.md](docs/telemetry.md) for a quick Supabase setup and
 configuration of `EVENTS_URL` and `EVENTS_TOKEN`.
 

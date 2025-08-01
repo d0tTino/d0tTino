@@ -128,3 +128,11 @@ NSM_URL=https://example.com/nsm ai-cli metrics --aggregates-url https://example.
 ```
 
 The output mirrors `nsm_stats.py` and prints `developer,week,count` CSV rows.
+
+## Troubleshooting
+
+Connection problems with Supabase usually fall into a few common categories:
+
+- **401 Unauthorized** – verify that `EVENTS_TOKEN` contains a valid anon or service key with permission to insert rows.
+- **Connection refused** – ensure your Supabase instance is running and that `EVENTS_URL` points to the correct host and port.
+- **SSL certificate errors** – when using a self-hosted instance with a self-signed certificate, use `http://` during local testing or configure your certificate authority.
