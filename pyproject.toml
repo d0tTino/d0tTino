@@ -21,6 +21,7 @@ test = [
     "uvicorn",
     "httpx",
     "jsonschema>=4",
+    "trio",
 ]
 cli = ["tomli_w", "jsonschema>=4"]
 lmql = ["lmql"]
