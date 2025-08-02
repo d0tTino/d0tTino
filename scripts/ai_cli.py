@@ -54,10 +54,21 @@ def _cmd_login(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_switch_context(args: argparse.Namespace) -> int:
+    data = {**_session, "context": args.context}
+    SESSION_FILE.parent.mkdir(parents=True, exist_ok=True)
+    SESSION_FILE.write_text(json.dumps(data))
+    _session.update(data)
+    _publish_event(args, "ai-cli-switch-context", {"context": args.context, "exit_code": 0})
+    return 0
+
+
 def _publish_event(args: argparse.Namespace, name: str, payload: dict[str, Any]) -> None:
     """Record analytics and publish to NATS when configured."""
     if "user_id" not in payload and _session.get("user_id"):
         payload = {"user_id": _session["user_id"], **payload}
+    if "context" not in payload and _session.get("context"):
+        payload = {"context": _session["context"], **payload}
     cli_actions.record_event_logged(name, payload, enabled=args.analytics)
     if args.analytics and getattr(args, "nats_url", None):
         try:
@@ -70,7 +81,10 @@ def _publish_event(args: argparse.Namespace, name: str, payload: dict[str, Any])
 def _cmd_send(args: argparse.Namespace) -> int:
     prompt = read_prompt(args.prompt)
     try:
-        output = router.send_prompt(prompt, local=args.local, model=args.model)
+        kwargs = {"local": args.local, "model": args.model}
+        if _session.get("context"):
+            kwargs["context"] = _session["context"]
+        output = router.send_prompt(prompt, **kwargs)
     except (FileNotFoundError, subprocess.CalledProcessError) as exc:
         print(exc, file=sys.stderr)
         _publish_event(args, "ai-cli-send", {"exit_code": 1})
@@ -237,6 +251,11 @@ def build_parser() -> argparse.ArgumentParser:
     login = sub.add_parser("login", help="Authenticate user", parents=[analytics])
     login.add_argument("user_id", help="Identifier to persist for the session")
     login.set_defaults(func=_cmd_login)
+    switch_context = sub.add_parser(
+        "switch-context", help="Switch active context", parents=[analytics]
+    )
+    switch_context.add_argument("context", help="Context identifier")
+    switch_context.set_defaults(func=_cmd_switch_context)
     send = sub.add_parser("send", help="Send a prompt to the LLM backend", parents=[analytics])
     send.add_argument("prompt", help="Prompt or '-' to read from STDIN")
     send.add_argument("--local", action="store_true", help="Force use of fallback backend")
@@ -335,6 +354,11 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 def login_main(argv: Optional[List[str]] = None) -> int:
     argv = ["login", *(argv or [])]
+    return main(argv)
+
+
+def switch_context_main(argv: Optional[List[str]] = None) -> int:
+    argv = ["switch-context", *(argv or [])]
     return main(argv)
 
 

@@ -164,8 +164,19 @@ def _model_info(model: str) -> dict[str, Any]:
     return cast(dict[str, Any], cfg.get("models", {}).get(model, {}))
 
 
-def send_prompt(prompt: str, *, local: bool = False, model: str = DEFAULT_MODEL) -> str:
-    """Send ``prompt`` using the configured backends."""
+def send_prompt(
+    prompt: str,
+    *,
+    local: bool = False,
+    model: str = DEFAULT_MODEL,
+    context: str | None = None,
+) -> str:
+    """Send ``prompt`` using the configured backends.
+
+    The optional ``context`` parameter can be used by higher level callers to
+    route requests differently. It is currently unused by the router itself but
+    accepted for compatibility with CLI features.
+    """
     primary, fallback = _preferred_backends()
     order: List[str] = []
 
