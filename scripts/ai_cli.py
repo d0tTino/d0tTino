@@ -206,6 +206,39 @@ def _cmd_stats(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_finance_analyze(args: argparse.Namespace) -> int:
+    payload: dict[str, Any] = {
+        "workflow": "FinancialDecisionSupport",
+        "parameters": {"max_options": args.max_options},
+    }
+    params = payload["parameters"]
+    if args.min_budget is not None:
+        params["min_budget"] = args.min_budget
+    if args.max_budget is not None:
+        params["max_budget"] = args.max_budget
+    try:
+        text = router.send_prompt(json.dumps(payload))
+        data = json.loads(text)
+        options = data.get("options", [])
+    except Exception as exc:  # noqa: BLE001
+        print(exc, file=sys.stderr)
+        _publish_event(args, "finance-analyze", {"exit_code": 1})
+        return 1
+    for idx, opt in enumerate(options, start=1):
+        print(opt)
+        _publish_event(
+            args,
+            "finance-analyze-progress",
+            {"options_generated": idx},
+        )
+    _publish_event(
+        args,
+        "finance-analyze",
+        {"exit_code": 0, "option_count": len(options)},
+    )
+    return 0
+
+
 def _cmd_metrics(args: argparse.Namespace) -> int:
     """Show weekly totals of successful ai-do runs."""
     if args.aggregates_url:
@@ -302,6 +335,28 @@ def build_parser() -> argparse.ArgumentParser:
     plugin = sub.add_parser("plugin", help="Manage plug-ins")
     plugin.add_argument("plugin_args", nargs=argparse.REMAINDER)
     plugin.set_defaults(func=_cmd_plugin)
+
+    finance = sub.add_parser(
+        "finance", help="Financial decision support", parents=[analytics]
+    )
+    finance_sub = finance.add_subparsers(dest="finance_command", required=True)
+    analyze = finance_sub.add_parser(
+        "analyze", help="Analyze financial options", parents=[analytics]
+    )
+    analyze.add_argument(
+        "--max-options",
+        type=int,
+        default=3,
+        dest="max_options",
+        help="Maximum number of options to generate (default: %(default)s)",
+    )
+    analyze.add_argument(
+        "--min-budget", type=float, dest="min_budget", default=None
+    )
+    analyze.add_argument(
+        "--max-budget", type=float, dest="max_budget", default=None
+    )
+    analyze.set_defaults(func=_cmd_finance_analyze)
 
     sources = sub.add_parser(
         "sources",
