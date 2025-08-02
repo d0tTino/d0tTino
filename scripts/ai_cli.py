@@ -7,6 +7,7 @@ import argparse
 import subprocess
 import sys
 import os
+import json
 from pathlib import Path
 from typing import List, Optional, Any
 
@@ -25,13 +26,38 @@ from ume import events as ume_events
 import logging
 import time
 
+SESSION_FILE = Path.home() / ".config" / "d0tTino" / "cli_session.json"
+_session: dict[str, Any] = {}
+
+
+def _load_session() -> None:
+    global _session
+    try:
+        _session = json.loads(SESSION_FILE.read_text())
+    except Exception:
+        _session = {}
+
+
+_load_session()
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 initialize()
 
 
+def _cmd_login(args: argparse.Namespace) -> int:
+    data = {"user_id": args.user_id}
+    SESSION_FILE.parent.mkdir(parents=True, exist_ok=True)
+    SESSION_FILE.write_text(json.dumps(data))
+    _session.update(data)
+    _publish_event(args, "ai-cli-login", {**data, "exit_code": 0})
+    return 0
+
+
 def _publish_event(args: argparse.Namespace, name: str, payload: dict[str, Any]) -> None:
     """Record analytics and publish to NATS when configured."""
+    if "user_id" not in payload and _session.get("user_id"):
+        payload = {"user_id": _session["user_id"], **payload}
     cli_actions.record_event_logged(name, payload, enabled=args.analytics)
     if args.analytics and getattr(args, "nats_url", None):
         try:
@@ -208,6 +234,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser = argparse.ArgumentParser(description=__doc__, parents=[analytics])
     sub = parser.add_subparsers(dest="command", required=True)
+    login = sub.add_parser("login", help="Authenticate user", parents=[analytics])
+    login.add_argument("user_id", help="Identifier to persist for the session")
+    login.set_defaults(func=_cmd_login)
     send = sub.add_parser("send", help="Send a prompt to the LLM backend", parents=[analytics])
     send.add_argument("prompt", help="Prompt or '-' to read from STDIN")
     send.add_argument("--local", action="store_true", help="Force use of fallback backend")
@@ -302,6 +331,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     args = parser.parse_args(argv)
     args.analytics = getattr(args, "analytics", analytics_default())
     return args.func(args)
+
+
+def login_main(argv: Optional[List[str]] = None) -> int:
+    argv = ["login", *(argv or [])]
+    return main(argv)
 
 
 def plan_main(argv: Optional[List[str]] = None) -> int:
