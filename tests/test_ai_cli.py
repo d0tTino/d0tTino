@@ -80,6 +80,46 @@ def test_do_creates_log_dir(monkeypatch, tmp_path):
     assert log.exists()
 
 
+def test_plan_requests_clarification(monkeypatch):
+    calls = []
+
+    def fake_plan(goal: str, *, config_path=None, analytics=False):
+        calls.append(goal)
+        return [] if len(calls) == 1 else [f"echo {goal}"]
+
+    monkeypatch.setattr(ai_cli.ai_exec, "plan", fake_plan)
+    monkeypatch.setattr("builtins.input", lambda _: "more info")
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        rc = ai_cli.main(["plan", "goal"])
+    assert rc == 0
+    assert calls == ["goal", "goal. more info"]
+    assert out.getvalue().splitlines() == ["echo goal. more info"]
+
+
+def test_do_requests_clarification(monkeypatch):
+    calls = []
+
+    def fake_plan(goal: str, *, config_path=None, analytics=False):
+        calls.append(goal)
+        return [] if len(calls) == 1 else [f"echo {goal}"]
+
+    monkeypatch.setattr(ai_cli.ai_exec, "plan", fake_plan)
+    captured = {}
+
+    def fake_run_steps(name, steps, **kwargs):
+        captured["name"] = name
+        captured["steps"] = steps
+        return 0
+
+    monkeypatch.setattr(cli_actions, "run_steps", fake_run_steps)
+    monkeypatch.setattr("builtins.input", lambda _: "extra detail")
+    rc = ai_cli.main(["do", "goal"])
+    assert rc == 0
+    assert calls == ["goal", "goal. extra detail"]
+    assert captured["steps"] == ["echo goal. extra detail"]
+
+
 def test_send_records_event(monkeypatch):
     monkeypatch.setattr(ai_cli.router, "send_prompt", lambda *a, **k: "ok")
     recorded = []
