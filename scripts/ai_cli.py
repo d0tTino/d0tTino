@@ -238,6 +238,8 @@ def _cmd_finance_analyze(args: argparse.Namespace) -> int:
         params["min_budget"] = args.min_budget
     if args.max_budget is not None:
         params["max_budget"] = args.max_budget
+    if getattr(args, "monthly_budget", None) is not None:
+        params["monthly_budget"] = args.monthly_budget
     stop = threading.Event()
     listener: threading.Thread | None = None
 
@@ -490,6 +492,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     analyze.add_argument(
         "--max-budget", type=float, dest="max_budget", default=None
+    )
+    analyze.add_argument(
+        "--monthly-budget", type=float, dest="monthly_budget", default=None
     )
     analyze.add_argument(
         "--no-progress",

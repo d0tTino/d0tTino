@@ -38,12 +38,19 @@ def test_finance_analyze(monkeypatch):
                 "10",
                 "--max-budget",
                 "20",
+                "--monthly-budget",
+                "300",
             ]
         )
     assert rc == 0
     assert captured["payload"] == {
         "workflow": "FinancialDecisionSupport",
-        "parameters": {"max_options": 2, "min_budget": 10.0, "max_budget": 20.0},
+        "parameters": {
+            "max_options": 2,
+            "min_budget": 10.0,
+            "max_budget": 20.0,
+            "monthly_budget": 300.0,
+        },
     }
     assert out.getvalue().splitlines() == [
         "1 options generated. Use `ai finance view` to see results.",
