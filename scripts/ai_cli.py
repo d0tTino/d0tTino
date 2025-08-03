@@ -270,6 +270,88 @@ def _cmd_metrics(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_calendar_add(args: argparse.Namespace) -> int:
+    start = time.time()
+    agent_cls = globals().get("CalendarNLP_Agent")
+    if agent_cls is None:
+        print("CalendarNLP_Agent is not available", file=sys.stderr)
+        cli_actions.record_event_logged(
+            "ai-cli-calendar-add",
+            {"exit_code": 1, "start_ts": start, "end_ts": start, "latency_ms": 0},
+            enabled=args.analytics,
+        )
+        return 1
+    try:
+        agent = agent_cls()
+        agent.add_event(args.text)
+    except Exception as exc:  # noqa: BLE001
+        end = time.time()
+        print(exc, file=sys.stderr)
+        cli_actions.record_event_logged(
+            "ai-cli-calendar-add",
+            {
+                "exit_code": 1,
+                "start_ts": start,
+                "end_ts": end,
+                "latency_ms": int((end - start) * 1000),
+            },
+            enabled=args.analytics,
+        )
+        return 1
+    end = time.time()
+    cli_actions.record_event_logged(
+        "ai-cli-calendar-add",
+        {
+            "exit_code": 0,
+            "start_ts": start,
+            "end_ts": end,
+            "latency_ms": int((end - start) * 1000),
+        },
+        enabled=args.analytics,
+    )
+    return 0
+
+
+def _cmd_calendar_view(args: argparse.Namespace) -> int:
+    base = args.url or os.environ.get("CALENDAR_URL")
+    if not base:
+        print("Calendar URL required (--url or CALENDAR_URL)", file=sys.stderr)
+        return 1
+    params: dict[str, Any] = {}
+    if args.day:
+        params["day"] = args.day
+    if args.week:
+        params["week"] = args.week
+    if args.layers:
+        params["layers"] = ",".join(args.layers)
+    try:
+        resp = requests.get(f"{base}/v1/calendar/events", params=params, timeout=10)
+        resp.raise_for_status()
+        events = resp.json()
+    except Exception as exc:  # noqa: BLE001
+        print(f"failed to fetch events: {exc}", file=sys.stderr)
+        return 1
+    if args.timeline:
+        for ev in events:
+            start = ev.get("start", "")
+            end = ev.get("end", "")
+            summary = ev.get("summary", "")
+            if end:
+                print(f"{start} - {end} {summary}".strip())
+            else:
+                print(f"{start} {summary}".strip())
+    else:
+        print(f"{'Start':<20} {'End':<20} {'Summary':<30} {'Layer':<10}")
+        for ev in events:
+            layer = ev.get("layer")
+            if layer is None:
+                layer = ",".join(str(x) for x in ev.get("layers", []))
+            print(
+                f"{ev.get('start',''):<20} {ev.get('end',''):<20} {ev.get('summary',''):<30} {layer}"
+            )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     analytics = build_analytics_parser()
 
@@ -396,6 +478,37 @@ def build_parser() -> argparse.ArgumentParser:
         help="URL for precomputed weekly aggregates (default: NSM_URL)",
     )
     metrics.set_defaults(func=_cmd_metrics)
+
+    calendar = sub.add_parser("calendar", help="Manage calendar events", parents=[analytics])
+    cal_sub = calendar.add_subparsers(dest="calendar_cmd", required=True)
+
+    cal_add = cal_sub.add_parser("add", help="Add calendar event", parents=[analytics])
+    cal_add.add_argument("text", help="Event description")
+    cal_add.set_defaults(func=_cmd_calendar_add)
+
+    cal_view = cal_sub.add_parser("view", help="View calendar events", parents=[analytics])
+    group = cal_view.add_mutually_exclusive_group()
+    group.add_argument("--day", dest="day")
+    group.add_argument("--week", dest="week")
+    cal_view.add_argument(
+        "--layers",
+        nargs="+",
+        dest="layers",
+        default=None,
+        help="Filter by layers",
+    )
+    cal_view.add_argument(
+        "--timeline",
+        action="store_true",
+        help="Display events as timeline",
+    )
+    cal_view.add_argument(
+        "--url",
+        dest="url",
+        default=None,
+        help="Calendar service base URL (default: CALENDAR_URL)",
+    )
+    cal_view.set_defaults(func=_cmd_calendar_view)
 
     return parser
 
