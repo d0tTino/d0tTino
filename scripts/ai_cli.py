@@ -97,9 +97,30 @@ def _cmd_send(args: argparse.Namespace) -> int:
     return 0
 
 
+def _clarify_goal(
+    goal: str, *, config, analytics: bool
+) -> tuple[str, List[str]]:
+    """Request clarification from the user until planning succeeds.
+
+    ``ai_exec.plan`` may return an empty list when the goal is ambiguous or
+    lacks sufficient detail. In that case ask the user for more context and
+    re-run planning with the expanded goal.
+    """
+    steps = ai_exec.plan(goal, config_path=config, analytics=analytics)
+    while not steps:
+        extra = input("Goal unclear. Please provide more details: ").strip()
+        if not extra:
+            break
+        goal = f"{goal}. {extra}" if goal else extra
+        steps = ai_exec.plan(goal, config_path=config, analytics=analytics)
+    return goal, steps
+
+
 def _cmd_plan(args: argparse.Namespace) -> int:
     start = time.time()
-    steps = ai_exec.plan(args.goal, config_path=args.config, analytics=args.analytics)
+    goal, steps = _clarify_goal(
+        args.goal, config=args.config, analytics=args.analytics
+    )
     for step in steps:
         print(step)
     end = time.time()
@@ -107,7 +128,7 @@ def _cmd_plan(args: argparse.Namespace) -> int:
         args,
         "ai-cli-plan",
         {
-            "goal": args.goal,
+            "goal": goal,
             "step_count": len(steps),
             "start_ts": start,
             "end_ts": end,
@@ -118,15 +139,15 @@ def _cmd_plan(args: argparse.Namespace) -> int:
 
 
 def _cmd_do(args: argparse.Namespace) -> int:
-    steps = ai_exec.plan(
-        args.goal, config_path=args.config, analytics=args.analytics
+    goal, steps = _clarify_goal(
+        args.goal, config=args.config, analytics=args.analytics
     )
     return cli_actions.run_steps(
         "ai-cli-do",
         steps,
         log_path=args.log,
         analytics=args.analytics,
-        payload={"goal": args.goal, "step_count": len(steps)},
+        payload={"goal": goal, "step_count": len(steps)},
         nats_url=args.nats_url,
         jetstream=getattr(args, "jetstream", False),
     )
