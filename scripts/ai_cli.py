@@ -10,6 +10,7 @@ import os
 import json
 from pathlib import Path
 from typing import List, Optional, Any
+import threading
 
 from llm import router
 from llm.backends import initialize
@@ -216,6 +217,30 @@ def _cmd_finance_analyze(args: argparse.Namespace) -> int:
         params["min_budget"] = args.min_budget
     if args.max_budget is not None:
         params["max_budget"] = args.max_budget
+    stop = threading.Event()
+    listener: threading.Thread | None = None
+
+    if not getattr(args, "no_progress", False):
+        
+        def _listen() -> None:
+            async def _run() -> None:
+                try:
+                    async for ev in ume_events.iter_events(url=args.nats_url):
+                        if stop.is_set():
+                            break
+                        if ev.get("name") == "finance-analyze-progress":
+                            cnt = ev.get("options_generated")
+                            if isinstance(cnt, int):
+                                print(
+                                    f"{cnt} options generated. Use `ai finance view` to see results."
+                                )
+                except Exception:  # pragma: no cover - best effort logging
+                    logging.debug("progress listener stopped")
+            asyncio.run(_run())
+
+        listener = threading.Thread(target=_listen, daemon=True)
+        listener.start()
+
     try:
         text = router.send_prompt(json.dumps(payload))
         data = json.loads(text)
@@ -223,9 +248,16 @@ def _cmd_finance_analyze(args: argparse.Namespace) -> int:
     except Exception as exc:  # noqa: BLE001
         print(exc, file=sys.stderr)
         _publish_event(args, "finance-analyze", {"exit_code": 1})
+        stop.set()
+        if listener:
+            listener.join()
         return 1
-    for idx, opt in enumerate(options, start=1):
-        print(opt)
+    finally:
+        stop.set()
+        if listener:
+            listener.join()
+
+    for idx, _ in enumerate(options, start=1):
         _publish_event(
             args,
             "finance-analyze-progress",
@@ -437,6 +469,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     analyze.add_argument(
         "--max-budget", type=float, dest="max_budget", default=None
+    )
+    analyze.add_argument(
+        "--no-progress",
+        action="store_true",
+        dest="no_progress",
+        help="Disable live progress updates",
     )
     analyze.set_defaults(func=_cmd_finance_analyze)
 
