@@ -256,7 +256,7 @@ def _cmd_finance_analyze(args: argparse.Namespace) -> int:
                             cnt = ev.get("options_generated")
                             if isinstance(cnt, int):
                                 print(
-                                    f"{cnt} options generated. Use `ai finance view` to see results."
+                                    f"{cnt} options generated. View them with `ai finance view`."
                                 )
                 except Exception:  # pragma: no cover - best effort logging
                     logging.debug("progress listener stopped")
@@ -292,6 +292,36 @@ def _cmd_finance_analyze(args: argparse.Namespace) -> int:
         "finance-analyze",
         {"exit_code": 0, "option_count": len(options)},
     )
+    return 0
+
+
+def _cmd_finance_view(args: argparse.Namespace) -> int:
+    base = args.url or os.environ.get("FINANCE_URL")
+    if not base:
+        print("Finance service URL required (--url or FINANCE_URL)", file=sys.stderr)
+        return 1
+    try:
+        resp = requests.get(f"{base}/v1/finance/options", timeout=10)
+        resp.raise_for_status()
+        options = resp.json()
+    except Exception as exc:  # noqa: BLE001
+        print(f"failed to fetch options: {exc}", file=sys.stderr)
+        return 1
+    if args.timeline:
+        for idx, opt in enumerate(options, start=1):
+            print(f"Option {idx}:")
+            for ev in opt.get("timeline", []):
+                ts = ev.get("time") or ev.get("date") or ev.get("start", "")
+                summary = ev.get("summary") or ev.get("description", "")
+                print(f"  {ts} {summary}".strip())
+    else:
+        print(f"{'Option':<6} {'Summary'}")
+        for idx, opt in enumerate(options, start=1):
+            if isinstance(opt, dict):
+                summary = opt.get("summary") or opt.get("description") or json.dumps(opt)
+            else:
+                summary = str(opt)
+            print(f"{idx:<6} {summary}")
     return 0
 
 
@@ -521,6 +551,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="Disable live progress updates",
     )
     analyze.set_defaults(func=_cmd_finance_analyze)
+
+    view = finance_sub.add_parser(
+        "view", help="View generated options", parents=[analytics]
+    )
+    view.add_argument(
+        "--timeline",
+        action="store_true",
+        help="Display options as timeline",
+    )
+    view.add_argument(
+        "--url",
+        dest="url",
+        default=None,
+        help="Finance service base URL (default: FINANCE_URL)",
+    )
+    view.set_defaults(func=_cmd_finance_view)
 
     sources = sub.add_parser(
         "sources",

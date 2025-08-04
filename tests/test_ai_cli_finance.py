@@ -53,8 +53,8 @@ def test_finance_analyze(monkeypatch):
         },
     }
     assert out.getvalue().splitlines() == [
-        "1 options generated. Use `ai finance view` to see results.",
-        "2 options generated. Use `ai finance view` to see results.",
+        "1 options generated. View them with `ai finance view`.",
+        "2 options generated. View them with `ai finance view`.",
     ]
     assert events == [
         ("finance-analyze-progress", {"options_generated": 1}),
@@ -85,3 +85,53 @@ def test_finance_analyze_no_budget(monkeypatch):
         "workflow": "FinancialDecisionSupport",
         "parameters": {"max_options": 5},
     }
+
+
+def test_finance_view(monkeypatch, capsys):
+    options = [{"summary": "Buy a car"}, {"summary": "Invest"}]
+
+    def fake_get(url, timeout=10):
+        assert url == "https://fin/v1/finance/options"
+
+        class Resp:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return options
+
+        return Resp()
+
+    monkeypatch.setattr(ai_cli.requests, "get", fake_get)
+    rc = ai_cli.main(["finance", "view", "--url", "https://fin"])
+    assert rc == 0
+    out = capsys.readouterr().out.splitlines()
+    assert out[0].startswith("Option")
+    assert "Buy a car" in out[1]
+    assert "Invest" in out[2]
+
+
+def test_finance_view_timeline(monkeypatch, capsys):
+    options = [
+        {
+            "summary": "Plan",
+            "timeline": [{"time": "2024-07-12", "summary": "Start"}],
+        }
+    ]
+
+    def fake_get(url, timeout=10):
+        class Resp:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return options
+
+        return Resp()
+
+    monkeypatch.setattr(ai_cli.requests, "get", fake_get)
+    rc = ai_cli.main(["finance", "view", "--timeline", "--url", "https://fin"])
+    assert rc == 0
+    out = capsys.readouterr().out.strip().splitlines()
+    assert "Option 1:" in out[0]
+    assert "2024-07-12" in out[1]
