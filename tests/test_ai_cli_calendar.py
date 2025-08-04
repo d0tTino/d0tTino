@@ -16,7 +16,7 @@ def test_calendar_add(monkeypatch):
         def add_event(self, text):
             captured["text"] = text
 
-    monkeypatch.setattr(ai_cli, "CalendarNLP_Agent", FakeAgent, raising=False)
+    monkeypatch.setattr(ai_cli, "_load_calendar_agent", lambda: FakeAgent)
 
     rc = ai_cli.main(["calendar", "add", "Lunch tomorrow", "--analytics"])
     assert rc == 0
@@ -28,6 +28,7 @@ def test_calendar_add(monkeypatch):
 
 
 def test_calendar_add_missing_agent(monkeypatch):
+
     recorded = []
 
     def fake_record(name, payload, *, enabled=False):
@@ -40,6 +41,7 @@ def test_calendar_add_missing_agent(monkeypatch):
     rc = ai_cli.main(["calendar", "add", "Lunch tomorrow", "--analytics"])
 
     assert rc != 0
+
     name, payload, enabled = recorded[0]
     assert name == "ai-cli-calendar-add"
     assert payload["exit_code"] == 1
