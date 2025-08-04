@@ -295,6 +295,34 @@ def _cmd_finance_analyze(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_finance_view(args: argparse.Namespace) -> int:
+    base = args.url or os.environ.get("FINANCE_URL")
+    if not base:
+        print("Finance URL required (--url or FINANCE_URL)", file=sys.stderr)
+        return 1
+    try:
+        resp = requests.get(f"{base}/v1/finance/options", timeout=10)
+        resp.raise_for_status()
+        options = resp.json()
+    except Exception as exc:  # noqa: BLE001
+        print(f"failed to fetch options: {exc}", file=sys.stderr)
+        return 1
+    if args.timeline:
+        for opt in options:
+            name = opt.get("name", "")
+            for ev in opt.get("timeline", []):
+                when = ev.get("time") or ev.get("date") or ""
+                desc = ev.get("detail") or ev.get("description") or ""
+                print(f"{when} {name} {desc}".strip())
+    else:
+        print(f"{'Name':<20} {'Cost':<10} {'Summary'}")
+        for opt in options:
+            print(
+                f"{opt.get('name',''):<20} {str(opt.get('cost','')):<10} {opt.get('summary','')}",
+            )
+    return 0
+
+
 def _cmd_metrics(args: argparse.Namespace) -> int:
     """Show weekly totals of successful ai-do runs."""
     if args.aggregates_url:
@@ -521,6 +549,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="Disable live progress updates",
     )
     analyze.set_defaults(func=_cmd_finance_analyze)
+
+    view = finance_sub.add_parser(
+        "view", help="View financial options", parents=[analytics]
+    )
+    view.add_argument(
+        "--url",
+        dest="url",
+        default=None,
+        help="Base URL for finance service",
+    )
+    view.add_argument(
+        "--timeline",
+        action="store_true",
+        dest="timeline",
+        help="Display options as timeline",
+    )
+    view.set_defaults(func=_cmd_finance_view)
 
     sources = sub.add_parser(
         "sources",
