@@ -26,6 +26,7 @@ from telemetry import analytics_default
 from ume import events as ume_events
 import logging
 import time
+import importlib
 
 SESSION_FILE = Path.home() / ".config" / "d0tTino" / "cli_session.json"
 _session: dict[str, Any] = {}
@@ -325,14 +326,31 @@ def _cmd_metrics(args: argparse.Namespace) -> int:
     return 0
 
 
+def _load_calendar_agent() -> type[Any] | None:
+    """Load and return the calendar NLP agent class if available."""
+    try:
+        module = importlib.import_module("calendar_nlp")
+        return getattr(module, "CalendarNLP_Agent")
+    except (ImportError, AttributeError):
+        return None
+
+
 def _cmd_calendar_add(args: argparse.Namespace) -> int:
     start = time.time()
-    agent_cls = globals().get("CalendarNLP_Agent")
+    agent_cls = _load_calendar_agent()
     if agent_cls is None:
-        print("CalendarNLP_Agent is not available", file=sys.stderr)
+        msg = "CalendarNLP_Agent is not available"
+        print(msg, file=sys.stderr)
+        end = time.time()
         cli_actions.record_event_logged(
             "ai-cli-calendar-add",
-            {"exit_code": 1, "start_ts": start, "end_ts": start, "latency_ms": 0},
+            {
+                "exit_code": 1,
+                "start_ts": start,
+                "end_ts": end,
+                "latency_ms": int((end - start) * 1000),
+                "error": msg,
+            },
             enabled=args.analytics,
         )
         return 1
