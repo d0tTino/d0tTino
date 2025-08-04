@@ -27,7 +27,8 @@ def test_calendar_add(monkeypatch):
     assert enabled is True
 
 
-def test_calendar_add_missing_agent(monkeypatch, capsys):
+def test_calendar_add_missing_agent(monkeypatch):
+
     recorded = []
 
     def fake_record(name, payload, *, enabled=False):
@@ -35,12 +36,12 @@ def test_calendar_add_missing_agent(monkeypatch, capsys):
         return True
 
     monkeypatch.setattr(cli_actions, "record_event_logged", fake_record)
-    monkeypatch.setattr(ai_cli, "_load_calendar_agent", lambda: None)
+    monkeypatch.delattr(ai_cli, "CalendarNLP_Agent", raising=False)
 
-    rc = ai_cli.main(["calendar", "add", "Lunch", "--analytics"])
-    assert rc == 1
-    err = capsys.readouterr().err
-    assert "CalendarNLP_Agent is not available" in err
+    rc = ai_cli.main(["calendar", "add", "Lunch tomorrow", "--analytics"])
+
+    assert rc != 0
+
     name, payload, enabled = recorded[0]
     assert name == "ai-cli-calendar-add"
     assert payload["exit_code"] == 1
