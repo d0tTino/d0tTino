@@ -298,7 +298,8 @@ def _cmd_finance_analyze(args: argparse.Namespace) -> int:
 def _cmd_finance_view(args: argparse.Namespace) -> int:
     base = args.url or os.environ.get("FINANCE_URL")
     if not base:
-        print("Finance service URL required (--url or FINANCE_URL)", file=sys.stderr)
+        print("Finance URL required (--url or FINANCE_URL)", file=sys.stderr)
+
         return 1
     try:
         resp = requests.get(f"{base}/v1/finance/options", timeout=10)
@@ -308,20 +309,19 @@ def _cmd_finance_view(args: argparse.Namespace) -> int:
         print(f"failed to fetch options: {exc}", file=sys.stderr)
         return 1
     if args.timeline:
-        for idx, opt in enumerate(options, start=1):
-            print(f"Option {idx}:")
+        for opt in options:
+            name = opt.get("name", "")
             for ev in opt.get("timeline", []):
-                ts = ev.get("time") or ev.get("date") or ev.get("start", "")
-                summary = ev.get("summary") or ev.get("description", "")
-                print(f"  {ts} {summary}".strip())
+                when = ev.get("time") or ev.get("date") or ""
+                desc = ev.get("detail") or ev.get("description") or ""
+                print(f"{when} {name} {desc}".strip())
     else:
-        print(f"{'Option':<6} {'Summary'}")
-        for idx, opt in enumerate(options, start=1):
-            if isinstance(opt, dict):
-                summary = opt.get("summary") or opt.get("description") or json.dumps(opt)
-            else:
-                summary = str(opt)
-            print(f"{idx:<6} {summary}")
+        print(f"{'Name':<20} {'Cost':<10} {'Summary'}")
+        for opt in options:
+            print(
+                f"{opt.get('name',''):<20} {str(opt.get('cost','')):<10} {opt.get('summary','')}",
+            )
+
     return 0
 
 
@@ -553,19 +553,22 @@ def build_parser() -> argparse.ArgumentParser:
     analyze.set_defaults(func=_cmd_finance_analyze)
 
     view = finance_sub.add_parser(
-        "view", help="View generated options", parents=[analytics]
-    )
-    view.add_argument(
-        "--timeline",
-        action="store_true",
-        help="Display options as timeline",
+        "view", help="View financial options", parents=[analytics]
     )
     view.add_argument(
         "--url",
         dest="url",
         default=None,
-        help="Finance service base URL (default: FINANCE_URL)",
+        help="Base URL for finance service",
+
     )
+    view.add_argument(
+        "--timeline",
+        action="store_true",
+        dest="timeline",
+        help="Display options as timeline",
+    )
+
     view.set_defaults(func=_cmd_finance_view)
 
     sources = sub.add_parser(
