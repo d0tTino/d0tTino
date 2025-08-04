@@ -256,7 +256,7 @@ def _cmd_finance_analyze(args: argparse.Namespace) -> int:
                             cnt = ev.get("options_generated")
                             if isinstance(cnt, int):
                                 print(
-                                    f"{cnt} options generated. Use `ai finance view` to see results."
+                                    f"{cnt} options generated. View them with `ai finance view`."
                                 )
                 except Exception:  # pragma: no cover - best effort logging
                     logging.debug("progress listener stopped")
@@ -299,6 +299,7 @@ def _cmd_finance_view(args: argparse.Namespace) -> int:
     base = args.url or os.environ.get("FINANCE_URL")
     if not base:
         print("Finance URL required (--url or FINANCE_URL)", file=sys.stderr)
+
         return 1
     try:
         resp = requests.get(f"{base}/v1/finance/options", timeout=10)
@@ -320,6 +321,7 @@ def _cmd_finance_view(args: argparse.Namespace) -> int:
             print(
                 f"{opt.get('name',''):<20} {str(opt.get('cost','')):<10} {opt.get('summary','')}",
             )
+
     return 0
 
 
@@ -558,6 +560,7 @@ def build_parser() -> argparse.ArgumentParser:
         dest="url",
         default=None,
         help="Base URL for finance service",
+
     )
     view.add_argument(
         "--timeline",
@@ -565,6 +568,7 @@ def build_parser() -> argparse.ArgumentParser:
         dest="timeline",
         help="Display options as timeline",
     )
+
     view.set_defaults(func=_cmd_finance_view)
 
     sources = sub.add_parser(
