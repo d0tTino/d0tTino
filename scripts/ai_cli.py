@@ -472,7 +472,11 @@ def build_parser() -> argparse.ArgumentParser:
     switch_context = sub.add_parser(
         "switch-context", help="Switch active context", parents=[analytics]
     )
-    switch_context.add_argument("context", help="Context identifier")
+    switch_context.add_argument(
+        "context",
+        choices=("personal", "group"),
+        help="Context identifier (personal or group)",
+    )
     switch_context.set_defaults(func=_cmd_switch_context)
     send = sub.add_parser("send", help="Send a prompt to the LLM backend", parents=[analytics])
     send.add_argument("prompt", help="Prompt or '-' to read from STDIN")
