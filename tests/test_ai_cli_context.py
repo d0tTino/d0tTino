@@ -39,3 +39,9 @@ def test_context_switch_affects_send(monkeypatch, tmp_path):
         assert data["context"] == "group"
     finally:
         ai_cli._session.clear()
+
+
+def test_switch_context_invalid_value():
+    with pytest.raises(SystemExit) as excinfo:
+        ai_cli.main(["switch-context", "invalid"])
+    assert excinfo.value.code == 2
