@@ -98,10 +98,22 @@ ai-cli send "Hello"
 ai-cli plan "Refactor the codebase"
 ai-cli do "Refactor the codebase"
 
+# Authenticate and manage session context
+ai login alice
+ai switch-context personal
+
+# Schedule events
+ai calendar add "Lunch tomorrow at noon"
+ai calendar view --day 2024-07-12
+
+# Analyze budgets and review options
+ai finance analyze --goal "Reduce monthly expenses"
+ai finance view
+
+```
 Legacy commands `ai`, `ai-plan`, and `ai-do` now invoke these subcommands
 behind the scenes.
 
-```
 Set `LLM_ROUTING_MODE` to `remote` or `local` to override the automatic
 selection logic, or adjust `LLM_COMPLEXITY_THRESHOLD` to change when the prompt
 is considered complex.
