@@ -120,6 +120,21 @@ def test_do_requests_clarification(monkeypatch):
     assert captured["steps"] == ["echo goal. extra detail"]
 
 
+def test_clarify_goal_prompts_user(monkeypatch):
+    calls = []
+
+    def fake_plan(goal: str, *, config_path=None, analytics=False):
+        calls.append(goal)
+        return [] if len(calls) == 1 else [f"echo {goal}"]
+
+    monkeypatch.setattr(ai_cli.ai_exec, "plan", fake_plan)
+    monkeypatch.setattr("builtins.input", lambda _: "details")
+    goal, steps = ai_cli._clarify_goal("goal", config=None, analytics=False)
+    assert calls == ["goal", "goal. details"]
+    assert goal == "goal. details"
+    assert steps == ["echo goal. details"]
+
+
 def test_send_records_event(monkeypatch):
     monkeypatch.setattr(ai_cli.router, "send_prompt", lambda *a, **k: "ok")
     recorded = []
