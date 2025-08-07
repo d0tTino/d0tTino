@@ -622,7 +622,7 @@ def build_parser() -> argparse.ArgumentParser:
     cal_add.set_defaults(func=_cmd_calendar_add)
 
     cal_view = cal_sub.add_parser("view", help="View calendar events", parents=[analytics])
-    group = cal_view.add_mutually_exclusive_group()
+    group = cal_view.add_mutually_exclusive_group(required=True)
     group.add_argument("--day", dest="day")
     group.add_argument("--week", dest="week")
     cal_view.add_argument(
