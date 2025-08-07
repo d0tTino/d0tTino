@@ -369,7 +369,9 @@ def _cmd_calendar_add(args: argparse.Namespace) -> int:
     start = time.time()
     agent_cls = _load_calendar_agent()
     if agent_cls is None:
-        msg = "CalendarNLP_Agent is not available"
+        msg = (
+            "CalendarNLP_Agent is not available. Install or enable the calendar plugin."
+        )
         print(msg, file=sys.stderr)
         end = time.time()
         cli_actions.record_event_logged(

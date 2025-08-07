@@ -29,7 +29,7 @@ def test_calendar_add(monkeypatch):
     assert enabled is True
 
 
-def test_calendar_add_missing_agent(monkeypatch):
+def test_calendar_add_missing_agent(monkeypatch, capsys):
 
     recorded = []
 
@@ -43,6 +43,8 @@ def test_calendar_add_missing_agent(monkeypatch):
     rc = ai_cli.main(["calendar", "add", "Lunch tomorrow", "--analytics"])
 
     assert rc != 0
+    err = capsys.readouterr().err.strip()
+    assert "Install or enable the calendar plugin" in err
 
     name, payload, enabled = recorded[0]
     assert name == "ai-cli-calendar-add"
