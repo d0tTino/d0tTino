@@ -1,3 +1,5 @@
+import pytest
+
 from scripts import ai_cli, cli_actions
 
 
@@ -119,3 +121,9 @@ def test_calendar_view_timeline(monkeypatch, capsys):
     out = capsys.readouterr().out.strip()
     assert "Meeting" in out
     assert "2024-07-12T10:00:00" in out
+
+
+def test_calendar_view_requires_timeframe():
+    with pytest.raises(SystemExit) as excinfo:
+        ai_cli.main(["calendar", "view"])
+    assert excinfo.value.code == 2
