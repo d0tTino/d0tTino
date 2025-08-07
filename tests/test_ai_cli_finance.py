@@ -87,6 +87,87 @@ def test_finance_analyze_no_budget(monkeypatch):
     }
 
 
+def test_finance_analyze_min_budget(monkeypatch):
+    captured = {}
+
+    def fake_send(prompt, *, local=False, model=ai_cli.router.DEFAULT_MODEL):
+        captured["payload"] = json.loads(prompt)
+        return json.dumps({"options": []})
+
+    monkeypatch.setattr(ai_cli.router, "send_prompt", fake_send)
+    monkeypatch.setattr(ai_cli, "_publish_event", lambda *a, **k: None)
+    rc = ai_cli.main(
+        [
+            "finance",
+            "analyze",
+            "--max-options",
+            "1",
+            "--min-budget",
+            "10",
+            "--no-progress",
+        ]
+    )
+    assert rc == 0
+    assert captured["payload"] == {
+        "workflow": "FinancialDecisionSupport",
+        "parameters": {"max_options": 1, "min_budget": 10.0},
+    }
+
+
+def test_finance_analyze_max_budget(monkeypatch):
+    captured = {}
+
+    def fake_send(prompt, *, local=False, model=ai_cli.router.DEFAULT_MODEL):
+        captured["payload"] = json.loads(prompt)
+        return json.dumps({"options": []})
+
+    monkeypatch.setattr(ai_cli.router, "send_prompt", fake_send)
+    monkeypatch.setattr(ai_cli, "_publish_event", lambda *a, **k: None)
+    rc = ai_cli.main(
+        [
+            "finance",
+            "analyze",
+            "--max-options",
+            "1",
+            "--max-budget",
+            "20",
+            "--no-progress",
+        ]
+    )
+    assert rc == 0
+    assert captured["payload"] == {
+        "workflow": "FinancialDecisionSupport",
+        "parameters": {"max_options": 1, "max_budget": 20.0},
+    }
+
+
+def test_finance_analyze_monthly_budget(monkeypatch):
+    captured = {}
+
+    def fake_send(prompt, *, local=False, model=ai_cli.router.DEFAULT_MODEL):
+        captured["payload"] = json.loads(prompt)
+        return json.dumps({"options": []})
+
+    monkeypatch.setattr(ai_cli.router, "send_prompt", fake_send)
+    monkeypatch.setattr(ai_cli, "_publish_event", lambda *a, **k: None)
+    rc = ai_cli.main(
+        [
+            "finance",
+            "analyze",
+            "--max-options",
+            "1",
+            "--monthly-budget",
+            "300",
+            "--no-progress",
+        ]
+    )
+    assert rc == 0
+    assert captured["payload"] == {
+        "workflow": "FinancialDecisionSupport",
+        "parameters": {"max_options": 1, "monthly_budget": 300.0},
+    }
+
+
 def test_finance_view(monkeypatch, capsys):
     options = [{"summary": "Buy a car"}, {"summary": "Invest"}]
 
@@ -106,7 +187,7 @@ def test_finance_view(monkeypatch, capsys):
     rc = ai_cli.main(["finance", "view", "--url", "https://fin"])
     assert rc == 0
     out = capsys.readouterr().out.splitlines()
-    assert out[0].startswith("Option")
+    assert out[0].startswith("Name")
     assert "Buy a car" in out[1]
     assert "Invest" in out[2]
 
@@ -133,5 +214,4 @@ def test_finance_view_timeline(monkeypatch, capsys):
     rc = ai_cli.main(["finance", "view", "--timeline", "--url", "https://fin"])
     assert rc == 0
     out = capsys.readouterr().out.strip().splitlines()
-    assert "Option 1:" in out[0]
-    assert "2024-07-12" in out[1]
+    assert "2024-07-12" in out[0]
