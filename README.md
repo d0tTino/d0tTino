@@ -1,422 +1,80 @@
-# d0tTino Configuration
+# Hi, I’m Tino
 
-This repository contains example dotfiles and configuration snippets for various tools.
+I build local‑first automation, agentic systems and tooling that’s easy to run on your own hardware. My work spans persistent memory engines, emergent AI sandboxes and practical task orchestration.
 
-Key directories:
+### What I’m building now
 
-- `dotfiles/` – shell and environment settings
-- `powershell/` – PowerShell profile scripts
-- `windows-terminal/` – starter Windows Terminal settings
-- `tablet-config/` – full example configuration for a tablet, including Windows Terminal
-- `starship.toml` – example Starship prompt configuration
-- `vscode/` – VS Code user settings
-- `llm/` – prompts and other LLM-related files. The optional `llm/llm_config.json` file stores preferred model names used by `llm.ai_router`. A sample configuration is available at `examples/llm_config.json`. Set the `LLM_CONFIG_PATH` environment variable to override the location. Configure it with Claude model names when using the `superclaude` backend.
-- `scripts/thm.py` – Terminal Harmony Manager for palette and profile sync (installs as `thm` when using `pip install -e .[cli]`)
-- `scripts/query_sources.py` – search `metadata/sources.json` by name or tag (installs as `query-sources` with the `cli` extra)
-- `research-papers/` – space to store research PDFs, links, and notes
- 
-After cloning the repository, install `stow` and run the helper script to link the packages using GNU Stow. If `stow` is missing the script prints `Error: GNU Stow is required`:
+- **Shared memory bus** – an event‑sourced knowledge graph so agents share durable, queryable context without depending on the cloud.
+- **Emergent AI worlds** – a sandbox where autonomous agents develop personalities, roles, memory and shared culture.
+- **Task orchestrators** – frameworks for chaining research → plan → execution → verification with audit trails and plug‑in schedulers.
+- **DNA data storage** – an educational toolkit that encodes and decodes files into simulated DNA sequences with CLI and GUI.
 
-```bash
-scripts/install_dotfiles.sh
-```
-Use `--dry-run` to preview the changes or `--target DIR` to specify an alternative location.
+---
 
-Get the fonts, palettes and Git hooks in one step:
+## Featured projects
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/d0tTino/d0tTino/main/scripts/install.sh | bash
-# Windows
-irm https://raw.githubusercontent.com/d0tTino/d0tTino/main/scripts/install.ps1 | iex
-```
+### Culture — AI social sandbox  
+A platform to develop and study autonomous AI agents and emergent behaviour.
 
-## Quickstart
+- **Implemented:** modular agents using LangGraph; hierarchical memory persisted to Chroma; shared knowledge board; resource economy (influence points and data units); Discord output; DSPy integration and local Ollama workflows; metrics and observability.  
+- **Planned:** richer visualisation and interactive Discord loop; advanced memory management and governance mechanics.  
+- **Status:** Active – development happens on the `dev` branch.
 
-Install the required Python packages (including test utilities such as
-`pytest` and `json5`). Optional dependencies enable additional backends.
-Install `dspy` via `pip install dspy-ai` for DSPy wrappers.
-Use `pip install lmql` or `pip install guidance` to enable the LMQL and
-Guidance backends. Tests that rely on these packages will be skipped if
-they are missing:
+### UME — Universal Memory Engine  
+An event‑sourced memory bus that turns streams of events into a knowledge graph for agents and automations.
 
-```bash
-pip install -e .[cli,plugins] -r requirements.txt
-```
-The `[plugins]` and `[test]` extras install `jsonschema` so you can manage plug-ins
-with `python -m scripts.plugins`. For example:
+- **Implemented:** ingestion API with schema validation; privacy agent to redact PII; FastAPI/GraphQL service with RBAC; adapters for SQLite, Postgres, Redis, Neo4j and Arango; vector‑store interface; CLI for maintenance and graph replay; projection engine that consumes events and builds the graph.  
+- **Planned:** production‑ready back‑end with high‑availability and a web dashboard.  
+- **Status:** Active – the `dev` branch is ahead of `main`.
 
-```bash
-python -m scripts.plugins backends install openrouter
-```
+### TaskCascadence — practical task orchestration  
+A Python framework for defining multi‑stage tasks with clear audit trails.
 
-For development and testing install everything using the development requirements file:
+- **Implemented:** graph‑based pipelines with `intake → research → plan → run → verify` stages; plugin architecture; synchronous and async execution; Temporal.io integration; built‑in monitoring; CLI and REST API; scheduler and plugin watcher; metrics endpoint.  
+- **Planned:** additional scheduler back‑ends and richer DAG tooling.  
+- **Status:** Active – work happens on `main`.
 
-```bash
-pip install -r requirements-dev.txt
-```
+### GeneCoder — simulated DNA data storage  
+An educational toolkit exploring simple encoding and decoding of data as DNA sequences.
 
-If you use [nvm](https://github.com/nvm-sh/nvm), run `nvm use` to switch to the
-version defined in `.nvmrc`.
+ - **Implemented:** CLI for encoding/decoding small data sets using base‑4 and GC‑balanced conversions; simple error correction (triple‑repeat, Hamming(7,4)); an early Flet GUI with basic analysis plots. Some advanced FEC (Reed‑Solomon, LDPC, Fountain) and AI‑assisted decoding exist as prototypes but may not be fully runnable.  
+ - **Planned:** broaden error correction support (Reed‑Solomon, LDPC and others), add streaming for large files and improve simulation fidelity.  
+ - **Status:** Prototype – experimental and may require manual setup.
 
-See the [backend plug-in guide](docs/plugins.md) for details. If you
-prefer not to install any extras, install `jsonschema` separately with:
-
-```bash
-pip install jsonschema
-```
+### DeepThought‑ReThought — experimental EDA AI  
+An event‑driven AI stack exploring extreme efficiency and modular architecture.
 
-Run `ruff` to lint the Python code:
+- **Implemented:** core event‑driven framework using NATS/JetStream; publishers and subscribers with structured event definitions; CLI for fine‑tuning small open‑source LLMs via PEFT (QLoRA) and VRAM estimation; packaging for separate `dtrt` and `dtrt‑finetune` commands; examples for memory services, reward manager and neuromorphic stubs.  
+- **Planned:** complete hierarchical memory service combining vector and graph memories; reinforcement and reward loops; adaptive code generation and neuromorphic experiments.  
+- **Status:** Prototype – active research on `dev`.
 
-```bash
-ruff check .
-```
+### tino‑storm — local‑first research wrapper  
+An experimental wrapper around the open‑source STORM knowledge curation engine with local storage defaults.
 
-Run `mypy` to verify type hints:
+- **Implemented:** command‑line interface and FastAPI service for research, outlining and drafting; ingestion watcher for dropping URLs/files into vaults; support for Discord, Twitter, Reddit and ArXiv scraping; pluggable search providers and Prometheus metrics.  
+- **Status:** Experimental – the dev branch is under active iteration and features are still maturing.
 
-```bash
-mypy --install-types --non-interactive
-```
+---
 
-The installation also provides an `ai` command for routing prompts to your chosen
-model:
-
-```bash
-# Send the prompt to the remote provider
-ai "Write a Python script"
+## Other projects and tools
 
-# Force evaluation with your local model
-ai --local "Translate text"
+I maintain a collection of other repos that support my workflow:
 
-# Generate a step-by-step plan
-ai-plan "Refactor the codebase"
-
-# Execute the plan interactively
-ai-do "Refactor the codebase"
+ - **DeepThought (Discord bot)** – a legacy Discord bot that previously experimented with memory relevance scoring, LLM response caching, Redis optimisation and Prometheus metrics. It is no longer maintained and has been superseded by DeepThought‑ReThought.  
+- **Constellation Agents** – a suite of micro‑agents (CalendarNLPAgent, ExplainabilityAgent, PlaidSyncAgent, FinRL Strategist) built on top of UME for scheduling events, explaining analyses and syncing financial transactions.  
+- **Constellation Dashboard** – a Next.js dashboard that dynamically loads panels exposed by various services.  
+- **Docs Hub and dotfiles** – centralised documentation and configuration for my environment and development tools.  
+- **TBDSpaceRPG, finance‑engine and other prototypes** – early experiments and learning projects; these are either inactive or in very early stages.
 
-# Or use the consolidated interface
-ai-cli send "Hello"
-ai-cli plan "Refactor the codebase"
-ai-cli do "Refactor the codebase"
-
-# Authenticate and manage session context
-ai login alice
-ai switch-context personal
-
-# Schedule events
-ai calendar add "Lunch tomorrow at noon"
-ai calendar view --day 2024-07-12
-
-# Analyze budgets and review options
-ai finance analyze --goal "Reduce monthly expenses"
-ai finance view
-
-```
-Legacy commands `ai`, `ai-plan`, and `ai-do` now invoke these subcommands
-behind the scenes.
-
-Set `LLM_ROUTING_MODE` to `remote` or `local` to override the automatic
-selection logic, or adjust `LLM_COMPLEXITY_THRESHOLD` to change when the prompt
-is considered complex.
-
-`ai-do` exits with the code of the first failing command, making it suitable for
-automation scripts.
-
-Next, install the Git hooks so `pre-commit` runs automatically. The script
-invokes `pre-commit install` after the common setup:
-
-```bash
-./install.sh
-# or on Windows
-./bootstrap.ps1
-```
-
-`install.sh` sets up the hooks for you. It detects your platform and calls
-`scripts/setup-hooks.ps1` on Windows or `scripts/setup-hooks.sh` elsewhere so
-`pre-commit` runs on each commit. The hook uses `.pre-commit-config.yaml` to
-run `ruff check` and `mypy` automatically.
-Install the development dependencies with `pip install -r requirements-dev.txt` before running the hook or tests.
-
-You can then run the test suite to verify the configuration:
-
-```bash
-pytest
-```
-
-Finally, run the smoke test to verify the basic commands:
-
-```bash
-npm run smoke
-```
-
-
-See the [installation guide](docs/installation.md) for setup instructions.
-Troubleshoot missing package managers in the
-[package manager section](docs/installation.md#troubleshooting-package-managers). Common failure scenarios are listed in the [macOS/Linux troubleshooting section](docs/installation.md#common-failures-on-macos-and-linux).
-After cloning the repository, run `./install.sh` (or `./bootstrap.ps1` from an
-elevated PowerShell window). Running it with elevation allows
-`scripts/fix-path.ps1` to modify your user PATH and enables the local Git
-hooks automatically. On Windows the script calls `scripts/setup-hooks.ps1`
-while on other platforms it invokes `scripts/setup-hooks.sh`.
-To enable and set up WSL in one step, pass `--install-wsl --setup-wsl` to
-`install.sh` or `-InstallWSL -SetupWSL` with `bootstrap.ps1`; see the
-[installation guide](docs/installation.md#WSL) for more details.
-
-After running the script, reload your profile with `. $PROFILE` or restart the terminal to pick up the new configuration. The profile defines an `ai` helper that forwards prompts to `python -m ai_router`.
-
-For a more detailed overview, see [docs/terminal.md](docs/terminal.md).
-For THM usage instructions, see [docs/thm.md](docs/thm.md). The tool ships with
-`blacklight`, `dracula` and `solarized-dark` palettes and can update your
-configuration via `thm apply <name>`.
-For details on fastfetch, btm and Nushell/Starship setup, see the [Terminal Tools section](docs/terminal.md#terminal-tools-fastfetch-btm--nushellstarship).
-For the **One Half Dark** and **Campbell** palettes and the `Alt+M` metrics pane binding used in the screenshots, see [Replicating the Screenshot Environment](docs/terminal.md#replicating-the-screenshot-environment). For a brief overview of the unified palette and pane shortcuts, check [Blacklight Palette & Shortcuts](docs/terminal.md#blacklight-palette--shortcuts).
-
-
-Additional guides:
-
-- [Desktop configuration](docs/desktop.md)
-- [Media containers](docs/media.md)
-- [Repository navigation](docs/navigation.md)
-- [AI automation tooling](docs/ai-automation.md)
-- [Dashboard overview](docs/dashboard.md)
-- [UME Quickstart](docs/ume.md)
-- [Backend plug-in guide](docs/plugins.md)
-
-## LLM Configuration
-
-`get_preferred_models()` reads model names from `llm/llm_config.json`.
-Copy `examples/llm_config.json` and adjust the `primary_model`,
-`fallback_model`, and per-model pricing or context limits to match your setup.
-Set `LLM_CONFIG_PATH` to override the default location. See
-[docs/ai-automation.md#llm-configuration](docs/ai-automation.md#llm-configuration)
-for details.
-
-## Git hooks
-
-Run `scripts/setup-hooks.sh` to enable the local hooks automatically
-(equivalent to running `git config core.hooksPath .githooks`). `install.sh`
-and `bootstrap.ps1` call the appropriate script for you (`scripts/setup-hooks.ps1`
-on Windows and `scripts/setup-hooks.sh` elsewhere) and then execute
-`pre-commit install`, so you usually don't need to run it manually:
-
-```bash
-./scripts/setup-hooks.sh
-```
-
-Once enabled, the `pre-commit` hook first runs `winget upgrade --all` and then
-automatically exports your current `winget` package list to
-`winget-packages.json` whenever you commit on Windows. In addition, it invokes
-`pre-commit` to run `ruff` and `mypy` as defined in `.pre-commit-config.yaml`.
-Be sure to commit the updated file so your package list stays in sync. On Linux
-or WSL the export is skipped unless `winget` is available.
-
-If the hook is disabled, run the following commands manually to upgrade and
-export your package list:
-
-```powershell
-winget upgrade --all
-pwsh -File scripts/export-winget.ps1
-```
-
-
-## Testing
-
-Install all required packages using the development requirements file so `pytest` and runtime
-dependencies like `requests` are available. Running the command below ensures
-every dependency needed for the tests is installed:
-
-```bash
-pip install -r requirements-dev.txt
-```
-This installs `jsonschema`, which the schema validation tests require.
-If `pytest` reports missing modules, consult `/tmp/pytest.log` to see which
-packages are required and ensure they are installed.
-To install everything manually use:
-
-```bash
-pip install -e .[test]
-pip install -r requirements.txt
-```
-
-# Optional: install `dspy` to run the complete suite
-```bash
-pip install dspy-ai
-# Optional: enable the LMQL backend
-pip install lmql
-# Optional: enable the Guidance backend
-pip install guidance
-```
-
-Then invoke `pytest`:
-
-```bash
-pytest
-```
-
-If you have the `pytest-xdist` plugin installed (included with the `[test]`
-extra) you can run the suite in parallel:
-
-```bash
-pytest -n auto || pytest
-```
-
-## Contributing
-
-Run `ruff`, `mypy`, and the plugin registry check before committing to ensure
-the code is lint and type error free and that `plugin-registry.json` is up to
-date. You can run them directly or via `pre-commit`:
-
-```bash
-ruff check .
-mypy --install-types --non-interactive
-python scripts/update_registry.py --check
-pre-commit run --files <changed files>
-```
-
-Run `pre-commit install` once after cloning to register the Git hook. The
-`install.sh` and `scripts/setup-hooks.sh` helpers call it automatically, so you
-usually only need to run it when customizing the hooks.
-
-After fixing any errors, rerun the commands and verify they report zero issues.
-The `pre-commit` hook runs the same checks automatically. CI determines whether
-tests need to run by executing `scripts/check-changed-code.sh`. If the script
-reports that only documentation or comment lines changed, the workflow sets
-`code_changed=false` and skips the test jobs, so documentation-only updates
-bypass the heavy CI stages.
-
-## Link checking
-
-The [`link-check`](.github/workflows/link-check.yml) workflow runs
-[lychee](https://github.com/lycheeverse/lychee) against all Markdown files.
-It executes on every pull request and once per week, failing the job if any
-links are unreachable.
-
-## Awesome sources
-
-Add new resources to `metadata/sources.json` using `name`, `url` and
-`category` fields. Optionally enrich the entries with GitHub star counts and
-API information:
-
-```bash
-python scripts/enrich_sources.py
-```
-
-Set `GITHUB_TOKEN` to a personal access token to avoid GitHub API rate
-limits when enriching sources.
+For private and ongoing work (such as **Aiga** and other closed repos), I focus on local‑first automation, privacy‑preserving audit trails, encrypted vaults and home‑lab scheduling. Details are intentionally abstract to protect sensitive information.
 
-After editing the JSON file regenerate the Markdown list with:
-
-```bash
-python scripts/generate_sources_md.py
-```
-
-Commit the updated `docs/awesome-sources.md` file. A GitHub Action and the
-pre-commit hook verify that the two files remain in sync.
+---
 
-These scripts make up the JSON → Markdown workflow. Whenever
-`metadata/sources.json` changes, the **Generate Sources Markdown** workflow
-(`.github/workflows/sources.yml`) runs the validation and generation scripts.
-The action commits an updated `docs/awesome-sources.md` to the pull request or
-fails if the files diverge.
-
-Query the list from the command line:
-
-```bash
-python scripts/query_sources.py --tag python
-python scripts/query_sources.py --name Docker
-```
-
-## Telemetry and Metrics
-
-When invoked with the `--analytics` flag or when the `EVENTS_ENABLED`
-environment variable is set to a truthy value, the CLI tools (`ai-do`,
-`ai-exec`, and the `ai-cli` subcommands `send`, `plan`, `do`) send a small JSON
-payload to the URL specified by `EVENTS_URL`. Each payload contains the
-following fields:
-
-- `name` – event type such as `ai-cli-plan` or `ai-do`
-- `goal` – the provided goal or prompt
-- `step_count` – number of generated steps (when planning)
-- `exit_code` – command execution result
-- `start_ts` and `end_ts` – Unix timestamps capturing the plan duration
-- `latency_ms` – computed from the timestamps
-
-- See [docs/telemetry.md#troubleshooting](docs/telemetry.md#troubleshooting) for help resolving common Supabase connection issues.
-
-See [docs/telemetry.md](docs/telemetry.md) for a quick Supabase setup and
-configuration of `EVENTS_URL` and `EVENTS_TOKEN`.
-
-Enable telemetry globally by exporting `EVENTS_ENABLED=true` before running the
-commands:
-
-```bash
-export EVENTS_ENABLED=true
-ai-cli do "Refactor the codebase"
-```
-
-To emit events for a single invocation pass `--analytics`:
-
-```bash
-ai-cli plan "Add tests" --analytics
-```
-
-These events record whether a command sequence completed successfully and can be
-aggregated per user. Summing successful executions for each developer over a
-calendar week yields the “successful automated tasks per active developer per
-week” metric. This telemetry helps track how effectively the automation tooling
-is being adopted and highlights trends in task reliability.
-
-To summarize these events, run:
-
-```bash
-python scripts/nsm_stats.py events.json
-```
-
-Replace `events.json` with a local NDJSON file or set the `EVENTS_URL` environment
-variable to fetch records from a server. The script prints `developer,week,count`
-CSV rows for each successful `ai-do` run per developer per ISO week.
-
-### Viewing Aggregated Statistics
-
-Run the script and pipe the output through `column -t` for a quick view or use
-the built-in metrics subcommand:
-
-```bash
-EVENTS_URL=https://example.com python scripts/nsm_stats.py | column -t -s ,
-EVENTS_URL=https://example.com ai-cli metrics
-```
-
-Set `EVENTS_URL` to the endpoint serving raw events. `ai-cli metrics` downloads
-these records, calculates weekly totals, and prints `developer,week,count`
-rows. If aggregates are available separately, pass `--aggregates-url` or set
-`NSM_URL`:
-
-```bash
-NSM_URL=https://example.com/nsm ai-cli metrics --aggregates-url https://example.com/nsm
-```
-
-See [docs/telemetry.md](docs/telemetry.md) for additional details. Each row
-shows the anonymized developer identifier, ISO week, and the number of
-successful `ai-do` runs.
-
-
-## Privacy
-
-`ai-do`, `ai-exec`, and the `ai-cli` subcommands (`send`, `plan`, `do`) can send
-anonymous completion events. Set `EVENTS_ENABLED=true` to opt in globally or use
-`--analytics` per invocation. A hashed developer UUID derived from the current
-user name is included with each payload. Events are posted to the URL specified
-in `EVENTS_URL` with optional authorization via `EVENTS_TOKEN`.
-
-Licensed under the [Apache 2.0](LICENSE) license.
-
-## North Star Metric
-
-The project tracks “successful automated tasks per active developer per week” as
-its north star metric. Every time a command completes successfully with
-analytics enabled (via `--analytics` or `EVENTS_ENABLED=true`), an event is
-posted to `EVENTS_URL` and counted toward the developer's weekly total.
-Aggregating these numbers highlights adoption trends and guides future
-automation work.
-
-For details on how the weekly totals are calculated, see
-[docs/telemetry.md#tracking-the-north-star-metric](docs/telemetry.md#tracking-the-north-star-metric).
+## Changelog (auto‑updated)
+
+- **2025‑08‑09** — Refreshed featured projects; clarified implemented vs planned features; added privacy language; added auto‑update changelog; reclassified DeepThought as legacy and marked tino‑storm as experimental.
+<!-- AGENT: Add new entries above this line. Keep the last 10. -->
+
+---
+
+I prefer local‑first defaults with optional cloud. You’ll find me under **Tino** or **T** across platforms.
