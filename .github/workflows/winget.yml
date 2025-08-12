@@ -1,0 +1,24 @@
+name: publish-winget
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  submit:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install wingetcreate
+        run: |
+          dotnet tool install --global wingetcreate
+      - name: Update manifest
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          wingetcreate update winget/tino.yaml https://github.com/d0tTino/d0tTino/releases/download/$env:VERSION/d0tTino.zip $env:VERSION
+      - name: Submit to winget-pkgs
+        env:
+          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+        run: |
+          wingetcreate submit winget/tino.yaml --token $env:WINGET_TOKEN
