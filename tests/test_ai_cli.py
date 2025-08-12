@@ -36,7 +36,7 @@ def test_plan_subcommand(monkeypatch):
     with contextlib.redirect_stdout(out):
         rc = ai_cli.main(["plan", "goal", "--config", "cfg.json"])
     assert rc == 0
-    assert out.getvalue().splitlines() == ["one", "two"]
+    assert out.getvalue().splitlines() == ["1. one", "2. two"]
 
 
 def test_do_subcommand(monkeypatch, tmp_path):
@@ -94,7 +94,7 @@ def test_plan_requests_clarification(monkeypatch):
         rc = ai_cli.main(["plan", "goal"])
     assert rc == 0
     assert calls == ["goal", "goal. more info"]
-    assert out.getvalue().splitlines() == ["echo goal. more info"]
+    assert out.getvalue().splitlines() == ["1. echo goal. more info"]
 
 
 def test_do_requests_clarification(monkeypatch):
