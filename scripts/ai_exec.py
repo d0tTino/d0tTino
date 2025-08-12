@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import argparse
-import re
+import shlex
 import subprocess
 import time
 from pathlib import Path
@@ -26,14 +26,27 @@ from telemetry import analytics_default
 _LAST_MODEL_REMOTE = True
 _LAST_MODEL_LOCK = Lock()
 
-RISKY_COMMANDS = {"rm", "sudo", "reboot", "shutdown", "poweroff", "mkfs", "dd"}
+RISKY_COMMANDS = {"rm", "reboot", "shutdown", "poweroff", "mkfs", "dd"}
 
 
 def _tag_risky(step: str) -> str:
-    """Append a risk tag to ``step`` when it matches dangerous commands."""
-    pattern = re.compile(r"\b(" + "|".join(re.escape(cmd) for cmd in RISKY_COMMANDS) + r")\b")
-    if pattern.search(step):
-        return f"{step} [danger]"
+    """Append a risk tag with the command type when ``step`` is dangerous."""
+    try:
+        tokens = shlex.split(step)
+    except ValueError:
+        return step
+    if not tokens:
+        return step
+    cmd = tokens[0]
+    risk: Optional[str] = None
+    if cmd == "sudo":
+        risk = "sudo"
+        if len(tokens) > 1 and tokens[1] in RISKY_COMMANDS:
+            risk = tokens[1]
+    elif cmd in RISKY_COMMANDS:
+        risk = cmd
+    if risk:
+        return f"{step} [risk:{risk}]"
     return step
 
 def last_model_remote() -> bool:
