@@ -129,6 +129,7 @@ def _cmd_plan(args: argparse.Namespace) -> int:
             print(f"{i}. {tag} {before}")
         else:
             print(f"{i}. {step}")
+
     end = time.time()
     _publish_event(
         args,
