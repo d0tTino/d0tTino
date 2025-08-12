@@ -111,7 +111,17 @@ def test_plan_tags_risky_commands(monkeypatch):
     monkeypatch.setattr(ai_exec.router, "run_ollama", lambda *a, **k: "")
     monkeypatch.setattr(ai_exec, "get_preferred_models", lambda *a, **k: ("g", "o"))
     steps = ai_exec.plan("goal")
-    assert steps == ["rm -rf / [danger]", "ls"]
+    assert steps == ["rm -rf / [risk:rm]", "ls"]
+
+
+def test_plan_tags_sudo_commands(monkeypatch):
+    monkeypatch.setattr(
+        ai_exec.router, "run_gemini", lambda *a, **k: "sudo reboot now\nls"
+    )
+    monkeypatch.setattr(ai_exec.router, "run_ollama", lambda *a, **k: "")
+    monkeypatch.setattr(ai_exec, "get_preferred_models", lambda *a, **k: ("g", "o"))
+    steps = ai_exec.plan("goal")
+    assert steps == ["sudo reboot now [risk:reboot]", "ls"]
 
 
 def create_exe(path: Path, contents: str = "#!/usr/bin/env bash\n") -> None:
