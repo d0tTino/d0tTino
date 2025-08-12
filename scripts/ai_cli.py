@@ -122,13 +122,16 @@ def _cmd_plan(args: argparse.Namespace) -> int:
     goal, steps = _clarify_goal(
         args.goal, config=args.config, analytics=args.analytics
     )
-    for i, step in enumerate(steps, 1):
+    numbered_steps: list[str] = []
+    for i, step in enumerate(steps, start=1):
         if step.endswith("]") and " [" in step:
             before, tag = step.rsplit(" [", 1)
             tag = "[" + tag
-            print(f"{i}. {tag} {before}")
+            numbered_steps.append(f"{i}. {tag} {before}")
         else:
-            print(f"{i}. {step}")
+            numbered_steps.append(f"{i}. {step}")
+    for line in numbered_steps:
+        print(line)
 
     end = time.time()
     _publish_event(
