@@ -106,6 +106,14 @@ def test_plan_records_event(monkeypatch):
     assert payload["model_source"] == "remote"
 
 
+def test_plan_tags_risky_commands(monkeypatch):
+    monkeypatch.setattr(ai_exec.router, "run_gemini", lambda *a, **k: "rm -rf /\nls")
+    monkeypatch.setattr(ai_exec.router, "run_ollama", lambda *a, **k: "")
+    monkeypatch.setattr(ai_exec, "get_preferred_models", lambda *a, **k: ("g", "o"))
+    steps = ai_exec.plan("goal")
+    assert steps == ["rm -rf / [danger]", "ls"]
+
+
 def create_exe(path: Path, contents: str = "#!/usr/bin/env bash\n") -> None:
     path.write_text(contents, encoding="utf-8")
     path.chmod(0o755)

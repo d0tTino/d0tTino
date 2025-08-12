@@ -5,10 +5,12 @@
 from __future__ import annotations
 
 import argparse
+import re
 import subprocess
+import time
 from pathlib import Path
-from typing import List, Optional
 from threading import Lock
+from typing import List, Optional
 
 from llm import router
 from llm.ai_router import get_preferred_models
@@ -20,10 +22,19 @@ from scripts.cli_common import (
 )
 from scripts import cli_actions
 from telemetry import analytics_default
-import time
 
 _LAST_MODEL_REMOTE = True
 _LAST_MODEL_LOCK = Lock()
+
+RISKY_COMMANDS = {"rm", "sudo", "reboot", "shutdown", "poweroff", "mkfs", "dd"}
+
+
+def _tag_risky(step: str) -> str:
+    """Append a risk tag to ``step`` when it matches dangerous commands."""
+    pattern = re.compile(r"\b(" + "|".join(re.escape(cmd) for cmd in RISKY_COMMANDS) + r")\b")
+    if pattern.search(step):
+        return f"{step} [danger]"
+    return step
 
 def last_model_remote() -> bool:
     """Return ``True`` if the last plan used a remote model."""
@@ -52,7 +63,7 @@ def plan(
             used_remote = False
             text = router.run_ollama(goal, model=fallback or router.DEFAULT_MODEL)
 
-        steps = [line.strip() for line in text.splitlines() if line.strip()]
+        steps = [_tag_risky(line.strip()) for line in text.splitlines() if line.strip()]
         return steps
     except Exception:
         exit_code = 1
