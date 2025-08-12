@@ -122,8 +122,8 @@ def _cmd_plan(args: argparse.Namespace) -> int:
     goal, steps = _clarify_goal(
         args.goal, config=args.config, analytics=args.analytics
     )
-    for step in steps:
-        print(step)
+    for i, step in enumerate(steps, start=1):
+        print(f"{i}. {step}")
     end = time.time()
     _publish_event(
         args,
