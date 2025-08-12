@@ -77,4 +77,8 @@ For private and ongoing work (such as **Aiga** and other closed repos), I focus 
 
 ---
 
+# d0tTino Configuration
+
+Refer to the docs for environment variables and other options.
+
 I prefer local‑first defaults with optional cloud. You’ll find me under **Tino** or **T** across platforms.

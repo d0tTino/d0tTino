@@ -18,7 +18,12 @@ DEFAULT_SUBJECT = os.environ.get("NATS_SUBJECT", "telemetry.events")
 
 async def _connect(url: str = DEFAULT_NATS_URL) -> NATS:
     nc = NATS()
-    await nc.connect(servers=[url])
+    await nc.connect(
+        servers=[url],
+        connect_timeout=1,
+        max_reconnect_attempts=1,
+        reconnect_time_wait=0.1,
+    )
     return nc
 
 
