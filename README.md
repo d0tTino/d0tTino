@@ -70,6 +70,12 @@ For private and ongoing work (such as **Aiga** and other closed repos), I focus 
 
 ---
 
+# d0tTino Configuration
+
+See [docs/install-winget.md](docs/install-winget.md) for instructions on installing d0tTino with Winget and guidance on configuration.
+
+---
+
 ## Changelog (auto‑updated)
 
 - **2025‑08‑09** — Refreshed featured projects; clarified implemented vs planned features; added privacy language; added auto‑update changelog; reclassified DeepThought as legacy and marked tino‑storm as experimental.
