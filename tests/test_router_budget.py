@@ -12,6 +12,7 @@ def reset_router(monkeypatch):
     importlib.reload(router)
 
 
+
 def _reload_router(monkeypatch, budget: str = "1"):
     monkeypatch.setenv("LLM_ROUTER_BUDGET", budget)
     monkeypatch.setenv("LLM_ROUTING_MODE", "remote")
@@ -19,6 +20,7 @@ def _reload_router(monkeypatch, budget: str = "1"):
     router = importlib.import_module("llm.router")
     importlib.reload(router)
     return router
+
 
 
 def test_budget_decrements_and_exhausts(monkeypatch):
