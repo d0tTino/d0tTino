@@ -99,6 +99,26 @@ def _cmd_send(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_suggest(args: argparse.Namespace) -> int:
+    try:
+        kwargs = {"local": args.local, "model": args.model}
+        if _session.get("context"):
+            kwargs["context"] = _session["context"]
+        suggestions = router.shell_suggest(args.goal, **kwargs)
+    except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+        print(exc, file=sys.stderr)
+        _publish_event(args, "ai-cli-suggest", {"exit_code": 1})
+        return 1
+    for line in suggestions:
+        print(line)
+    _publish_event(
+        args,
+        "ai-cli-suggest",
+        {"exit_code": 0, "suggestion_count": len(suggestions)},
+    )
+    return 0
+
+
 def _clarify_goal(
     goal: str, *, config, analytics: bool
 ) -> tuple[str, List[PlanStep]]:
@@ -498,6 +518,20 @@ def build_parser() -> argparse.ArgumentParser:
     send.add_argument("--local", action="store_true", help="Force use of fallback backend")
     send.add_argument("--model", default=router.DEFAULT_MODEL, help="Model name for Ollama (default: %(default)s)")
     send.set_defaults(func=_cmd_send)
+
+    suggest = sub.add_parser(
+        "suggest", help="Suggest shell commands for a goal", parents=[analytics]
+    )
+    suggest.add_argument("goal")
+    suggest.add_argument(
+        "--local", action="store_true", help="Force use of fallback backend"
+    )
+    suggest.add_argument(
+        "--model",
+        default=router.DEFAULT_MODEL,
+        help="Model name for Ollama (default: %(default)s)",
+    )
+    suggest.set_defaults(func=_cmd_suggest)
 
     plan = sub.add_parser("plan", help="Generate a shell plan for a goal", parents=[analytics])
     plan.add_argument("goal")

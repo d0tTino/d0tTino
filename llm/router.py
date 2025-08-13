@@ -272,6 +272,18 @@ def send_prompt(
     raise RuntimeError("Unable to process prompt")
 
 
+def shell_suggest(
+    goal: str,
+    *,
+    local: bool = False,
+    model: str = DEFAULT_MODEL,
+    context: str | None = None,
+) -> List[str]:
+    """Return shell command suggestions for ``goal``."""
+    text = send_prompt(goal, local=local, model=model, context=context)
+    return [line for line in text.splitlines() if line]
+
+
 __all__ = [
     "DEFAULT_MODEL",
     "DEFAULT_PRIMARY_BACKEND",
@@ -287,5 +299,6 @@ __all__ = [
     "create_default_chain",
     "run_langchain",
     "send_prompt",
+    "shell_suggest",
     "get_budget",
 ]
