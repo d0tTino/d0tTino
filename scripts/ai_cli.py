@@ -144,15 +144,18 @@ def _cmd_do(args: argparse.Namespace) -> int:
     goal, steps = _clarify_goal(
         args.goal, config=args.config, analytics=args.analytics
     )
-    return cli_actions.run_steps(
-        "ai-cli-do",
-        steps,
-        log_path=args.log,
-        analytics=args.analytics,
-        payload={"goal": goal, "step_count": len(steps)},
-        nats_url=args.nats_url,
-        jetstream=getattr(args, "jetstream", False),
-    )
+    kwargs: dict[str, Any] = {
+        "log_path": args.log,
+        "analytics": args.analytics,
+        "payload": {"goal": goal, "step_count": len(steps)},
+        "nats_url": args.nats_url,
+        "jetstream": getattr(args, "jetstream", False),
+    }
+    if getattr(args, "dry_run", False):
+        kwargs["dry_run"] = True
+    if getattr(args, "yes", False):
+        kwargs["assume_yes"] = True
+    return cli_actions.run_steps("ai-cli-do", steps, **kwargs)
 
 
 def _cmd_recipe(args: argparse.Namespace) -> int:
@@ -163,15 +166,17 @@ def _cmd_recipe(args: argparse.Namespace) -> int:
         return 1
     recipe_func = mapping[args.name]
     steps = recipe_func(args.goal)
-    exit_code = cli_actions.run_recipe(
-        args.name,
-        args.goal,
-        steps,
-        log_path=args.log,
-        analytics=args.analytics,
-        nats_url=args.nats_url,
-        jetstream=getattr(args, "jetstream", False),
-    )
+    kwargs: dict[str, Any] = {
+        "log_path": args.log,
+        "analytics": args.analytics,
+        "nats_url": args.nats_url,
+        "jetstream": getattr(args, "jetstream", False),
+    }
+    if getattr(args, "dry_run", False):
+        kwargs["dry_run"] = True
+    if getattr(args, "yes", False):
+        kwargs["assume_yes"] = True
+    exit_code = cli_actions.run_recipe(args.name, args.goal, steps, **kwargs)
     end = time.time()
     if exit_code == 0:
         _publish_event(
@@ -506,6 +511,18 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Publish events via JetStream",
     )
+    do.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print commands without executing",
+    )
+    do.add_argument(
+        "--yes",
+        "--confirm",
+        dest="yes",
+        action="store_true",
+        help="Run without interactive prompts",
+    )
     do.set_defaults(func=_cmd_do)
 
     recipe = sub.add_parser("recipe", help="Execute a named recipe", parents=[analytics])
@@ -521,6 +538,18 @@ def build_parser() -> argparse.ArgumentParser:
         "--jetstream",
         action="store_true",
         help="Publish events via JetStream",
+    )
+    recipe.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print commands without executing",
+    )
+    recipe.add_argument(
+        "--yes",
+        "--confirm",
+        dest="yes",
+        action="store_true",
+        help="Run without interactive prompts",
     )
     recipe.set_defaults(func=_cmd_recipe)
 

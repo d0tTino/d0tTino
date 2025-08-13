@@ -65,6 +65,48 @@ def test_main_skips_when_declined(monkeypatch, tmp_path):
     assert not log.exists()
 
 
+def test_main_dry_run(monkeypatch, tmp_path):
+    monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: ["echo hi"])
+    def fail_run(*a, **k):
+        raise AssertionError("run called")
+
+    monkeypatch.setattr(subprocess, "run", fail_run)
+    log = tmp_path / "log.txt"
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        rc = ai_do.main(["goal", "--log", str(log), "--dry-run"])
+    assert rc == 0
+    assert "echo hi" in out.getvalue()
+    assert "dry-run" in log.read_text()
+
+
+def test_main_yes_runs_without_prompts(monkeypatch, tmp_path):
+    monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: ["echo hi"])
+
+    called = []
+
+    def fake_run(cmd, *, shell, capture_output, text):
+        called.append(cmd)
+
+        class Result:
+            def __init__(self):
+                self.stdout = ""
+                self.stderr = ""
+                self.returncode = 0
+
+        return Result()
+
+    def fail_input(_):  # pragma: no cover - should not be called
+        raise AssertionError("input called")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr("builtins.input", fail_input)
+    log = tmp_path / "log.txt"
+    rc = ai_do.main(["goal", "--log", str(log), "--yes"])
+    assert rc == 0
+    assert called == [["echo", "hi"]]
+
+
 def test_main_returns_failure(monkeypatch, tmp_path):
     monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: ["fail"])
 

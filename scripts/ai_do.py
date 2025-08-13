@@ -54,6 +54,18 @@ def main(argv: Optional[List[str]] = None) -> int:
         default=REPO_ROOT / "ai_do.log",
         help="Log file path (default: %(default)s)",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print commands without executing",
+    )
+    parser.add_argument(
+        "--yes",
+        "--confirm",
+        dest="yes",
+        action="store_true",
+        help="Run without interactive prompts",
+    )
     args = parser.parse_args(argv)
 
     analytics = getattr(args, "analytics", analytics_default())
@@ -70,6 +82,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         },
         duration_key="duration_ms",
         nats_url=args.nats_url if hasattr(args, "nats_url") else None,
+        dry_run=args.dry_run,
+        assume_yes=args.yes,
     )
     if args.notify:
         if exit_code == 0:

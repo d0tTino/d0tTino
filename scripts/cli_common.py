@@ -25,13 +25,30 @@ def read_prompt(prompt: str) -> str:
     return prompt
 
 
-def execute_steps(steps: Iterable[str], *, log_path: Path) -> int:
-    """Interactively execute ``steps`` and write a log to ``log_path``."""
+def execute_steps(
+    steps: Iterable[str], *, log_path: Path, dry_run: bool = False, assume_yes: bool = False
+) -> int:
+    """Execute ``steps`` and write a log to ``log_path``.
+
+    When ``dry_run`` is ``True`` the commands are printed and logged without
+    being executed. If ``assume_yes`` is ``True`` all confirmation prompts are
+    skipped and commands run automatically.
+    """
     exit_code = 0
     for i, step in enumerate(steps, 1):
-        answer = input(f"{i}. {step} [y/N]?").strip().lower()
-        if answer != "y":
+        if dry_run:
+            print(f"{i}. {step}")
+            with log_path.open("a", encoding="utf-8") as log:
+                log.write(f"$ {step}\n(dry-run)\n\n")
             continue
+
+        if not assume_yes:
+            answer = input(f"{i}. {step} [y/N]?").strip().lower()
+            if answer != "y":
+                continue
+        else:
+            print(f"{i}. {step}")
+
         try:
             tokens = shlex.split(step)
         except ValueError:
@@ -46,9 +63,12 @@ def execute_steps(steps: Iterable[str], *, log_path: Path) -> int:
                 needs_shell = special_chars or shlex.join(tokens) != step
         cmd = step if needs_shell else tokens
         cmd_str = step if needs_shell else " ".join(tokens)
-        answer = input(f"Run command: {cmd_str} [y/N]?").strip().lower()
-        if answer != "y":
-            continue
+        if not assume_yes:
+            answer = input(f"Run command: {cmd_str} [y/N]?").strip().lower()
+            if answer != "y":
+                continue
+        else:
+            print(f"$ {cmd_str}")
         result = subprocess.run(cmd, shell=needs_shell, capture_output=True, text=True)
         with log_path.open("a", encoding="utf-8") as log:
             log.write(f"$ {step}\n")

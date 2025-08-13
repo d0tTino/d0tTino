@@ -32,11 +32,15 @@ def run_steps(
     duration_key: str = "latency_ms",
     nats_url: str | None = None,
     jetstream: bool = False,
+    dry_run: bool = False,
+    assume_yes: bool = False,
 ) -> int:
     """Execute ``steps`` and record an analytics event."""
     start = time.time()
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    exit_code = execute_steps(steps, log_path=log_path)
+    exit_code = execute_steps(
+        steps, log_path=log_path, dry_run=dry_run, assume_yes=assume_yes
+    )
     end = time.time()
     data = {
         "exit_code": exit_code,
@@ -68,6 +72,8 @@ def run_recipe(
     analytics: bool = False,
     nats_url: str | None = None,
     jetstream: bool = False,
+    dry_run: bool = False,
+    assume_yes: bool = False,
 ) -> int:
     """Execute a recipe and record an analytics event."""
     if callable(steps_or_callable):
@@ -82,6 +88,8 @@ def run_recipe(
         payload={"recipe": name, "goal": goal, "step_count": len(steps)},
         nats_url=nats_url,
         jetstream=jetstream,
+        dry_run=dry_run,
+        assume_yes=assume_yes,
     )
 
 __all__ = ["record_event_logged", "run_steps", "run_recipe"]
