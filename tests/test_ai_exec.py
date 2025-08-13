@@ -11,6 +11,7 @@ from pathlib import Path
 pytest.importorskip("requests")
 
 from scripts import ai_exec, cli_actions
+from scripts.cli_common import PlanStep
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -30,7 +31,7 @@ def test_plan_uses_primary(monkeypatch):
     monkeypatch.setattr(ai_exec, "get_preferred_models", lambda *a, **k: ("g", "o"))
 
     steps = ai_exec.plan("goal")
-    assert steps == ["step1", "step2"]
+    assert [s.command for s in steps] == ["step1", "step2"]
     assert calls == [("gemini", "goal", "g")]
 
 
@@ -50,7 +51,7 @@ def test_plan_falls_back(monkeypatch):
     monkeypatch.setattr(ai_exec, "get_preferred_models", lambda *a, **k: ("g", "o"))
 
     steps = ai_exec.plan("goal")
-    assert steps == ["fallback"]
+    assert [s.command for s in steps] == ["fallback"]
     assert calls == [
         ("gemini", "goal", "g"),
         ("ollama", "goal", "o"),
@@ -61,14 +62,14 @@ def test_main_invokes_plan(monkeypatch):
     def mock_plan(goal: str, *, config_path=None, analytics=False):
         assert goal == "goal"
         assert str(config_path) == "cfg.json"
-        return ["one", "two"]
+        return [PlanStep(1, "one"), PlanStep(2, "two")]
 
     monkeypatch.setattr(ai_exec, "plan", mock_plan)
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
         rc = ai_exec.main(["goal", "--config", "cfg.json"])
     assert rc == 0
-    assert out.getvalue().splitlines() == ["one", "two"]
+    assert out.getvalue().splitlines() == ["1. one", "2. two"]
 
 
 def test_main_notifies(monkeypatch):
@@ -96,7 +97,7 @@ def test_plan_records_event(monkeypatch):
 
     monkeypatch.setattr(cli_actions, "record_event_logged", fake_record)
     steps = ai_exec.plan("goal", analytics=True)
-    assert steps == ["step"]
+    assert [s.command for s in steps] == ["step"]
     name, payload, enabled = recorded[0]
     assert name == "ai-exec-plan"
     assert enabled is True
@@ -111,7 +112,7 @@ def test_plan_tags_risky_commands(monkeypatch):
     monkeypatch.setattr(ai_exec.router, "run_ollama", lambda *a, **k: "")
     monkeypatch.setattr(ai_exec, "get_preferred_models", lambda *a, **k: ("g", "o"))
     steps = ai_exec.plan("goal")
-    assert steps == ["rm -rf / [risk:rm]", "ls"]
+    assert [s.command for s in steps] == ["rm -rf / [risk:rm]", "ls"]
 
 
 def test_plan_tags_sudo_commands(monkeypatch):
@@ -121,7 +122,19 @@ def test_plan_tags_sudo_commands(monkeypatch):
     monkeypatch.setattr(ai_exec.router, "run_ollama", lambda *a, **k: "")
     monkeypatch.setattr(ai_exec, "get_preferred_models", lambda *a, **k: ("g", "o"))
     steps = ai_exec.plan("goal")
-    assert steps == ["sudo reboot now [risk:reboot]", "ls"]
+    assert [s.command for s in steps] == ["sudo reboot now [risk:reboot]", "ls"]
+
+
+def test_plan_parses_diffs(monkeypatch):
+    monkeypatch.setattr(
+        ai_exec.router,
+        "run_gemini",
+        lambda *a, **k: "echo hi\n--- a.txt\n+++ b.txt\n+hi",
+    )
+    monkeypatch.setattr(ai_exec.router, "run_ollama", lambda *a, **k: "")
+    monkeypatch.setattr(ai_exec, "get_preferred_models", lambda *a, **k: ("g", "o"))
+    steps = ai_exec.plan("goal")
+    assert steps[0].diff == "--- a.txt\n+++ b.txt\n+hi"
 
 
 def create_exe(path: Path, contents: str = "#!/usr/bin/env bash\n") -> None:
@@ -163,7 +176,7 @@ def test_script_runs(monkeypatch, tmp_path: Path) -> None:
     )
 
     assert result.returncode == 0
-    assert result.stdout.splitlines() == ["step1", "step2"]
+    assert result.stdout.splitlines() == ["1. step1", "2. step2"]
 
 
 def test_last_model_remote_thread_safety(monkeypatch):
@@ -187,7 +200,7 @@ def test_last_model_remote_thread_safety(monkeypatch):
 
     def run(goal):
         steps = ai_exec.plan(goal)
-        results[goal] = (steps, ai_exec.last_model_remote())
+        results[goal] = ([s.command for s in steps], ai_exec.last_model_remote())
 
     t_remote = threading.Thread(target=run, args=("remote",))
     t_local = threading.Thread(target=run, args=("local",))
@@ -218,6 +231,6 @@ def test_main_env_enables_analytics(monkeypatch):
     with contextlib.redirect_stdout(out):
         rc = ai_exec.main(["goal"])
     assert rc == 0
-    assert out.getvalue().splitlines() == ["step"]
+    assert out.getvalue().splitlines() == ["1. step"]
     assert recorded == [True]
 

@@ -266,9 +266,8 @@ async def test_exec_stream_return_type(monkeypatch, tmp_path):
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize("anyio_backend", ["asyncio"])
 async def test_prompt_event_loop_not_blocked(monkeypatch, tmp_path, anyio_backend):
-    if anyio_backend != "asyncio":
-        pytest.skip("asyncio backend only")
     app = load_app(state_path=tmp_path / 'state.json')
     api = importlib.import_module('api')
 
@@ -294,9 +293,8 @@ async def test_prompt_event_loop_not_blocked(monkeypatch, tmp_path, anyio_backen
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize("anyio_backend", ["asyncio"])
 async def test_plan_event_loop_not_blocked(monkeypatch, tmp_path, anyio_backend):
-    if anyio_backend != "asyncio":
-        pytest.skip("asyncio backend only")
     monkeypatch.setattr(ai_exec, 'plan', lambda goal: ['step'])
     app = load_app(state_path=tmp_path / 'state.json')
 
