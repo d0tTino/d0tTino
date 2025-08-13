@@ -33,6 +33,46 @@ DEFAULT_FALLBACK_BACKEND = "ollama"
 DEFAULT_COMPLEXITY_THRESHOLD = 50
 
 
+_REMOTE_BACKENDS = {
+    "gemini",
+    "openrouter",
+    "anthropic",
+    "mistral",
+    "superclaude",
+    "langchain",
+}
+
+
+def _load_budget() -> int | None:
+    env_val = os.environ.get("LLM_ROUTER_BUDGET")
+    if env_val:
+        try:
+            return int(env_val)
+        except ValueError:  # pragma: no cover - invalid env value
+            return None
+    path = os.environ.get("LLM_CONFIG_PATH")
+    cfg_path = Path(path) if path else _DEFAULT_CONFIG
+    cfg = _load_config(cfg_path)
+    budget_val = cfg.get("budget")
+    return int(budget_val) if isinstance(budget_val, int) else None
+
+
+_BUDGET = _load_budget()
+
+
+def get_budget() -> int | None:
+    return _BUDGET
+
+
+def _decrement_budget() -> None:
+    global _BUDGET
+    if _BUDGET is None:
+        return
+    if _BUDGET <= 0:
+        raise RuntimeError("LLM budget exhausted")
+    _BUDGET -= 1
+
+
 def estimate_prompt_complexity(prompt: str) -> int:
     """Return a basic complexity score for ``prompt``."""
     return len(prompt.split())
@@ -224,6 +264,8 @@ def send_prompt(
                     order.append(primary)
     for backend_name in order:
         try:
+            if backend_name in _REMOTE_BACKENDS:
+                _decrement_budget()
             return _run_backend(backend_name, prompt, model)
         except (FileNotFoundError, subprocess.CalledProcessError):
             continue
@@ -245,4 +287,5 @@ __all__ = [
     "create_default_chain",
     "run_langchain",
     "send_prompt",
+    "get_budget",
 ]
