@@ -1,4 +1,6 @@
 import importlib
+import sys
+
 import pytest
 
 
@@ -6,16 +8,15 @@ import pytest
 def reset_router(monkeypatch):
     yield
     monkeypatch.delenv("LLM_ROUTER_BUDGET", raising=False)
-    import llm.router as router
-    importlib.reload(router)
+    sys.modules.pop("llm.router", None)
+    importlib.import_module("llm.router")
 
 
 def _reload_router(monkeypatch, budget: str = "1"):
     monkeypatch.setenv("LLM_ROUTER_BUDGET", budget)
     monkeypatch.setenv("LLM_ROUTING_MODE", "remote")
-    import llm.router as router
-    importlib.reload(router)
-    return router
+    sys.modules.pop("llm.router", None)
+    return importlib.import_module("llm.router")
 
 
 def test_budget_decrements_and_exhausts(monkeypatch):

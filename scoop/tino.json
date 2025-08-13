@@ -1,10 +1,10 @@
 {
-    "version": "0.1.0",
+    "version": "{{VERSION}}",
     "description": "Bootstrap scripts and configuration for d0tTino",
     "homepage": "https://github.com/d0tTino/d0tTino",
     "license": "MIT",
-    "url": "https://github.com/d0tTino/d0tTino/archive/refs/tags/v0.1.0.zip",
-    "hash": "b3527c54a0bb40be55939dd0416943dfa04139472cb8d800106ffa290b4ae3e6",
+    "url": "https://github.com/d0tTino/d0tTino/archive/refs/tags/v{{VERSION}}.zip",
+    "hash": "{{SHA256}}",
     "autoupdate": {
         "url": "https://github.com/d0tTino/d0tTino/archive/refs/tags/v$version.zip"
     }
