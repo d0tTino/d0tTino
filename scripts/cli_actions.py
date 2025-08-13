@@ -9,7 +9,7 @@ from typing import Iterable, Callable, Sequence, Any
 
 from ume import events as ume_events
 
-from scripts.cli_common import execute_steps
+from scripts.cli_common import PlanStep, execute_steps
 from telemetry import record_event
 from ume.events import publish_event_sync
 
@@ -24,7 +24,7 @@ def record_event_logged(name: str, payload: dict[str, Any], *, enabled: bool = F
 
 def run_steps(
     event_name: str,
-    steps: Iterable[str],
+    steps: Iterable[PlanStep],
     *,
     log_path: Path,
     analytics: bool = False,
@@ -34,12 +34,13 @@ def run_steps(
     jetstream: bool = False,
     dry_run: bool = False,
     assume_yes: bool = False,
+    confirm: bool = False,
 ) -> int:
     """Execute ``steps`` and record an analytics event."""
     start = time.time()
     log_path.parent.mkdir(parents=True, exist_ok=True)
     exit_code = execute_steps(
-        steps, log_path=log_path, dry_run=dry_run, assume_yes=assume_yes
+        steps, log_path=log_path, dry_run=dry_run, assume_yes=assume_yes, confirm=confirm
     )
     end = time.time()
     data = {
@@ -74,12 +75,14 @@ def run_recipe(
     jetstream: bool = False,
     dry_run: bool = False,
     assume_yes: bool = False,
+    confirm: bool = False,
 ) -> int:
     """Execute a recipe and record an analytics event."""
     if callable(steps_or_callable):
-        steps = list(steps_or_callable(goal))
+        raw_steps = list(steps_or_callable(goal))
     else:
-        steps = list(steps_or_callable)
+        raw_steps = list(steps_or_callable)
+    steps = [PlanStep(i + 1, s) for i, s in enumerate(raw_steps)]
     return run_steps(
         "ai-do-recipe",
         steps,
@@ -90,6 +93,7 @@ def run_recipe(
         jetstream=jetstream,
         dry_run=dry_run,
         assume_yes=assume_yes,
+        confirm=confirm,
     )
 
 __all__ = ["record_event_logged", "run_steps", "run_recipe"]

@@ -7,13 +7,14 @@ import pytest
 pytest.importorskip("requests")
 
 from scripts import ai_do, ai_exec, cli_actions
+from scripts.cli_common import PlanStep
 
 
 def test_main_runs_and_logs(monkeypatch, tmp_path):
     def fake_plan(goal: str, *, config_path=None, analytics=False):
         assert goal == "goal"
         assert config_path is None
-        return ["cmd1", "cmd2"]
+        return [PlanStep(1, "cmd1"), PlanStep(2, "cmd2")]
 
     monkeypatch.setattr(ai_exec, "plan", fake_plan)
 
@@ -47,7 +48,7 @@ def test_main_runs_and_logs(monkeypatch, tmp_path):
 
 
 def test_main_skips_when_declined(monkeypatch, tmp_path):
-    monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: ["cmd"])
+    monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: [PlanStep(1, "cmd")])
     monkeypatch.setattr("builtins.input", lambda _: "n")
     run_called = False
 
@@ -66,7 +67,11 @@ def test_main_skips_when_declined(monkeypatch, tmp_path):
 
 
 def test_main_dry_run(monkeypatch, tmp_path):
-    monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: ["echo hi"])
+    monkeypatch.setattr(
+        ai_exec,
+        "plan",
+        lambda *a, **k: [PlanStep(1, "echo hi", diff="--- a\n+++ b\n+hi")],
+    )
     def fail_run(*a, **k):
         raise AssertionError("run called")
 
@@ -76,12 +81,13 @@ def test_main_dry_run(monkeypatch, tmp_path):
     with contextlib.redirect_stdout(out):
         rc = ai_do.main(["goal", "--log", str(log), "--dry-run"])
     assert rc == 0
-    assert "echo hi" in out.getvalue()
+    assert "1. echo hi" in out.getvalue()
+    assert "--- a" in out.getvalue()
     assert "dry-run" in log.read_text()
 
 
 def test_main_yes_runs_without_prompts(monkeypatch, tmp_path):
-    monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: ["echo hi"])
+    monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: [PlanStep(1, "echo hi")])
 
     called = []
 
@@ -107,8 +113,57 @@ def test_main_yes_runs_without_prompts(monkeypatch, tmp_path):
     assert called == [["echo", "hi"]]
 
 
+def test_risky_requires_confirm(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        ai_exec, "plan", lambda *a, **k: [PlanStep(1, "rm -rf / [risk:rm]")]
+    )
+    prompts = []
+
+    def fake_input(prompt):
+        prompts.append(prompt)
+        return "n"
+
+    def fail_run(*a, **k):
+        raise AssertionError("should not run")
+
+    monkeypatch.setattr("builtins.input", fake_input)
+    monkeypatch.setattr(subprocess, "run", fail_run)
+    log = tmp_path / "log.txt"
+    rc = ai_do.main(["goal", "--log", str(log), "--yes"])
+    assert rc == 0
+    assert prompts  # prompted despite --yes
+
+
+def test_confirm_allows_risky(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        ai_exec, "plan", lambda *a, **k: [PlanStep(1, "echo hi [risk:rm]")]
+    )
+    called = []
+
+    def fake_run(cmd, *, shell, capture_output, text):
+        called.append(cmd)
+
+        class Result:
+            def __init__(self):
+                self.stdout = ""
+                self.stderr = ""
+                self.returncode = 0
+
+        return Result()
+
+    def fail_input(_):  # pragma: no cover - should not be called
+        raise AssertionError("input called")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr("builtins.input", fail_input)
+    log = tmp_path / "log.txt"
+    rc = ai_do.main(["goal", "--log", str(log), "--yes", "--confirm"])
+    assert rc == 0
+    assert called == [["echo", "hi"]]
+
+
 def test_main_returns_failure(monkeypatch, tmp_path):
-    monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: ["fail"])
+    monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: [PlanStep(1, "fail")])
 
     class Result:
         def __init__(self):
@@ -132,7 +187,7 @@ def test_main_returns_failure(monkeypatch, tmp_path):
 
 
 def test_main_confirms_and_sanitizes(monkeypatch, tmp_path):
-    monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: ["echo hi"])
+    monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: [PlanStep(1, "echo hi")])
 
     prompts = []
     inputs = iter(["y", "y"])
@@ -203,7 +258,7 @@ def test_main_records_event(monkeypatch, tmp_path):
 
 
 def test_main_records_failure(monkeypatch, tmp_path):
-    monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: ["bad"])
+    monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: [PlanStep(1, "bad")])
     inputs = iter(["y", "y"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
 

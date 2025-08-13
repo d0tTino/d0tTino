@@ -61,10 +61,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
     parser.add_argument(
         "--yes",
-        "--confirm",
-        dest="yes",
         action="store_true",
-        help="Run without interactive prompts",
+        help="Run without interactive prompts for non-risky commands",
+    )
+    parser.add_argument(
+        "--confirm",
+        action="store_true",
+        help="Also run commands tagged [risk:*] without prompting",
     )
     args = parser.parse_args(argv)
 
@@ -84,6 +87,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         nats_url=args.nats_url if hasattr(args, "nats_url") else None,
         dry_run=args.dry_run,
         assume_yes=args.yes,
+        confirm=args.confirm,
     )
     if args.notify:
         if exit_code == 0:

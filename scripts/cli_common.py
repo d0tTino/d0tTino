@@ -11,8 +11,9 @@ import os
 import shlex
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Optional
 
 import requests  # noqa: F401 -- imported for backward-compatibility
 from telemetry import analytics_default, record_event
@@ -25,45 +26,76 @@ def read_prompt(prompt: str) -> str:
     return prompt
 
 
+@dataclass
+class PlanStep:
+    """Single planned step with an optional diff preview."""
+
+    number: int
+    command: str
+    diff: Optional[str] = None
+
+
+def _strip_risk_tag(command: str) -> str:
+    """Return ``command`` without any ``[risk:*]`` suffix."""
+
+    if " [risk:" in command:
+        return command.rsplit(" [risk:", 1)[0]
+    return command
+
+
 def execute_steps(
-    steps: Iterable[str], *, log_path: Path, dry_run: bool = False, assume_yes: bool = False
+    steps: Iterable[PlanStep],
+    *,
+    log_path: Path,
+    dry_run: bool = False,
+    assume_yes: bool = False,
+    confirm: bool = False,
 ) -> int:
     """Execute ``steps`` and write a log to ``log_path``.
 
     When ``dry_run`` is ``True`` the commands are printed and logged without
     being executed. If ``assume_yes`` is ``True`` all confirmation prompts are
-    skipped and commands run automatically.
+    skipped for non-risky commands. Commands tagged with ``[risk:*]`` require the
+    ``confirm`` flag to run without prompting.
     """
     exit_code = 0
-    for i, step in enumerate(steps, 1):
+    for step in steps:
+        is_risky = "[risk:" in step.command
+        step_assume_yes = assume_yes and (confirm or not is_risky)
         if dry_run:
-            print(f"{i}. {step}")
+            print(f"{step.number}. {step.command}")
+            if step.diff:
+                print(step.diff)
             with log_path.open("a", encoding="utf-8") as log:
-                log.write(f"$ {step}\n(dry-run)\n\n")
+                log.write(f"$ {step.command}\n")
+                if step.diff:
+                    log.write(f"{step.diff}\n")
+                log.write("(dry-run)\n\n")
             continue
 
-        if not assume_yes:
-            answer = input(f"{i}. {step} [y/N]?").strip().lower()
+        if not step_assume_yes:
+            answer = input(f"{step.number}. {step.command} [y/N]?").strip().lower()
             if answer != "y":
                 continue
         else:
-            print(f"{i}. {step}")
+            print(f"{step.number}. {step.command}")
 
+        cmd_text = _strip_risk_tag(step.command)
         try:
-            tokens = shlex.split(step)
+            tokens = shlex.split(cmd_text)
         except ValueError:
             tokens = []
             needs_shell = True
         else:
-            special_chars = any(ch in step for ch in "|&;><$`")
+            special_chars = any(ch in cmd_text for ch in "|&;><$`")
             if os.name == "nt":
                 # ``shlex.join`` uses POSIX quoting which breaks on Windows.
                 needs_shell = special_chars
             else:
-                needs_shell = special_chars or shlex.join(tokens) != step
-        cmd = step if needs_shell else tokens
-        cmd_str = step if needs_shell else " ".join(tokens)
-        if not assume_yes:
+                needs_shell = special_chars or shlex.join(tokens) != cmd_text
+        cmd = cmd_text if needs_shell else tokens
+        cmd_str = cmd_text if needs_shell else " ".join(tokens)
+        if not step_assume_yes:
             answer = input(f"Run command: {cmd_str} [y/N]?").strip().lower()
             if answer != "y":
                 continue
@@ -71,7 +103,7 @@ def execute_steps(
             print(f"$ {cmd_str}")
         result = subprocess.run(cmd, shell=needs_shell, capture_output=True, text=True)
         with log_path.open("a", encoding="utf-8") as log:
-            log.write(f"$ {step}\n")
+            log.write(f"$ {step.command}\n")
             if result.stdout:
                 log.write(result.stdout)
             if result.stderr:
@@ -111,4 +143,5 @@ __all__ = [
     "build_analytics_parser",
     "analytics_default",
     "record_event",
+    "PlanStep",
 ]

@@ -7,6 +7,7 @@ pytest.importorskip("requests")
 
 from scripts import ai_cli
 from scripts import cli_actions
+from scripts.cli_common import PlanStep
 import telemetry
 
 
@@ -29,7 +30,7 @@ def test_plan_subcommand(monkeypatch):
     def fake_plan(goal: str, *, config_path=None, analytics=False):
         assert goal == "goal"
         assert config_path == "cfg.json"
-        return ["one", "two"]
+        return [PlanStep(1, "one"), PlanStep(2, "two")]
 
     monkeypatch.setattr(ai_cli.ai_exec, "plan", fake_plan)
     out = io.StringIO()
@@ -41,7 +42,7 @@ def test_plan_subcommand(monkeypatch):
 
 
 def test_do_subcommand(monkeypatch, tmp_path):
-    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: ["echo hi"])
+    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: [PlanStep(1, "echo hi")])
 
     inputs = iter(["y", "y"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
@@ -64,7 +65,7 @@ def test_do_subcommand(monkeypatch, tmp_path):
 
 
 def test_do_creates_log_dir(monkeypatch, tmp_path):
-    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: ["echo hi"])
+    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: [PlanStep(1, "echo hi")])
     monkeypatch.setattr("builtins.input", lambda _: "y")
 
     class Result:
@@ -86,7 +87,7 @@ def test_plan_requests_clarification(monkeypatch):
 
     def fake_plan(goal: str, *, config_path=None, analytics=False):
         calls.append(goal)
-        return [] if len(calls) == 1 else [f"echo {goal}"]
+        return [] if len(calls) == 1 else [PlanStep(1, f"echo {goal}")]
 
     monkeypatch.setattr(ai_cli.ai_exec, "plan", fake_plan)
     monkeypatch.setattr("builtins.input", lambda _: "more info")
@@ -104,7 +105,7 @@ def test_do_requests_clarification(monkeypatch):
 
     def fake_plan(goal: str, *, config_path=None, analytics=False):
         calls.append(goal)
-        return [] if len(calls) == 1 else [f"echo {goal}"]
+        return [] if len(calls) == 1 else [PlanStep(1, f"echo {goal}")]
 
     monkeypatch.setattr(ai_cli.ai_exec, "plan", fake_plan)
     captured = {}
@@ -119,7 +120,7 @@ def test_do_requests_clarification(monkeypatch):
     rc = ai_cli.main(["do", "goal"])
     assert rc == 0
     assert calls == ["goal", "goal. extra detail"]
-    assert captured["steps"] == ["echo goal. extra detail"]
+    assert captured["steps"] == [PlanStep(1, "echo goal. extra detail")]
 
 
 def test_clarify_goal_prompts_user(monkeypatch):
@@ -127,14 +128,14 @@ def test_clarify_goal_prompts_user(monkeypatch):
 
     def fake_plan(goal: str, *, config_path=None, analytics=False):
         calls.append(goal)
-        return [] if len(calls) == 1 else [f"echo {goal}"]
+        return [] if len(calls) == 1 else [PlanStep(1, f"echo {goal}")]
 
     monkeypatch.setattr(ai_cli.ai_exec, "plan", fake_plan)
     monkeypatch.setattr("builtins.input", lambda _: "details")
     goal, steps = ai_cli._clarify_goal("goal", config=None, analytics=False)
     assert calls == ["goal", "goal. details"]
     assert goal == "goal. details"
-    assert steps == ["echo goal. details"]
+    assert steps == [PlanStep(1, "echo goal. details")]
 
 
 def test_send_records_event(monkeypatch):
@@ -155,7 +156,7 @@ def test_send_records_event(monkeypatch):
 
 
 def test_plan_records_event(monkeypatch):
-    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: ["one"])
+    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: [PlanStep(1, "one")])
     recorded = []
 
     def fake_record(name, payload, *, enabled=False):
@@ -177,7 +178,7 @@ def test_plan_records_event(monkeypatch):
 
 
 def test_do_records_event(monkeypatch, tmp_path):
-    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: ["echo hi"])
+    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: [PlanStep(1, "echo hi")])
     inputs = iter(["y", "y"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
 
@@ -209,7 +210,7 @@ def test_do_records_event(monkeypatch, tmp_path):
 
 
 def test_do_records_failure(monkeypatch, tmp_path):
-    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: ["bad"])
+    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: [PlanStep(1, "bad")])
     inputs = iter(["y", "y"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
 
@@ -401,7 +402,7 @@ def test_plan_posts_event(monkeypatch):
     monkeypatch.setenv("EVENTS_URL", "https://example.com")
     monkeypatch.setenv("EVENTS_TOKEN", "tok")
     monkeypatch.setenv("USER", "alice")
-    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: ["one"])
+    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: [PlanStep(1, "one")])
     sent = {}
 
     def fake_post(url, headers=None, json=None, timeout=None):
@@ -430,7 +431,7 @@ def test_do_posts_event(monkeypatch, tmp_path):
     monkeypatch.setenv("EVENTS_URL", "https://example.com")
     monkeypatch.setenv("EVENTS_TOKEN", "tok")
     monkeypatch.setenv("USER", "alice")
-    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: ["echo hi"])
+    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: [PlanStep(1, "echo hi")])
     monkeypatch.setattr("builtins.input", lambda _: "y")
 
     class Result:
@@ -465,7 +466,7 @@ def test_do_posts_event(monkeypatch, tmp_path):
 
 
 def test_plan_nats_publish(monkeypatch):
-    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: ["one"])
+    monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: [PlanStep(1, "one")])
     published = []
 
     def fake_publish(url, name, payload):

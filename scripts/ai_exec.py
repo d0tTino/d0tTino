@@ -16,6 +16,7 @@ from llm import router
 from llm.ai_router import get_preferred_models
 from llm.backends import initialize
 from scripts.cli_common import (
+    PlanStep,
     read_prompt,
     send_notification,
     build_analytics_parser,
@@ -56,9 +57,34 @@ def last_model_remote() -> bool:
 
 initialize()
 
+def _parse_steps(text: str) -> List[PlanStep]:
+    """Return a list of :class:`PlanStep` objects from ``text``."""
+
+    steps: List[PlanStep] = []
+    current: Optional[str] = None
+    diff_lines: List[str] = []
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        if line.startswith((" ", "+", "-", "@", "diff", "---", "+++")) and current:
+            diff_lines.append(line)
+            continue
+        if current is not None:
+            steps.append(
+                PlanStep(len(steps) + 1, _tag_risky(current), "\n".join(diff_lines) or None)
+            )
+            diff_lines = []
+        current = line.strip()
+    if current is not None:
+        steps.append(
+            PlanStep(len(steps) + 1, _tag_risky(current), "\n".join(diff_lines) or None)
+        )
+    return steps
+
+
 def plan(
     goal: str, *, config_path: Optional[Path] = None, analytics: bool = False
-) -> List[str]:
+) -> List[PlanStep]:
     """Return planning steps for ``goal`` using preferred models."""
     global _LAST_MODEL_REMOTE
     start = time.time()
@@ -68,7 +94,7 @@ def plan(
     )
     used_remote = True
     exit_code = 0
-    steps: List[str] = []
+    steps: List[PlanStep] = []
     try:
         try:
             text = router.run_gemini(goal, model=primary)
@@ -76,7 +102,7 @@ def plan(
             used_remote = False
             text = router.run_ollama(goal, model=fallback or router.DEFAULT_MODEL)
 
-        steps = [_tag_risky(line.strip()) for line in text.splitlines() if line.strip()]
+        steps = _parse_steps(text)
         return steps
     except Exception:
         exit_code = 1
@@ -110,7 +136,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     goal = read_prompt(args.goal)
     steps = plan(goal, config_path=cfg_path, analytics=args.analytics)
     for step in steps:
-        print(step)
+        print(f"{step.number}. {step.command}")
+        if step.diff:
+            print(step.diff)
     if args.notify:
         send_notification("ai-plan completed")
     return 0

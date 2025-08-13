@@ -3,6 +3,7 @@ import uuid
 
 pytest.importorskip("requests")
 from scripts import cli_common
+from scripts.cli_common import PlanStep
 
 
 def test_record_event_skips_when_disabled(monkeypatch):
@@ -120,7 +121,9 @@ def test_execute_steps_parses_quoted_args(monkeypatch, tmp_path):
 
     monkeypatch.setattr(cli_common.subprocess, "run", fake_run)
 
-    cli_common.execute_steps(["echo 'foo bar'"], log_path=tmp_path / "log.txt")
+    cli_common.execute_steps(
+        [PlanStep(1, "echo 'foo bar'")], log_path=tmp_path / "log.txt"
+    )
 
     assert captured["cmd"] == ["echo", "foo bar"]
     assert captured["shell"] is False
@@ -146,7 +149,9 @@ def test_execute_steps_fallbacks_to_shell(monkeypatch, tmp_path):
 
     monkeypatch.setattr(cli_common.subprocess, "run", fake_run)
 
-    cli_common.execute_steps(["python -c \"print('hi')\""], log_path=tmp_path / "log.txt")
+    cli_common.execute_steps(
+        [PlanStep(1, "python -c \"print('hi')\"")], log_path=tmp_path / "log.txt"
+    )
 
     assert captured["cmd"] == "python -c \"print('hi')\""
     assert captured["shell"] is True
@@ -173,9 +178,10 @@ def test_execute_steps_windows_path(monkeypatch, tmp_path):
     monkeypatch.setattr(cli_common.subprocess, "run", fake_run)
     monkeypatch.setattr(cli_common.os, "name", "nt")
 
-    cli_common.execute_steps([
-        '"C:\\Program Files\\Foo Bar\\tool.exe" arg'
-    ], log_path=tmp_path / "log.txt")
+    cli_common.execute_steps(
+        [PlanStep(1, '"C:\\Program Files\\Foo Bar\\tool.exe" arg')],
+        log_path=tmp_path / "log.txt",
+    )
 
     assert captured["cmd"] == ["C:\\Program Files\\Foo Bar\\tool.exe", "arg"]
     assert captured["shell"] is False

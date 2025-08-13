@@ -17,6 +17,7 @@ from llm.backends import initialize
 import asyncio
 from scripts import ai_exec, recipes, plugins, query_sources, nsm_stats
 from scripts.cli_common import (
+    PlanStep,
     read_prompt,
     build_analytics_parser,
 )
@@ -100,7 +101,7 @@ def _cmd_send(args: argparse.Namespace) -> int:
 
 def _clarify_goal(
     goal: str, *, config, analytics: bool
-) -> tuple[str, List[str]]:
+) -> tuple[str, List[PlanStep]]:
     """Request clarification from the user until planning succeeds.
 
     ``ai_exec.plan`` may return an empty list when the goal is ambiguous or
@@ -122,8 +123,10 @@ def _cmd_plan(args: argparse.Namespace) -> int:
     goal, steps = _clarify_goal(
         args.goal, config=args.config, analytics=args.analytics
     )
-    for i, step in enumerate(steps, 1):
-        print(f"{i}. {step}")
+    for step in steps:
+        print(f"{step.number}. {step.command}")
+        if step.diff:
+            print(step.diff)
 
     end = time.time()
     _publish_event(
@@ -155,6 +158,8 @@ def _cmd_do(args: argparse.Namespace) -> int:
         kwargs["dry_run"] = True
     if getattr(args, "yes", False):
         kwargs["assume_yes"] = True
+    if getattr(args, "confirm", False):
+        kwargs["confirm"] = True
     return cli_actions.run_steps("ai-cli-do", steps, **kwargs)
 
 
@@ -176,6 +181,8 @@ def _cmd_recipe(args: argparse.Namespace) -> int:
         kwargs["dry_run"] = True
     if getattr(args, "yes", False):
         kwargs["assume_yes"] = True
+    if getattr(args, "confirm", False):
+        kwargs["confirm"] = True
     exit_code = cli_actions.run_recipe(args.name, args.goal, steps, **kwargs)
     end = time.time()
     if exit_code == 0:
@@ -518,10 +525,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     do.add_argument(
         "--yes",
-        "--confirm",
-        dest="yes",
         action="store_true",
-        help="Run without interactive prompts",
+        help="Run without interactive prompts for non-risky commands",
+    )
+    do.add_argument(
+        "--confirm",
+        action="store_true",
+        help="Also run commands tagged [risk:*] without prompting",
     )
     do.set_defaults(func=_cmd_do)
 
@@ -546,10 +556,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     recipe.add_argument(
         "--yes",
-        "--confirm",
-        dest="yes",
         action="store_true",
-        help="Run without interactive prompts",
+        help="Run without interactive prompts for non-risky commands",
+    )
+    recipe.add_argument(
+        "--confirm",
+        action="store_true",
+        help="Also run commands tagged [risk:*] without prompting",
     )
     recipe.set_defaults(func=_cmd_recipe)
 
