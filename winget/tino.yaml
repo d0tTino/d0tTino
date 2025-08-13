@@ -1,5 +1,5 @@
 PackageIdentifier: Tino.d0tTino
-PackageVersion: 0.1.0
+PackageVersion: 1.0.0
 PackageLocale: en-US
 Publisher: d0tTino
 PackageName: d0tTino
@@ -9,7 +9,7 @@ PackageUrl: https://github.com/d0tTino/d0tTino
 Installers:
   - Architecture: x64
     InstallerType: zip
-    InstallerUrl: https://github.com/d0tTino/d0tTino/releases/download/v0.1.0/d0tTino.zip
-    Sha256: 0000000000000000000000000000000000000000000000000000000000000000
+    InstallerUrl: https://github.com/d0tTino/d0tTino/archive/refs/tags/v1.0.0.zip
+    Sha256: 5fd81a8bbd03bc12bd83f78a67bfcc469fbc969a6bbe3e2f819593170ccbe2d3
 ManifestType: singleton
 ManifestVersion: 1.6.0
