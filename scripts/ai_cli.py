@@ -494,6 +494,13 @@ def build_parser() -> argparse.ArgumentParser:
     analytics = build_analytics_parser()
 
     analytics.add_argument(
+        "--enable-mcp",
+        action="store_true",
+        dest="enable_mcp",
+        help="Load MCP plug-ins exposing additional tools",
+    )
+
+    analytics.add_argument(
         "--nats-url",
         dest="nats_url",
         default=None,
@@ -731,6 +738,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     args.analytics = getattr(args, "analytics", analytics_default())
+    if getattr(args, "enable_mcp", False):
+        try:
+            mcp = importlib.import_module("plugins.mcp")
+            mcp.get_tools()
+        except Exception as exc:  # noqa: BLE001
+            logging.debug("Failed to load MCP plug-ins: %s", exc)
     return args.func(args)
 
 
