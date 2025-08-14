@@ -262,6 +262,15 @@ def _cmd_stats(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_status(args: argparse.Namespace) -> int:
+    """Show remaining budget and routing mode."""
+    budget = router.get_budget()
+    mode = os.environ.get("LLM_ROUTING_MODE", "auto")
+    print(f"Budget remaining: {budget}")
+    print(f"Routing mode: {mode}")
+    return 0
+
+
 def _cmd_finance_analyze(args: argparse.Namespace) -> int:
     payload: dict[str, Any] = {
         "workflow": "FinancialDecisionSupport",
@@ -675,6 +684,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Filter by tag (repeatable)",
     )
     sources.set_defaults(func=_cmd_sources)
+
+    status = sub.add_parser(
+        "status",
+        help="Show remaining budget and routing mode",
+        parents=[analytics],
+    )
+    status.set_defaults(func=_cmd_status)
 
     stats = sub.add_parser(
         "stats",
