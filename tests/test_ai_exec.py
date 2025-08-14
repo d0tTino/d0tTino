@@ -12,6 +12,7 @@ pytest.importorskip("requests")
 
 from scripts import ai_exec, cli_actions
 from scripts.cli_common import PlanStep
+import scripts.cli_common as cli_common
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -233,4 +234,42 @@ def test_main_env_enables_analytics(monkeypatch):
     assert rc == 0
     assert out.getvalue().splitlines() == ["1. step"]
     assert recorded == [True]
+
+
+def test_plan_adds_file_diff(monkeypatch, tmp_path):
+    target = tmp_path / "sample.txt"
+    target.write_text("hello\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        ai_exec.router, "run_gemini", lambda *a, **k: f"cat {target}"
+    )
+    monkeypatch.setattr(ai_exec.router, "run_ollama", lambda *a, **k: "")
+    monkeypatch.setattr(ai_exec, "get_preferred_models", lambda *a, **k: ("g", "o"))
+
+    steps = ai_exec.plan("goal")
+    assert steps[0].diff is not None
+    assert "+hello" in steps[0].diff
+
+
+def test_execute_steps_requires_confirm(monkeypatch, tmp_path):
+    step = PlanStep(1, "rm -rf / [risk:rm]")
+    called = []
+
+    def fake_run(cmd, shell=False, capture_output=False, text=False):
+        called.append(cmd)
+        class R:
+            returncode = 0
+            stdout = ""
+            stderr = ""
+        return R()
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    log = tmp_path / "log.txt"
+    rc = cli_common.execute_steps([step], log_path=log, assume_yes=True)
+    assert rc == 1
+    assert called == []
+
+    rc = cli_common.execute_steps([step], log_path=log, assume_yes=True, confirm=True)
+    assert rc == 0
+    assert called != []
 

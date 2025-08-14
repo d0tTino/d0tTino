@@ -9,6 +9,7 @@ import shlex
 import subprocess
 import time
 from pathlib import Path
+from typing import Iterable
 from threading import Lock
 from typing import List, Optional
 
@@ -82,6 +83,34 @@ def _parse_steps(text: str) -> List[PlanStep]:
     return steps
 
 
+def _append_file_diffs(steps: Iterable[PlanStep]) -> None:
+    """Populate ``diff`` for steps that reference existing files."""
+
+    for step in steps:
+        if step.diff:
+            continue
+        command = step.command
+        if " [risk:" in command:
+            command = command.rsplit(" [risk:", 1)[0]
+        try:
+            tokens = shlex.split(command)
+        except ValueError:
+            continue
+        files = [Path(tok) for tok in tokens[1:] if Path(tok).is_file()]
+        diffs: List[str] = []
+        for file in files:
+            result = subprocess.run(
+                ["git", "diff", "--no-index", "--", "/dev/null", str(file)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if result.stdout:
+                diffs.append(result.stdout.strip())
+        if diffs:
+            step.diff = "\n".join(diffs)
+
+
 def plan(
     goal: str, *, config_path: Optional[Path] = None, analytics: bool = False
 ) -> List[PlanStep]:
@@ -103,6 +132,7 @@ def plan(
             text = router.run_ollama(goal, model=fallback or router.DEFAULT_MODEL)
 
         steps = _parse_steps(text)
+        _append_file_diffs(steps)
         return steps
     except Exception:
         exit_code = 1

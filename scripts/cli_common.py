@@ -55,14 +55,35 @@ def execute_steps(
 ) -> int:
     """Execute ``steps`` and write a log to ``log_path``.
 
-    When ``dry_run`` is ``True`` the commands are printed and logged without
-    being executed. If ``assume_yes`` is ``True`` all confirmation prompts are
-    skipped for non-risky commands. Commands tagged with ``[risk:*]`` require the
-    ``confirm`` flag to run without prompting.
+    ``dry_run`` prints the planned commands and their diffs without executing
+    them. When executing, commands tagged with ``[risk:*]`` require the
+    ``confirm`` flag to be set or the function aborts before running anything.
     """
+    step_list = list(steps)
+
+    # Display the plan up-front so users can review the numbered steps.
+    for step in step_list:
+        print(f"{step.number}. {step.command}")
+        if dry_run and step.diff:
+            print(step.diff)
+
+    if dry_run:
+        for step in step_list:
+            with log_path.open("a", encoding="utf-8") as log:
+                log.write(f"$ {step.command}\n")
+                if step.diff:
+                    log.write(f"{step.diff}\n")
+                log.write(f"[capabilities: {', '.join(sorted(step.capabilities))}]\n")
+                log.write("(dry-run)\n\n")
+        return 0
+
+    if any("[risk:" in step.command for step in step_list) and not confirm:
+        print("Risky commands present. Re-run with --confirm to execute.", file=sys.stderr)
+        return 1
+
     exit_code = 0
     allowed = allowed_capabilities or set()
-    for step in steps:
+    for step in step_list:
         missing_caps = step.capabilities - allowed
         if missing_caps:
             msg = f"Missing capabilities: {', '.join(sorted(missing_caps))}"
@@ -76,17 +97,6 @@ def execute_steps(
             continue
         is_risky = "[risk:" in step.command
         step_assume_yes = assume_yes and (confirm or not is_risky)
-        if dry_run:
-            print(f"{step.number}. {step.command}")
-            if step.diff:
-                print(step.diff)
-            with log_path.open("a", encoding="utf-8") as log:
-                log.write(f"$ {step.command}\n")
-                if step.diff:
-                    log.write(f"{step.diff}\n")
-                log.write(f"[capabilities: {', '.join(sorted(step.capabilities))}]\n")
-                log.write("(dry-run)\n\n")
-            continue
 
         if not step_assume_yes:
             answer = input(f"{step.number}. {step.command} [y/N]?").strip().lower()
