@@ -117,6 +117,18 @@ Run `ruff` to check the code style:
 ruff check .
 ```
 
+
+## Scoop
+
+Install the tools via [Scoop](https://scoop.sh) on Windows:
+
+```powershell
+scoop bucket add tino https://github.com/d0tTino/tino-bucket
+scoop install tino
+```
+
+Update the package with `scoop update tino`.
+
 ## Windows
 
 > Required tools: **PowerShell**, **curl**, **git** and **unzip**. The

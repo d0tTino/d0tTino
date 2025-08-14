@@ -2,9 +2,9 @@
 
 Use [Scoop](https://scoop.sh) to install the tools from this repository on Windows.
 
-1. Add this repository as a custom bucket, pointing at the `scoop` subdirectory:
+1. Add the custom bucket:
    ```powershell
-   scoop bucket add tino https://github.com/d0tTino/d0tTino main scoop
+   scoop bucket add tino https://github.com/d0tTino/tino-bucket
    ```
 2. Install the manifest:
    ```powershell
@@ -15,4 +15,4 @@ Use [Scoop](https://scoop.sh) to install the tools from this repository on Windo
    scoop update tino
    ```
 
-The manifest downloads the current `main` branch archive and verifies it using the SHA256 hash stored in `scoop/tino.json`.
+The manifest downloads the versioned release archive and runs a dry-run of the common installer to verify dependencies.
