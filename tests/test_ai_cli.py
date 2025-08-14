@@ -258,6 +258,7 @@ def test_recipe_subcommand(monkeypatch, tmp_path):
         analytics=False,
         nats_url=None,
         jetstream=False,
+        **kwargs,
     ):
         captured["name"] = name
         captured["goal"] = goal

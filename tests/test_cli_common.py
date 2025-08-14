@@ -185,3 +185,59 @@ def test_execute_steps_windows_path(monkeypatch, tmp_path):
 
     assert captured["cmd"] == ["C:\\Program Files\\Foo Bar\\tool.exe", "arg"]
     assert captured["shell"] is False
+
+
+def test_execute_steps_enforces_capabilities(monkeypatch, tmp_path):
+    captured = {}
+
+    def fake_run(cmd, *, shell, capture_output, text):
+        captured["called"] = True
+
+        class Result:
+            def __init__(self):
+                self.stdout = ""
+                self.stderr = ""
+                self.returncode = 0
+
+        return Result()
+
+    monkeypatch.setattr(cli_common.subprocess, "run", fake_run)
+
+    step = PlanStep(1, "echo hi", capabilities={"process.exec"})
+    rc = cli_common.execute_steps(
+        [step],
+        log_path=tmp_path / "log.txt",
+        allowed_capabilities={"filesystem.read"},
+        assume_yes=True,
+    )
+
+    assert rc == 1
+    assert "called" not in captured
+    content = (tmp_path / "log.txt").read_text()
+    assert "missing capabilities: process.exec" in content
+
+
+def test_execute_steps_logs_capabilities(monkeypatch, tmp_path):
+    inputs = iter(["y", "y"])
+    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
+    def fake_run(cmd, *, shell, capture_output, text):
+        class Result:
+            def __init__(self):
+                self.stdout = ""
+                self.stderr = ""
+                self.returncode = 0
+
+        return Result()
+
+    monkeypatch.setattr(cli_common.subprocess, "run", fake_run)
+
+    step = PlanStep(1, "echo hi", capabilities={"process.exec"})
+    cli_common.execute_steps(
+        [step],
+        log_path=tmp_path / "log.txt",
+        allowed_capabilities={"process.exec"},
+    )
+
+    content = (tmp_path / "log.txt").read_text()
+    assert "[capabilities: process.exec]" in content

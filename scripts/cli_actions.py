@@ -35,12 +35,18 @@ def run_steps(
     dry_run: bool = False,
     assume_yes: bool = False,
     confirm: bool = False,
+    allowed_capabilities: set[str] | None = None,
 ) -> int:
     """Execute ``steps`` and record an analytics event."""
     start = time.time()
     log_path.parent.mkdir(parents=True, exist_ok=True)
     exit_code = execute_steps(
-        steps, log_path=log_path, dry_run=dry_run, assume_yes=assume_yes, confirm=confirm
+        steps,
+        log_path=log_path,
+        dry_run=dry_run,
+        assume_yes=assume_yes,
+        confirm=confirm,
+        allowed_capabilities=allowed_capabilities,
     )
     end = time.time()
     data = {
@@ -76,6 +82,7 @@ def run_recipe(
     dry_run: bool = False,
     assume_yes: bool = False,
     confirm: bool = False,
+    allowed_capabilities: set[str] | None = None,
 ) -> int:
     """Execute a recipe and record an analytics event."""
     if callable(steps_or_callable):
@@ -94,6 +101,7 @@ def run_recipe(
         dry_run=dry_run,
         assume_yes=assume_yes,
         confirm=confirm,
+        allowed_capabilities=allowed_capabilities,
     )
 
 __all__ = ["record_event_logged", "run_steps", "run_recipe"]
