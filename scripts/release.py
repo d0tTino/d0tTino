@@ -54,7 +54,7 @@ def update_winget(tag: str, version: str, sha: str) -> Path:
         manifest = yaml.safe_load(fh)
     manifest["PackageVersion"] = version
     manifest["Installers"][0]["InstallerUrl"] = (
-        f"https://github.com/d0tTino/d0tTino/archive/refs/tags/{tag}.zip"
+        f"https://github.com/d0tTino/d0tTino/releases/download/{tag}/tino-windows-{version}.zip"
     )
     manifest["Installers"][0]["Sha256"] = sha
     with path.open("w") as fh:
@@ -64,12 +64,12 @@ def update_winget(tag: str, version: str, sha: str) -> Path:
 
 def update_scoop(tag: str, version: str, sha: str) -> Path:
     """Update the Scoop manifest with the provided values."""
-    path = REPO / "scoop" / "tino.json"
+    path = REPO / "scoop" / "tino-bucket" / "tino.json"
     with path.open() as fh:
         manifest = json.load(fh)
     manifest["version"] = version
     manifest["url"] = (
-        f"https://github.com/d0tTino/d0tTino/archive/refs/tags/{tag}.zip"
+        f"https://github.com/d0tTino/d0tTino/releases/download/{tag}/tino-windows-{version}.zip"
     )
     manifest["hash"] = sha
     with path.open("w") as fh:
@@ -101,7 +101,7 @@ def publish_scoop(manifest: Path, repo_url: str) -> None:
 def main() -> None:
     tag = latest_tag()
     version = tag_version(tag)
-    url = f"https://github.com/d0tTino/d0tTino/archive/refs/tags/{tag}.zip"
+    url = f"https://github.com/d0tTino/d0tTino/releases/download/{tag}/tino-windows-{version}.zip"
     sha = download_sha256(url)
 
     winget_path = update_winget(tag, version, sha)
