@@ -11,9 +11,9 @@ import os
 import shlex
 import subprocess
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Set
 
 import requests  # noqa: F401 -- imported for backward-compatibility
 from telemetry import analytics_default, record_event
@@ -33,6 +33,7 @@ class PlanStep:
     number: int
     command: str
     diff: Optional[str] = None
+    capabilities: Set[str] = field(default_factory=set)
 
 
 def _strip_risk_tag(command: str) -> str:
@@ -50,6 +51,7 @@ def execute_steps(
     dry_run: bool = False,
     assume_yes: bool = False,
     confirm: bool = False,
+    allowed_capabilities: Set[str] | None = None,
 ) -> int:
     """Execute ``steps`` and write a log to ``log_path``.
 
@@ -59,7 +61,19 @@ def execute_steps(
     ``confirm`` flag to run without prompting.
     """
     exit_code = 0
+    allowed = allowed_capabilities or set()
     for step in steps:
+        missing_caps = step.capabilities - allowed
+        if missing_caps:
+            msg = f"Missing capabilities: {', '.join(sorted(missing_caps))}"
+            print(msg, file=sys.stderr)
+            with log_path.open("a", encoding="utf-8") as log:
+                log.write(f"$ {step.command}\n")
+                log.write(f"[missing capabilities: {', '.join(sorted(missing_caps))}]\n")
+                log.write("(skipped)\n\n")
+            if not exit_code:
+                exit_code = 1
+            continue
         is_risky = "[risk:" in step.command
         step_assume_yes = assume_yes and (confirm or not is_risky)
         if dry_run:
@@ -70,6 +84,7 @@ def execute_steps(
                 log.write(f"$ {step.command}\n")
                 if step.diff:
                     log.write(f"{step.diff}\n")
+                log.write(f"[capabilities: {', '.join(sorted(step.capabilities))}]\n")
                 log.write("(dry-run)\n\n")
             continue
 
@@ -104,6 +119,7 @@ def execute_steps(
         result = subprocess.run(cmd, shell=needs_shell, capture_output=True, text=True)
         with log_path.open("a", encoding="utf-8") as log:
             log.write(f"$ {step.command}\n")
+            log.write(f"[capabilities: {', '.join(sorted(step.capabilities))}]\n")
             if result.stdout:
                 log.write(result.stdout)
             if result.stderr:
