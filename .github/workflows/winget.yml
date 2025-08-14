@@ -14,9 +14,10 @@ jobs:
           dotnet tool install --global wingetcreate
       - name: Update manifest
         env:
-          VERSION: ${{ github.ref_name }}
+          TAG_NAME: ${{ github.ref_name }}
         run: |
-          wingetcreate update winget/tino.yaml https://github.com/d0tTino/d0tTino/releases/download/$env:VERSION/d0tTino.zip $env:VERSION
+          $version = $env:TAG_NAME.TrimStart('v')
+          wingetcreate update winget/tino.yaml https://github.com/d0tTino/d0tTino/releases/download/$env:TAG_NAME/d0tTino.zip $version
       - name: Submit to winget-pkgs
         env:
           WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}

@@ -1,4 +1,5 @@
 # Hi, I’m Tino
+[![winget](https://github.com/d0tTino/d0tTino/actions/workflows/winget.yml/badge.svg)](https://github.com/d0tTino/d0tTino/actions/workflows/winget.yml)
 
 I build local‑first automation, agentic systems and tooling that’s easy to run on your own hardware. My work spans persistent memory engines, emergent AI sandboxes and practical task orchestration.
 

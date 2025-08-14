@@ -45,3 +45,9 @@ def discover_plugins() -> None:
 def load_backends() -> None:
     """Convenience wrapper to import all available backends."""
     discover_plugins()
+    # Ensure the built-in SuperClaude backend is always available even if the
+    # registry has been cleared during tests or reinitialization.
+    if "superclaude" not in backends.available_backends():
+        from llm import router
+
+        backends.register_backend("superclaude", router.run_superclaude)
