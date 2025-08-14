@@ -72,7 +72,19 @@ For private and ongoing work (such as **Aiga** and other closed repos), I focus 
 
 # d0tTino Configuration
 
-See [docs/install-winget.md](docs/install-winget.md) for instructions on installing d0tTino with Winget and guidance on configuration.
+## Quickstart
+
+Install with your preferred Windows package manager:
+
+```powershell
+winget install tino
+scoop install tino
+```
+
+For advanced bootstrap options, see
+[docs/installation.md](docs/installation.md).
+Detailed Winget instructions are available in
+[docs/install-winget.md](docs/install-winget.md).
 
 ---
 
