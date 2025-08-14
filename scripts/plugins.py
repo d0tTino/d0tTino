@@ -62,6 +62,14 @@ PLUGIN_REGISTRY: Dict[str, str] = {
 # cannot be loaded from the network or cache.
 RECIPE_REGISTRY: Dict[str, str] = {
     "echo": "d0ttino-echo-recipe",
+    "wsl": "d0ttino-wsl-recipe",
+    "docker_desktop": "d0ttino-docker-desktop-recipe",
+    "vscode": "d0ttino-vscode-recipe",
+    "gpu_drivers": "d0ttino-gpu-drivers-recipe",
+    "windows_terminal": "d0ttino-windows-terminal-recipe",
+    "powershell": "d0ttino-powershell-recipe",
+    "nodejs": "d0ttino-nodejs-recipe",
+    "git": "d0ttino-git-recipe",
 }
 
 # Default directory for recipe packages downloaded via ``recipes sync``
