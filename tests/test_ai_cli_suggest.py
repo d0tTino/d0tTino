@@ -4,7 +4,7 @@ import pytest
 
 pytest.importorskip("requests")
 
-from scripts import ai_cli
+from scripts import ai_cli, ai_suggest
 
 
 def test_suggest_subcommand(monkeypatch):
@@ -20,7 +20,7 @@ def test_suggest_subcommand(monkeypatch):
         assert model == "m"
         return suggestions
 
-    monkeypatch.setattr(ai_cli.router, "shell_suggest", fake_suggest)
+    monkeypatch.setattr(ai_suggest, "suggest", fake_suggest)
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
         rc = ai_cli.main(["suggest", "goal", "--local", "--model", "m"])

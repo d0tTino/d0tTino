@@ -15,7 +15,7 @@ import threading
 from llm import router
 from llm.backends import initialize
 import asyncio
-from scripts import ai_exec, recipes, plugins, query_sources, nsm_stats
+from scripts import ai_exec, recipes, plugins, query_sources, nsm_stats, ai_suggest
 from scripts.cli_common import (
     PlanStep,
     read_prompt,
@@ -75,7 +75,7 @@ def _publish_event(args: argparse.Namespace, name: str, payload: dict[str, Any])
     cli_actions.record_event_logged(name, payload, enabled=args.analytics)
     if args.analytics and getattr(args, "nats_url", None):
         try:
-            asyncio.run(ume_events.publish_event(args.nats_url, name, payload))  # type: ignore[misc,arg-type]
+            asyncio.run(ume_events.publish_event(args.nats_url, name, payload))
 
         except Exception as exc:  # noqa: BLE001
             logging.debug("Failed to publish NATS event: %s", exc)
@@ -104,7 +104,7 @@ def _cmd_suggest(args: argparse.Namespace) -> int:
         kwargs = {"local": args.local, "model": args.model}
         if _session.get("context"):
             kwargs["context"] = _session["context"]
-        suggestions = router.shell_suggest(args.goal, **kwargs)
+        suggestions = ai_suggest.suggest(args.goal, **kwargs)
     except (FileNotFoundError, subprocess.CalledProcessError) as exc:
         print(exc, file=sys.stderr)
         _publish_event(args, "ai-cli-suggest", {"exit_code": 1})
@@ -535,6 +535,11 @@ def build_parser() -> argparse.ArgumentParser:
     send.add_argument("--model", default=router.DEFAULT_MODEL, help="Model name for Ollama (default: %(default)s)")
     send.set_defaults(func=_cmd_send)
 
+    plan = sub.add_parser("plan", help="Generate a shell plan for a goal", parents=[analytics])
+    plan.add_argument("goal")
+    plan.add_argument("--config")
+    plan.set_defaults(func=_cmd_plan)
+
     suggest = sub.add_parser(
         "suggest", help="Suggest shell commands for a goal", parents=[analytics]
     )
@@ -548,11 +553,6 @@ def build_parser() -> argparse.ArgumentParser:
         help="Model name for Ollama (default: %(default)s)",
     )
     suggest.set_defaults(func=_cmd_suggest)
-
-    plan = sub.add_parser("plan", help="Generate a shell plan for a goal", parents=[analytics])
-    plan.add_argument("goal")
-    plan.add_argument("--config")
-    plan.set_defaults(func=_cmd_plan)
 
     do = sub.add_parser("do", help="Interactively execute a goal", parents=[analytics])
     do.add_argument("goal")
