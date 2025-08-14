@@ -10,7 +10,7 @@ PackageUrl: https://github.com/d0tTino/d0tTino
 Installers:
   - Architecture: x64
     InstallerType: zip
-    InstallerUrl: https://github.com/d0tTino/d0tTino/archive/refs/tags/v{{VERSION}}.zip
+    InstallerUrl: https://github.com/d0tTino/d0tTino/releases/download/v{{VERSION}}/d0tTino.zip
     Sha256: "{{SHA256}}"
 ManifestType: singleton
 ManifestVersion: 1.6.0
