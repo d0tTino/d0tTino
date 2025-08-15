@@ -61,13 +61,11 @@ def execute_steps(
     """
     step_list = list(steps)
 
-    # Display the plan up-front so users can review the numbered steps.
-    for step in step_list:
-        print(f"{step.number}. {step.command}")
-        if dry_run and step.diff:
-            print(step.diff)
-
     if dry_run:
+        for step in step_list:
+            print(f"{step.number}. {step.command}")
+            if step.diff:
+                print(step.diff)
         for step in step_list:
             with log_path.open("a", encoding="utf-8") as log:
                 log.write(f"$ {step.command}\n")
@@ -84,21 +82,25 @@ def execute_steps(
     exit_code = 0
     allowed = set(allowed_capabilities) if allowed_capabilities else set()
     for step in step_list:
+        print(f"{step.number}. {step.command}")
+        if step.diff:
+            print(step.diff)
+
         missing_caps = step.capabilities - allowed
         if missing_caps:
             skip_step = False
             for cap in sorted(missing_caps):
-                answer = input(f"Grant capability {cap.value}? [y/N]").strip().lower()
+                answer = input(f"Grant capability {cap}? [y/N]").strip().lower()
                 if answer == "y":
                     allowed.add(cap)
                     with log_path.open("a", encoding="utf-8") as log:
-                        log.write(f"[granted capability: {cap.value}]\n")
+                        log.write(f"[granted capability: {cap}]\n")
                 else:
-                    msg = f"Missing capabilities: {cap.value}"
+                    msg = f"Missing capabilities: {cap}"
                     print(msg, file=sys.stderr)
                     with log_path.open("a", encoding="utf-8") as log:
                         log.write(f"$ {step.command}\n")
-                        log.write(f"[missing capabilities: {cap.value}]\n")
+                        log.write(f"[missing capabilities: {cap}]\n")
                         log.write("(skipped)\n\n")
                     if not exit_code:
                         exit_code = 1
@@ -108,13 +110,6 @@ def execute_steps(
                 continue
         is_risky = "[risk:" in step.command
         step_assume_yes = assume_yes and (confirm or not is_risky)
-
-        if not step_assume_yes:
-            answer = input(f"{step.number}. {step.command} [y/N]?").strip().lower()
-            if answer != "y":
-                continue
-        else:
-            print(f"{step.number}. {step.command}")
 
         cmd_text = _strip_risk_tag(step.command)
         try:
@@ -141,7 +136,7 @@ def execute_steps(
         with log_path.open("a", encoding="utf-8") as log:
             log.write(f"$ {step.command}\n")
             log.write(
-                f"[capabilities: {', '.join(sorted(c.value for c in step.capabilities))}]\n"
+                f"[capabilities: {', '.join(sorted(step.capabilities))}]\n"
             )
             if result.stdout:
                 log.write(result.stdout)

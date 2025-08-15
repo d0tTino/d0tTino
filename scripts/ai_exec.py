@@ -83,6 +83,12 @@ def _parse_steps(text: str) -> List[PlanStep]:
     return steps
 
 
+def _hyperlink(path: Path, text: str | None = None) -> str:
+    """Return an OSC 8 hyperlink for ``path``."""
+    uri = path.resolve().as_uri()
+    return f"\x1b]8;;{uri}\x1b\\{text or path}\x1b]8;;\x1b\\"
+
+
 def _append_file_diffs(steps: Iterable[PlanStep]) -> None:
     """Populate ``diff`` for steps that reference existing files."""
 
@@ -106,7 +112,7 @@ def _append_file_diffs(steps: Iterable[PlanStep]) -> None:
                 check=False,
             )
             if result.stdout:
-                diffs.append(result.stdout.strip())
+                diffs.append(f"{_hyperlink(file)}\n{result.stdout.strip()}")
         if diffs:
             step.diff = "\n".join(diffs)
 
