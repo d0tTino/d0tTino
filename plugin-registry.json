@@ -1,12 +1,33 @@
 {
   "plugins": {
-    "sample": "d0ttino-sample-plugin",
-    "openrouter": "d0ttino-openrouter-plugin",
-    "lobechat": "d0ttino-lobechat-plugin",
-    "mindbridge": "d0ttino-mindbridge-plugin",
-    "anthropic": "d0ttino-anthropic-plugin",
-    "mistral": "d0ttino-mistral-plugin",
-    "lmql": "d0ttino-lmql-plugin"
+    "sample": {
+      "package": "d0ttino-sample-plugin",
+      "mcp": {}
+    },
+    "openrouter": {
+      "package": "d0ttino-openrouter-plugin",
+      "mcp": {}
+    },
+    "lobechat": {
+      "package": "d0ttino-lobechat-plugin",
+      "mcp": {}
+    },
+    "mindbridge": {
+      "package": "d0ttino-mindbridge-plugin",
+      "mcp": {}
+    },
+    "anthropic": {
+      "package": "d0ttino-anthropic-plugin",
+      "mcp": {}
+    },
+    "mistral": {
+      "package": "d0ttino-mistral-plugin",
+      "mcp": {}
+    },
+    "lmql": {
+      "package": "d0ttino-lmql-plugin",
+      "mcp": {}
+    }
   },
   "recipes": {
     "echo": "d0ttino-echo-recipe",

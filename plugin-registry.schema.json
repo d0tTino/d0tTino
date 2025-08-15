@@ -8,8 +8,19 @@
     "plugins": {
       "type": "object",
       "additionalProperties": {
-        "type": "string",
-        "description": "Name of the pip package containing the plug-in"
+        "type": "object",
+        "required": ["package", "mcp"],
+        "properties": {
+          "package": {
+            "type": "string",
+            "description": "Name of the pip package containing the plug-in"
+          },
+          "mcp": {
+            "type": "object",
+            "description": "MCP metadata for the plug-in"
+          }
+        },
+        "additionalProperties": false
       }
     },
     "recipes": {

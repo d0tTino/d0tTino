@@ -27,7 +27,7 @@ from pathlib import Path
 import subprocess
 import sys
 import time
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any, overload, Literal, cast
 
 import requests
 try:
@@ -99,9 +99,19 @@ def _valid_registry(data: Dict[str, object]) -> bool:
             return False
     plugins = data.get("plugins")
     recipes = data.get("recipes")
+
+    def _valid_plugin(val: object) -> bool:
+        if isinstance(val, str):
+            return True
+        if isinstance(val, dict):
+            pkg = val.get("package")
+            mcp_meta = val.get("mcp")
+            return isinstance(pkg, str) and isinstance(mcp_meta, dict)
+        return False
+
     return (
         isinstance(plugins, dict)
-        and all(isinstance(v, str) for v in plugins.values())
+        and all(_valid_plugin(v) for v in plugins.values())
         and (
             recipes is None
             or (
@@ -136,9 +146,35 @@ def _fetch_registry(url: str) -> Dict[str, object] | None:
     return None
 
 
+@overload
 def load_registry(
-    section: str = "plugins", update: bool = False, ttl: int = DEFAULT_CACHE_TTL
+    section: str = "plugins",
+    update: bool = False,
+    ttl: int = DEFAULT_CACHE_TTL,
+    *,
+    raw: Literal[False] = False,
 ) -> Dict[str, str]:
+    ...
+
+
+@overload
+def load_registry(
+    section: str = "plugins",
+    update: bool = False,
+    ttl: int = DEFAULT_CACHE_TTL,
+    *,
+    raw: Literal[True],
+) -> Dict[str, Any]:
+    ...
+
+
+def load_registry(
+    section: str = "plugins",
+    update: bool = False,
+    ttl: int = DEFAULT_CACHE_TTL,
+    *,
+    raw: bool = False,
+) -> Dict[str, Any]:
     """Return the registry section with network → cache → default fallback.
 
     The registry URL is taken from ``PLUGIN_REGISTRY_URL`` when set and
@@ -191,11 +227,26 @@ def load_registry(
     if isinstance(data, dict):
         mapping = data.get(section) or {}
         if isinstance(mapping, dict):
-            return {str(k): str(v) for k, v in mapping.items()}
+            if raw:
+                return mapping
+            result: Dict[str, str] = {}
+            for k, v in mapping.items():
+                if isinstance(v, str):
+                    result[str(k)] = v
+                elif isinstance(v, dict):
+                    pkg = v.get("package")
+                    if isinstance(pkg, str):
+                        result[str(k)] = pkg
+            return result
 
     if section == "plugins":
-        return PLUGIN_REGISTRY
-    return RECIPE_REGISTRY
+        if not raw:
+            return PLUGIN_REGISTRY
+        return cast(
+            Dict[str, Any],
+            {k: {"package": v, "mcp": {}} for k, v in PLUGIN_REGISTRY.items()},
+        )
+    return RECIPE_REGISTRY  # recipes not used with raw
 
 
 def _is_installed(package: str) -> bool:
@@ -333,7 +384,12 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Force fresh download of the plug-in registry",
     )
-    sub = parser.add_subparsers(dest="command", required=True)
+    parser.add_argument(
+        "--mcp",
+        action="store_true",
+        help="Serve MCP endpoints for registered plug-ins",
+    )
+    sub = parser.add_subparsers(dest="command")
 
     backends = sub.add_parser("backends", help="Manage backend plug-ins")
     backend_sub = backends.add_subparsers(dest="backend_command", required=True)
@@ -394,6 +450,13 @@ def main(argv: Optional[List[str]] = None) -> int:
             file=sys.stderr,
         )
     args = parser.parse_args(argv)
+    if getattr(args, "mcp", False):
+        from plugins import mcp_adapter
+
+        mcp_adapter.serve(load_registry(raw=True))
+        return 0
+    if not hasattr(args, "func"):
+        parser.error("a command is required")
     return args.func(args)
 
 
