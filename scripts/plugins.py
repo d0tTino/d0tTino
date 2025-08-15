@@ -377,6 +377,19 @@ def _cmd_publish_recipes(args: argparse.Namespace) -> int:
         return exc.returncode
 
 
+def _cmd_new_plugin(args: argparse.Namespace) -> int:
+    """Scaffold a new plug-in project."""
+    from scripts import plugin_scaffold
+
+    plugin_scaffold.scaffold_plugin(
+        args.name,
+        recipe=args.recipe,
+        description=args.description,
+        output=args.output,
+    )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -390,6 +403,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Serve MCP endpoints for registered plug-ins",
     )
     sub = parser.add_subparsers(dest="command")
+
+    new = sub.add_parser("new", help="Scaffold a new plug-in")
+    new.add_argument("name", help="Plug-in name")
+    new.add_argument("--recipe", action="store_true", help="Create a recipe plug-in")
+    new.add_argument("--description", default="A d0tTino plug-in")
+    new.add_argument("--output", default=".", help="Output directory")
+    new.set_defaults(func=_cmd_new_plugin)
 
     backends = sub.add_parser("backends", help="Manage backend plug-ins")
     backend_sub = backends.add_subparsers(dest="backend_command", required=True)
