@@ -1,11 +1,28 @@
 pub mod commands {
     use reqwest::Client;
-    use serde::Deserialize;
-    use std::{fs, path::PathBuf};
+    use serde::{Deserialize, Serialize};
+    use std::{
+        fs::{self, OpenOptions},
+        io::Write,
+        path::PathBuf,
+    };
 
     #[derive(Deserialize)]
     struct PlanResponse {
         steps: Option<Vec<String>>,
+    }
+
+    #[derive(Serialize)]
+    pub struct PluginInfo {
+        name: String,
+        enabled: bool,
+    }
+
+    #[derive(Serialize)]
+    pub struct Dashboard {
+        recent_plans: Vec<String>,
+        budget: Option<i64>,
+        plugins: Vec<PluginInfo>,
     }
 
     pub async fn plan(goal: String) -> Result<Vec<String>, String> {
@@ -17,7 +34,20 @@ pub mod commands {
             .await
             .map_err(|e| e.to_string())?;
         let plan: PlanResponse = resp.json().await.map_err(|e| e.to_string())?;
-        Ok(plan.steps.unwrap_or_default())
+        let steps = plan.steps.unwrap_or_default();
+        if let Ok(home) = std::env::var("HOME") {
+            let log_path = PathBuf::from(home)
+                .join(".cache")
+                .join("d0ttino")
+                .join("plans.log");
+            if let Some(parent) = log_path.parent() {
+                let _ = fs::create_dir_all(parent);
+            }
+            if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(log_path) {
+                let _ = writeln!(file, "{}", goal);
+            }
+        }
+        Ok(steps)
     }
 
     pub async fn exec(goal: String) -> Result<String, String> {
@@ -90,5 +120,48 @@ pub mod commands {
             log.push_str(&format!("(exit {})\n\n", code));
         }
         Ok(log)
+    }
+
+    pub async fn dashboard() -> Result<Dashboard, String> {
+        let mut plans = Vec::new();
+        if let Ok(home) = std::env::var("HOME") {
+            let log_path = PathBuf::from(&home)
+                .join(".cache")
+                .join("d0ttino")
+                .join("plans.log");
+            if let Ok(content) = fs::read_to_string(log_path) {
+                plans = content
+                    .lines()
+                    .rev()
+                    .take(5)
+                    .map(|s| s.to_string())
+                    .collect();
+            }
+        }
+
+        let budget = std::env::var("LLM_ROUTER_BUDGET")
+            .ok()
+            .and_then(|s| s.parse().ok());
+
+        let mut plugins = Vec::new();
+        let reg_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../plugin-registry.json");
+        if let Ok(data) = fs::read_to_string(reg_path) {
+            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&data) {
+                if let Some(map) = json.get("plugins").and_then(|v| v.as_object()) {
+                    for name in map.keys() {
+                        plugins.push(PluginInfo {
+                            name: name.clone(),
+                            enabled: true,
+                        });
+                    }
+                }
+            }
+        }
+
+        Ok(Dashboard {
+            recent_plans: plans,
+            budget,
+            plugins,
+        })
     }
 }
