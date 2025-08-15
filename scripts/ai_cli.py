@@ -263,11 +263,10 @@ def _cmd_stats(args: argparse.Namespace) -> int:
 
 
 def _cmd_status(args: argparse.Namespace) -> int:
-    """Show remaining budget and routing mode."""
-    budget = router.get_budget()
-    mode = os.environ.get("LLM_ROUTING_MODE", "auto")
+    """Show remaining budget and last model source."""
+    budget, source = router.get_budget()
     print(f"Budget remaining: {budget}")
-    print(f"Routing mode: {mode}")
+    print(f"Last model source: {source or 'unknown'}")
     return 0
 
 
@@ -687,7 +686,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     status = sub.add_parser(
         "status",
-        help="Show remaining budget and routing mode",
+        help="Show remaining budget and last model source",
         parents=[analytics],
     )
     status.set_defaults(func=_cmd_status)
