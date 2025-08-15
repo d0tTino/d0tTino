@@ -1,11 +1,10 @@
-import importlib.metadata
 import sys
 import types
 
-from plugins import mcp
+from plugins import mcp, mcp_adapter
 
 
-def test_mcp_adapter_exposes_registered_tools(monkeypatch):
+def test_mcp_adapter_exposes_registry_tools(monkeypatch):
     module = types.ModuleType("dummy_tool_mod")
 
     def tool_func():
@@ -14,17 +13,19 @@ def test_mcp_adapter_exposes_registered_tools(monkeypatch):
     module.tool = tool_func
     monkeypatch.setitem(sys.modules, "dummy_tool_mod", module)
 
-    entry = importlib.metadata.EntryPoint(
-        name="dummy", value="dummy_tool_mod:tool", group="d0ttino.tools"
-    )
-    monkeypatch.setattr(mcp, "discover_entry_points", lambda group: iter([entry]))
+    reg = {
+        "dummy": {"package": "pkg", "mcp": {"entry_point": "dummy_tool_mod:tool"}}
+    }
+    monkeypatch.setattr(mcp_adapter.registry, "load_registry", lambda raw=True: reg)
 
-    tools = mcp.get_tools()
+    tools = mcp_adapter.get_tools(reg)
     assert tools["dummy"] is tool_func
 
 
 def test_ai_cli_flag_enables_mcp(monkeypatch, tmp_path):
-    from scripts import ai_cli
+    import importlib
+
+    ai_cli = importlib.import_module("scripts.ai_cli")
 
     monkeypatch.setattr(ai_cli, "SESSION_FILE", tmp_path / "session.json")
     monkeypatch.setattr(ai_cli.cli_actions, "record_event_logged", lambda *a, **k: None)
@@ -42,7 +43,9 @@ def test_ai_cli_flag_enables_mcp(monkeypatch, tmp_path):
 
 
 def test_ai_cli_does_not_enable_mcp_without_flag(monkeypatch, tmp_path):
-    from scripts import ai_cli
+    import importlib
+
+    ai_cli = importlib.import_module("scripts.ai_cli")
 
     monkeypatch.setattr(ai_cli, "SESSION_FILE", tmp_path / "session.json")
     monkeypatch.setattr(ai_cli.cli_actions, "record_event_logged", lambda *a, **k: None)

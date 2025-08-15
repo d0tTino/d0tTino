@@ -200,6 +200,22 @@ def test_recipe_install(monkeypatch):
     assert "pkg" in called["cmd"]
 
 
+def test_mcp_flag_starts_server(monkeypatch):
+    called = {}
+
+    def fake_serve(registry):
+        called["registry"] = registry
+
+    from plugins import mcp_adapter
+
+    monkeypatch.setattr(mcp_adapter, "serve", fake_serve)
+    monkeypatch.setattr(plugins, "load_registry", lambda *a, **k: {})
+
+    rc = plugins.main(["--mcp"])
+    assert rc == 0
+    assert "registry" in called
+
+
 def test_recipe_remove(monkeypatch):
     called = {}
 
