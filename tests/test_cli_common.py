@@ -4,6 +4,7 @@ import uuid
 pytest.importorskip("requests")
 from scripts import cli_common
 from scripts.cli_common import PlanStep
+from scripts.capabilities import Capability
 
 
 def test_record_event_skips_when_disabled(monkeypatch):
@@ -188,6 +189,9 @@ def test_execute_steps_windows_path(monkeypatch, tmp_path):
 
 
 def test_execute_steps_enforces_capabilities(monkeypatch, tmp_path):
+    inputs = iter(["n"])
+    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
     captured = {}
 
     def fake_run(cmd, *, shell, capture_output, text):
@@ -203,11 +207,11 @@ def test_execute_steps_enforces_capabilities(monkeypatch, tmp_path):
 
     monkeypatch.setattr(cli_common.subprocess, "run", fake_run)
 
-    step = PlanStep(1, "echo hi", capabilities={"process.exec"})
+    step = PlanStep(1, "echo hi", capabilities={Capability.PROCESS_EXEC})
     rc = cli_common.execute_steps(
         [step],
         log_path=tmp_path / "log.txt",
-        allowed_capabilities={"filesystem.read"},
+        allowed_capabilities={Capability.FILESYSTEM_READ},
         assume_yes=True,
     )
 
@@ -232,11 +236,11 @@ def test_execute_steps_logs_capabilities(monkeypatch, tmp_path):
 
     monkeypatch.setattr(cli_common.subprocess, "run", fake_run)
 
-    step = PlanStep(1, "echo hi", capabilities={"process.exec"})
+    step = PlanStep(1, "echo hi", capabilities={Capability.PROCESS_EXEC})
     cli_common.execute_steps(
         [step],
         log_path=tmp_path / "log.txt",
-        allowed_capabilities={"process.exec"},
+        allowed_capabilities={Capability.PROCESS_EXEC},
     )
 
     content = (tmp_path / "log.txt").read_text()

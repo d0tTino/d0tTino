@@ -82,19 +82,30 @@ def execute_steps(
         return 1
 
     exit_code = 0
-    allowed = allowed_capabilities or set()
+    allowed = set(allowed_capabilities) if allowed_capabilities else set()
     for step in step_list:
         missing_caps = step.capabilities - allowed
         if missing_caps:
-            msg = f"Missing capabilities: {', '.join(sorted(missing_caps))}"
-            print(msg, file=sys.stderr)
-            with log_path.open("a", encoding="utf-8") as log:
-                log.write(f"$ {step.command}\n")
-                log.write(f"[missing capabilities: {', '.join(sorted(missing_caps))}]\n")
-                log.write("(skipped)\n\n")
-            if not exit_code:
-                exit_code = 1
-            continue
+            skip_step = False
+            for cap in sorted(missing_caps):
+                answer = input(f"Grant capability {cap.value}? [y/N]").strip().lower()
+                if answer == "y":
+                    allowed.add(cap)
+                    with log_path.open("a", encoding="utf-8") as log:
+                        log.write(f"[granted capability: {cap.value}]\n")
+                else:
+                    msg = f"Missing capabilities: {cap.value}"
+                    print(msg, file=sys.stderr)
+                    with log_path.open("a", encoding="utf-8") as log:
+                        log.write(f"$ {step.command}\n")
+                        log.write(f"[missing capabilities: {cap.value}]\n")
+                        log.write("(skipped)\n\n")
+                    if not exit_code:
+                        exit_code = 1
+                    skip_step = True
+                    break
+            if skip_step:
+                continue
         is_risky = "[risk:" in step.command
         step_assume_yes = assume_yes and (confirm or not is_risky)
 
@@ -129,7 +140,9 @@ def execute_steps(
         result = subprocess.run(cmd, shell=needs_shell, capture_output=True, text=True)
         with log_path.open("a", encoding="utf-8") as log:
             log.write(f"$ {step.command}\n")
-            log.write(f"[capabilities: {', '.join(sorted(step.capabilities))}]\n")
+            log.write(
+                f"[capabilities: {', '.join(sorted(c.value for c in step.capabilities))}]\n"
+            )
             if result.stdout:
                 log.write(result.stdout)
             if result.stderr:
