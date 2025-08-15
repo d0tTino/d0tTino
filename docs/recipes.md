@@ -5,19 +5,19 @@ sequences for setting up a Windows development environment. Each recipe returns
 a list of shell commands that can be executed on a Windows host.
 
 ## wsl
-- **Usage:** Enables and installs the Windows Subsystem for Linux.
+- **Usage:** Enables required optional features, installs WSL, and sets version 2 as the default.
 - **Prerequisites:** Requires Windows 10 or later with virtualization enabled.
 
 ## docker_desktop
-- **Usage:** Installs Docker Desktop via `winget`.
+- **Usage:** Installs Docker Desktop and configures WSL 2 as the container backend.
 - **Prerequisites:** Requires WSL 2 and a 64‑bit system.
 
 ## vscode
-- **Usage:** Installs Visual Studio Code using `winget`.
+- **Usage:** Installs Visual Studio Code and recommended Python and Jupyter extensions.
 - **Prerequisites:** None.
 
 ## gpu_drivers
-- **Usage:** Installs NVIDIA GPU drivers through `winget`.
+- **Usage:** Installs NVIDIA display drivers and the CUDA toolkit.
 - **Prerequisites:** NVIDIA GPU hardware.
 
 ## windows_terminal

@@ -71,3 +71,26 @@ def test_discover_recipes_loads_entry_points_py310(monkeypatch):
     mapping = recipes.discover_recipes()
     assert "dummy" in mapping
 
+
+def test_builtin_curated_recipes():
+    mapping = recipes.discover_recipes()
+    assert mapping["wsl"]("") == [
+        "dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart",
+        "dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart",
+        "wsl --install",
+        "wsl --set-default-version 2",
+    ]
+    assert mapping["docker_desktop"]("") == [
+        "winget install -e --id Docker.DockerDesktop",
+        "wsl --set-default-version 2",
+    ]
+    assert mapping["vscode"]("") == [
+        "winget install -e --id Microsoft.VisualStudioCode",
+        "code --install-extension ms-python.python",
+        "code --install-extension ms-toolsai.jupyter",
+    ]
+    assert mapping["gpu_drivers"]("") == [
+        "winget install -e --id Nvidia.DisplayDriver",
+        "winget install -e --id Nvidia.CUDA",
+    ]
+
