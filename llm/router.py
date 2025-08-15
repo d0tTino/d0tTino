@@ -58,19 +58,20 @@ def _load_budget() -> int | None:
 
 
 _BUDGET = _load_budget()
+_LAST_MODEL_SOURCE: str | None = None
 
 
-def get_budget() -> int | None:
-    return _BUDGET
+def get_budget() -> tuple[int | None, str | None]:
+    return _BUDGET, _LAST_MODEL_SOURCE
 
 
-def _decrement_budget() -> None:
+def _decrement_budget(tokens: int) -> None:
     global _BUDGET
     if _BUDGET is None:
         return
-    if _BUDGET <= 0:
+    if _BUDGET < tokens:
         raise RuntimeError("LLM budget exhausted")
-    _BUDGET -= 1
+    _BUDGET -= tokens
 
 
 def estimate_prompt_complexity(prompt: str) -> int:
@@ -217,6 +218,7 @@ def send_prompt(
     route requests differently. It is currently unused by the router itself but
     accepted for compatibility with CLI features.
     """
+    global _LAST_MODEL_SOURCE
     primary, fallback = _preferred_backends()
     order: List[str] = []
 
@@ -262,11 +264,15 @@ def send_prompt(
                     if fallback:
                         order.append(fallback)
                     order.append(primary)
+
+    tokens = estimate_prompt_complexity(prompt)
     for backend_name in order:
         try:
             if backend_name in _REMOTE_BACKENDS:
-                _decrement_budget()
-            return _run_backend(backend_name, prompt, model)
+                _decrement_budget(tokens)
+            text = _run_backend(backend_name, prompt, model)
+            _LAST_MODEL_SOURCE = backend_name
+            return text
         except (FileNotFoundError, subprocess.CalledProcessError):
             continue
     raise RuntimeError("Unable to process prompt")
