@@ -34,7 +34,7 @@ def test_main_runs_and_logs(monkeypatch, tmp_path):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    inputs = iter(["y", "y", "n"])
+    inputs = iter(["y", "n"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
 
     log = tmp_path / "log.txt"
@@ -86,6 +86,41 @@ def test_main_dry_run(monkeypatch, tmp_path):
     assert "dry-run" in log.read_text()
 
 
+def test_diff_preview_shown(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        ai_exec,
+        "plan",
+        lambda *a, **k: [PlanStep(1, "echo hi", diff="--- a\n+++ b\n+hi")],
+    )
+
+    run_called = False
+
+    def fail_run(*a, **k):
+        nonlocal run_called
+        run_called = True
+
+    monkeypatch.setattr(subprocess, "run", fail_run)
+
+    prompts = []
+
+    def fake_input(prompt):
+        prompts.append(prompt)
+        return "n"
+
+    monkeypatch.setattr("builtins.input", fake_input)
+
+    log = tmp_path / "log.txt"
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        rc = ai_do.main(["goal", "--log", str(log)])
+
+    assert rc == 0
+    output = out.getvalue()
+    assert "--- a" in output
+    assert not run_called
+    assert prompts and prompts[0].startswith("Run command")
+
+
 def test_main_yes_runs_without_prompts(monkeypatch, tmp_path):
     monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: [PlanStep(1, "echo hi")])
 
@@ -130,8 +165,8 @@ def test_risky_requires_confirm(monkeypatch, tmp_path):
     monkeypatch.setattr(subprocess, "run", fail_run)
     log = tmp_path / "log.txt"
     rc = ai_do.main(["goal", "--log", str(log), "--yes"])
-    assert rc == 0
-    assert prompts  # prompted despite --yes
+    assert rc == 1
+    assert not prompts
 
 
 def test_confirm_allows_risky(monkeypatch, tmp_path):
@@ -176,7 +211,7 @@ def test_main_returns_failure(monkeypatch, tmp_path):
         return Result()
 
     monkeypatch.setattr(subprocess, "run", fake_run)
-    inputs = iter(["y", "y"])
+    inputs = iter(["y"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
 
     log = tmp_path / "log.txt"
@@ -190,7 +225,7 @@ def test_main_confirms_and_sanitizes(monkeypatch, tmp_path):
     monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: [PlanStep(1, "echo hi")])
 
     prompts = []
-    inputs = iter(["y", "y"])
+    inputs = iter(["y"])
 
     def fake_input(prompt):
         prompts.append(prompt)
@@ -259,7 +294,7 @@ def test_main_records_event(monkeypatch, tmp_path):
 
 def test_main_records_failure(monkeypatch, tmp_path):
     monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: [PlanStep(1, "bad")])
-    inputs = iter(["y", "y"])
+    inputs = iter(["y"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
 
     class Result:
