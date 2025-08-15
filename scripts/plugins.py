@@ -61,15 +61,16 @@ PLUGIN_REGISTRY: Dict[str, str] = {
 # Mapping of recipe name to pip package used as a fallback when a registry
 # cannot be loaded from the network or cache.
 RECIPE_REGISTRY: Dict[str, str] = {
-    "echo": "d0ttino-echo-recipe",
-    "wsl": "d0ttino-wsl-recipe",
+    # Curated recipes shipped with the repository
     "docker_desktop": "d0ttino-docker-desktop-recipe",
-    "vscode": "d0ttino-vscode-recipe",
-    "gpu_drivers": "d0ttino-gpu-drivers-recipe",
-    "windows_terminal": "d0ttino-windows-terminal-recipe",
-    "powershell": "d0ttino-powershell-recipe",
-    "nodejs": "d0ttino-nodejs-recipe",
     "git": "d0ttino-git-recipe",
+    "gpu_drivers": "d0ttino-gpu-drivers-recipe",
+    "nodejs": "d0ttino-nodejs-recipe",
+    "powershell": "d0ttino-powershell-recipe",
+    "vscode": "d0ttino-vscode-recipe",
+    "windows_terminal": "d0ttino-windows-terminal-recipe",
+    "wsl": "d0ttino-wsl-recipe",
+    "echo": "d0ttino-echo-recipe",
 }
 
 # Default directory for recipe packages downloaded via ``recipes sync``
