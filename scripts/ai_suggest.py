@@ -4,10 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import json
 import shlex
 import subprocess
 import sys
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from llm import router
 from llm.backends import initialize
@@ -39,16 +40,29 @@ def _label_risk(step: str) -> str:
     return f"{step} [risk:{risk}]"
 
 
+def _split_rationale(line: str) -> tuple[str, str]:
+    """Split ``line`` into ``command`` and ``rationale`` parts."""
+    if " # " in line:
+        cmd, rationale = line.split(" # ", 1)
+        return cmd.strip(), rationale.strip()
+    return line.strip(), ""
+
+
 def suggest(
     goal: str,
     *,
     local: bool = False,
     model: str = router.DEFAULT_MODEL,
     context: str | None = None,
-) -> List[str]:
-    """Return up to three risk-tagged shell command suggestions for ``goal``."""
-    text = router.shell_suggest(goal, local=local, model=model, context=context)
-    return [_label_risk(line) for line in text[:3]]
+) -> List[Dict[str, str]]:
+    """Return up to three risk-tagged suggestions with rationales."""
+    prompt = f"{goal}\nExplain each command briefly"
+    text = router.shell_suggest(prompt, local=local, model=model, context=context)
+    suggestions: List[Dict[str, str]] = []
+    for line in text[:3]:
+        cmd, rationale = _split_rationale(line)
+        suggestions.append({"command": _label_risk(cmd), "rationale": rationale})
+    return suggestions
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -61,6 +75,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         default=router.DEFAULT_MODEL,
         help="Model name for Ollama (default: %(default)s)",
     )
+    parser.add_argument("--json", action="store_true", help="Output suggestions as JSON")
     args = parser.parse_args(argv)
     args.analytics = getattr(args, "analytics", analytics_default())
     try:
@@ -71,8 +86,14 @@ def main(argv: Optional[List[str]] = None) -> int:
             "ai-suggest", {"exit_code": 1}, enabled=args.analytics
         )
         return 1
-    for line in suggestions:
-        print(line)
+    if args.json:
+        print(json.dumps(suggestions))
+    else:
+        for item in suggestions:
+            print(item["command"])
+            if item["rationale"]:
+                print(item["rationale"])
+            print("Press Enter to run")
     cli_actions.record_event_logged(
         "ai-suggest",
         {"exit_code": 0, "suggestion_count": len(suggestions)},
