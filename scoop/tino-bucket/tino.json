@@ -9,4 +9,5 @@
   "autoupdate": {
     "url": "https://github.com/d0tTino/d0tTino/releases/download/v$version/tino-windows-$version.zip"
   }
+
 }
