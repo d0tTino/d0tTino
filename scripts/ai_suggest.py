@@ -8,6 +8,7 @@ import json
 import shlex
 import subprocess
 import sys
+from pathlib import Path
 from typing import Dict, List, Optional
 
 from llm import router
@@ -89,11 +90,22 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.json:
         print(json.dumps(suggestions))
     else:
-        for item in suggestions:
+        log_path = Path.home() / ".config" / "d0tTino" / "ai_suggest.log"
+        for idx, item in enumerate(suggestions, 1):
             print(item["command"])
             if item["rationale"]:
                 print(item["rationale"])
-            print("Press Enter to run")
+            answer = input("Press Enter to run, anything else to skip: ").strip()
+            if answer == "":
+                cli_actions.run_steps(
+                    "ai-suggest-run",
+                    [item["command"]],
+                    log_path=log_path,
+                    analytics=args.analytics,
+                    assume_yes=True,
+                    confirm=True,
+                    payload={"suggestion_index": idx, "goal": args.goal},
+                )
     cli_actions.record_event_logged(
         "ai-suggest",
         {"exit_code": 0, "suggestion_count": len(suggestions)},
