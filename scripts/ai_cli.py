@@ -75,7 +75,7 @@ def _publish_event(args: argparse.Namespace, name: str, payload: dict[str, Any])
     cli_actions.record_event_logged(name, payload, enabled=args.analytics)
     if args.analytics and getattr(args, "nats_url", None):
         try:
-            asyncio.run(ume_events.publish_event(args.nats_url, name, payload))
+            asyncio.run(ume_events.publish_event(name, payload, url=args.nats_url))
 
         except Exception as exc:  # noqa: BLE001
             logging.debug("Failed to publish NATS event: %s", exc)
@@ -263,9 +263,11 @@ def _cmd_stats(args: argparse.Namespace) -> int:
 
 
 def _cmd_status(args: argparse.Namespace) -> int:
-    """Show remaining budget and last model source."""
+    """Show remaining budget, routing mode, and last model source."""
     budget, source = router.get_budget()
     print(f"Budget remaining: {budget}")
+    mode = os.environ.get("LLM_ROUTING_MODE", "auto")
+    print(f"Routing mode: {mode}")
     print(f"Last model source: {source or 'unknown'}")
     return 0
 

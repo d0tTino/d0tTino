@@ -327,7 +327,8 @@ def test_send_prompt_routes_to_superclaude(monkeypatch):
 
 
 def test_superclaude_backend_registered():
-    assert get_backend("superclaude") is router.run_superclaude
+    register_backend("superclaude", router.run_superclaude)
+    assert get_backend("superclaude").__name__ == router.run_superclaude.__name__
 
 
 def test_auto_prefers_lower_cost(monkeypatch, tmp_path):

@@ -76,7 +76,10 @@ def execute_steps(
         return 0
 
     if any("[risk:" in step.command for step in step_list) and not confirm:
-        print("Risky commands present. Re-run with --confirm to execute.", file=sys.stderr)
+        print(
+            "Risky commands present. Re-run with --confirm to execute.",
+            file=sys.stderr,
+        )
         return 1
 
     exit_code = 0
