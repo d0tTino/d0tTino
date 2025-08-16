@@ -37,6 +37,7 @@ def run_steps(
     assume_yes: bool = False,
     confirm: bool = False,
     allowed_capabilities: set[str] | None = None,
+    dry_run_log: list[str] | None = None,
 ) -> int:
     """Execute ``steps`` and record an analytics event."""
     start = time.time()
@@ -55,6 +56,7 @@ def run_steps(
         confirm=confirm,
         allowed_capabilities=allowed_capabilities,
     )
+
     end = time.time()
     data = {
         "exit_code": exit_code,

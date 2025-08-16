@@ -20,6 +20,7 @@ from scripts.cli_common import (
     PlanStep,
     read_prompt,
     build_analytics_parser,
+    execute_steps,
 )
 import requests
 from scripts import cli_actions
@@ -109,14 +110,34 @@ def _cmd_suggest(args: argparse.Namespace) -> int:
         print(exc, file=sys.stderr)
         _publish_event(args, "ai-cli-suggest", {"exit_code": 1})
         return 1
-    for line in suggestions:
-        print(line)
+    log_path = Path.home() / ".config" / "d0tTino" / "ai_cli_suggest.log"
+    exit_code = 0
+    for idx, item in enumerate(suggestions, 1):
+        print(item["command"])
+        if item["rationale"]:
+            print(item["rationale"])
+        answer = input("Press Enter to run, anything else to skip: ").strip()
+        if answer == "":
+            payload = {"goal": args.goal, "suggestion_index": idx}
+            if _session.get("context"):
+                payload["context"] = _session["context"]
+            rc = cli_actions.run_steps(
+                "ai-cli-suggest-run",
+                [item["command"]],
+                log_path=log_path,
+                analytics=args.analytics,
+                payload=payload,
+                assume_yes=True,
+                confirm=True,
+            )
+            if exit_code == 0:
+                exit_code = rc
     _publish_event(
         args,
         "ai-cli-suggest",
-        {"exit_code": 0, "suggestion_count": len(suggestions)},
+        {"exit_code": exit_code, "suggestion_count": len(suggestions)},
     )
-    return 0
+    return exit_code
 
 
 def _clarify_goal(
@@ -167,20 +188,31 @@ def _cmd_do(args: argparse.Namespace) -> int:
     goal, steps = _clarify_goal(
         args.goal, config=args.config, analytics=args.analytics
     )
+    plan_steps = [s if isinstance(s, PlanStep) else PlanStep(i + 1, s) for i, s in enumerate(steps)]
+    dry_log: list[str] = []
+    args.log.parent.mkdir(parents=True, exist_ok=True)
+    execute_steps(plan_steps, log_path=args.log, dry_run=True, dry_run_log=dry_log)
+    if getattr(args, "dry_run", False):
+        return 0
+    if any("[risk:" in s.command for s in plan_steps) and not getattr(args, "confirm", False):
+        print(
+            "Risky commands present. Re-run with --confirm to execute.",
+            file=sys.stderr,
+        )
+        return 1
     kwargs: dict[str, Any] = {
         "log_path": args.log,
         "analytics": args.analytics,
-        "payload": {"goal": goal, "step_count": len(steps)},
+        "payload": {"goal": goal, "step_count": len(plan_steps)},
         "nats_url": args.nats_url,
         "jetstream": getattr(args, "jetstream", False),
+        "dry_run_log": dry_log,
     }
-    if getattr(args, "dry_run", False):
-        kwargs["dry_run"] = True
     if getattr(args, "yes", False):
         kwargs["assume_yes"] = True
     if getattr(args, "confirm", False):
         kwargs["confirm"] = True
-    return cli_actions.run_steps("ai-cli-do", steps, **kwargs)
+    return cli_actions.run_steps("ai-cli-do", plan_steps, **kwargs)
 
 
 def _cmd_recipe(args: argparse.Namespace) -> int:
@@ -263,9 +295,23 @@ def _cmd_stats(args: argparse.Namespace) -> int:
 
 
 def _cmd_status(args: argparse.Namespace) -> int:
-    """Show remaining budget, routing mode, and last model source."""
+    """Show remaining budget, a visual meter, routing mode, and last model source."""
     budget, source = router.get_budget()
-    print(f"Budget remaining: {budget}")
+    total: int | None = None
+    load_budget = getattr(router, "_load_budget", None)
+    if callable(load_budget):
+        try:
+            total = load_budget()
+        except Exception:  # pragma: no cover - best effort
+            total = None
+    if budget is not None and total:
+        width = 10
+        filled = int(budget / total * width)
+        meter = f"[{'#' * filled}{'-' * (width - filled)}]"
+        print(f"Budget remaining: {budget}/{total}")
+        print(f"Budget meter: {meter}")
+    else:
+        print(f"Budget remaining: {budget}")
     mode = os.environ.get("LLM_ROUTING_MODE", "auto")
     print(f"Routing mode: {mode}")
     print(f"Last model source: {source or 'unknown'}")
