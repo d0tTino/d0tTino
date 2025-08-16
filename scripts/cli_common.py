@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import secrets
 import shlex
 import subprocess
 import sys
@@ -34,6 +35,9 @@ class PlanStep:
     command: str
     diff: Optional[str] = None
     capabilities: Set[str] = field(default_factory=set)
+
+
+_SESSION_TOKENS: dict[str, str] = {}
 
 
 def _strip_risk_tag(command: str) -> str:
@@ -96,6 +100,7 @@ def execute_steps(
         for line in dry_run_log:
             print(line)
 
+
     for step in step_list:
         if not dry_run_log:
             print(f"{step.number}. {step.command}")
@@ -107,7 +112,10 @@ def execute_steps(
             skip_step = False
             for cap in sorted(missing_caps):
                 answer = input(f"Grant capability {cap.value}? [y/N]").strip().lower()
+
                 if answer == "y":
+                    token = secrets.token_hex(8)
+                    _SESSION_TOKENS[cap] = token
                     allowed.add(cap)
                     with log_path.open("a", encoding="utf-8") as log:
                         log.write(f"[granted capability: {cap.value}]\n")
@@ -117,6 +125,7 @@ def execute_steps(
                     with log_path.open("a", encoding="utf-8") as log:
                         log.write(f"$ {step.command}\n")
                         log.write(f"[missing capabilities: {cap.value}]\n")
+
                         log.write("(skipped)\n\n")
                     if not exit_code:
                         exit_code = 1

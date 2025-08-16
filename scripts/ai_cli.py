@@ -110,14 +110,34 @@ def _cmd_suggest(args: argparse.Namespace) -> int:
         print(exc, file=sys.stderr)
         _publish_event(args, "ai-cli-suggest", {"exit_code": 1})
         return 1
-    for line in suggestions:
-        print(line)
+    log_path = Path.home() / ".config" / "d0tTino" / "ai_cli_suggest.log"
+    exit_code = 0
+    for idx, item in enumerate(suggestions, 1):
+        print(item["command"])
+        if item["rationale"]:
+            print(item["rationale"])
+        answer = input("Press Enter to run, anything else to skip: ").strip()
+        if answer == "":
+            payload = {"goal": args.goal, "suggestion_index": idx}
+            if _session.get("context"):
+                payload["context"] = _session["context"]
+            rc = cli_actions.run_steps(
+                "ai-cli-suggest-run",
+                [item["command"]],
+                log_path=log_path,
+                analytics=args.analytics,
+                payload=payload,
+                assume_yes=True,
+                confirm=True,
+            )
+            if exit_code == 0:
+                exit_code = rc
     _publish_event(
         args,
         "ai-cli-suggest",
-        {"exit_code": 0, "suggestion_count": len(suggestions)},
+        {"exit_code": exit_code, "suggestion_count": len(suggestions)},
     )
-    return 0
+    return exit_code
 
 
 def _clarify_goal(
@@ -275,9 +295,23 @@ def _cmd_stats(args: argparse.Namespace) -> int:
 
 
 def _cmd_status(args: argparse.Namespace) -> int:
-    """Show remaining budget, routing mode, and last model source."""
+    """Show remaining budget, a visual meter, routing mode, and last model source."""
     budget, source = router.get_budget()
-    print(f"Budget remaining: {budget}")
+    total: int | None = None
+    load_budget = getattr(router, "_load_budget", None)
+    if callable(load_budget):
+        try:
+            total = load_budget()
+        except Exception:  # pragma: no cover - best effort
+            total = None
+    if budget is not None and total:
+        width = 10
+        filled = int(budget / total * width)
+        meter = f"[{'#' * filled}{'-' * (width - filled)}]"
+        print(f"Budget remaining: {budget}/{total}")
+        print(f"Budget meter: {meter}")
+    else:
+        print(f"Budget remaining: {budget}")
     mode = os.environ.get("LLM_ROUTING_MODE", "auto")
     print(f"Routing mode: {mode}")
     print(f"Last model source: {source or 'unknown'}")
