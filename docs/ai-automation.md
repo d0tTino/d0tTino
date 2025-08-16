@@ -230,6 +230,34 @@ approved.
 This interactive review makes the workflow safer by ensuring you see and approve
 every step before it runs.
 
+### Default flow
+
+Running `ai-cli do` is the recommended default. The command performs four
+stages:
+
+1. **Plan** – draft shell commands for the goal.
+2. **Dry-run** – write the numbered steps to `ai_do.log` and print them for
+   review.
+3. **Capability prompts** – grant required scopes such as
+   `filesystem.read`, `process.exec` or `network.fetch` before each step.
+4. **Execute** – only steps marked without a `[risk:*]` tag run
+   automatically. Commands tagged with `[risk:...]` require `--confirm`.
+
+Example:
+
+```bash
+ai-cli do "set up the project" --confirm
+```
+
+If a step needs extra permissions the CLI asks, for example:
+
+```
+Grant capability process.exec? [y/N]
+```
+
+This default flow ensures every risky or privileged action is visible in the
+dry-run log and explicitly approved before it executes.
+
 ## Few-Shot Logging with DSPy
 
 DSPy's `LoggedFewShotWrapper` lets you record a module's inputs and outputs and
