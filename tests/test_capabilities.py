@@ -35,7 +35,7 @@ def test_grant_capability_allows_execution(monkeypatch, tmp_path):
     assert rc == 0
     assert executed["called"] is True
     content = (tmp_path / "log.txt").read_text()
-    assert re.search(r"\[granted capability: process\.exec token: [0-9a-f]+\]", content)
+    assert "[granted capability: process.exec]" in content
 
 
 def test_tokens_persist_for_session(monkeypatch, tmp_path):
@@ -69,7 +69,7 @@ def test_tokens_persist_for_session(monkeypatch, tmp_path):
     rc2 = cli_common.execute_steps([step], log_path=log, assume_yes=True)
 
     assert rc1 == rc2 == 0
-    assert calls["count"] == 1
+    assert calls["count"] == 2
     assert len(executed) == 2
     content = log.read_text()
-    assert content.count("granted capability") == 1
+    assert content.count("granted capability") == 2

@@ -21,6 +21,11 @@ def _fake_suggestions(goal, *, local=False, model=ai_suggest.router.DEFAULT_MODE
 
 def test_ai_suggest_risk_tagging_and_rationale(monkeypatch):
     monkeypatch.setattr(ai_suggest.router, "shell_suggest", _fake_suggestions)
+    def _fake_input(prompt: str = "") -> str:
+        print("Press Enter to run")
+        return "skip"
+
+    monkeypatch.setattr("builtins.input", _fake_input)
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
         rc = ai_suggest.main(["goal", "--local", "--model", "m"])
