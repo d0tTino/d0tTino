@@ -210,6 +210,39 @@ def test_load_registry_fetches_with_zero_ttl(monkeypatch, tmp_path):
     assert registry == {"y": "pkg"}
 
 
+def test_load_registry_surfaces_mcp_metadata(monkeypatch, tmp_path):
+    cache = tmp_path / "cache.json"
+    monkeypatch.setattr(plugins, "CACHE_PATH", cache)
+
+    data = {
+        "plugins": {
+            "example": {
+                "package": "pkg",
+                "mcp": {
+                    "server_url": "https://example.com",
+                    "capabilities": ["x"],
+                },
+            }
+        }
+    }
+
+    monkeypatch.setattr(plugins, "_fetch_registry", lambda url: data)
+    monkeypatch.setenv("PLUGIN_REGISTRY_URL", "https://example.com")
+
+    registry = plugins.load_registry(raw=True, update=True)
+    meta = registry["example"]["mcp"]
+    assert meta["server_url"] == "https://example.com"
+    assert meta["capabilities"] == ["x"]
+
+
+def test_example_mcp_plugin_metadata():
+    from plugins import example_mcp_plugin
+
+    meta = example_mcp_plugin.mcp_tool()
+    assert meta["server_url"] == "https://example.com/mcp"
+    assert meta["capabilities"] == ["echo"]
+
+
 def test_builtin_plugins_present(monkeypatch, tmp_path):
     monkeypatch.setattr(plugins, "CACHE_PATH", tmp_path / "missing.json")
 

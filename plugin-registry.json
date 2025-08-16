@@ -27,6 +27,13 @@
     "lmql": {
       "package": "d0ttino-lmql-plugin",
       "mcp": {}
+    },
+    "example_mcp": {
+      "package": "d0ttino-example-mcp-plugin",
+      "mcp": {
+        "server_url": "https://example.com/mcp",
+        "capabilities": ["echo"]
+      }
     }
   },
   "recipes": {
