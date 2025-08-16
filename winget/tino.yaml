@@ -1,6 +1,6 @@
 PackageIdentifier: Tino.d0tTino
 # The release script fills in the version, installer URL and hash
-PackageVersion: "1.0.0"
+PackageVersion: "1.0.1"
 PackageLocale: en-US
 Publisher: d0tTino
 PackageName: d0tTino
@@ -10,7 +10,7 @@ PackageUrl: https://github.com/d0tTino/d0tTino
 Installers:
   - Architecture: x64
     InstallerType: zip
-    InstallerUrl: https://github.com/d0tTino/d0tTino/releases/download/v1.0.0/tino-windows-1.0.0.zip
-    Sha256: "F9045DE4815968CF632A2A33D5C56F6234DF241AA39EC259B44480B7FE3782D6"
+    InstallerUrl: https://github.com/d0tTino/d0tTino/releases/download/v1.0.1/tino-windows-1.0.1.zip
+    Sha256: "1261807F8311AAC9C34283AC1B26319740EF0864E77CE5200D04CCA362FBFF6E"
 ManifestType: singleton
 ManifestVersion: 1.6.0
