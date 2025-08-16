@@ -17,7 +17,20 @@
           },
           "mcp": {
             "type": "object",
-            "description": "MCP metadata for the plug-in"
+            "description": "MCP metadata for the plug-in",
+            "properties": {
+              "server_url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Base URL for the MCP server"
+              },
+              "capabilities": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Capabilities exposed by the server"
+              }
+            },
+            "additionalProperties": false
           }
         },
         "additionalProperties": false

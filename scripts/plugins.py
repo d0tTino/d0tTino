@@ -56,6 +56,7 @@ PLUGIN_REGISTRY: Dict[str, str] = {
     "anthropic": "d0ttino-anthropic-plugin",
     "mistral": "d0ttino-mistral-plugin",
     "lmql": "d0ttino-lmql-plugin",
+    "example_mcp": "d0ttino-example-mcp-plugin",
 }
 
 # Mapping of recipe name to pip package used as a fallback when a registry
@@ -233,7 +234,18 @@ def load_registry(
         mapping = data.get(section) or {}
         if isinstance(mapping, dict):
             if raw:
-                return mapping
+                result: Dict[str, Any] = {}
+                for k, v in mapping.items():
+                    if isinstance(v, str):
+                        result[str(k)] = {"package": v, "mcp": {}}
+                    elif isinstance(v, dict):
+                        pkg = v.get("package")
+                        mcp_meta = v.get("mcp")
+                        if not isinstance(mcp_meta, dict):
+                            mcp_meta = {}
+                        if isinstance(pkg, str):
+                            result[str(k)] = {"package": pkg, "mcp": mcp_meta}
+                return result
             result: Dict[str, str] = {}
             for k, v in mapping.items():
                 if isinstance(v, str):

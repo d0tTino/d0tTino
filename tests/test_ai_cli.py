@@ -508,7 +508,8 @@ def test_plan_nats_publish(monkeypatch):
     monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: [PlanStep(1, "one")])
     published = []
 
-    async def fake_publish(name, payload, url=None):
+    async def fake_publish(name, payload, *, url):
+
         published.append((url, name, payload))
         return True
 

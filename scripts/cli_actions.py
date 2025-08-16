@@ -47,16 +47,16 @@ def run_steps(
     if assume_yes and not confirm and risk_present:
         print("Risky commands present. User confirmation required.", file=sys.stderr)
         return 1
-    else:
-        exit_code = execute_steps(
-            step_list,
-            log_path=log_path,
-            dry_run=dry_run,
-            assume_yes=assume_yes,
-            confirm=confirm,
-            allowed_capabilities=allowed_capabilities,
-            dry_run_log=dry_run_log,
-        )
+
+    exit_code = execute_steps(
+        step_list,
+        log_path=log_path,
+        dry_run=dry_run,
+        assume_yes=assume_yes,
+        confirm=confirm,
+        allowed_capabilities=allowed_capabilities,
+    )
+
     end = time.time()
     data = {
         "exit_code": exit_code,
