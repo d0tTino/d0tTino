@@ -61,7 +61,8 @@ def test_status_reports_budget_and_source(monkeypatch):
         rc = ai_cli.main(["status"])
     assert rc == 0
     assert out.getvalue().splitlines() == [
-        "Budget remaining: 3",
+        "Budget remaining: 3/5",
+        "Budget meter: [######----]",
         "Routing mode: remote",
         "Last model source: gemini",
     ]

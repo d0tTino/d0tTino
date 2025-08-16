@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import secrets
 import shlex
 import subprocess
 import sys
@@ -34,6 +35,9 @@ class PlanStep:
     command: str
     diff: Optional[str] = None
     capabilities: Set[str] = field(default_factory=set)
+
+
+_SESSION_TOKENS: dict[str, str] = {}
 
 
 def _strip_risk_tag(command: str) -> str:
@@ -84,6 +88,7 @@ def execute_steps(
 
     exit_code = 0
     allowed = set(allowed_capabilities) if allowed_capabilities else set()
+    allowed.update(_SESSION_TOKENS.keys())
     for step in step_list:
         print(f"{step.number}. {step.command}")
         if step.diff:
@@ -93,17 +98,22 @@ def execute_steps(
         if missing_caps:
             skip_step = False
             for cap in sorted(missing_caps):
-                answer = input(f"Grant capability {cap}? [y/N]").strip().lower()
+                cap_name = cap.value if hasattr(cap, "value") else str(cap)
+                answer = input(f"Grant capability {cap_name}? [y/N]").strip().lower()
                 if answer == "y":
+                    token = secrets.token_hex(8)
+                    _SESSION_TOKENS[cap] = token
                     allowed.add(cap)
                     with log_path.open("a", encoding="utf-8") as log:
-                        log.write(f"[granted capability: {cap}]\n")
+                        log.write(
+                            f"[granted capability: {cap_name} token: {token}]\n"
+                        )
                 else:
-                    msg = f"Missing capabilities: {cap}"
+                    msg = f"Missing capabilities: {cap_name}"
                     print(msg, file=sys.stderr)
                     with log_path.open("a", encoding="utf-8") as log:
                         log.write(f"$ {step.command}\n")
-                        log.write(f"[missing capabilities: {cap}]\n")
+                        log.write(f"[missing capabilities: {cap_name}]\n")
                         log.write("(skipped)\n\n")
                     if not exit_code:
                         exit_code = 1
