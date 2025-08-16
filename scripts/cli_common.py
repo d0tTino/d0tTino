@@ -56,6 +56,7 @@ def execute_steps(
     assume_yes: bool = False,
     confirm: bool = False,
     allowed_capabilities: Set[str] | None = None,
+    dry_run_log: list[str] | None = None,
 ) -> int:
     """Execute ``steps`` and write a log to ``log_path``.
 
@@ -66,10 +67,14 @@ def execute_steps(
     step_list = list(steps)
 
     if dry_run:
+        lines: list[str] = []
         for step in step_list:
-            print(f"{step.number}. {step.command}")
+            line = f"{step.number}. {step.command}"
+            print(line)
+            lines.append(line)
             if step.diff:
                 print(step.diff)
+                lines.append(step.diff)
         for step in step_list:
             with log_path.open("a", encoding="utf-8") as log:
                 log.write(f"$ {step.command}\n")
@@ -77,6 +82,8 @@ def execute_steps(
                     log.write(f"{step.diff}\n")
                 log.write(f"[capabilities: {', '.join(sorted(step.capabilities))}]\n")
                 log.write("(dry-run)\n\n")
+        if dry_run_log is not None:
+            dry_run_log.extend(lines)
         return 0
 
     if any("[risk:" in step.command for step in step_list) and not confirm:
@@ -88,32 +95,37 @@ def execute_steps(
 
     exit_code = 0
     allowed = set(allowed_capabilities) if allowed_capabilities else set()
-    allowed.update(_SESSION_TOKENS.keys())
+
+    if dry_run_log:
+        for line in dry_run_log:
+            print(line)
+
+
     for step in step_list:
-        print(f"{step.number}. {step.command}")
-        if step.diff:
-            print(step.diff)
+        if not dry_run_log:
+            print(f"{step.number}. {step.command}")
+            if step.diff:
+                print(step.diff)
 
         missing_caps = step.capabilities - allowed
         if missing_caps:
             skip_step = False
             for cap in sorted(missing_caps):
-                cap_name = cap.value if hasattr(cap, "value") else str(cap)
-                answer = input(f"Grant capability {cap_name}? [y/N]").strip().lower()
+                answer = input(f"Grant capability {cap.value}? [y/N]").strip().lower()
+
                 if answer == "y":
                     token = secrets.token_hex(8)
                     _SESSION_TOKENS[cap] = token
                     allowed.add(cap)
                     with log_path.open("a", encoding="utf-8") as log:
-                        log.write(
-                            f"[granted capability: {cap_name} token: {token}]\n"
-                        )
+                        log.write(f"[granted capability: {cap.value}]\n")
                 else:
-                    msg = f"Missing capabilities: {cap_name}"
+                    msg = f"Missing capabilities: {cap.value}"
                     print(msg, file=sys.stderr)
                     with log_path.open("a", encoding="utf-8") as log:
                         log.write(f"$ {step.command}\n")
-                        log.write(f"[missing capabilities: {cap_name}]\n")
+                        log.write(f"[missing capabilities: {cap.value}]\n")
+
                         log.write("(skipped)\n\n")
                     if not exit_code:
                         exit_code = 1

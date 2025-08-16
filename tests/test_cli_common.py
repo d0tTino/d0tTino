@@ -245,3 +245,27 @@ def test_execute_steps_logs_capabilities(monkeypatch, tmp_path):
 
     content = (tmp_path / "log.txt").read_text()
     assert "[capabilities: process.exec]" in content
+
+
+def test_execute_steps_reuses_dry_run_log(monkeypatch, tmp_path, capsys):
+    step = PlanStep(1, "echo hi")
+    log = tmp_path / "log.txt"
+    dry_log: list[str] = []
+    cli_common.execute_steps([step], log_path=log, dry_run=True, dry_run_log=dry_log)
+    assert dry_log
+    capsys.readouterr()
+
+    def fake_run(cmd, *, shell, capture_output, text):
+        class Result:
+            def __init__(self):
+                self.stdout = "done"
+                self.stderr = ""
+                self.returncode = 0
+
+        return Result()
+
+    monkeypatch.setattr(cli_common.subprocess, "run", fake_run)
+    cli_common.execute_steps([step], log_path=log, dry_run_log=dry_log, assume_yes=True)
+    out = capsys.readouterr().out.splitlines()
+    assert out.count("1. echo hi") == 1
+    assert "$ echo hi" in out
