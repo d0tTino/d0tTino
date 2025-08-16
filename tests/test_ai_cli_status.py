@@ -23,7 +23,8 @@ def test_status_reports_budget_depletion(monkeypatch):
         rc = ai_cli.main(["status"])
     assert rc == 0
     assert out.getvalue().splitlines() == [
-        "Budget remaining: 0",
+        "Budget remaining: 0/1",
+        "Budget meter: [----------]",
         "Routing mode: remote",
         "Last model source: gemini",
     ]
