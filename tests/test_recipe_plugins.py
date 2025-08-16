@@ -93,4 +93,16 @@ def test_builtin_curated_recipes():
         "winget install -e --id Nvidia.DisplayDriver",
         "winget install -e --id Nvidia.CUDA",
     ]
+    assert mapping["git"]("") == [
+        "winget install -e --id Git.Git",
+    ]
+    assert mapping["starship"]("") == [
+        "winget install -e --id Starship.Starship",
+    ]
+    assert mapping["windows_terminal"]("") == [
+        "winget install -e --id Microsoft.WindowsTerminal",
+    ]
+    assert mapping["fastfetch"]("") == [
+        "winget install -e --id Fastfetch.Fastfetch",
+    ]
 

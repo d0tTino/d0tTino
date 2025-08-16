@@ -64,10 +64,12 @@ PLUGIN_REGISTRY: Dict[str, str] = {
 RECIPE_REGISTRY: Dict[str, str] = {
     # Curated recipes shipped with the repository
     "docker_desktop": "d0ttino-docker-desktop-recipe",
+    "fastfetch": "d0ttino-fastfetch-recipe",
     "git": "d0ttino-git-recipe",
     "gpu_drivers": "d0ttino-gpu-drivers-recipe",
     "nodejs": "d0ttino-nodejs-recipe",
     "powershell": "d0ttino-powershell-recipe",
+    "starship": "d0ttino-starship-recipe",
     "vscode": "d0ttino-vscode-recipe",
     "windows_terminal": "d0ttino-windows-terminal-recipe",
     "wsl": "d0ttino-wsl-recipe",
@@ -234,18 +236,18 @@ def load_registry(
         mapping = data.get(section) or {}
         if isinstance(mapping, dict):
             if raw:
-                result: Dict[str, Any] = {}
+                raw_result: Dict[str, Any] = {}
                 for k, v in mapping.items():
                     if isinstance(v, str):
-                        result[str(k)] = {"package": v, "mcp": {}}
+                        raw_result[str(k)] = {"package": v, "mcp": {}}
                     elif isinstance(v, dict):
                         pkg = v.get("package")
                         mcp_meta = v.get("mcp")
                         if not isinstance(mcp_meta, dict):
                             mcp_meta = {}
                         if isinstance(pkg, str):
-                            result[str(k)] = {"package": pkg, "mcp": mcp_meta}
-                return result
+                            raw_result[str(k)] = {"package": pkg, "mcp": mcp_meta}
+                return raw_result
             result: Dict[str, str] = {}
             for k, v in mapping.items():
                 if isinstance(v, str):
