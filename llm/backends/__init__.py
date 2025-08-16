@@ -68,6 +68,9 @@ def register_backend(name: str, func: Callable[[str, str], str]) -> None:
 def get_backend(name: str) -> Callable[[str, str], str]:
     """Return the backend callable registered for ``name``."""
     key = name.lower()
+    if key == "superclaude":
+        from llm import router as _router
+        return _router.run_superclaude
     if key not in _BACKEND_REGISTRY:
         raise ValueError(f"Unknown backend: {name}")
     return _BACKEND_REGISTRY[key]

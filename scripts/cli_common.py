@@ -78,7 +78,10 @@ def execute_steps(
         return 0
 
     if any("[risk:" in step.command for step in step_list) and not confirm:
-        print("Risky commands present. Re-run with --confirm to execute.", file=sys.stderr)
+        print(
+            "Risky commands present. Re-run with --confirm to execute.",
+            file=sys.stderr,
+        )
         return 1
 
     exit_code = 0
@@ -88,17 +91,17 @@ def execute_steps(
         if missing_caps:
             skip_step = False
             for cap in sorted(missing_caps):
-                answer = input(f"Grant capability {cap.value}? [y/N]").strip().lower()
+                answer = input(f"Grant capability {cap}? [y/N]").strip().lower()
                 if answer == "y":
                     allowed.add(cap)
                     with log_path.open("a", encoding="utf-8") as log:
-                        log.write(f"[granted capability: {cap.value}]\n")
+                        log.write(f"[granted capability: {cap}]\n")
                 else:
-                    msg = f"Missing capabilities: {cap.value}"
+                    msg = f"Missing capabilities: {cap}"
                     print(msg, file=sys.stderr)
                     with log_path.open("a", encoding="utf-8") as log:
                         log.write(f"$ {step.command}\n")
-                        log.write(f"[missing capabilities: {cap.value}]\n")
+                        log.write(f"[missing capabilities: {cap}]\n")
                         log.write("(skipped)\n\n")
                     if not exit_code:
                         exit_code = 1
@@ -141,7 +144,7 @@ def execute_steps(
         with log_path.open("a", encoding="utf-8") as log:
             log.write(f"$ {step.command}\n")
             log.write(
-                f"[capabilities: {', '.join(sorted(c.value for c in step.capabilities))}]\n"
+                f"[capabilities: {', '.join(sorted(step.capabilities))}]\n"
             )
             if result.stdout:
                 log.write(result.stdout)

@@ -62,6 +62,7 @@ def test_status_reports_budget_and_source(monkeypatch):
     assert rc == 0
     assert out.getvalue().splitlines() == [
         "Budget remaining: 3",
+        "Routing mode: remote",
         "Last model source: gemini",
     ]
 

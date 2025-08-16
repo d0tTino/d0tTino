@@ -15,7 +15,6 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from urllib.request import urlopen
 
 import yaml
 
@@ -40,11 +39,29 @@ def tag_version(tag: str) -> str:
     return tag[1:] if tag.startswith("v") else tag
 
 
-def download_sha256(url: str) -> str:
-    """Download *url* and return its sha256 hex digest."""
-    with urlopen(url) as resp:  # nosec - url comes from our own repository
-        data = resp.read()
-    return hashlib.sha256(data).hexdigest()
+def build_archive(tag: str, version: str) -> Path:
+    """Create the release archive for the given *tag* and *version*."""
+    archive = REPO / f"tino-windows-{version}.zip"
+    if archive.exists():
+        archive.unlink()
+    run([
+        "git",
+        "archive",
+        tag,
+        "--format=zip",
+        "--output",
+        str(archive),
+    ])
+    return archive
+
+
+def file_sha256(path: Path) -> str:
+    """Return the sha256 hex digest of *path*."""
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(8192), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 def update_winget(tag: str, version: str, sha: str) -> Path:
@@ -101,8 +118,8 @@ def publish_scoop(manifest: Path, repo_url: str) -> None:
 def main() -> None:
     tag = latest_tag()
     version = tag_version(tag)
-    url = f"https://github.com/d0tTino/d0tTino/releases/download/{tag}/tino-windows-{version}.zip"
-    sha = download_sha256(url)
+    archive = build_archive(tag, version)
+    sha = file_sha256(archive)
 
     winget_path = update_winget(tag, version, sha)
     scoop_path = update_scoop(tag, version, sha)

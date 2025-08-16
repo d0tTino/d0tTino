@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import time
 import asyncio
+import sys
 from pathlib import Path
 from typing import Iterable, Callable, Sequence, Any
 
@@ -40,14 +41,27 @@ def run_steps(
     """Execute ``steps`` and record an analytics event."""
     start = time.time()
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    exit_code = execute_steps(
-        steps,
-        log_path=log_path,
-        dry_run=dry_run,
-        assume_yes=assume_yes,
-        confirm=confirm,
-        allowed_capabilities=allowed_capabilities,
-    )
+    step_list = [s if isinstance(s, PlanStep) else PlanStep(i + 1, s) for i, s in enumerate(steps)]
+    risk_present = any("[risk:" in s.command for s in step_list)
+    if assume_yes and not confirm and risk_present:
+        print("Risky commands present. User confirmation required.", file=sys.stderr)
+        exit_code = execute_steps(
+            step_list,
+            log_path=log_path,
+            dry_run=dry_run,
+            assume_yes=False,
+            confirm=True,
+            allowed_capabilities=allowed_capabilities,
+        )
+    else:
+        exit_code = execute_steps(
+            step_list,
+            log_path=log_path,
+            dry_run=dry_run,
+            assume_yes=assume_yes,
+            confirm=confirm,
+            allowed_capabilities=allowed_capabilities,
+        )
     end = time.time()
     data = {
         "exit_code": exit_code,
