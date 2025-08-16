@@ -20,6 +20,7 @@ from scripts.cli_common import (
     PlanStep,
     read_prompt,
     build_analytics_parser,
+    execute_steps,
 )
 import requests
 from scripts import cli_actions
@@ -167,20 +168,31 @@ def _cmd_do(args: argparse.Namespace) -> int:
     goal, steps = _clarify_goal(
         args.goal, config=args.config, analytics=args.analytics
     )
+    plan_steps = [s if isinstance(s, PlanStep) else PlanStep(i + 1, s) for i, s in enumerate(steps)]
+    dry_log: list[str] = []
+    args.log.parent.mkdir(parents=True, exist_ok=True)
+    execute_steps(plan_steps, log_path=args.log, dry_run=True, dry_run_log=dry_log)
+    if getattr(args, "dry_run", False):
+        return 0
+    if any("[risk:" in s.command for s in plan_steps) and not getattr(args, "confirm", False):
+        print(
+            "Risky commands present. Re-run with --confirm to execute.",
+            file=sys.stderr,
+        )
+        return 1
     kwargs: dict[str, Any] = {
         "log_path": args.log,
         "analytics": args.analytics,
-        "payload": {"goal": goal, "step_count": len(steps)},
+        "payload": {"goal": goal, "step_count": len(plan_steps)},
         "nats_url": args.nats_url,
         "jetstream": getattr(args, "jetstream", False),
+        "dry_run_log": dry_log,
     }
-    if getattr(args, "dry_run", False):
-        kwargs["dry_run"] = True
     if getattr(args, "yes", False):
         kwargs["assume_yes"] = True
     if getattr(args, "confirm", False):
         kwargs["confirm"] = True
-    return cli_actions.run_steps("ai-cli-do", steps, **kwargs)
+    return cli_actions.run_steps("ai-cli-do", plan_steps, **kwargs)
 
 
 def _cmd_recipe(args: argparse.Namespace) -> int:

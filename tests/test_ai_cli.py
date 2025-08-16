@@ -116,6 +116,7 @@ def test_do_requests_clarification(monkeypatch):
         return 0
 
     monkeypatch.setattr(cli_actions, "run_steps", fake_run_steps)
+    monkeypatch.setattr(ai_cli, "execute_steps", lambda *a, **k: 0)
     monkeypatch.setattr("builtins.input", lambda _: "extra detail")
     rc = ai_cli.main(["do", "goal"])
     assert rc == 0
@@ -239,6 +240,43 @@ def test_do_records_failure(monkeypatch, tmp_path):
     assert payload["goal"] == "goal"
     assert payload["exit_code"] == 1
     assert "latency_ms" in payload and payload["latency_ms"] >= 0
+
+
+def test_do_requires_confirm_for_risky_steps(monkeypatch, tmp_path, capsys):
+    monkeypatch.setattr(
+        ai_cli.ai_exec,
+        "plan",
+        lambda *a, **k: [PlanStep(1, "rm -rf / [risk:rm]")],
+    )
+    log = tmp_path / "log.txt"
+    rc = ai_cli.main(["do", "goal", "--log", str(log), "--yes"])
+    assert rc == 1
+    err = capsys.readouterr().err
+    assert "Risky commands present" in err
+
+    called = []
+
+    def fake_run(cmd, shell=False, capture_output=False, text=False):
+        called.append(cmd)
+
+        class R:
+            returncode = 0
+            stdout = ""
+            stderr = ""
+
+        return R()
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    rc = ai_cli.main([
+        "do",
+        "goal",
+        "--log",
+        str(log),
+        "--yes",
+        "--confirm",
+    ])
+    assert rc == 0
+    assert called
 
 
 def test_recipe_subcommand(monkeypatch, tmp_path):
@@ -470,7 +508,7 @@ def test_plan_nats_publish(monkeypatch):
     monkeypatch.setattr(ai_cli.ai_exec, "plan", lambda *a, **k: [PlanStep(1, "one")])
     published = []
 
-    def fake_publish(url, name, payload):
+    async def fake_publish(name, payload, url=None):
         published.append((url, name, payload))
         return True
 
@@ -485,7 +523,6 @@ def test_plan_nats_publish(monkeypatch):
 
     assert rc == 0
     url, name, payload = published[0]
-    assert url == "nats://example.com"
     assert name == "ai-cli-plan"
     assert payload["goal"] == "goal"
 

@@ -37,6 +37,7 @@ def run_steps(
     assume_yes: bool = False,
     confirm: bool = False,
     allowed_capabilities: set[str] | None = None,
+    dry_run_log: list[str] | None = None,
 ) -> int:
     """Execute ``steps`` and record an analytics event."""
     start = time.time()
@@ -45,14 +46,7 @@ def run_steps(
     risk_present = any("[risk:" in s.command for s in step_list)
     if assume_yes and not confirm and risk_present:
         print("Risky commands present. User confirmation required.", file=sys.stderr)
-        exit_code = execute_steps(
-            step_list,
-            log_path=log_path,
-            dry_run=dry_run,
-            assume_yes=False,
-            confirm=True,
-            allowed_capabilities=allowed_capabilities,
-        )
+        return 1
     else:
         exit_code = execute_steps(
             step_list,
@@ -61,6 +55,7 @@ def run_steps(
             assume_yes=assume_yes,
             confirm=confirm,
             allowed_capabilities=allowed_capabilities,
+            dry_run_log=dry_run_log,
         )
     end = time.time()
     data = {
