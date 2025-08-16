@@ -263,9 +263,23 @@ def _cmd_stats(args: argparse.Namespace) -> int:
 
 
 def _cmd_status(args: argparse.Namespace) -> int:
-    """Show remaining budget, routing mode, and last model source."""
+    """Show remaining budget, a visual meter, routing mode, and last model source."""
     budget, source = router.get_budget()
-    print(f"Budget remaining: {budget}")
+    total: int | None = None
+    load_budget = getattr(router, "_load_budget", None)
+    if callable(load_budget):
+        try:
+            total = load_budget()
+        except Exception:  # pragma: no cover - best effort
+            total = None
+    if budget is not None and total:
+        width = 10
+        filled = int(budget / total * width)
+        meter = f"[{'#' * filled}{'-' * (width - filled)}]"
+        print(f"Budget remaining: {budget}/{total}")
+        print(f"Budget meter: {meter}")
+    else:
+        print(f"Budget remaining: {budget}")
     mode = os.environ.get("LLM_ROUTING_MODE", "auto")
     print(f"Routing mode: {mode}")
     print(f"Last model source: {source or 'unknown'}")
