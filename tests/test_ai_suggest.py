@@ -22,8 +22,8 @@ def _fake_suggestions(goal, *, local=False, model=ai_suggest.router.DEFAULT_MODE
 def test_ai_suggest_risk_tagging_and_rationale(monkeypatch):
     monkeypatch.setattr(ai_suggest.router, "shell_suggest", _fake_suggestions)
     def _fake_input(prompt: str = "") -> str:
-        print("Press Enter to run")
-        return "skip"
+        print(prompt)
+        return ""
 
     monkeypatch.setattr("builtins.input", _fake_input)
     out = io.StringIO()
@@ -31,16 +31,14 @@ def test_ai_suggest_risk_tagging_and_rationale(monkeypatch):
         rc = ai_suggest.main(["goal", "--local", "--model", "m"])
     assert rc == 0
     lines = out.getvalue().splitlines()
-    assert len(lines) == 9  # 3 suggestions * 3 lines each
-    assert lines[0].endswith("[risk:rm]")
+    assert len(lines) == 7  # 3 suggestions * 2 lines + 1 prompt
+    assert lines[0].startswith("1. ") and lines[0].endswith("[risk:rm]")
     assert lines[1] == "wipe everything"
-    assert lines[2] == "Press Enter to run"
-    assert lines[3].endswith("[risk:reboot]")
-    assert lines[4] == "restart"
-    assert lines[5] == "Press Enter to run"
-    assert lines[6].endswith("[risk:info]")
-    assert lines[7] == "list"
-    assert lines[8] == "Press Enter to run"
+    assert lines[2].startswith("2. ") and lines[2].endswith("[risk:reboot]")
+    assert lines[3] == "restart"
+    assert lines[4].startswith("3. ") and lines[4].endswith("[risk:info]")
+    assert lines[5] == "list"
+    assert lines[6].startswith("Select command to run")
 
 
 def test_ai_suggest_json_output(monkeypatch):

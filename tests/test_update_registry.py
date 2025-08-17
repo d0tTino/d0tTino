@@ -23,7 +23,13 @@ def test_update_registry_rewrites_outdated_file(tmp_path, monkeypatch):
     monkeypatch.setattr(update_registry, "load_registry", lambda path=reg: orig_load(path))
     rc = update_registry.main([])
     assert rc == 0
-    expected = {"plugins": plugins.PLUGIN_REGISTRY, "recipes": plugins.RECIPE_REGISTRY}
+    expected = {
+        "plugins": {
+            name: {"package": pkg, "mcp": {}}
+            for name, pkg in plugins.PLUGIN_REGISTRY.items()
+        },
+        "recipes": plugins.RECIPE_REGISTRY,
+    }
     assert json.loads(reg.read_text(encoding="utf-8")) == expected
 
 
@@ -34,7 +40,13 @@ def test_update_registry_creates_missing_file(tmp_path, monkeypatch):
     monkeypatch.setattr(update_registry, "load_registry", lambda path=reg: orig_load(path))
     rc = update_registry.main([])
     assert rc == 0
-    expected = {"plugins": plugins.PLUGIN_REGISTRY, "recipes": plugins.RECIPE_REGISTRY}
+    expected = {
+        "plugins": {
+            name: {"package": pkg, "mcp": {}}
+            for name, pkg in plugins.PLUGIN_REGISTRY.items()
+        },
+        "recipes": plugins.RECIPE_REGISTRY,
+    }
     assert json.loads(reg.read_text(encoding="utf-8")) == expected
 
 

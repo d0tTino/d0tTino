@@ -22,7 +22,7 @@ async def _connect(url: str = DEFAULT_NATS_URL) -> NATS:
         servers=[url],
         connect_timeout=1,
         max_reconnect_attempts=1,
-        reconnect_time_wait=0.1,
+        reconnect_time_wait=1,
     )
     return nc
 
