@@ -63,18 +63,27 @@
 				{
 					"PackageIdentifier" : "OpenJS.NodeJS.LTS"
 				},
-				{
-					"PackageIdentifier" : "Nvidia.PhysX"
-				},
-				{
-					"PackageIdentifier" : "wez.wezterm"
-				},
-				{
-					"PackageIdentifier" : "Starship.Starship"
-				},
-				{
-					"PackageIdentifier" : "GoLang.Go"
-				},
+                                {
+                                        "PackageIdentifier" : "Nvidia.PhysX"
+                                },
+                                {
+                                        "PackageIdentifier" : "Nvidia.DisplayDriver"
+                                },
+                                {
+                                        "PackageIdentifier" : "Nvidia.CUDA"
+                                },
+                                {
+                                        "PackageIdentifier" : "wez.wezterm"
+                                },
+                                {
+                                        "PackageIdentifier" : "Starship.Starship"
+                                },
+                                {
+                                        "PackageIdentifier" : "Fastfetch.Fastfetch"
+                                },
+                                {
+                                        "PackageIdentifier" : "GoLang.Go"
+                                },
 				{
 					"PackageIdentifier" : "Microsoft.VisualStudio.2019.BuildTools"
 				},

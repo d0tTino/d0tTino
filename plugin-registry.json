@@ -30,10 +30,7 @@
     },
     "example_mcp": {
       "package": "d0ttino-example-mcp-plugin",
-      "mcp": {
-        "server_url": "https://example.com/mcp",
-        "capabilities": ["echo"]
-      }
+      "mcp": {}
     }
   },
   "recipes": {
@@ -45,6 +42,8 @@
     "windows_terminal": "d0ttino-windows-terminal-recipe",
     "powershell": "d0ttino-powershell-recipe",
     "nodejs": "d0ttino-nodejs-recipe",
-    "git": "d0ttino-git-recipe"
+    "git": "d0ttino-git-recipe",
+    "starship": "d0ttino-starship-recipe",
+    "fastfetch": "d0ttino-fastfetch-recipe"
   }
 }
