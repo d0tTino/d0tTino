@@ -111,20 +111,21 @@ def execute_steps(
         if missing_caps:
             skip_step = False
             for cap in sorted(missing_caps):
-                answer = input(f"Grant capability {cap.value}? [y/N]").strip().lower()
+                cap_name = cap.value if hasattr(cap, "value") else str(cap)
+                answer = input(f"Grant capability {cap_name}? [y/N]").strip().lower()
 
                 if answer == "y":
                     token = secrets.token_hex(8)
-                    _SESSION_TOKENS[cap] = token
-                    allowed.add(cap)
+                    _SESSION_TOKENS[cap_name] = token
+                    allowed.add(cap_name)
                     with log_path.open("a", encoding="utf-8") as log:
-                        log.write(f"[granted capability: {cap.value}]\n")
+                        log.write(f"[granted capability: {cap_name}]\n")
                 else:
-                    msg = f"Missing capabilities: {cap.value}"
+                    msg = f"Missing capabilities: {cap_name}"
                     print(msg, file=sys.stderr)
                     with log_path.open("a", encoding="utf-8") as log:
                         log.write(f"$ {step.command}\n")
-                        log.write(f"[missing capabilities: {cap.value}]\n")
+                        log.write(f"[missing capabilities: {cap_name}]\n")
 
                         log.write("(skipped)\n\n")
                     if not exit_code:

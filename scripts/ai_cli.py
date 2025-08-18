@@ -111,27 +111,29 @@ def _cmd_suggest(args: argparse.Namespace) -> int:
         _publish_event(args, "ai-cli-suggest", {"exit_code": 1})
         return 1
     log_path = Path.home() / ".config" / "d0tTino" / "ai_cli_suggest.log"
-    exit_code = 0
     for idx, item in enumerate(suggestions, 1):
-        print(item["command"])
+        print(f"{idx}. {item['command']}")
         if item["rationale"]:
             print(item["rationale"])
-        answer = input("Press Enter to run, anything else to skip: ").strip()
-        if answer == "":
+    choice = input(
+        f"Select command to run [1-{len(suggestions)}] or press Enter to skip: "
+    ).strip()
+    exit_code = 0
+    if choice.isdigit():
+        idx = int(choice)
+        if 1 <= idx <= len(suggestions):
             payload = {"goal": args.goal, "suggestion_index": idx}
             if _session.get("context"):
                 payload["context"] = _session["context"]
-            rc = cli_actions.run_steps(
+            exit_code = cli_actions.run_steps(
                 "ai-cli-suggest-run",
-                [item["command"]],
+                [PlanStep(1, suggestions[idx - 1]["command"])],
                 log_path=log_path,
                 analytics=args.analytics,
                 payload=payload,
                 assume_yes=True,
                 confirm=True,
             )
-            if exit_code == 0:
-                exit_code = rc
     _publish_event(
         args,
         "ai-cli-suggest",

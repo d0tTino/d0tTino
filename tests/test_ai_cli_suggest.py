@@ -11,7 +11,7 @@ def test_suggest_executes_selected_command(monkeypatch):
         "suggest",
         lambda goal, **kwargs: [{"command": "echo hi [risk:info]", "rationale": ""}],
     )
-    inputs = iter([""])
+    inputs = iter(["1"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
 
     captured = {}
@@ -29,7 +29,7 @@ def test_suggest_executes_selected_command(monkeypatch):
         rc = ai_cli.main(["suggest", "goal", "--analytics"])
     assert rc == 0
     assert captured["event"] == "ai-cli-suggest-run"
-    assert captured["steps"] == ["echo hi [risk:info]"]
+    assert captured["steps"][0].command == "echo hi [risk:info]"
     assert captured["kwargs"]["analytics"] is True
     payload = captured["kwargs"]["payload"]
     assert payload["goal"] == "goal"
@@ -43,7 +43,7 @@ def test_suggest_skips_on_input(monkeypatch):
         "suggest",
         lambda goal, **kwargs: [{"command": "echo hi [risk:info]", "rationale": ""}],
     )
-    inputs = iter(["n"])
+    inputs = iter([""])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
 
     calls = []
