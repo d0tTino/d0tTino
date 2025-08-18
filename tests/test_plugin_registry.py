@@ -235,6 +235,20 @@ def test_load_registry_surfaces_mcp_metadata(monkeypatch, tmp_path):
     assert meta["capabilities"] == ["x"]
 
 
+def test_example_mcp_plugin_in_registry(monkeypatch, tmp_path):
+    cache = tmp_path / "cache.json"
+    monkeypatch.setattr(plugins, "CACHE_PATH", cache)
+
+    registry_data = json.loads((plugins.REPO_ROOT / "plugin-registry.json").read_text())
+    monkeypatch.setattr(plugins, "_fetch_registry", lambda url: registry_data)
+    monkeypatch.setenv("PLUGIN_REGISTRY_URL", "https://example.com")
+
+    registry = plugins.load_registry(raw=True, update=True)
+    meta = registry["example_mcp"]["mcp"]
+    assert meta["server_url"] == "https://example.com/mcp"
+    assert meta["capabilities"] == ["echo"]
+
+
 def test_example_mcp_plugin_metadata():
     from plugins import example_mcp_plugin
 

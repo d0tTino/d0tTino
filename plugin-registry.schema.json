@@ -30,6 +30,7 @@
                 "description": "Capabilities exposed by the server"
               }
             },
+            "required": ["server_url", "capabilities"],
             "additionalProperties": false
           }
         },
