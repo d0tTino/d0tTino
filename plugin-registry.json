@@ -2,35 +2,59 @@
   "plugins": {
     "sample": {
       "package": "d0ttino-sample-plugin",
-      "mcp": {}
+      "mcp": {
+        "server_url": "https://example.com",
+        "capabilities": []
+      }
     },
     "openrouter": {
       "package": "d0ttino-openrouter-plugin",
-      "mcp": {}
+      "mcp": {
+        "server_url": "https://example.com",
+        "capabilities": []
+      }
     },
     "lobechat": {
       "package": "d0ttino-lobechat-plugin",
-      "mcp": {}
+      "mcp": {
+        "server_url": "https://example.com",
+        "capabilities": []
+      }
     },
     "mindbridge": {
       "package": "d0ttino-mindbridge-plugin",
-      "mcp": {}
+      "mcp": {
+        "server_url": "https://example.com",
+        "capabilities": []
+      }
     },
     "anthropic": {
       "package": "d0ttino-anthropic-plugin",
-      "mcp": {}
+      "mcp": {
+        "server_url": "https://example.com",
+        "capabilities": []
+      }
     },
     "mistral": {
       "package": "d0ttino-mistral-plugin",
-      "mcp": {}
+      "mcp": {
+        "server_url": "https://example.com",
+        "capabilities": []
+      }
     },
     "lmql": {
       "package": "d0ttino-lmql-plugin",
-      "mcp": {}
+      "mcp": {
+        "server_url": "https://example.com",
+        "capabilities": []
+      }
     },
     "example_mcp": {
       "package": "d0ttino-example-mcp-plugin",
-      "mcp": {}
+      "mcp": {
+        "server_url": "https://example.com/mcp",
+        "capabilities": ["echo"]
+      }
     }
   },
   "recipes": {
@@ -47,3 +71,4 @@
     "fastfetch": "d0ttino-fastfetch-recipe"
   }
 }
+

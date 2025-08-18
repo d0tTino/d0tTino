@@ -19,4 +19,7 @@ def test_plugin_registry_schema_valid() -> None:
 def test_plugins_include_mcp_metadata() -> None:
     data = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
     for plugin in data.get("plugins", {}).values():
-        assert "mcp" in plugin
+        mcp = plugin.get("mcp")
+        assert isinstance(mcp, dict)
+        assert "server_url" in mcp
+        assert "capabilities" in mcp

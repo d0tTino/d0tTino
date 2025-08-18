@@ -239,14 +239,32 @@ def load_registry(
                 raw_result: Dict[str, Any] = {}
                 for k, v in mapping.items():
                     if isinstance(v, str):
-                        raw_result[str(k)] = {"package": v, "mcp": {}}
+                        raw_result[str(k)] = {
+                            "package": v,
+                            "mcp": {"server_url": "", "capabilities": []},
+                        }
                     elif isinstance(v, dict):
                         pkg = v.get("package")
                         mcp_meta = v.get("mcp")
                         if not isinstance(mcp_meta, dict):
                             mcp_meta = {}
+                        server_url = mcp_meta.get("server_url")
+                        if not isinstance(server_url, str):
+                            server_url = ""
+                        capabilities = mcp_meta.get("capabilities")
+                        if not (
+                            isinstance(capabilities, list)
+                            and all(isinstance(c, str) for c in capabilities)
+                        ):
+                            capabilities = []
                         if isinstance(pkg, str):
-                            raw_result[str(k)] = {"package": pkg, "mcp": mcp_meta}
+                            raw_result[str(k)] = {
+                                "package": pkg,
+                                "mcp": {
+                                    "server_url": server_url,
+                                    "capabilities": capabilities,
+                                },
+                            }
                 return raw_result
             result: Dict[str, str] = {}
             for k, v in mapping.items():
@@ -263,7 +281,13 @@ def load_registry(
             return PLUGIN_REGISTRY
         return cast(
             Dict[str, Any],
-            {k: {"package": v, "mcp": {}} for k, v in PLUGIN_REGISTRY.items()},
+            {
+                k: {
+                    "package": v,
+                    "mcp": {"server_url": "", "capabilities": []},
+                }
+                for k, v in PLUGIN_REGISTRY.items()
+            },
         )
     return RECIPE_REGISTRY  # recipes not used with raw
 
