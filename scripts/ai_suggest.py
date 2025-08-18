@@ -13,7 +13,7 @@ from typing import Dict, List, Optional
 
 from llm import router
 from llm.backends import initialize
-from scripts.cli_common import build_analytics_parser
+from scripts.cli_common import build_analytics_parser, PlanStep
 from scripts import cli_actions
 from telemetry import analytics_default
 
@@ -92,14 +92,18 @@ def main(argv: Optional[List[str]] = None) -> int:
     else:
         log_path = Path.home() / ".config" / "d0tTino" / "ai_suggest.log"
         for idx, item in enumerate(suggestions, 1):
-            print(item["command"])
+            print(f"{idx}. {item['command']}")
             if item["rationale"]:
                 print(item["rationale"])
-            answer = input("Press Enter to run, anything else to skip: ").strip()
-            if answer == "":
+        choice = input(
+            f"Select command to run [1-{len(suggestions)}] or press Enter to skip: "
+        ).strip()
+        if choice.isdigit():
+            idx = int(choice)
+            if 1 <= idx <= len(suggestions):
                 cli_actions.run_steps(
                     "ai-suggest-run",
-                    [item["command"]],
+                    [PlanStep(1, suggestions[idx - 1]["command"])],
                     log_path=log_path,
                     analytics=args.analytics,
                     assume_yes=True,

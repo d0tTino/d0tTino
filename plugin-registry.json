@@ -30,10 +30,7 @@
     },
     "example_mcp": {
       "package": "d0ttino-example-mcp-plugin",
-      "mcp": {
-        "server_url": "https://example.com/mcp",
-        "capabilities": ["echo"]
-      }
+      "mcp": {}
     }
   },
   "recipes": {

@@ -1,5 +1,3 @@
-import re
-
 from scripts import cli_common
 from scripts.cli_common import PlanStep
 from scripts.capabilities import Capability

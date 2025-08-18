@@ -234,18 +234,18 @@ def load_registry(
         mapping = data.get(section) or {}
         if isinstance(mapping, dict):
             if raw:
-                result: Dict[str, Any] = {}
+                raw_result: Dict[str, Any] = {}
                 for k, v in mapping.items():
                     if isinstance(v, str):
-                        result[str(k)] = {"package": v, "mcp": {}}
+                        raw_result[str(k)] = {"package": v, "mcp": {}}
                     elif isinstance(v, dict):
                         pkg = v.get("package")
                         mcp_meta = v.get("mcp")
                         if not isinstance(mcp_meta, dict):
                             mcp_meta = {}
                         if isinstance(pkg, str):
-                            result[str(k)] = {"package": pkg, "mcp": mcp_meta}
-                return result
+                            raw_result[str(k)] = {"package": pkg, "mcp": mcp_meta}
+                return raw_result
             result: Dict[str, str] = {}
             for k, v in mapping.items():
                 if isinstance(v, str):
