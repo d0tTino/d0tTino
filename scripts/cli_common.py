@@ -112,6 +112,12 @@ def execute_steps(
             skip_step = False
             for cap in sorted(missing_caps):
                 cap_name = cap.value if hasattr(cap, "value") else str(cap)
+                if cap_name in _SESSION_TOKENS:
+                    token = _SESSION_TOKENS[cap_name]
+                    allowed.add(cap_name)
+                    with log_path.open("a", encoding="utf-8") as log:
+                        log.write(f"[using capability token: {cap_name}={token}]\n")
+                    continue
                 answer = input(f"Grant capability {cap_name}? [y/N]").strip().lower()
 
                 if answer == "y":
@@ -119,7 +125,7 @@ def execute_steps(
                     _SESSION_TOKENS[cap_name] = token
                     allowed.add(cap_name)
                     with log_path.open("a", encoding="utf-8") as log:
-                        log.write(f"[granted capability: {cap_name}]\n")
+                        log.write(f"[granted capability: {cap_name} token={token}]\n")
                 else:
                     msg = f"Missing capabilities: {cap_name}"
                     print(msg, file=sys.stderr)

@@ -57,12 +57,15 @@ def _load_budget() -> int | None:
     return int(budget_val) if isinstance(budget_val, int) else None
 
 
-_BUDGET = _load_budget()
+_TOTAL_BUDGET = _load_budget()
+_BUDGET = _TOTAL_BUDGET
 _LAST_MODEL_SOURCE: str | None = None
 
 
-def get_budget() -> tuple[int | None, str | None]:
-    return _BUDGET, _LAST_MODEL_SOURCE
+def get_budget() -> tuple[int | None, int | None, str | None]:
+    """Return remaining and total budget along with the last model source."""
+
+    return _BUDGET, _TOTAL_BUDGET, _LAST_MODEL_SOURCE
 
 
 def _decrement_budget(tokens: int) -> None:
