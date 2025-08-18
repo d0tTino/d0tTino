@@ -17,6 +17,28 @@ from scripts.cli_common import build_analytics_parser, PlanStep
 from scripts import cli_actions
 from telemetry import analytics_default
 
+
+def read_key() -> str:
+    """Return a single character from stdin without waiting for ``Enter``."""
+    try:  # Unix
+        import termios
+        import tty
+
+        fd = sys.stdin.fileno()
+        old = termios.tcgetattr(fd)
+        try:
+            tty.setraw(fd)
+            return sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old)
+    except Exception:
+        try:  # Windows fallback
+            import msvcrt  # type: ignore[import-not-found]
+
+            return msvcrt.getch().decode()
+        except Exception:  # pragma: no cover - extremely unlikely
+            return ""
+
 initialize()
 
 RISKY_COMMANDS = {"rm", "reboot", "shutdown", "poweroff", "mkfs", "dd"}
@@ -95,9 +117,13 @@ def main(argv: Optional[List[str]] = None) -> int:
             print(f"{idx}. {item['command']}")
             if item["rationale"]:
                 print(item["rationale"])
-        choice = input(
-            f"Select command to run [1-{len(suggestions)}] or press Enter to skip: "
-        ).strip()
+        print(
+            f"Press [1-{len(suggestions)}] to run a command or any other key to skip: ",
+            end="",
+            flush=True,
+        )
+        choice = read_key()
+        print()
         if choice.isdigit():
             idx = int(choice)
             if 1 <= idx <= len(suggestions):

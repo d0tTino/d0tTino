@@ -115,9 +115,13 @@ def _cmd_suggest(args: argparse.Namespace) -> int:
         print(f"{idx}. {item['command']}")
         if item["rationale"]:
             print(item["rationale"])
-    choice = input(
-        f"Select command to run [1-{len(suggestions)}] or press Enter to skip: "
-    ).strip()
+    print(
+        f"Press [1-{len(suggestions)}] to run a command or any other key to skip: ",
+        end="",
+        flush=True,
+    )
+    choice = ai_suggest.read_key()
+    print()
     exit_code = 0
     if choice.isdigit():
         idx = int(choice)

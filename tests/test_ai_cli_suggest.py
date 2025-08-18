@@ -11,8 +11,7 @@ def test_suggest_executes_selected_command(monkeypatch):
         "suggest",
         lambda goal, **kwargs: [{"command": "echo hi [risk:info]", "rationale": ""}],
     )
-    inputs = iter(["1"])
-    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+    monkeypatch.setattr(ai_suggest, "read_key", lambda: "1")
 
     captured = {}
 
@@ -36,15 +35,14 @@ def test_suggest_executes_selected_command(monkeypatch):
     assert payload["context"] == "ctx"
 
 
-def test_suggest_skips_on_input(monkeypatch):
+def test_suggest_skips_on_keypress(monkeypatch):
     monkeypatch.setattr(ai_cli, "_session", {})
     monkeypatch.setattr(
         ai_suggest,
         "suggest",
         lambda goal, **kwargs: [{"command": "echo hi [risk:info]", "rationale": ""}],
     )
-    inputs = iter([""])
-    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+    monkeypatch.setattr(ai_suggest, "read_key", lambda: "q")
 
     calls = []
 
