@@ -223,24 +223,25 @@ Legacy commands `ai-plan` and `ai-do` now delegate to these subcommands.
 
 The `do` subcommand always prints a dry-run of the planned commands before
 execution. Review the output and re-run with `--dry-run` to preview only or
-pass `--confirm` to execute steps marked with a `[risk:*]` tag. The dry-run
-output is replayed during the confirmed run so you execute exactly what you
-approved.
+pass `--confirm` to execute steps marked with a `[risk:*]` tag. After the dry
+run the CLI replays the output and asks for confirmation so you execute exactly
+what you approved.
 
 This interactive review makes the workflow safer by ensuring you see and approve
 every step before it runs.
 
 ### Default flow
 
-Running `ai-cli do` is the recommended default. The command performs four
+Running `ai-cli do` is the recommended default. The command performs five
 stages:
 
 1. **Plan** – draft shell commands for the goal.
 2. **Dry-run** – write the numbered steps to `ai_do.log` and print them for
    review.
-3. **Capability prompts** – grant required scopes such as
+3. **Confirm** – replay the dry-run and require approval to continue.
+4. **Capability prompts** – grant required scopes such as
    `filesystem.read`, `process.exec` or `network.fetch` before each step.
-4. **Execute** – only steps marked without a `[risk:*]` tag run
+5. **Execute** – only steps marked without a `[risk:*]` tag run
    automatically. Commands tagged with `[risk:...]` require `--confirm`.
 
 Example:

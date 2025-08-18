@@ -194,9 +194,10 @@ def _cmd_do(args: argparse.Namespace) -> int:
     dry_log: list[str] = []
     args.log.parent.mkdir(parents=True, exist_ok=True)
     execute_steps(plan_steps, log_path=args.log, dry_run=True, dry_run_log=dry_log)
+    risk_present = any("[risk:" in s.command for s in plan_steps)
     if getattr(args, "dry_run", False):
         return 0
-    if any("[risk:" in s.command for s in plan_steps) and not getattr(args, "confirm", False):
+    if risk_present and not getattr(args, "confirm", False):
         print(
             "Risky commands present. Re-run with --confirm to execute.",
             file=sys.stderr,

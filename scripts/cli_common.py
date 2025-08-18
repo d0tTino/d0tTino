@@ -86,7 +86,22 @@ def execute_steps(
             dry_run_log.extend(lines)
         return 0
 
-    if any("[risk:" in step.command for step in step_list) and not confirm:
+    risk_present = any("[risk:" in step.command for step in step_list)
+
+    if dry_run_log:
+        for line in dry_run_log:
+            print(line)
+        if risk_present and not confirm:
+            print(
+                "Risky commands present. Re-run with --confirm to execute.",
+                file=sys.stderr,
+            )
+            return 1
+        if not assume_yes:
+            answer = input("Proceed with execution? [y/N]").strip().lower()
+            if answer != "y":
+                return 1
+    elif risk_present and not confirm:
         print(
             "Risky commands present. Re-run with --confirm to execute.",
             file=sys.stderr,
@@ -95,10 +110,6 @@ def execute_steps(
 
     exit_code = 0
     allowed = set(allowed_capabilities) if allowed_capabilities else set()
-
-    if dry_run_log:
-        for line in dry_run_log:
-            print(line)
 
 
     for step in step_list:

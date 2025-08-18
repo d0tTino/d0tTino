@@ -55,6 +55,7 @@ def run_steps(
         assume_yes=assume_yes,
         confirm=confirm,
         allowed_capabilities=allowed_capabilities,
+        dry_run_log=dry_run_log,
     )
 
     end = time.time()
