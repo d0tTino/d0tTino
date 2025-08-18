@@ -269,3 +269,32 @@ def test_execute_steps_reuses_dry_run_log(monkeypatch, tmp_path, capsys):
     out = capsys.readouterr().out.splitlines()
     assert out.count("1. echo hi") == 1
     assert "$ echo hi" in out
+
+
+def test_execute_steps_requires_confirmation_after_dry_run(monkeypatch, tmp_path, capsys):
+    step = PlanStep(1, "echo hi")
+    log = tmp_path / "log.txt"
+    dry_log: list[str] = []
+    cli_common.execute_steps([step], log_path=log, dry_run=True, dry_run_log=dry_log)
+    assert dry_log
+    capsys.readouterr()
+
+    called = False
+
+    def fake_run(cmd, *, shell, capture_output, text):
+        nonlocal called
+        called = True
+
+        class Result:
+            def __init__(self):
+                self.stdout = ""
+                self.stderr = ""
+                self.returncode = 0
+
+        return Result()
+
+    monkeypatch.setattr(cli_common.subprocess, "run", fake_run)
+    monkeypatch.setattr("builtins.input", lambda _: "n")
+    rc = cli_common.execute_steps([step], log_path=log, dry_run_log=dry_log)
+    assert rc == 1
+    assert not called
