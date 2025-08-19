@@ -52,8 +52,8 @@
     "example_mcp": {
       "package": "d0ttino-example-mcp-plugin",
       "mcp": {
-        "server_url": "https://example.com/mcp",
-        "capabilities": ["echo"]
+        "server_url": "https://example.com",
+        "capabilities": []
       }
     }
   },
@@ -71,4 +71,3 @@
     "fastfetch": "d0ttino-fastfetch-recipe"
   }
 }
-
