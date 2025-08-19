@@ -247,17 +247,26 @@ stages:
 Example:
 
 ```bash
-ai-cli do "set up the project" --confirm
+ai-cli do "set up the project" --dry-run
 ```
 
-If a step needs extra permissions the CLI asks, for example:
+The dry-run writes numbered steps to `ai_do.log` for review:
 
 ```
+1 mkdir -p .venv
+2 [risk:network.fetch] pip install -r requirements.txt
+```
+
+Re-run with `--confirm` to execute the plan. Steps that require extra
+permissions trigger capability prompts before running, for example:
+
+```
+Grant capability filesystem.write? [y/N]
 Grant capability process.exec? [y/N]
 ```
 
-This default flow ensures every risky or privileged action is visible in the
-dry-run log and explicitly approved before it executes.
+This default flow surfaces risk tags in the dry-run log and requires explicit
+approval before any privileged action executes.
 
 ## Few-Shot Logging with DSPy
 
