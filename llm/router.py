@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 from pathlib import Path
@@ -43,22 +44,58 @@ _REMOTE_BACKENDS = {
 }
 
 
-def _load_budget() -> int | None:
+_BUDGET_PATH = Path(os.environ.get("LLM_BUDGET_PATH", _DEFAULT_CONFIG.with_name("budget.json")))
+
+
+def _save_budget(remaining: int, total: int, *, spend: int | None = None) -> None:
+    """Persist remaining and total budget and optional token ``spend``."""
+    try:
+        history: list[int] = []
+        if _BUDGET_PATH.exists():
+            with _BUDGET_PATH.open(encoding="utf-8") as fh:
+                data = json.load(fh)
+                history = data.get("history", [])
+        if spend is not None:
+            history.append(spend)
+        payload = {"remaining": remaining, "total": total}
+        if history:
+            payload["history"] = history
+        with _BUDGET_PATH.open("w", encoding="utf-8") as fh:
+            json.dump(payload, fh)
+    except Exception:  # pragma: no cover - best effort persistence
+        pass
+
+
+def _load_budget() -> tuple[int | None, int | None]:
+    if _BUDGET_PATH.exists():
+        try:
+            with _BUDGET_PATH.open(encoding="utf-8") as fh:
+                data = json.load(fh)
+            remaining = data.get("remaining")
+            total = data.get("total")
+            if isinstance(remaining, int) and isinstance(total, int):
+                return remaining, total
+        except Exception:  # pragma: no cover - ignore corrupt file
+            pass
     env_val = os.environ.get("LLM_ROUTER_BUDGET")
     if env_val:
         try:
-            return int(env_val)
+            total = int(env_val)
         except ValueError:  # pragma: no cover - invalid env value
-            return None
+            return None, None
+        _save_budget(total, total)
+        return total, total
     path = os.environ.get("LLM_CONFIG_PATH")
     cfg_path = Path(path) if path else _DEFAULT_CONFIG
     cfg = _load_config(cfg_path)
     budget_val = cfg.get("budget")
-    return int(budget_val) if isinstance(budget_val, int) else None
+    if isinstance(budget_val, int):
+        _save_budget(budget_val, budget_val)
+        return budget_val, budget_val
+    return None, None
 
 
-_TOTAL_BUDGET = _load_budget()
-_BUDGET = _TOTAL_BUDGET
+_BUDGET, _TOTAL_BUDGET = _load_budget()
 _LAST_MODEL_SOURCE: str | None = None
 
 
@@ -75,6 +112,8 @@ def _decrement_budget(tokens: int) -> None:
     if _BUDGET < tokens:
         raise RuntimeError("LLM budget exhausted")
     _BUDGET -= tokens
+    if _TOTAL_BUDGET is not None:
+        _save_budget(_BUDGET, _TOTAL_BUDGET, spend=tokens)
 
 
 def estimate_prompt_complexity(prompt: str) -> int:

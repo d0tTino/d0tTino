@@ -308,7 +308,8 @@ def _cmd_status(args: argparse.Namespace) -> int:
         width = 10
         filled = int(budget / total * width)
         meter = f"[{'#' * filled}{'-' * (width - filled)}]"
-        print(f"Budget remaining: {budget}/{total}")
+        pct = int(budget / total * 100)
+        print(f"Budget remaining: {budget}/{total} ({pct}%)")
         print(f"Budget meter: {meter}")
     else:
         print(f"Budget remaining: {budget}")
