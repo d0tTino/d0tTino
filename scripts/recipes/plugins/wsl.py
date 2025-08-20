@@ -7,11 +7,9 @@ from llm.backends.plugin_sdk import register_recipe
 
 
 def run(_: str) -> List[str]:
-    """Install the Windows Subsystem for Linux with required features."""
+    """Install the Windows Subsystem for Linux via winget."""
     return [
-        "dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart",
-        "dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart",
-        "wsl --install",
+        "winget install -e --id Microsoft.WSL",
         "wsl --set-default-version 2",
     ]
 
