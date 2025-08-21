@@ -38,6 +38,7 @@ class PlanStep:
 
 
 _SESSION_TOKENS: dict[str, str] = {}
+SESSION_LOG = Path(os.environ.get("SESSION_LOG", "session.log"))
 
 
 def _strip_risk_tag(command: str) -> str:
@@ -137,6 +138,11 @@ def execute_steps(
                     allowed.add(cap_name)
                     with log_path.open("a", encoding="utf-8") as log:
                         log.write(f"[granted capability: {cap_name} token={token}]\n")
+                    SESSION_LOG.parent.mkdir(parents=True, exist_ok=True)
+                    with SESSION_LOG.open("a", encoding="utf-8") as slog:
+                        slog.write(
+                            f"[granted capability: {cap_name} token={token}]\n"
+                        )
                 else:
                     msg = f"Missing capabilities: {cap_name}"
                     print(msg, file=sys.stderr)
@@ -145,6 +151,9 @@ def execute_steps(
                         log.write(f"[missing capabilities: {cap_name}]\n")
 
                         log.write("(skipped)\n\n")
+                    SESSION_LOG.parent.mkdir(parents=True, exist_ok=True)
+                    with SESSION_LOG.open("a", encoding="utf-8") as slog:
+                        slog.write(f"[denied capability: {cap_name}]\n")
                     if not exit_code:
                         exit_code = 1
                     skip_step = True

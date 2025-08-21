@@ -189,6 +189,7 @@ def test_execute_steps_windows_path(monkeypatch, tmp_path):
 
 
 def test_execute_steps_enforces_capabilities(monkeypatch, tmp_path):
+    cli_common._SESSION_TOKENS.clear()
     inputs = iter(["n"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
 

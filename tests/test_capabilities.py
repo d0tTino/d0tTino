@@ -77,3 +77,36 @@ def test_tokens_persist_for_session(monkeypatch, tmp_path):
     content = log.read_text()
     assert content.count("granted capability") == 1
     assert "using capability token: process.exec" in content
+
+
+def test_session_log_records_grants_and_denials(monkeypatch, tmp_path):
+    cli_common._SESSION_TOKENS.clear()
+    monkeypatch.setattr(
+        cli_common, "SESSION_LOG", tmp_path / "session.log"
+    )
+    inputs = iter(["y", "n", "y"])
+    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
+    def fake_run(cmd, *, shell, capture_output, text):
+        class Result:
+            def __init__(self):
+                self.stdout = ""
+                self.stderr = ""
+                self.returncode = 0
+
+        return Result()
+
+    monkeypatch.setattr(cli_common.subprocess, "run", fake_run)
+
+    steps = [
+        PlanStep(1, "echo hi", capabilities={Capability.PROCESS_EXEC}),
+        PlanStep(2, "curl example.com", capabilities={Capability.NETWORK_FETCH}),
+        PlanStep(3, "cat file.txt", capabilities={Capability.FILESYSTEM_READ}),
+    ]
+
+    cli_common.execute_steps(steps, log_path=tmp_path / "log.txt", assume_yes=True)
+
+    content = (tmp_path / "session.log").read_text()
+    assert "[granted capability: process.exec" in content
+    assert "[denied capability: network.fetch]" in content
+    assert "[granted capability: filesystem.read" in content
