@@ -40,6 +40,15 @@ async fn dashboard() -> Result<ume_tauri::commands::Dashboard, String> {
 }
 
 #[cfg(feature = "gui")]
+#[tauri::command]
+async fn record_event(
+    name: String,
+    payload: serde_json::Value,
+) -> Result<bool, String> {
+    ume_tauri::commands::record_event(name, payload).await
+}
+
+#[cfg(feature = "gui")]
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
@@ -49,6 +58,7 @@ fn main() {
             open_prompt_file,
             run_recipe,
             dashboard,
+            record_event,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")

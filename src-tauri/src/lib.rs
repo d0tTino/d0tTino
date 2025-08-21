@@ -2,6 +2,7 @@ pub mod commands {
     use reqwest::Client;
     use serde::{Deserialize, Serialize};
     use std::{
+        collections::HashSet,
         fs::{self, OpenOptions},
         io::Write,
         path::PathBuf,
@@ -14,15 +15,15 @@ pub mod commands {
 
     #[derive(Serialize)]
     pub struct PluginInfo {
-        name: String,
-        enabled: bool,
+        pub name: String,
+        pub enabled: bool,
     }
 
     #[derive(Serialize)]
     pub struct Dashboard {
-        recent_plans: Vec<String>,
-        budget: Option<i64>,
-        plugins: Vec<PluginInfo>,
+        pub recent_plans: Vec<String>,
+        pub budget: Option<i64>,
+        pub plugins: Vec<PluginInfo>,
     }
 
     pub async fn plan(goal: String) -> Result<Vec<String>, String> {
@@ -122,6 +123,32 @@ pub mod commands {
         Ok(log)
     }
 
+    pub async fn record_event(
+        name: String,
+        payload: serde_json::Value,
+    ) -> Result<bool, String> {
+        use tokio::process::Command;
+
+        let script = r#"
+import json,sys,telemetry
+name=sys.argv[1]
+payload=json.loads(sys.argv[2])
+ok=telemetry.record_event(name,payload,enabled=True)
+raise SystemExit(0 if ok else 1)
+"#;
+
+        let output = Command::new("python3")
+            .arg("-c")
+            .arg(script)
+            .arg(name)
+            .arg(payload.to_string())
+            .output()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        Ok(output.status.success())
+    }
+
     pub async fn dashboard() -> Result<Dashboard, String> {
         let mut plans = Vec::new();
         if let Ok(home) = std::env::var("HOME") {
@@ -143,6 +170,23 @@ pub mod commands {
             .ok()
             .and_then(|s| s.parse().ok());
 
+        let mut enabled = HashSet::new();
+        if let Ok(home) = std::env::var("HOME") {
+            let cfg_path = PathBuf::from(&home)
+                .join(".config")
+                .join("d0tTino")
+                .join("mcp.json");
+            if let Ok(content) = fs::read_to_string(cfg_path) {
+                if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
+                    if let Some(map) = json.as_object() {
+                        for name in map.keys() {
+                            enabled.insert(name.clone());
+                        }
+                    }
+                }
+            }
+        }
+
         let mut plugins = Vec::new();
         let reg_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../plugin-registry.json");
         if let Ok(data) = fs::read_to_string(reg_path) {
@@ -151,7 +195,7 @@ pub mod commands {
                     for name in map.keys() {
                         plugins.push(PluginInfo {
                             name: name.clone(),
-                            enabled: true,
+                            enabled: enabled.contains(name),
                         });
                     }
                 }
