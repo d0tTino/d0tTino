@@ -15,6 +15,9 @@ export default function Home() {
   const [recipes, setRecipes] = useState([]);
   const [selected, setSelected] = useState('');
   const [promptFile, setPromptFile] = useState('');
+  const [recentPlans, setRecentPlans] = useState([]);
+  const [budget, setBudget] = useState(null);
+  const [pluginToggles, setPluginToggles] = useState([]);
 
   useEffect(() => {
     fetch('/api/health')
@@ -29,6 +32,14 @@ export default function Home() {
 
     if (window && window.__TAURI__) {
       invoke('list_recipes').then(setRecipes).catch(() => {});
+      invoke('dashboard')
+        .then((data) => {
+          setRecentPlans(data.recent_plans || []);
+          setBudget(data.budget ?? null);
+          setPluginToggles(data.plugins || []);
+        })
+        .catch(() => {});
+      invoke('record_event', { name: 'dashboard_open', payload: {} }).catch(() => {});
       listen('prompt-file', (e) => {
         setPrompt(e.payload);
       }).then((unsub) => {
@@ -134,6 +145,29 @@ export default function Home() {
         <p>
           Queries: {stats.queries}, Memory: {stats.memory}
         </p>
+      )}
+      {recentPlans.length > 0 && (
+        <div>
+          <h2>Recent Plans</h2>
+          <ul>
+            {recentPlans.map((p, i) => (
+              <li key={i}>{p}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {budget !== null && <p>Budget: {budget}</p>}
+      {pluginToggles.length > 0 && (
+        <div>
+          <h2>Plugins</h2>
+          {pluginToggles.map((p) => (
+            <div key={p.name}>
+              <label>
+                <input type="checkbox" checked={p.enabled} readOnly /> {p.name}
+              </label>
+            </div>
+          ))}
+        </div>
       )}
       <div>
         <input value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="prompt" />
