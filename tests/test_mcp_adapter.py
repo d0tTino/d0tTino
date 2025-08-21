@@ -1,25 +1,23 @@
-import sys
-import types
-
 from plugins import mcp, mcp_adapter
 
 
 def test_mcp_adapter_exposes_registry_tools(monkeypatch):
-    module = types.ModuleType("dummy_tool_mod")
-
-    def tool_func():
-        return "ok"
-
-    module.tool = tool_func
-    monkeypatch.setitem(sys.modules, "dummy_tool_mod", module)
-
     reg = {
-        "dummy": {"package": "pkg", "mcp": {"entry_point": "dummy_tool_mod:tool"}}
+        "dummy": {
+            "package": "pkg",
+            "mcp": {
+                "server_url": "https://example.com",
+                "capabilities": ["echo"],
+            },
+        }
     }
     monkeypatch.setattr(mcp_adapter.registry, "load_registry", lambda raw=True: reg)
 
     tools = mcp_adapter.get_tools(reg)
-    assert tools["dummy"] is tool_func
+    assert tools["dummy"]() == {
+        "server_url": "https://example.com",
+        "capabilities": ["echo"],
+    }
 
 
 def test_ai_cli_flag_enables_mcp(monkeypatch, tmp_path):

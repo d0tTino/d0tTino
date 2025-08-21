@@ -43,3 +43,16 @@ def test_plugin_remove_delegates(monkeypatch):
     rc = ai_cli.main(['plugin', 'backends', 'remove', 'x'])
     assert rc == 0
     assert called['argv'] == ['backends', 'remove', 'x']
+
+
+def test_plugin_mcp_enable_delegates(monkeypatch):
+    called = {}
+
+    def fake_main(argv):
+        called['argv'] = argv
+        return 0
+
+    monkeypatch.setattr(ai_cli.plugins, 'main', fake_main)
+    rc = ai_cli.main(['plugin', 'mcp', 'enable', 'x'])
+    assert rc == 0
+    assert called['argv'] == ['mcp', 'enable', 'x']

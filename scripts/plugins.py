@@ -86,6 +86,9 @@ DEFAULT_REGISTRY_URL = "https://raw.githubusercontent.com/d0tTino/d0tTino/main/p
 # Cache file for the remote registry
 CACHE_PATH = Path.home() / ".cache" / "d0ttino" / "plugin_registry.json"
 
+# Configuration file for enabled MCP tools
+MCP_CONFIG_PATH = Path.home() / ".config" / "d0tTino" / "mcp.json"
+
 # Default TTL for the cached registry (24 hours)
 DEFAULT_CACHE_TTL = max(0, int(os.environ.get("PLUGIN_REGISTRY_TTL", "86400")))
 
@@ -300,6 +303,18 @@ def _is_installed(package: str) -> bool:
         return False
 
 
+def _load_mcp_config() -> Dict[str, Any]:
+    try:
+        return json.loads(MCP_CONFIG_PATH.read_text())
+    except Exception:
+        return {}
+
+
+def _save_mcp_config(data: Dict[str, Any]) -> None:
+    MCP_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    MCP_CONFIG_PATH.write_text(json.dumps(data, indent=2))
+
+
 def _cmd_list_impl(section: str, update: bool) -> int:
     registry = load_registry(section, update=update)
     for name, package in sorted(registry.items()):
@@ -349,6 +364,33 @@ def _cmd_remove_impl(args: argparse.Namespace, section: str) -> int:
 
 def _cmd_remove_backend(args: argparse.Namespace) -> int:
     return _cmd_remove_impl(args, "plugins")
+
+
+def _cmd_mcp_enable(args: argparse.Namespace) -> int:
+    registry = load_registry(raw=True, update=args.update)
+    name = args.name
+    meta = registry.get(name)
+    if not isinstance(meta, dict):
+        print(f"Unknown MCP plug-in: {name}", file=sys.stderr)
+        return 1
+    mcp_meta = meta.get("mcp")
+    if not isinstance(mcp_meta, dict) or not mcp_meta.get("server_url"):
+        print(f"No MCP server info for plug-in: {name}", file=sys.stderr)
+        return 1
+    config = _load_mcp_config()
+    config[name] = mcp_meta
+    _save_mcp_config(config)
+    return 0
+
+
+def _cmd_mcp_disable(args: argparse.Namespace) -> int:
+    config = _load_mcp_config()
+    if args.name in config:
+        del config[args.name]
+        _save_mcp_config(config)
+        return 0
+    print(f"MCP plug-in not enabled: {args.name}", file=sys.stderr)
+    return 1
 
 
 def _cmd_list_recipes(args: argparse.Namespace) -> int:
@@ -467,6 +509,17 @@ def build_parser() -> argparse.ArgumentParser:
     b_remove = backend_sub.add_parser("remove", help="Remove a backend")
     b_remove.add_argument("name", help="Backend name")
     b_remove.set_defaults(func=_cmd_remove_backend)
+
+    mcp = sub.add_parser("mcp", help="Manage MCP tools")
+    mcp_sub = mcp.add_subparsers(dest="mcp_command", required=True)
+
+    m_enable = mcp_sub.add_parser("enable", help="Enable an MCP tool")
+    m_enable.add_argument("name", help="Tool name")
+    m_enable.set_defaults(func=_cmd_mcp_enable)
+
+    m_disable = mcp_sub.add_parser("disable", help="Disable an MCP tool")
+    m_disable.add_argument("name", help="Tool name")
+    m_disable.set_defaults(func=_cmd_mcp_disable)
 
     recipe = sub.add_parser("recipes", help="Manage recipe plug-ins")
     recipe_sub = recipe.add_subparsers(dest="recipe_command", required=True)
