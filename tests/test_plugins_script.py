@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+import json
 
 import pytest
 
@@ -214,6 +215,38 @@ def test_mcp_flag_starts_server(monkeypatch):
     rc = plugins.main(["--mcp"])
     assert rc == 0
     assert "registry" in called
+
+
+def test_mcp_enable_writes_config(monkeypatch, tmp_path):
+    cfg = tmp_path / "mcp.json"
+    monkeypatch.setattr(plugins, "MCP_CONFIG_PATH", cfg)
+
+    def fake_load(section="plugins", update=False, *, raw=False):
+        if raw:
+            return {
+                "dummy": {
+                    "package": "pkg",
+                    "mcp": {"server_url": "https://example.com", "capabilities": []},
+                }
+            }
+        return {}
+
+    monkeypatch.setattr(plugins, "load_registry", fake_load)
+
+    rc = plugins.main(["mcp", "enable", "dummy"])
+    assert rc == 0
+    data = json.loads(cfg.read_text())
+    assert data["dummy"]["server_url"] == "https://example.com"
+
+
+def test_mcp_disable_removes_config(monkeypatch, tmp_path):
+    cfg = tmp_path / "mcp.json"
+    cfg.write_text(json.dumps({"dummy": {"server_url": "u", "capabilities": []}}))
+    monkeypatch.setattr(plugins, "MCP_CONFIG_PATH", cfg)
+
+    rc = plugins.main(["mcp", "disable", "dummy"])
+    assert rc == 0
+    assert json.loads(cfg.read_text()) == {}
 
 
 def test_recipe_remove(monkeypatch):

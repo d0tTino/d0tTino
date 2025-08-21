@@ -2,6 +2,9 @@
 
 This module converts plug-in registry entries that include ``mcp`` metadata
 into callable tools and optionally serves them over a minimal JSON protocol.
+Entries can either expose a Python ``entry_point`` or provide remote
+``server_url`` details. For the latter a trivial callable returning the
+metadata is generated.
 """
 
 from __future__ import annotations
@@ -17,7 +20,7 @@ __all__ = ["iter_tools", "get_tools", "serve"]
 
 
 def iter_tools(registry_data: Dict[str, object] | None = None) -> Iterator[tuple[str, Any]]:
-    """Yield ``(name, tool)`` for each plug-in exposing an MCP entry point.
+    """Yield ``(name, tool)`` for each plug-in exposing MCP metadata.
 
     ``registry_data`` should be a mapping in the format returned by
     :func:`scripts.plugins.load_registry` when ``raw=True``. When omitted, the
@@ -34,14 +37,25 @@ def iter_tools(registry_data: Dict[str, object] | None = None) -> Iterator[tuple
         if not isinstance(mcp_meta, dict):
             continue
         entry = mcp_meta.get("entry_point")
-        if not isinstance(entry, str):
-            continue
-        try:
-            module_name, obj_name = entry.split(":", 1)
-            module = importlib.import_module(module_name)
-            yield name, getattr(module, obj_name)
-        except Exception:  # pragma: no cover - best effort loading
-            continue
+        if isinstance(entry, str):
+            try:
+                module_name, obj_name = entry.split(":", 1)
+                module = importlib.import_module(module_name)
+                yield name, getattr(module, obj_name)
+                continue
+            except Exception:  # pragma: no cover - best effort loading
+                continue
+        server_url = mcp_meta.get("server_url")
+        if isinstance(server_url, str):
+            meta_copy = {
+                "server_url": server_url,
+                "capabilities": mcp_meta.get("capabilities", []),
+            }
+
+            def _tool(meta=meta_copy):
+                return meta
+
+            yield name, _tool
 
 
 def get_tools(registry_data: Dict[str, object] | None = None) -> Dict[str, Any]:
