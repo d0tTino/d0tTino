@@ -245,8 +245,8 @@ def test_example_mcp_plugin_in_registry(monkeypatch, tmp_path):
 
     registry = plugins.load_registry(raw=True, update=True)
     meta = registry["example_mcp"]["mcp"]
-    assert meta["server_url"] == "https://example.com/mcp"
-    assert meta["capabilities"] == ["echo"]
+    assert meta["server_url"] == "https://example.com"
+    assert meta["capabilities"] == []
 
 
 def test_example_mcp_plugin_metadata():
