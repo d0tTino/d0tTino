@@ -1,10 +1,9 @@
 {
-  "version": "main",
+  "version": "0.0.0",
   "description": "Bootstrap scripts and configuration for d0tTino",
   "homepage": "https://github.com/d0tTino/d0tTino",
   "license": "MIT",
-  "url": "https://github.com/d0tTino/d0tTino/archive/refs/heads/main.zip",
-  "hash": "0d4f4a16d336fb63a507c02281f74e507c2854ee330ac8e3353d872d2c883e92",
+  "url": "https://github.com/d0tTino/d0tTino/releases/download/v0.0.0/tino-windows-0.0.0.zip",
+  "hash": "0000000000000000000000000000000000000000000000000000000000000000",
   "pre_install": "bash \"$dir\\scripts\\install_common.sh\" --dry-run"
-
 }
