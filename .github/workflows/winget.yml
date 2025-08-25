@@ -1,25 +1,26 @@
 name: publish-winget
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 jobs:
-  submit:
+  release:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
       - name: Install wingetcreate
-        run: |
-          dotnet tool install --global wingetcreate
-      - name: Update manifest
-        env:
-          TAG_NAME: ${{ github.ref_name }}
-        run: |
-          $version = $env:TAG_NAME.TrimStart('v')
-          wingetcreate update winget/tino.yaml https://github.com/d0tTino/d0tTino/releases/download/$env:TAG_NAME/d0tTino.zip $version
-      - name: Submit to winget-pkgs
+        run: dotnet tool install --global wingetcreate
+      - name: Run release script
         env:
           WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
-        run: |
-          wingetcreate submit winget/tino.yaml --token $env:WINGET_TOKEN
+          SCOOP_BUCKET: ${{ secrets.SCOOP_BUCKET }}
+        run: python scripts/release.py
