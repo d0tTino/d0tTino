@@ -35,6 +35,7 @@ Third-party packages may add new backends by exposing an entry point in the
 
 See the [backend plug-in guide](plugins.md) for a full template and interface
 description.
+For curated command recipes, consult the [recipes guide](recipes.md).
 
 Example ``pyproject.toml`` snippet:
 

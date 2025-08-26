@@ -75,9 +75,7 @@ def test_discover_recipes_loads_entry_points_py310(monkeypatch):
 def test_builtin_curated_recipes():
     mapping = recipes.discover_recipes()
     assert mapping["wsl"]("") == [
-        "dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart",
-        "dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart",
-        "wsl --install",
+        "winget install -e --id Microsoft.WSL",
         "wsl --set-default-version 2",
     ]
     assert mapping["docker_desktop"]("") == [
@@ -92,6 +90,12 @@ def test_builtin_curated_recipes():
     assert mapping["gpu_drivers"]("") == [
         "winget install -e --id Nvidia.DisplayDriver",
         "winget install -e --id Nvidia.CUDA",
+    ]
+    assert mapping["powershell"]("") == [
+        "winget install -e --id Microsoft.PowerShell",
+    ]
+    assert mapping["nodejs"]("") == [
+        "winget install -e --id OpenJS.NodeJS.LTS",
     ]
     assert mapping["git"]("") == [
         "winget install -e --id Git.Git",

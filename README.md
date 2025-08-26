@@ -92,6 +92,8 @@ For advanced bootstrap options, see
 [docs/installation.md](docs/installation.md).
 Detailed Winget instructions are available in
 [docs/install-winget.md](docs/install-winget.md).
+Explore curated setup commands in
+[docs/recipes.md](docs/recipes.md).
 
 ---
 
