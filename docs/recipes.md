@@ -5,7 +5,7 @@ sequences for setting up a Windows development environment. Each recipe returns
 a list of shell commands that can be executed on a Windows host.
 
 ## wsl
-- **Usage:** Enables required optional features, installs WSL, and sets version 2 as the default.
+- **Usage:** Installs WSL and sets version 2 as the default.
 - **Prerequisites:** Requires Windows 10 or later with virtualization enabled.
 
 ## docker_desktop
@@ -34,4 +34,12 @@ a list of shell commands that can be executed on a Windows host.
 
 ## git
 - **Usage:** Installs Git for Windows.
+- **Prerequisites:** None.
+
+## starship
+- **Usage:** Installs the Starship prompt.
+- **Prerequisites:** None.
+
+## fastfetch
+- **Usage:** Installs Fastfetch for quick system information.
 - **Prerequisites:** None.
