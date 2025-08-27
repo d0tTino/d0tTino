@@ -111,8 +111,12 @@ def _append_file_diffs(steps: Iterable[PlanStep]) -> None:
                 text=True,
                 check=False,
             )
-            if result.stdout:
-                diffs.append(f"{_hyperlink(file)}\n{result.stdout.strip()}")
+            diff_text = result.stdout.strip() or result.stderr.strip()
+            hyperlink = _hyperlink(file)
+            if diff_text:
+                diffs.append(f"{hyperlink}\n{diff_text}")
+            else:
+                diffs.append(hyperlink)
         if diffs:
             step.diff = "\n".join(diffs)
 
