@@ -98,7 +98,7 @@ def execute_steps(
                 file=sys.stderr,
             )
             return 1
-        if not assume_yes:
+        if not (assume_yes or confirm):
             answer = input("Proceed with execution? [y/N]").strip().lower()
             if answer != "y":
                 return 1
@@ -160,8 +160,7 @@ def execute_steps(
                     break
             if skip_step:
                 continue
-        is_risky = "[risk:" in step.command
-        step_assume_yes = assume_yes and (confirm or not is_risky)
+        step_assume_yes = assume_yes or confirm
 
         cmd_text = _strip_risk_tag(step.command)
         try:
