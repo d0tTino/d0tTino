@@ -33,9 +33,9 @@ def read_key() -> str:
             termios.tcsetattr(fd, termios.TCSADRAIN, old)
     except Exception:
         try:  # Windows fallback
-            import msvcrt  # type: ignore[import-not-found]
+            import msvcrt
 
-            return msvcrt.getch().decode()
+            return msvcrt.getch().decode()  # type: ignore[attr-defined]
         except Exception:  # pragma: no cover - extremely unlikely
             return ""
 

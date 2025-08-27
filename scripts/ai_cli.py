@@ -129,15 +129,24 @@ def _cmd_suggest(args: argparse.Namespace) -> int:
             payload = {"goal": args.goal, "suggestion_index": idx}
             if _session.get("context"):
                 payload["context"] = _session["context"]
-            exit_code = cli_actions.run_steps(
-                "ai-cli-suggest-run",
-                [PlanStep(1, suggestions[idx - 1]["command"])],
-                log_path=log_path,
-                analytics=args.analytics,
-                payload=payload,
-                assume_yes=True,
-                confirm=True,
-            )
+            if getattr(args, "to_plan", False):
+                plan_args = argparse.Namespace(
+                    goal=suggestions[idx - 1]["command"],
+                    config=None,
+                    analytics=args.analytics,
+                    nats_url=getattr(args, "nats_url", None),
+                )
+                exit_code = _cmd_plan(plan_args)
+            else:
+                exit_code = cli_actions.run_steps(
+                    "ai-cli-suggest-run",
+                    [PlanStep(1, suggestions[idx - 1]["command"])],
+                    log_path=log_path,
+                    analytics=args.analytics,
+                    payload=payload,
+                    assume_yes=True,
+                    confirm=True,
+                )
     _publish_event(
         args,
         "ai-cli-suggest",
@@ -599,6 +608,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--model",
         default=router.DEFAULT_MODEL,
         help="Model name for Ollama (default: %(default)s)",
+    )
+    suggest.add_argument(
+        "--to-plan",
+        action="store_true",
+        help="Forward the chosen command to the plan subcommand",
     )
     suggest.set_defaults(func=_cmd_suggest)
 

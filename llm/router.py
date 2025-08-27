@@ -57,7 +57,7 @@ def _save_budget(remaining: int, total: int, *, spend: int | None = None) -> Non
                 history = data.get("history", [])
         if spend is not None:
             history.append(spend)
-        payload = {"remaining": remaining, "total": total}
+        payload: dict[str, Any] = {"remaining": remaining, "total": total}
         if history:
             payload["history"] = history
         with _BUDGET_PATH.open("w", encoding="utf-8") as fh:
