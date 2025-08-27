@@ -51,6 +51,17 @@ python -m scripts.plugins backends install openrouter
 ```
 
 
+## MCP Adapter
+
+Expose registered plug-ins over the [Model Context Protocol](https://github.com/modelcontextprotocol) with the CLI:
+
+```bash
+python -m scripts.ai_cli mcp
+```
+
+The command reads JSON requests on standard input and writes responses on standard output, making plug-in tools available to any MCP client.
+
+
 ## LLM Routing CLI
 
 Use the `ai` command to route prompts to your configured language model. By
