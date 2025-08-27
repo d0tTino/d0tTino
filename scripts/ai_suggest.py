@@ -71,6 +71,33 @@ def _split_rationale(line: str) -> tuple[str, str]:
     return line.strip(), ""
 
 
+def _short_help(cmd: str) -> str:
+    """Return the first line of ``cmd --help`` or ``""`` on failure."""
+    try:
+        tokens = shlex.split(cmd)
+    except ValueError:
+        return ""
+    if not tokens:
+        return ""
+    prog = tokens[0]
+    if prog == "sudo" and len(tokens) > 1:
+        prog = tokens[1]
+    try:
+        out = subprocess.run(
+            [prog, "--help"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        line = out.stdout.splitlines()
+        if line:
+            return line[0].strip()
+    except Exception:
+        pass
+    return ""
+
+
 def suggest(
     goal: str,
     *,
@@ -84,6 +111,9 @@ def suggest(
     suggestions: List[Dict[str, str]] = []
     for line in text[:3]:
         cmd, rationale = _split_rationale(line)
+        help_text = _short_help(cmd)
+        if help_text:
+            rationale = f"{rationale} ({help_text})" if rationale else help_text
         suggestions.append({"command": _label_risk(cmd), "rationale": rationale})
     return suggestions
 
