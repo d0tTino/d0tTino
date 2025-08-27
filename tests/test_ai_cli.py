@@ -6,9 +6,21 @@ import pytest
 pytest.importorskip("requests")
 
 from scripts import ai_cli
+from scripts import ai_exec
 from scripts import cli_actions
 from scripts.cli_common import PlanStep
 import telemetry
+
+
+def test_append_file_diffs_hyperlink_format(tmp_path):
+    file = tmp_path / "file.txt"
+    file.write_text("hi")
+    step = PlanStep(1, f"cat {file}")
+    ai_exec._append_file_diffs([step])
+    assert step.diff is not None
+    line = step.diff.splitlines()[0]
+    expected = f"\x1b]8;;{file.resolve().as_uri()}\x1b\\{file}\x1b]8;;\x1b\\"
+    assert line == expected
 
 
 def test_send_subcommand(monkeypatch):
