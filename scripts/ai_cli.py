@@ -274,6 +274,13 @@ def _cmd_plugin(args: argparse.Namespace) -> int:
     return plugins.main(args.plugin_args)
 
 
+def _cmd_mcp(args: argparse.Namespace) -> int:
+    from plugins import mcp_adapter
+
+    mcp_adapter.serve()
+    return 0
+
+
 def _cmd_sources(args: argparse.Namespace) -> int:
     matches = query_sources.find_sources(
         name=args.name,
@@ -681,6 +688,11 @@ def build_parser() -> argparse.ArgumentParser:
     plugin = sub.add_parser("plugin", help="Manage plug-ins")
     plugin.add_argument("plugin_args", nargs=argparse.REMAINDER)
     plugin.set_defaults(func=_cmd_plugin)
+
+    mcp = sub.add_parser(
+        "mcp", help="Serve MCP endpoints for registered plug-ins"
+    )
+    mcp.set_defaults(func=_cmd_mcp)
 
     finance = sub.add_parser(
         "finance", help="Financial decision support", parents=[analytics]
