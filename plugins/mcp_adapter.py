@@ -16,7 +16,13 @@ from typing import Any, Dict, Iterator
 
 from scripts import plugins as registry
 
-__all__ = ["iter_tools", "get_tools", "serve"]
+__all__ = [
+    "iter_tools",
+    "get_tools",
+    "iter_tool_descriptors",
+    "get_tool_descriptors",
+    "serve",
+]
 
 
 def iter_tools(registry_data: Dict[str, object] | None = None) -> Iterator[tuple[str, Any]]:
@@ -64,6 +70,49 @@ def get_tools(registry_data: Dict[str, object] | None = None) -> Dict[str, Any]:
     return {name: tool for name, tool in iter_tools(registry_data)}
 
 
+def iter_tool_descriptors(
+    registry_data: Dict[str, object] | None = None,
+) -> Iterator[tuple[str, Dict[str, Any]]]:
+    """Yield ``(name, descriptor)`` for each MCP-enabled plug-in.
+
+    The descriptor follows the minimal structure required by the MCP tool
+    discovery specification and includes the tool ``name``, ``server_url`` and
+    ``capabilities`` list.
+    """
+
+    if registry_data is None:
+        registry_data = registry.load_registry(raw=True)
+
+    for name, meta in registry_data.items():
+        if not isinstance(meta, dict):
+            continue
+        mcp_meta = meta.get("mcp")
+        if not isinstance(mcp_meta, dict):
+            continue
+        server_url = mcp_meta.get("server_url")
+        if not isinstance(server_url, str):
+            continue
+        capabilities = mcp_meta.get("capabilities", [])
+        if not (
+            isinstance(capabilities, list)
+            and all(isinstance(c, str) for c in capabilities)
+        ):
+            capabilities = []
+        yield name, {
+            "name": name,
+            "server_url": server_url,
+            "capabilities": capabilities,
+        }
+
+
+def get_tool_descriptors(
+    registry_data: Dict[str, object] | None = None,
+) -> Dict[str, Dict[str, Any]]:
+    """Return a mapping of tool names to MCP descriptors."""
+
+    return {name: desc for name, desc in iter_tool_descriptors(registry_data)}
+
+
 def serve(registry_data: Dict[str, object] | None = None) -> None:
     """Serve tools over a line-oriented JSON protocol on ``stdin``/``stdout``.
 
@@ -73,23 +122,29 @@ def serve(registry_data: Dict[str, object] | None = None) -> None:
     """
 
     tools = get_tools(registry_data)
+    descriptors = get_tool_descriptors(registry_data)
 
     for line in sys.stdin:
         try:
             req = json.loads(line)
         except json.JSONDecodeError:
             continue
-        name = req.get("tool")
-        args = req.get("args") or {}
-        func = tools.get(name)
-        if func is None:
-            resp = {"error": f"unknown tool: {name}"}
+        resp: Dict[str, Any]
+        command = req.get("command")
+        if command == "list_tools":
+            resp = {"result": list(descriptors.values())}
         else:
-            try:
-                result = func(**args)
-                resp = {"result": result}
-            except Exception as exc:  # pragma: no cover - propagate error
-                resp = {"error": str(exc)}
+            name = req.get("tool")
+            args = req.get("args") or {}
+            func = tools.get(name)
+            if func is None:
+                resp = {"error": f"unknown tool: {name}"}
+            else:
+                try:
+                    result = func(**args)
+                    resp = {"result": result}
+                except Exception as exc:  # pragma: no cover - propagate error
+                    resp = {"error": str(exc)}
         sys.stdout.write(json.dumps(resp) + "\n")
         sys.stdout.flush()
 
