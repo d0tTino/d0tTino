@@ -148,6 +148,33 @@ def test_main_yes_runs_without_prompts(monkeypatch, tmp_path):
     assert called == [["echo", "hi"]]
 
 
+def test_confirm_runs_without_prompts(monkeypatch, tmp_path):
+    monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: [PlanStep(1, "echo hi")])
+
+    called = []
+
+    def fake_run(cmd, *, shell, capture_output, text):
+        called.append(cmd)
+
+        class Result:
+            def __init__(self):
+                self.stdout = ""
+                self.stderr = ""
+                self.returncode = 0
+
+        return Result()
+
+    def fail_input(_):  # pragma: no cover - should not be called
+        raise AssertionError("input called")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr("builtins.input", fail_input)
+    log = tmp_path / "log.txt"
+    rc = ai_do.main(["goal", "--log", str(log), "--confirm"])
+    assert rc == 0
+    assert called == [["echo", "hi"]]
+
+
 def test_risky_requires_confirm(monkeypatch, tmp_path):
     monkeypatch.setattr(
         ai_exec, "plan", lambda *a, **k: [PlanStep(1, "rm -rf / [risk:rm]")]
@@ -192,7 +219,7 @@ def test_confirm_allows_risky(monkeypatch, tmp_path):
     monkeypatch.setattr(subprocess, "run", fake_run)
     monkeypatch.setattr("builtins.input", fail_input)
     log = tmp_path / "log.txt"
-    rc = ai_do.main(["goal", "--log", str(log), "--yes", "--confirm"])
+    rc = ai_do.main(["goal", "--log", str(log), "--confirm"])
     assert rc == 0
     assert called == [["echo", "hi"]]
 
