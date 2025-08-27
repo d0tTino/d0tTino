@@ -57,3 +57,33 @@ def test_suggest_skips_on_keypress(monkeypatch):
         rc = ai_cli.main(["suggest", "goal"])
     assert rc == 0
     assert calls == []
+
+
+def test_suggest_forwards_to_plan(monkeypatch):
+    monkeypatch.setattr(ai_cli, "_session", {})
+    monkeypatch.setattr(
+        ai_suggest,
+        "suggest",
+        lambda goal, **kwargs: [{"command": "echo hi [risk:info]", "rationale": ""}],
+    )
+    monkeypatch.setattr(ai_suggest, "read_key", lambda: "1")
+
+    captured = {}
+
+    def fake_plan(args):
+        captured["goal"] = args.goal
+        captured["analytics"] = args.analytics
+        return 0
+
+    def forbid_run_steps(*args, **kwargs):  # pragma: no cover - ensure not called
+        raise AssertionError("run_steps should not be called")
+
+    monkeypatch.setattr(ai_cli, "_cmd_plan", fake_plan)
+    monkeypatch.setattr(cli_actions, "run_steps", forbid_run_steps)
+
+    out = io.StringIO()
+    with contextlib.redirect_stdout(out):
+        rc = ai_cli.main(["suggest", "goal", "--to-plan", "--analytics"])
+    assert rc == 0
+    assert captured["goal"] == "echo hi [risk:info]"
+    assert captured["analytics"] is True
