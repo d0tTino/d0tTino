@@ -64,7 +64,7 @@ def test_status_reports_budget_and_source(monkeypatch, tmp_path):
     assert rc == 0
     assert out.getvalue().splitlines() == [
         "Budget remaining: 3/5 (60%)",
-        "Budget meter: [######----]",
+        "Usage meter: [####------]",
         "Routing mode: remote",
         "Last model source: gemini",
     ]
