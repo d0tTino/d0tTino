@@ -318,15 +318,16 @@ def _cmd_stats(args: argparse.Namespace) -> int:
 
 
 def _cmd_status(args: argparse.Namespace) -> int:
-    """Show remaining budget, a visual meter, routing mode, and last model source."""
+    """Show remaining budget, a usage meter, routing mode, and last model source."""
     budget, total, source = router.get_budget()
     if budget is not None and total:
         width = 10
-        filled = int(budget / total * width)
+        used = total - budget
+        filled = int(used / total * width)
         meter = f"[{'#' * filled}{'-' * (width - filled)}]"
         pct = int(budget / total * 100)
         print(f"Budget remaining: {budget}/{total} ({pct}%)")
-        print(f"Budget meter: {meter}")
+        print(f"Usage meter: {meter}")
     else:
         print(f"Budget remaining: {budget}")
     mode = os.environ.get("LLM_ROUTING_MODE", "auto")
