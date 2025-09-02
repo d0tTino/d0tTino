@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 from pathlib import Path
+from datetime import date
 
 from typing import Any, Callable, List, cast
 
@@ -47,8 +48,14 @@ _REMOTE_BACKENDS = {
 _BUDGET_PATH = Path(os.environ.get("LLM_BUDGET_PATH", _DEFAULT_CONFIG.with_name("budget.json")))
 
 
-def _save_budget(remaining: int, total: int, *, spend: int | None = None) -> None:
-    """Persist remaining and total budget and optional token ``spend``."""
+def _save_budget(
+    remaining: int | None,
+    total: int | None,
+    *,
+    spend: int | None = None,
+    daily: tuple[str, int] | None = None,
+) -> None:
+    """Persist remaining/total budget and optional token ``spend`` and ``daily`` usage."""
     try:
         history: list[int] = []
         if _BUDGET_PATH.exists():
@@ -57,9 +64,15 @@ def _save_budget(remaining: int, total: int, *, spend: int | None = None) -> Non
                 history = data.get("history", [])
         if spend is not None:
             history.append(spend)
-        payload: dict[str, Any] = {"remaining": remaining, "total": total}
+        payload: dict[str, Any] = {}
+        if remaining is not None:
+            payload["remaining"] = remaining
+        if total is not None:
+            payload["total"] = total
         if history:
             payload["history"] = history
+        if daily is not None:
+            payload["daily"] = {"date": daily[0], "used": daily[1]}
         with _BUDGET_PATH.open("w", encoding="utf-8") as fh:
             json.dump(payload, fh)
     except Exception:  # pragma: no cover - best effort persistence
@@ -95,7 +108,28 @@ def _load_budget() -> tuple[int | None, int | None]:
     return None, None
 
 
+def _load_daily_usage() -> tuple[str, int]:
+    today = date.today().isoformat()
+    if _BUDGET_PATH.exists():
+        try:
+            with _BUDGET_PATH.open(encoding="utf-8") as fh:
+                data = json.load(fh)
+            daily = data.get("daily")
+            if isinstance(daily, dict):
+                if daily.get("date") == today and isinstance(daily.get("used"), int):
+                    return today, daily["used"]
+        except Exception:  # pragma: no cover - ignore corrupt file
+            pass
+    return today, 0
+
+
 _BUDGET, _TOTAL_BUDGET = _load_budget()
+_DAILY_DATE, _DAILY_USAGE = _load_daily_usage()
+_daily_limit_env = os.environ.get("LLM_DAILY_LIMIT")
+try:
+    _DAILY_LIMIT = int(_daily_limit_env) if _daily_limit_env else None
+except ValueError:  # pragma: no cover - invalid env value
+    _DAILY_LIMIT = None
 _LAST_MODEL_SOURCE: str | None = None
 
 
@@ -106,14 +140,20 @@ def get_budget() -> tuple[int | None, int | None, str | None]:
 
 
 def _decrement_budget(tokens: int) -> None:
-    global _BUDGET
-    if _BUDGET is None:
-        return
-    if _BUDGET < tokens:
-        raise RuntimeError("LLM budget exhausted")
-    _BUDGET -= tokens
-    if _TOTAL_BUDGET is not None:
-        _save_budget(_BUDGET, _TOTAL_BUDGET, spend=tokens)
+    global _BUDGET, _DAILY_USAGE, _DAILY_DATE
+    if _DAILY_LIMIT is not None:
+        today = date.today().isoformat()
+        if _DAILY_DATE != today:
+            _DAILY_DATE, _DAILY_USAGE = today, 0
+        if _DAILY_USAGE + tokens > _DAILY_LIMIT:
+            raise RuntimeError("LLM daily limit exceeded")
+        _DAILY_USAGE += tokens
+    if _BUDGET is not None:
+        if _BUDGET < tokens:
+            raise RuntimeError("LLM budget exhausted")
+        _BUDGET -= tokens
+    if _TOTAL_BUDGET is not None or _DAILY_LIMIT is not None:
+        _save_budget(_BUDGET, _TOTAL_BUDGET, spend=tokens, daily=(_DAILY_DATE, _DAILY_USAGE))
 
 
 def estimate_prompt_complexity(prompt: str) -> int:
