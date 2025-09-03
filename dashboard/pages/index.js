@@ -17,6 +17,7 @@ export default function Home() {
   const [promptFile, setPromptFile] = useState('');
   const [recentPlans, setRecentPlans] = useState([]);
   const [budget, setBudget] = useState(null);
+  const [budgetHistory, setBudgetHistory] = useState([]);
   const [pluginToggles, setPluginToggles] = useState([]);
 
   useEffect(() => {
@@ -36,6 +37,7 @@ export default function Home() {
         .then((data) => {
           setRecentPlans(data.recent_plans || []);
           setBudget(data.budget ?? null);
+          setBudgetHistory(data.budget_history || []);
           setPluginToggles(data.plugins || []);
         })
         .catch(() => {});
@@ -157,6 +159,16 @@ export default function Home() {
         </div>
       )}
       {budget !== null && <p>Budget: {budget}</p>}
+      {budgetHistory.length > 0 && (
+        <div>
+          <h2>Budget History</h2>
+          <ul>
+            {budgetHistory.map((b, i) => (
+              <li key={i}>{b}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       {pluginToggles.length > 0 && (
         <div>
           <h2>Plugins</h2>
