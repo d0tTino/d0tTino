@@ -13,6 +13,7 @@ pytest.importorskip("requests")
 from scripts import ai_exec, cli_actions
 from scripts.cli_common import PlanStep
 import scripts.cli_common as cli_common
+from scripts.capabilities import Capability
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -136,6 +137,31 @@ def test_plan_parses_diffs(monkeypatch):
     monkeypatch.setattr(ai_exec, "get_preferred_models", lambda *a, **k: ("g", "o"))
     steps = ai_exec.plan("goal")
     assert steps[0].diff == "--- a.txt\n+++ b.txt\n+hi"
+
+
+def test_plan_marks_network_commands(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        ai_exec.router,
+        "run_gemini",
+        lambda *a, **k: "curl https://example.com",  # network tool
+    )
+    monkeypatch.setattr(ai_exec.router, "run_ollama", lambda *a, **k: "")
+    monkeypatch.setattr(ai_exec, "get_preferred_models", lambda *a, **k: ("g", "o"))
+    steps = ai_exec.plan("goal")
+    assert steps[0].capabilities == {Capability.NETWORK_FETCH}
+
+    prompts: list[str] = []
+
+    def fake_input(msg: str) -> str:
+        prompts.append(msg)
+        return "n"
+
+    monkeypatch.setattr("builtins.input", fake_input)
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: type("R", (), {"stdout": "", "stderr": "", "returncode": 0})())
+    log = tmp_path / "log.txt"
+    rc = cli_common.execute_steps(steps, log_path=log, assume_yes=True)
+    assert rc == 1
+    assert prompts == ["Grant capability network.fetch? [y/N]"]
 
 
 def create_exe(path: Path, contents: str = "#!/usr/bin/env bash\n") -> None:
