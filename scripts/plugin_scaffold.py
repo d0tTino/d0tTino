@@ -28,6 +28,7 @@ def scaffold_plugin(
 
     if recipe:
         init = f'''"""{description}"""
+from typing import Dict, List
 from llm.backends.plugin_sdk import register_recipe
 
 
@@ -36,19 +37,23 @@ def run(goal: str):
     return [f"echo {{goal}}"]
 
 
-def mcp_tool():
+def mcp_tool() -> Dict[str, object]:
     """Return MCP tool metadata."""
-    return {{}}
+    return {{
+        "server_url": "https://example.com/mcp",
+        "capabilities": ["echo"],
+    }}
 
 
 register_recipe("{name}", run)
 
-__all__ = ["run", "mcp_tool"]
+__all__: List[str] = ["run", "mcp_tool"]
 '''
         entry_group = "d0ttino.recipes"
         entry_line = f'{name} = "{package}:run"'
     else:
         init = f'''"""{description}"""
+from typing import Dict, List
 from llm.backends.plugin_sdk import register_backend
 
 
@@ -57,14 +62,17 @@ def run(prompt: str, model: str | None = None) -> str:
     return "response"
 
 
-def mcp_tool():
+def mcp_tool() -> Dict[str, object]:
     """Return MCP tool metadata."""
-    return {{}}
+    return {{
+        "server_url": "https://example.com/mcp",
+        "capabilities": ["echo"],
+    }}
 
 
 register_backend("{name}", run)
 
-__all__ = ["run", "mcp_tool"]
+__all__: List[str] = ["run", "mcp_tool"]
 '''
         entry_group = "llm.plugins"
         entry_line = f'{name} = "{package}"'
