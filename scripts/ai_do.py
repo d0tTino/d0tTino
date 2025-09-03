@@ -7,6 +7,7 @@ Prompts before each step unless ``--yes``/``--confirm`` are supplied."""
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 from typing import Callable, List, Optional, Sequence
 
@@ -15,6 +16,7 @@ from llm.backends import initialize
 from scripts.cli_common import (
     send_notification,
     build_analytics_parser,
+    execute_steps,
 )
 from scripts import cli_actions
 from telemetry import analytics_default
@@ -76,6 +78,14 @@ def main(argv: Optional[List[str]] = None) -> int:
     analytics = getattr(args, "analytics", analytics_default())
     cfg_path = Path(args.config) if args.config else None
     steps = ai_exec.plan(args.goal, config_path=cfg_path, analytics=analytics)
+    dry_log: list[str] = []
+    execute_steps(steps, log_path=args.log, dry_run=True, dry_run_log=dry_log)
+    risk_present = any("[risk:" in s.command for s in steps)
+    if args.dry_run:
+        return 0
+    if risk_present and not args.confirm:
+        print("Risky commands present. Re-run with --confirm to execute.", file=sys.stderr)
+        return 1
     exit_code = cli_actions.run_steps(
         "ai-do",
         steps,
@@ -87,9 +97,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         },
         duration_key="duration_ms",
         nats_url=args.nats_url if hasattr(args, "nats_url") else None,
-        dry_run=args.dry_run,
         assume_yes=args.yes,
         confirm=args.confirm,
+        dry_run_log=dry_log,
     )
     if args.notify:
         if exit_code == 0:

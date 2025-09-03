@@ -234,10 +234,12 @@ ai-cli do "git add . && git commit -m 'update' && git push" --log my.log
 Legacy commands `ai-plan` and `ai-do` now delegate to these subcommands.
 
 The `do` subcommand always prints a dry-run of the planned commands before
-execution. Review the output and re-run with `--dry-run` to preview only or
-pass `--confirm` to execute steps marked with a `[risk:*]` tag. After the dry
-run the CLI replays the output and asks for confirmation so you execute exactly
-what you approved.
+execution and refuses to run without this preview. Each step is annotated with
+`[risk:read]`, `[risk:write]`, `[risk:network]` or `[risk:elevated]` to classify
+its impact. Review the output and re-run with `--dry-run` to preview only or
+pass `--confirm` to execute steps that carry any risk tag. After the dry run the
+CLI replays the output and asks for confirmation so you execute exactly what you
+approved.
 
 This interactive review makes the workflow safer by ensuring you see and approve
 every step before it runs.

@@ -29,7 +29,22 @@ from telemetry import analytics_default
 _LAST_MODEL_REMOTE = True
 _LAST_MODEL_LOCK = Lock()
 
-RISKY_COMMANDS = {"rm", "reboot", "shutdown", "poweroff", "mkfs", "dd"}
+READ_COMMANDS = {"cat", "grep", "head", "ls", "more", "tail"}
+WRITE_COMMANDS = {
+    "chmod",
+    "chown",
+    "cp",
+    "dd",
+    "ln",
+    "mkdir",
+    "mv",
+    "rm",
+    "rmdir",
+    "tee",
+    "touch",
+    "truncate",
+    "mkfs",
+}
 NETWORK_COMMANDS = {
     "curl",
     "wget",
@@ -41,7 +56,7 @@ NETWORK_COMMANDS = {
 
 
 def _tag_risky(step: str) -> str:
-    """Append a risk tag with the command type when ``step`` is dangerous."""
+    """Append risk classification tags to ``step`` when applicable."""
     try:
         tokens = shlex.split(step)
     except ValueError:
@@ -49,15 +64,19 @@ def _tag_risky(step: str) -> str:
     if not tokens:
         return step
     cmd = tokens[0]
-    risk: Optional[str] = None
+    risks: set[str] = set()
     if cmd == "sudo":
-        risk = "sudo"
-        if len(tokens) > 1 and tokens[1] in RISKY_COMMANDS:
-            risk = tokens[1]
-    elif cmd in RISKY_COMMANDS:
-        risk = cmd
-    if risk:
-        return f"{step} [risk:{risk}]"
+        risks.add("elevated")
+        if len(tokens) > 1:
+            cmd = tokens[1]
+    if cmd in NETWORK_COMMANDS:
+        risks.add("network")
+    if cmd in WRITE_COMMANDS:
+        risks.add("write")
+    elif cmd in READ_COMMANDS:
+        risks.add("read")
+    if risks:
+        return f"{step} [risk:{','.join(sorted(risks))}]"
     return step
 
 

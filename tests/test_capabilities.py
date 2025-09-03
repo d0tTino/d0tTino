@@ -30,6 +30,7 @@ def test_grant_capability_allows_execution(monkeypatch, tmp_path):
         [step],
         log_path=tmp_path / "log.txt",
         assume_yes=True,
+        dry_run_log=["1. echo hi"],
     )
 
     assert rc == 0
@@ -68,8 +69,8 @@ def test_tokens_persist_for_session(monkeypatch, tmp_path):
 
     step = PlanStep(1, "echo hi", capabilities={Capability.PROCESS_EXEC})
     log = tmp_path / "log.txt"
-    rc1 = cli_common.execute_steps([step], log_path=log, assume_yes=True)
-    rc2 = cli_common.execute_steps([step], log_path=log, assume_yes=True)
+    rc1 = cli_common.execute_steps([step], log_path=log, assume_yes=True, dry_run_log=["1. echo hi"])
+    rc2 = cli_common.execute_steps([step], log_path=log, assume_yes=True, dry_run_log=["1. echo hi"])
 
     assert rc1 == rc2 == 0
     assert calls["count"] == 1
@@ -104,7 +105,12 @@ def test_session_log_records_grants_and_denials(monkeypatch, tmp_path):
         PlanStep(3, "cat file.txt", capabilities={Capability.FILESYSTEM_READ}),
     ]
 
-    cli_common.execute_steps(steps, log_path=tmp_path / "log.txt", assume_yes=True)
+    cli_common.execute_steps(
+        steps,
+        log_path=tmp_path / "log.txt",
+        assume_yes=True,
+        dry_run_log=["1. echo hi", "2. curl example.com", "3. cat file.txt"],
+    )
 
     content = (tmp_path / "session.log").read_text()
     assert "[granted capability: process.exec" in content
@@ -138,11 +144,11 @@ def test_token_expiration(monkeypatch, tmp_path):
 
     step = PlanStep(1, "echo hi", capabilities={Capability.PROCESS_EXEC})
     log = tmp_path / "log.txt"
-    cli_common.execute_steps([step], log_path=log, assume_yes=True)
+    cli_common.execute_steps([step], log_path=log, assume_yes=True, dry_run_log=["1. echo hi"])
     token1, expiry1 = cli_common._SESSION_TOKENS["process.exec"]
 
     current["time"] = expiry1 + 1
-    cli_common.execute_steps([step], log_path=log, assume_yes=True)
+    cli_common.execute_steps([step], log_path=log, assume_yes=True, dry_run_log=["1. echo hi"])
     token2, expiry2 = cli_common._SESSION_TOKENS["process.exec"]
 
     assert calls["count"] == 2

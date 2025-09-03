@@ -41,7 +41,30 @@ def read_key() -> str:
 
 initialize()
 
-RISKY_COMMANDS = {"rm", "reboot", "shutdown", "poweroff", "mkfs", "dd"}
+READ_COMMANDS = {"cat", "grep", "head", "ls", "more", "tail"}
+WRITE_COMMANDS = {
+    "chmod",
+    "chown",
+    "cp",
+    "dd",
+    "ln",
+    "mkdir",
+    "mv",
+    "rm",
+    "rmdir",
+    "tee",
+    "touch",
+    "truncate",
+    "mkfs",
+}
+NETWORK_COMMANDS = {
+    "curl",
+    "wget",
+    "winget",
+    "pip",
+    "pip3",
+    "pipx",
+}
 
 
 def _label_risk(step: str) -> str:
@@ -53,14 +76,20 @@ def _label_risk(step: str) -> str:
     if not tokens:
         return f"{step} [risk:info]"
     cmd = tokens[0]
-    risk = "info"
+    risks: set[str] = set()
     if cmd == "sudo":
-        risk = "sudo"
-        if len(tokens) > 1 and tokens[1] in RISKY_COMMANDS:
-            risk = tokens[1]
-    elif cmd in RISKY_COMMANDS:
-        risk = cmd
-    return f"{step} [risk:{risk}]"
+        risks.add("elevated")
+        if len(tokens) > 1:
+            cmd = tokens[1]
+    if cmd in NETWORK_COMMANDS:
+        risks.add("network")
+    if cmd in WRITE_COMMANDS:
+        risks.add("write")
+    elif cmd in READ_COMMANDS:
+        risks.add("read")
+    if not risks:
+        risks.add("info")
+    return f"{step} [risk:{','.join(sorted(risks))}]"
 
 
 def _split_rationale(line: str) -> tuple[str, str]:

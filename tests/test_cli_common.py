@@ -123,7 +123,9 @@ def test_execute_steps_parses_quoted_args(monkeypatch, tmp_path):
     monkeypatch.setattr(cli_common.subprocess, "run", fake_run)
 
     cli_common.execute_steps(
-        [PlanStep(1, "echo 'foo bar'")], log_path=tmp_path / "log.txt"
+        [PlanStep(1, "echo 'foo bar'")],
+        log_path=tmp_path / "log.txt",
+        dry_run_log=["1. echo 'foo bar'"]
     )
 
     assert captured["cmd"] == ["echo", "foo bar"]
@@ -151,7 +153,9 @@ def test_execute_steps_fallbacks_to_shell(monkeypatch, tmp_path):
     monkeypatch.setattr(cli_common.subprocess, "run", fake_run)
 
     cli_common.execute_steps(
-        [PlanStep(1, "python -c \"print('hi')\"")], log_path=tmp_path / "log.txt"
+        [PlanStep(1, "python -c \"print('hi')\"")],
+        log_path=tmp_path / "log.txt",
+        dry_run_log=["1. python -c \"print('hi')\""]
     )
 
     assert captured["cmd"] == "python -c \"print('hi')\""
@@ -182,6 +186,7 @@ def test_execute_steps_windows_path(monkeypatch, tmp_path):
     cli_common.execute_steps(
         [PlanStep(1, '"C:\\Program Files\\Foo Bar\\tool.exe" arg')],
         log_path=tmp_path / "log.txt",
+        dry_run_log=["1. \"C:/Program Files/Foo Bar/tool.exe\" arg"],
     )
 
     assert captured["cmd"] == ["C:\\Program Files\\Foo Bar\\tool.exe", "arg"]
@@ -214,6 +219,7 @@ def test_execute_steps_enforces_capabilities(monkeypatch, tmp_path):
         log_path=tmp_path / "log.txt",
         allowed_capabilities={Capability.FILESYSTEM_READ},
         assume_yes=True,
+        dry_run_log=["1. echo hi"],
     )
 
     assert rc == 1
@@ -242,6 +248,7 @@ def test_execute_steps_logs_capabilities(monkeypatch, tmp_path):
         [step],
         log_path=tmp_path / "log.txt",
         allowed_capabilities={Capability.PROCESS_EXEC},
+        dry_run_log=["1. echo hi"],
     )
 
     content = (tmp_path / "log.txt").read_text()

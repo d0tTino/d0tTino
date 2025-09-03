@@ -114,7 +114,7 @@ def test_plan_tags_risky_commands(monkeypatch):
     monkeypatch.setattr(ai_exec.router, "run_ollama", lambda *a, **k: "")
     monkeypatch.setattr(ai_exec, "get_preferred_models", lambda *a, **k: ("g", "o"))
     steps = ai_exec.plan("goal")
-    assert [s.command for s in steps] == ["rm -rf / [risk:rm]", "ls"]
+    assert [s.command for s in steps] == ["rm -rf / [risk:write]", "ls [risk:read]"]
 
 
 def test_plan_tags_sudo_commands(monkeypatch):
@@ -124,7 +124,7 @@ def test_plan_tags_sudo_commands(monkeypatch):
     monkeypatch.setattr(ai_exec.router, "run_ollama", lambda *a, **k: "")
     monkeypatch.setattr(ai_exec, "get_preferred_models", lambda *a, **k: ("g", "o"))
     steps = ai_exec.plan("goal")
-    assert [s.command for s in steps] == ["sudo reboot now [risk:reboot]", "ls"]
+    assert [s.command for s in steps] == ["sudo reboot now [risk:elevated]", "ls [risk:read]"]
 
 
 def test_plan_parses_diffs(monkeypatch):
@@ -159,9 +159,9 @@ def test_plan_marks_network_commands(monkeypatch, tmp_path):
     monkeypatch.setattr("builtins.input", fake_input)
     monkeypatch.setattr(subprocess, "run", lambda *a, **k: type("R", (), {"stdout": "", "stderr": "", "returncode": 0})())
     log = tmp_path / "log.txt"
-    rc = cli_common.execute_steps(steps, log_path=log, assume_yes=True)
+    rc = cli_common.execute_steps(steps, log_path=log, assume_yes=True, dry_run_log=["1. curl https://example.com"])
     assert rc == 1
-    assert prompts == ["Grant capability network.fetch? [y/N]"]
+    assert prompts == []
 
 
 def create_exe(path: Path, contents: str = "#!/usr/bin/env bash\n") -> None:
@@ -278,7 +278,7 @@ def test_plan_adds_file_diff(monkeypatch, tmp_path):
 
 
 def test_execute_steps_requires_confirm(monkeypatch, tmp_path):
-    step = PlanStep(1, "rm -rf / [risk:rm]")
+    step = PlanStep(1, "rm -rf / [risk:write]")
     called = []
 
     def fake_run(cmd, shell=False, capture_output=False, text=False):
@@ -291,11 +291,19 @@ def test_execute_steps_requires_confirm(monkeypatch, tmp_path):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
     log = tmp_path / "log.txt"
-    rc = cli_common.execute_steps([step], log_path=log, assume_yes=True)
+    rc = cli_common.execute_steps(
+        [step], log_path=log, assume_yes=True, dry_run_log=["1. rm -rf / [risk:write]"]
+    )
     assert rc == 1
     assert called == []
 
-    rc = cli_common.execute_steps([step], log_path=log, assume_yes=True, confirm=True)
+    rc = cli_common.execute_steps(
+        [step],
+        log_path=log,
+        assume_yes=True,
+        confirm=True,
+        dry_run_log=["1. rm -rf / [risk:write]"]
+    )
     assert rc == 0
     assert called != []
 

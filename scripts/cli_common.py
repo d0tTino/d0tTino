@@ -73,6 +73,7 @@ def execute_steps(
     ``dry_run`` prints the planned commands and their diffs without executing
     them. When executing, commands tagged with ``[risk:*]`` require the
     ``confirm`` flag to be set or the function aborts before running anything.
+    A non-empty ``dry_run_log`` must be supplied to proceed with execution.
     """
     step_list = list(steps)
 
@@ -98,6 +99,10 @@ def execute_steps(
             dry_run_log.extend(lines)
         return 0
 
+    if not dry_run_log and step_list:
+        print("Dry-run log required before execution.", file=sys.stderr)
+        return 1
+
     risk_present = any("[risk:" in step.command for step in step_list)
 
     if dry_run_log:
@@ -113,13 +118,6 @@ def execute_steps(
             answer = input("Proceed with execution? [y/N]").strip().lower()
             if answer != "y":
                 return 1
-    elif risk_present and not confirm:
-        print(
-            "Risky commands present. Re-run with --confirm to execute.",
-            file=sys.stderr,
-        )
-        return 1
-
     exit_code = 0
     allowed = set(allowed_capabilities) if allowed_capabilities else set()
 
