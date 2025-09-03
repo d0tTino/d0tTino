@@ -1,0 +1,3 @@
+$schema: https://aka.ms/winget-schema
+packages:
+  - packageIdentifier: OpenJS.NodeJS.LTS

@@ -44,6 +44,13 @@
         "format": "uri",
         "description": "URL to the pip package containing the recipe"
       }
+    },
+    "recipe_configs": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "description": "Path to winget configuration file for the recipe"
+      }
     }
   },
   "additionalProperties": false
