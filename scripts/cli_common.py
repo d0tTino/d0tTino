@@ -12,6 +12,7 @@ import secrets
 import shlex
 import subprocess
 import sys
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Optional, Set
@@ -37,7 +38,8 @@ class PlanStep:
     capabilities: Set[str] = field(default_factory=set)
 
 
-_SESSION_TOKENS: dict[str, str] = {}
+_SESSION_TOKENS: dict[str, tuple[str, float]] = {}
+TOKEN_TTL_SECONDS = 3600
 SESSION_LOG = Path(os.environ.get("SESSION_LOG", "session.log"))
 
 
@@ -47,6 +49,13 @@ def _strip_risk_tag(command: str) -> str:
     if " [risk:" in command:
         return command.rsplit(" [risk:", 1)[0]
     return command
+
+
+def _purge_expired_tokens() -> None:
+    now = time.time()
+    expired = [cap for cap, (_, exp) in _SESSION_TOKENS.items() if exp <= now]
+    for cap in expired:
+        del _SESSION_TOKENS[cap]
 
 
 def execute_steps(
@@ -66,6 +75,8 @@ def execute_steps(
     ``confirm`` flag to be set or the function aborts before running anything.
     """
     step_list = list(steps)
+
+    _purge_expired_tokens()
 
     if dry_run:
         lines: list[str] = []
@@ -125,7 +136,7 @@ def execute_steps(
             for cap in sorted(missing_caps):
                 cap_name = cap.value if hasattr(cap, "value") else str(cap)
                 if cap_name in _SESSION_TOKENS:
-                    token = _SESSION_TOKENS[cap_name]
+                    token, _ = _SESSION_TOKENS[cap_name]
                     allowed.add(cap_name)
                     with log_path.open("a", encoding="utf-8") as log:
                         log.write(f"[using capability token: {cap_name}={token}]\n")
@@ -134,7 +145,10 @@ def execute_steps(
 
                 if answer == "y":
                     token = secrets.token_hex(8)
-                    _SESSION_TOKENS[cap_name] = token
+                    _SESSION_TOKENS[cap_name] = (
+                        token,
+                        time.time() + TOKEN_TTL_SECONDS,
+                    )
                     allowed.add(cap_name)
                     with log_path.open("a", encoding="utf-8") as log:
                         log.write(f"[granted capability: {cap_name} token={token}]\n")
