@@ -78,14 +78,13 @@ For private and ongoing work (such as **Aiga** and other closed repos), I focus 
 Install with your preferred Windows package manager:
 
 ```powershell
-winget install Tino.d0tTino
+winget install --id Tino.d0tTino -e
 ```
 
-Or register the Scoop bucket and install:
+Or use Scoop in a single line:
 
 ```powershell
-scoop bucket add tino-bucket https://github.com/d0tTino/d0tTino
-scoop install tino
+scoop bucket add tino https://github.com/d0tTino/tino-bucket; scoop install tino
 ```
 
 For advanced bootstrap options, see

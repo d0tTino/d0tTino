@@ -1,10 +1,10 @@
 # Install with winget
 
-After the package is published to the Windows Package Manager repository, you can install the toolkit with a single command:
+Run this one‑liner to grab the latest release from the Windows Package Manager:
 
 ```powershell
 winget install --id Tino.d0tTino -e
 ```
 
-This one‑liner downloads the latest release from GitHub and sets up the scripts. For manual setup, run `bootstrap.ps1` or `install.sh` from the repository.
+The command downloads the newest archive from GitHub and sets up the scripts. For manual setup, run `bootstrap.ps1` or `install.sh` from the repository.
 
