@@ -23,12 +23,21 @@ from scripts.cli_common import (
     build_analytics_parser,
 )
 from scripts import cli_actions
+from scripts.capabilities import Capability
 from telemetry import analytics_default
 
 _LAST_MODEL_REMOTE = True
 _LAST_MODEL_LOCK = Lock()
 
 RISKY_COMMANDS = {"rm", "reboot", "shutdown", "poweroff", "mkfs", "dd"}
+NETWORK_COMMANDS = {
+    "curl",
+    "wget",
+    "winget",
+    "pip",
+    "pip3",
+    "pipx",
+}
 
 
 def _tag_risky(step: str) -> str:
@@ -51,6 +60,20 @@ def _tag_risky(step: str) -> str:
         return f"{step} [risk:{risk}]"
     return step
 
+
+def _detect_capabilities(step: str) -> set[str]:
+    """Return capability tags inferred from ``step``."""
+    try:
+        tokens = shlex.split(step)
+    except ValueError:
+        return set()
+    if not tokens:
+        return set()
+    cmd = tokens[1] if tokens[0] == "sudo" and len(tokens) > 1 else tokens[0]
+    if cmd in NETWORK_COMMANDS:
+        return {Capability.NETWORK_FETCH}
+    return set()
+
 def last_model_remote() -> bool:
     """Return ``True`` if the last plan used a remote model."""
     with _LAST_MODEL_LOCK:
@@ -72,13 +95,23 @@ def _parse_steps(text: str) -> List[PlanStep]:
             continue
         if current is not None:
             steps.append(
-                PlanStep(len(steps) + 1, _tag_risky(current), "\n".join(diff_lines) or None)
+                PlanStep(
+                    len(steps) + 1,
+                    _tag_risky(current),
+                    "\n".join(diff_lines) or None,
+                    capabilities=_detect_capabilities(current),
+                )
             )
             diff_lines = []
         current = line.strip()
     if current is not None:
         steps.append(
-            PlanStep(len(steps) + 1, _tag_risky(current), "\n".join(diff_lines) or None)
+            PlanStep(
+                len(steps) + 1,
+                _tag_risky(current),
+                "\n".join(diff_lines) or None,
+                capabilities=_detect_capabilities(current),
+            )
         )
     return steps
 
