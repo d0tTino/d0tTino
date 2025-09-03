@@ -69,5 +69,17 @@
     "git": "d0ttino-git-recipe",
     "starship": "d0ttino-starship-recipe",
     "fastfetch": "d0ttino-fastfetch-recipe"
+  },
+  "recipe_configs": {
+    "wsl": "scripts/recipes/config/wsl.yaml",
+    "docker_desktop": "scripts/recipes/config/docker_desktop.yaml",
+    "vscode": "scripts/recipes/config/vscode.yaml",
+    "gpu_drivers": "scripts/recipes/config/gpu_drivers.yaml",
+    "windows_terminal": "scripts/recipes/config/windows_terminal.yaml",
+    "powershell": "scripts/recipes/config/powershell.yaml",
+    "nodejs": "scripts/recipes/config/nodejs.yaml",
+    "git": "scripts/recipes/config/git.yaml",
+    "starship": "scripts/recipes/config/starship.yaml",
+    "fastfetch": "scripts/recipes/config/fastfetch.yaml"
   }
 }

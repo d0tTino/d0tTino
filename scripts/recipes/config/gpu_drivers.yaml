@@ -1,0 +1,4 @@
+$schema: https://aka.ms/winget-schema
+packages:
+  - packageIdentifier: Nvidia.DisplayDriver
+  - packageIdentifier: Nvidia.CUDA

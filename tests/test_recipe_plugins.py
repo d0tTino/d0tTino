@@ -2,6 +2,7 @@ import importlib
 import importlib.metadata
 import sys
 import types
+from pathlib import Path
 import pytest
 
 pytest.importorskip("requests")
@@ -74,39 +75,39 @@ def test_discover_recipes_loads_entry_points_py310(monkeypatch):
 
 def test_builtin_curated_recipes():
     mapping = recipes.discover_recipes()
+    config_dir = Path(__file__).resolve().parent.parent / "scripts" / "recipes" / "config"
     assert mapping["wsl"]("") == [
-        "winget install -e --id Microsoft.WSL",
+        f"winget configure -f {config_dir / 'wsl.yaml'}",
         "wsl --set-default-version 2",
     ]
     assert mapping["docker_desktop"]("") == [
-        "winget install -e --id Docker.DockerDesktop",
+        f"winget configure -f {config_dir / 'docker_desktop.yaml'}",
         "wsl --set-default-version 2",
     ]
     assert mapping["vscode"]("") == [
-        "winget install -e --id Microsoft.VisualStudioCode",
+        f"winget configure -f {config_dir / 'vscode.yaml'}",
         "code --install-extension ms-python.python",
         "code --install-extension ms-toolsai.jupyter",
     ]
     assert mapping["gpu_drivers"]("") == [
-        "winget install -e --id Nvidia.DisplayDriver",
-        "winget install -e --id Nvidia.CUDA",
+        f"winget configure -f {config_dir / 'gpu_drivers.yaml'}",
     ]
     assert mapping["powershell"]("") == [
-        "winget install -e --id Microsoft.PowerShell",
+        f"winget configure -f {config_dir / 'powershell.yaml'}",
     ]
     assert mapping["nodejs"]("") == [
-        "winget install -e --id OpenJS.NodeJS.LTS",
+        f"winget configure -f {config_dir / 'nodejs.yaml'}",
     ]
     assert mapping["git"]("") == [
-        "winget install -e --id Git.Git",
+        f"winget configure -f {config_dir / 'git.yaml'}",
     ]
     assert mapping["starship"]("") == [
-        "winget install -e --id Starship.Starship",
+        f"winget configure -f {config_dir / 'starship.yaml'}",
     ]
     assert mapping["windows_terminal"]("") == [
-        "winget install -e --id Microsoft.WindowsTerminal",
+        f"winget configure -f {config_dir / 'windows_terminal.yaml'}",
     ]
     assert mapping["fastfetch"]("") == [
-        "winget install -e --id Fastfetch.Fastfetch",
+        f"winget configure -f {config_dir / 'fastfetch.yaml'}",
     ]
 
