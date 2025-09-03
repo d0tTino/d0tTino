@@ -14,6 +14,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import argparse
 from pathlib import Path
 
 import yaml
@@ -116,6 +117,16 @@ def publish_scoop(manifest: Path, repo_url: str) -> None:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Update release manifests and optionally publish upstream."
+    )
+    parser.add_argument(
+        "--publish",
+        action="store_true",
+        help="Submit manifests to Winget and Scoop using environment credentials",
+    )
+    args = parser.parse_args()
+
     tag = latest_tag()
     version = tag_version(tag)
     archive = build_archive(tag, version)
@@ -124,17 +135,18 @@ def main() -> None:
     winget_path = update_winget(tag, version, sha)
     scoop_path = update_scoop(tag, version, sha)
 
-    token = os.environ.get("WINGET_TOKEN")
-    if token:
+    if args.publish:
+        token = os.environ.get("WINGET_TOKEN")
+        if not token:
+            raise RuntimeError("WINGET_TOKEN not set")
         publish_winget(winget_path, token)
-    else:
-        print("WINGET_TOKEN not set; skipping Winget publish")
 
-    repo_url = os.environ.get("SCOOP_BUCKET")
-    if repo_url:
+        repo_url = os.environ.get("SCOOP_BUCKET")
+        if not repo_url:
+            raise RuntimeError("SCOOP_BUCKET not set")
         publish_scoop(scoop_path, repo_url)
     else:
-        print("SCOOP_BUCKET not set; skipping Scoop publish")
+        print("Skipping publish; run with --publish to submit manifests")
 
 
 if __name__ == "__main__":

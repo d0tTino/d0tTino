@@ -2,6 +2,14 @@
 
 Use [Scoop](https://scoop.sh) to install the tools from this repository on Windows.
 
+Install everything in one step:
+
+```powershell
+scoop bucket add tino https://github.com/d0tTino/tino-bucket; scoop install tino
+```
+
+Prefer manual steps? Run the commands separately:
+
 1. Add the custom bucket:
    ```powershell
    scoop bucket add tino https://github.com/d0tTino/tino-bucket
@@ -14,11 +22,5 @@ Use [Scoop](https://scoop.sh) to install the tools from this repository on Windo
    ```powershell
    scoop update tino
    ```
-
-Alternatively, perform the installation in one step:
-
-```powershell
-scoop bucket add tino https://github.com/d0tTino/tino-bucket; scoop install tino
-```
 
 The manifest downloads the versioned release archive and runs a dry-run of the common installer to verify dependencies.
