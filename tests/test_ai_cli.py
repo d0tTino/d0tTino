@@ -258,7 +258,7 @@ def test_do_requires_confirm_for_risky_steps(monkeypatch, tmp_path, capsys):
     monkeypatch.setattr(
         ai_cli.ai_exec,
         "plan",
-        lambda *a, **k: [PlanStep(1, "rm -rf / [risk:rm]")],
+        lambda *a, **k: [PlanStep(1, "rm -rf / [risk:write]")],
     )
     log = tmp_path / "log.txt"
     rc = ai_cli.main(["do", "goal", "--log", str(log), "--yes"])

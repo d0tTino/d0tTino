@@ -100,6 +100,14 @@ def run_recipe(
     else:
         raw_steps = list(steps_or_callable)
     steps = [PlanStep(i + 1, s) for i, s in enumerate(raw_steps)]
+    dry_log: list[str] = []
+    execute_steps(steps, log_path=log_path, dry_run=True, dry_run_log=dry_log)
+    if dry_run:
+        return 0
+    risk_present = any("[risk:" in s.command for s in steps)
+    if risk_present and not confirm:
+        print("Risky commands present. Re-run with --confirm to execute.", file=sys.stderr)
+        return 1
     return run_steps(
         "ai-do-recipe",
         steps,
@@ -108,10 +116,10 @@ def run_recipe(
         payload={"recipe": name, "goal": goal, "step_count": len(steps)},
         nats_url=nats_url,
         jetstream=jetstream,
-        dry_run=dry_run,
         assume_yes=assume_yes,
         confirm=confirm,
         allowed_capabilities=allowed_capabilities,
+        dry_run_log=dry_log,
     )
 
 __all__ = ["record_event_logged", "run_steps", "run_recipe"]

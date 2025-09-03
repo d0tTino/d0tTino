@@ -34,7 +34,7 @@ def test_main_runs_and_logs(monkeypatch, tmp_path):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
 
-    inputs = iter(["y", "n"])
+    inputs = iter(["y", "y", "n"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
 
     log = tmp_path / "log.txt"
@@ -61,9 +61,9 @@ def test_main_skips_when_declined(monkeypatch, tmp_path):
     log = tmp_path / "log.txt"
     rc = ai_do.main(["goal", "--log", str(log)])
 
-    assert rc == 0
+    assert rc == 1
     assert not run_called
-    assert not log.exists()
+    assert log.exists()
 
 
 def test_main_dry_run(monkeypatch, tmp_path):
@@ -114,11 +114,11 @@ def test_diff_preview_shown(monkeypatch, tmp_path):
     with contextlib.redirect_stdout(out):
         rc = ai_do.main(["goal", "--log", str(log)])
 
-    assert rc == 0
+    assert rc == 1
     output = out.getvalue()
     assert "--- a" in output
     assert not run_called
-    assert prompts and prompts[0].startswith("Run command")
+    assert prompts and prompts[0].startswith("Proceed")
 
 
 def test_main_yes_runs_without_prompts(monkeypatch, tmp_path):
@@ -177,7 +177,7 @@ def test_confirm_runs_without_prompts(monkeypatch, tmp_path):
 
 def test_risky_requires_confirm(monkeypatch, tmp_path):
     monkeypatch.setattr(
-        ai_exec, "plan", lambda *a, **k: [PlanStep(1, "rm -rf / [risk:rm]")]
+        ai_exec, "plan", lambda *a, **k: [PlanStep(1, "rm -rf / [risk:write]")]
     )
     prompts = []
 
@@ -198,7 +198,7 @@ def test_risky_requires_confirm(monkeypatch, tmp_path):
 
 def test_confirm_allows_risky(monkeypatch, tmp_path):
     monkeypatch.setattr(
-        ai_exec, "plan", lambda *a, **k: [PlanStep(1, "echo hi [risk:rm]")]
+        ai_exec, "plan", lambda *a, **k: [PlanStep(1, "echo hi [risk:write]")]
     )
     called = []
 
@@ -238,7 +238,7 @@ def test_main_returns_failure(monkeypatch, tmp_path):
         return Result()
 
     monkeypatch.setattr(subprocess, "run", fake_run)
-    inputs = iter(["y"])
+    inputs = iter(["y", "y"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
 
     log = tmp_path / "log.txt"
@@ -252,7 +252,7 @@ def test_main_confirms_and_sanitizes(monkeypatch, tmp_path):
     monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: [PlanStep(1, "echo hi")])
 
     prompts = []
-    inputs = iter(["y"])
+    inputs = iter(["y", "y"])
 
     def fake_input(prompt):
         prompts.append(prompt)
@@ -321,7 +321,7 @@ def test_main_records_event(monkeypatch, tmp_path):
 
 def test_main_records_failure(monkeypatch, tmp_path):
     monkeypatch.setattr(ai_exec, "plan", lambda *a, **k: [PlanStep(1, "bad")])
-    inputs = iter(["y"])
+    inputs = iter(["y", "y"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
 
     class Result:
@@ -350,6 +350,19 @@ def test_main_records_failure(monkeypatch, tmp_path):
     assert payload["exit_code"] == 1
     assert "duration_ms" in payload and payload["duration_ms"] >= 0
     assert payload["model_source"] == "remote"
+
+
+def test_network_risk_requires_confirm(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        ai_exec, "plan", lambda *a, **k: [PlanStep(1, "curl example.com [risk:network]")]
+    )
+    def fail_run(*a, **k):  # pragma: no cover - should not run
+        raise AssertionError("should not run")
+
+    monkeypatch.setattr(subprocess, "run", fail_run)
+    log = tmp_path / "log.txt"
+    rc = ai_do.main(["goal", "--log", str(log), "--yes"])
+    assert rc == 1
 
 
 def test_main_accepts_config_path(monkeypatch):
