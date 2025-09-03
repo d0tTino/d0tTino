@@ -30,6 +30,19 @@ backend becomes available to the routing utilities.
    [plugin-registry.json](../plugin-registry.json) so others can install it via
    the registry.
 
+## Scaffolding a Plug-in
+
+Use `scripts/plugin_scaffold.py` to bootstrap a backend or recipe package:
+
+```bash
+python -m scripts.plugin_scaffold demo
+python -m scripts.plugin_scaffold demo --recipe
+```
+
+The script creates a directory with a minimal `pyproject.toml`, an `mcp.json`
+file and a plug-in module that defines a sample `run` function along with
+`mcp_tool` metadata. Edit these stubs to implement your plug-in.
+
 ## Required Entry Point
 
 Expose the plug-in module via the `llm.plugins` entry point group in your
