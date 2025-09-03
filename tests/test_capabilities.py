@@ -38,7 +38,7 @@ def test_grant_capability_allows_execution(monkeypatch, tmp_path):
     match = re.search(r"\[granted capability: process\.exec token=([0-9a-f]+)\]", content)
     assert match
     token = match.group(1)
-    assert cli_common._SESSION_TOKENS["process.exec"] == token
+    assert cli_common._SESSION_TOKENS["process.exec"][0] == token
 
 
 def test_tokens_persist_for_session(monkeypatch, tmp_path):
@@ -110,3 +110,41 @@ def test_session_log_records_grants_and_denials(monkeypatch, tmp_path):
     assert "[granted capability: process.exec" in content
     assert "[denied capability: network.fetch]" in content
     assert "[granted capability: filesystem.read" in content
+
+
+def test_token_expiration(monkeypatch, tmp_path):
+    cli_common._SESSION_TOKENS.clear()
+    current = {"time": 1000.0}
+    monkeypatch.setattr(cli_common.time, "time", lambda: current["time"])
+
+    calls = {"count": 0}
+
+    def fake_input(_: str) -> str:
+        calls["count"] += 1
+        return "y"
+
+    monkeypatch.setattr("builtins.input", fake_input)
+
+    def fake_run(cmd, *, shell, capture_output, text):
+        class Result:
+            def __init__(self):
+                self.stdout = ""
+                self.stderr = ""
+                self.returncode = 0
+
+        return Result()
+
+    monkeypatch.setattr(cli_common.subprocess, "run", fake_run)
+
+    step = PlanStep(1, "echo hi", capabilities={Capability.PROCESS_EXEC})
+    log = tmp_path / "log.txt"
+    cli_common.execute_steps([step], log_path=log, assume_yes=True)
+    token1, expiry1 = cli_common._SESSION_TOKENS["process.exec"]
+
+    current["time"] = expiry1 + 1
+    cli_common.execute_steps([step], log_path=log, assume_yes=True)
+    token2, expiry2 = cli_common._SESSION_TOKENS["process.exec"]
+
+    assert calls["count"] == 2
+    assert token1 != token2
+    assert expiry2 > expiry1
