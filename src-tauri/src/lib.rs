@@ -23,6 +23,7 @@ pub mod commands {
     pub struct Dashboard {
         pub recent_plans: Vec<String>,
         pub budget: Option<i64>,
+        pub budget_history: Vec<i64>,
         pub plugins: Vec<PluginInfo>,
     }
 
@@ -123,10 +124,7 @@ pub mod commands {
         Ok(log)
     }
 
-    pub async fn record_event(
-        name: String,
-        payload: serde_json::Value,
-    ) -> Result<bool, String> {
+    pub async fn record_event(name: String, payload: serde_json::Value) -> Result<bool, String> {
         use tokio::process::Command;
 
         let script = r#"
@@ -166,9 +164,37 @@ raise SystemExit(0 if ok else 1)
             }
         }
 
-        let budget = std::env::var("LLM_ROUTER_BUDGET")
-            .ok()
-            .and_then(|s| s.parse().ok());
+        use tokio::process::Command;
+        let script = r#"
+import json, os, pathlib, llm.router as r
+b, _t, _s = r.get_budget()
+path = os.environ.get('LLM_BUDGET_PATH') or str(r._BUDGET_PATH)
+hist = []
+p = pathlib.Path(path)
+if p.exists():
+    try:
+        hist = json.loads(p.read_text()).get('history', [])
+    except Exception:
+        pass
+print(json.dumps({'budget': b, 'history': hist}))
+"#;
+        let output = Command::new("python3")
+            .arg("-c")
+            .arg(script)
+            .output()
+            .await
+            .map_err(|e| e.to_string())?;
+        if !output.status.success() {
+            return Err(String::from_utf8_lossy(&output.stderr).to_string());
+        }
+        let val: serde_json::Value =
+            serde_json::from_slice(&output.stdout).map_err(|e| e.to_string())?;
+        let budget = val.get("budget").and_then(|v| v.as_i64());
+        let history = val
+            .get("history")
+            .and_then(|v| v.as_array())
+            .map(|arr| arr.iter().filter_map(|n| n.as_i64()).collect())
+            .unwrap_or_default();
 
         let mut enabled = HashSet::new();
         if let Ok(home) = std::env::var("HOME") {
@@ -205,6 +231,7 @@ raise SystemExit(0 if ok else 1)
         Ok(Dashboard {
             recent_plans: plans,
             budget,
+            budget_history: history,
             plugins,
         })
     }
