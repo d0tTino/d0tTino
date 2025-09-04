@@ -1,6 +1,9 @@
 import contextlib
 import io
 
+import contextlib
+import io
+
 from scripts import ai_cli, ai_suggest, cli_actions
 
 
@@ -9,7 +12,9 @@ def test_suggest_executes_selected_command(monkeypatch):
     monkeypatch.setattr(
         ai_suggest,
         "suggest",
-        lambda goal, **kwargs: [{"command": "echo hi [risk:info]", "rationale": ""}],
+        lambda goal, **kwargs: [
+            {"command": "echo hi", "rationale": "", "risk": {"tags": ["info"], "score": 0}}
+        ],
     )
     monkeypatch.setattr(ai_suggest, "read_key", lambda: "1")
 
@@ -40,7 +45,9 @@ def test_suggest_skips_on_keypress(monkeypatch):
     monkeypatch.setattr(
         ai_suggest,
         "suggest",
-        lambda goal, **kwargs: [{"command": "echo hi [risk:info]", "rationale": ""}],
+        lambda goal, **kwargs: [
+            {"command": "echo hi", "rationale": "", "risk": {"tags": ["info"], "score": 0}}
+        ],
     )
     monkeypatch.setattr(ai_suggest, "read_key", lambda: "q")
 
@@ -64,7 +71,9 @@ def test_suggest_forwards_to_plan(monkeypatch):
     monkeypatch.setattr(
         ai_suggest,
         "suggest",
-        lambda goal, **kwargs: [{"command": "echo hi [risk:info]", "rationale": ""}],
+        lambda goal, **kwargs: [
+            {"command": "echo hi", "rationale": "", "risk": {"tags": ["info"], "score": 0}}
+        ],
     )
     monkeypatch.setattr(ai_suggest, "read_key", lambda: "1")
 
@@ -85,5 +94,5 @@ def test_suggest_forwards_to_plan(monkeypatch):
     with contextlib.redirect_stdout(out):
         rc = ai_cli.main(["suggest", "goal", "--to-plan", "--analytics"])
     assert rc == 0
-    assert captured["goal"] == "echo hi [risk:info]"
+    assert captured["goal"] == "echo hi"
     assert captured["analytics"] is True

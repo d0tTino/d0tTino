@@ -112,7 +112,9 @@ def _cmd_suggest(args: argparse.Namespace) -> int:
         return 1
     log_path = Path.home() / ".config" / "d0tTino" / "ai_cli_suggest.log"
     for idx, item in enumerate(suggestions, 1):
-        print(f"{idx}. {item['command']}")
+        tags = ",".join(item["risk"]["tags"])
+        score = item["risk"]["score"]
+        print(f"{idx}. {item['command']} [risk:{tags}] (score:{score})")
         if item["rationale"]:
             print(item["rationale"])
     print(
@@ -138,9 +140,11 @@ def _cmd_suggest(args: argparse.Namespace) -> int:
                 )
                 exit_code = _cmd_plan(plan_args)
             else:
+                item = suggestions[idx - 1]
+                cmd = f"{item['command']} [risk:{','.join(item['risk']['tags'])}]"
                 exit_code = cli_actions.run_steps(
                     "ai-cli-suggest-run",
-                    [PlanStep(1, suggestions[idx - 1]["command"])],
+                    [PlanStep(1, cmd)],
                     log_path=log_path,
                     analytics=args.analytics,
                     payload=payload,
