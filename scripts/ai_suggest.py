@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Suggest up to three shell commands for a goal with risk labels."""
+"""Suggest up to three shell commands for a goal with risk labels and scores."""
 
 from __future__ import annotations
 
@@ -66,15 +66,18 @@ NETWORK_COMMANDS = {
     "pipx",
 }
 
+# Numeric score associated with each risk tag
+RISK_SCORES = {"info": 0, "read": 1, "network": 2, "write": 3, "elevated": 4}
 
-def _label_risk(step: str) -> str:
-    """Append a risk tag to ``step`` describing potential danger."""
+
+def _score_risk(step: str) -> tuple[List[str], int]:
+    """Return risk tags for ``step`` and a numeric score."""
     try:
         tokens = shlex.split(step)
     except ValueError:
-        return f"{step} [risk:info]"
+        return ["info"], RISK_SCORES["info"]
     if not tokens:
-        return f"{step} [risk:info]"
+        return ["info"], RISK_SCORES["info"]
     cmd = tokens[0]
     risks: set[str] = set()
     if cmd == "sudo":
@@ -89,7 +92,9 @@ def _label_risk(step: str) -> str:
         risks.add("read")
     if not risks:
         risks.add("info")
-    return f"{step} [risk:{','.join(sorted(risks))}]"
+    tags = sorted(risks)
+    score = max(RISK_SCORES[tag] for tag in tags)
+    return tags, score
 
 
 def _split_rationale(line: str) -> tuple[str, str]:
@@ -133,17 +138,20 @@ def suggest(
     local: bool = False,
     model: str = router.DEFAULT_MODEL,
     context: str | None = None,
-) -> List[Dict[str, str]]:
-    """Return up to three risk-tagged suggestions with rationales."""
+) -> List[Dict[str, object]]:
+    """Return up to three suggestions with rationales and risk scores."""
     prompt = f"{goal}\nExplain each command briefly"
     text = router.shell_suggest(prompt, local=local, model=model, context=context)
-    suggestions: List[Dict[str, str]] = []
+    suggestions: List[Dict[str, object]] = []
     for line in text[:3]:
         cmd, rationale = _split_rationale(line)
         help_text = _short_help(cmd)
         if help_text:
             rationale = f"{rationale} ({help_text})" if rationale else help_text
-        suggestions.append({"command": _label_risk(cmd), "rationale": rationale})
+        tags, score = _score_risk(cmd)
+        suggestions.append(
+            {"command": cmd, "rationale": rationale, "risk": {"tags": tags, "score": score}}
+        )
     return suggestions
 
 
@@ -173,7 +181,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     else:
         log_path = Path.home() / ".config" / "d0tTino" / "ai_suggest.log"
         for idx, item in enumerate(suggestions, 1):
-            print(f"{idx}. {item['command']}")
+            tags = ",".join(item["risk"]["tags"])
+            score = item["risk"]["score"]
+            print(f"{idx}. {item['command']} [risk:{tags}] (score:{score})")
             if item["rationale"]:
                 print(item["rationale"])
         print(
@@ -186,9 +196,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         if choice.isdigit():
             idx = int(choice)
             if 1 <= idx <= len(suggestions):
+                item = suggestions[idx - 1]
+                cmd = f"{item['command']} [risk:{','.join(item['risk']['tags'])}]"
                 cli_actions.run_steps(
                     "ai-suggest-run",
-                    [PlanStep(1, suggestions[idx - 1]["command"])],
+                    [PlanStep(1, cmd)],
                     log_path=log_path,
                     analytics=args.analytics,
                     assume_yes=True,
