@@ -199,6 +199,29 @@ Anthropic, Mistral and LMQL will look like:
 }
 ```
 
+### Migrating to MCP descriptors
+
+Plug-ins now require an MCP descriptor under the `mcp.descriptor` key in the
+registry. Existing entries with `server_url` and `capabilities` at the `mcp`
+level must be updated to nest these fields under `mcp.descriptor`. For example:
+
+```json
+{
+  "my_backend": {
+    "package": "my-package",
+    "mcp": {
+      "descriptor": {
+        "server_url": "https://example.com/mcp",
+        "capabilities": []
+      }
+    }
+  }
+}
+```
+
+Run `python -m scripts.update_registry` after updating entries to ensure the
+schema check passes.
+
 Add recipe packages under the `recipes` key:
 
 ```json

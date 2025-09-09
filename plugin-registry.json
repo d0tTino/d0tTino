@@ -3,57 +3,73 @@
     "sample": {
       "package": "d0ttino-sample-plugin",
       "mcp": {
-        "server_url": "https://example.com",
-        "capabilities": []
+        "descriptor": {
+          "server_url": "https://example.com",
+          "capabilities": []
+        }
       }
     },
     "openrouter": {
       "package": "d0ttino-openrouter-plugin",
       "mcp": {
-        "server_url": "https://example.com",
-        "capabilities": []
+        "descriptor": {
+          "server_url": "https://example.com",
+          "capabilities": []
+        }
       }
     },
     "lobechat": {
       "package": "d0ttino-lobechat-plugin",
       "mcp": {
-        "server_url": "https://example.com",
-        "capabilities": []
+        "descriptor": {
+          "server_url": "https://example.com",
+          "capabilities": []
+        }
       }
     },
     "mindbridge": {
       "package": "d0ttino-mindbridge-plugin",
       "mcp": {
-        "server_url": "https://example.com",
-        "capabilities": []
+        "descriptor": {
+          "server_url": "https://example.com",
+          "capabilities": []
+        }
       }
     },
     "anthropic": {
       "package": "d0ttino-anthropic-plugin",
       "mcp": {
-        "server_url": "https://example.com",
-        "capabilities": []
+        "descriptor": {
+          "server_url": "https://example.com",
+          "capabilities": []
+        }
       }
     },
     "mistral": {
       "package": "d0ttino-mistral-plugin",
       "mcp": {
-        "server_url": "https://example.com",
-        "capabilities": []
+        "descriptor": {
+          "server_url": "https://example.com",
+          "capabilities": []
+        }
       }
     },
     "lmql": {
       "package": "d0ttino-lmql-plugin",
       "mcp": {
-        "server_url": "https://example.com",
-        "capabilities": []
+        "descriptor": {
+          "server_url": "https://example.com",
+          "capabilities": []
+        }
       }
     },
     "example_mcp": {
       "package": "d0ttino-example-mcp-plugin",
       "mcp": {
-        "server_url": "https://example.com",
-        "capabilities": []
+        "descriptor": {
+          "server_url": "https://example.com",
+          "capabilities": []
+        }
       }
     }
   },

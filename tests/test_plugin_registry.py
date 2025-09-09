@@ -219,8 +219,10 @@ def test_load_registry_surfaces_mcp_metadata(monkeypatch, tmp_path):
             "example": {
                 "package": "pkg",
                 "mcp": {
-                    "server_url": "https://example.com",
-                    "capabilities": ["x"],
+                    "descriptor": {
+                        "server_url": "https://example.com",
+                        "capabilities": ["x"],
+                    }
                 },
             }
         }
@@ -231,8 +233,9 @@ def test_load_registry_surfaces_mcp_metadata(monkeypatch, tmp_path):
 
     registry = plugins.load_registry(raw=True, update=True)
     meta = registry["example"]["mcp"]
-    assert meta["server_url"] == "https://example.com"
-    assert meta["capabilities"] == ["x"]
+    desc = meta["descriptor"]
+    assert desc["server_url"] == "https://example.com"
+    assert desc["capabilities"] == ["x"]
 
 
 def test_example_mcp_plugin_in_registry(monkeypatch, tmp_path):
@@ -245,8 +248,9 @@ def test_example_mcp_plugin_in_registry(monkeypatch, tmp_path):
 
     registry = plugins.load_registry(raw=True, update=True)
     meta = registry["example_mcp"]["mcp"]
-    assert meta["server_url"] == "https://example.com"
-    assert meta["capabilities"] == []
+    desc = meta["descriptor"]
+    assert desc["server_url"] == "https://example.com"
+    assert desc["capabilities"] == []
 
 
 def test_example_mcp_plugin_metadata():

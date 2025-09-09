@@ -51,15 +51,13 @@ def iter_tools(registry_data: Dict[str, object] | None = None) -> Iterator[tuple
                 continue
             except Exception:  # pragma: no cover - best effort loading
                 continue
-        server_url = mcp_meta.get("server_url")
-        if isinstance(server_url, str):
-            meta_copy = {
-                "server_url": server_url,
-                "capabilities": mcp_meta.get("capabilities", []),
-            }
+        descriptor = mcp_meta.get("descriptor")
+        if isinstance(descriptor, dict):
+            desc_copy = descriptor.copy()
+            desc_copy.setdefault("name", name)
 
-            def _tool(meta=meta_copy):
-                return meta
+            def _tool(desc=desc_copy):
+                return desc
 
             yield name, _tool
 
@@ -73,36 +71,17 @@ def get_tools(registry_data: Dict[str, object] | None = None) -> Dict[str, Any]:
 def iter_tool_descriptors(
     registry_data: Dict[str, object] | None = None,
 ) -> Iterator[tuple[str, Dict[str, Any]]]:
-    """Yield ``(name, descriptor)`` for each MCP-enabled plug-in.
+    """Yield ``(name, descriptor)`` for each MCP-enabled plug-in."""
 
-    The descriptor follows the minimal structure required by the MCP tool
-    discovery specification and includes the tool ``name``, ``server_url`` and
-    ``capabilities`` list.
-    """
-
-    if registry_data is None:
-        registry_data = registry.load_registry(raw=True)
-
-    for name, meta in registry_data.items():
-        if not isinstance(meta, dict):
+    for name, tool in iter_tools(registry_data):
+        try:
+            desc = tool()
+        except Exception:  # pragma: no cover - best effort loading
             continue
-        mcp_meta = meta.get("mcp")
-        if not isinstance(mcp_meta, dict):
-            continue
-        server_url = mcp_meta.get("server_url")
-        if not isinstance(server_url, str):
-            continue
-        capabilities = mcp_meta.get("capabilities", [])
-        if not (
-            isinstance(capabilities, list)
-            and all(isinstance(c, str) for c in capabilities)
-        ):
-            capabilities = []
-        yield name, {
-            "name": name,
-            "server_url": server_url,
-            "capabilities": capabilities,
-        }
+        if isinstance(desc, dict):
+            desc_copy = desc.copy()
+            desc_copy.setdefault("name", name)
+            yield name, desc_copy
 
 
 def get_tool_descriptors(
