@@ -7,6 +7,8 @@ notifications and building analytics argument parsers.
 from __future__ import annotations
 
 import argparse
+import logging
+from logging.handlers import RotatingFileHandler
 import os
 import secrets
 import shlex
@@ -43,6 +45,29 @@ TOKEN_TTL_SECONDS = 3600
 SESSION_LOG = Path(os.environ.get("SESSION_LOG", "session.log"))
 
 
+def _get_capability_logger() -> logging.Logger:
+    """Return a logger that writes capability grants and denials."""
+
+    logger = logging.getLogger("capability_tokens")
+    log_path = SESSION_LOG
+    handler_path = (
+        logger.handlers[0].baseFilename
+        if logger.handlers and isinstance(logger.handlers[0], RotatingFileHandler)
+        else None
+    )
+    if handler_path != str(log_path):
+        logger.handlers.clear()
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        handler = RotatingFileHandler(log_path, maxBytes=1_000_000, backupCount=3)
+        formatter = logging.Formatter(
+            "%(asctime)s %(message)s", "%Y-%m-%d %H:%M:%S"
+        )
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+    return logger
+
+
 def _strip_risk_tag(command: str) -> str:
     """Return ``command`` without any ``[risk:*]`` suffix."""
 
@@ -74,6 +99,8 @@ def execute_steps(
     them. When executing, commands tagged with ``[risk:*]`` require the
     ``confirm`` flag to be set or the function aborts before running anything.
     A non-empty ``dry_run_log`` must be supplied to proceed with execution.
+    Capabilities are denied by default and must be explicitly granted before
+    their associated steps run.
     """
     step_list = list(steps)
 
@@ -138,6 +165,9 @@ def execute_steps(
                     allowed.add(cap_name)
                     with log_path.open("a", encoding="utf-8") as log:
                         log.write(f"[using capability token: {cap_name}={token}]\n")
+                    _get_capability_logger().info(
+                        "using capability token: %s token=%s", cap_name, token
+                    )
                     continue
                 answer = input(f"Grant capability {cap_name}? [y/N]").strip().lower()
 
@@ -150,11 +180,9 @@ def execute_steps(
                     allowed.add(cap_name)
                     with log_path.open("a", encoding="utf-8") as log:
                         log.write(f"[granted capability: {cap_name} token={token}]\n")
-                    SESSION_LOG.parent.mkdir(parents=True, exist_ok=True)
-                    with SESSION_LOG.open("a", encoding="utf-8") as slog:
-                        slog.write(
-                            f"[granted capability: {cap_name} token={token}]\n"
-                        )
+                    _get_capability_logger().info(
+                        "granted capability: %s token=%s", cap_name, token
+                    )
                 else:
                     msg = f"Missing capabilities: {cap_name}"
                     print(msg, file=sys.stderr)
@@ -163,9 +191,9 @@ def execute_steps(
                         log.write(f"[missing capabilities: {cap_name}]\n")
 
                         log.write("(skipped)\n\n")
-                    SESSION_LOG.parent.mkdir(parents=True, exist_ok=True)
-                    with SESSION_LOG.open("a", encoding="utf-8") as slog:
-                        slog.write(f"[denied capability: {cap_name}]\n")
+                    _get_capability_logger().info(
+                        "denied capability: %s", cap_name
+                    )
                     if not exit_code:
                         exit_code = 1
                     skip_step = True

@@ -85,6 +85,7 @@ def test_session_log_records_grants_and_denials(monkeypatch, tmp_path):
     monkeypatch.setattr(
         cli_common, "SESSION_LOG", tmp_path / "session.log"
     )
+    cli_common._get_capability_logger()
     inputs = iter(["y", "n", "y"])
     monkeypatch.setattr("builtins.input", lambda _: next(inputs))
 
@@ -112,10 +113,61 @@ def test_session_log_records_grants_and_denials(monkeypatch, tmp_path):
         dry_run_log=["1. echo hi", "2. curl example.com", "3. cat file.txt"],
     )
 
-    content = (tmp_path / "session.log").read_text()
-    assert "[granted capability: process.exec" in content
-    assert "[denied capability: network.fetch]" in content
-    assert "[granted capability: filesystem.read" in content
+    lines = (tmp_path / "session.log").read_text().splitlines()
+    assert any(
+        re.match(
+            r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} granted capability: process\.exec token=[0-9a-f]+",
+            line,
+        )
+        for line in lines
+    )
+    assert any(
+        re.match(
+            r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} denied capability: network.fetch",
+            line,
+        )
+        for line in lines
+    )
+    assert any("granted capability: filesystem.read" in line for line in lines)
+
+
+def test_default_deny_requires_approval(monkeypatch, tmp_path):
+    cli_common._SESSION_TOKENS.clear()
+    monkeypatch.setattr(
+        cli_common, "SESSION_LOG", tmp_path / "session.log"
+    )
+    cli_common._get_capability_logger()
+
+    inputs = iter(["n"])
+    monkeypatch.setattr("builtins.input", lambda _: next(inputs))
+
+    executed = {}
+
+    def fake_run(cmd, *, shell, capture_output, text):
+        executed["called"] = True
+
+        class Result:
+            def __init__(self):
+                self.stdout = ""
+                self.stderr = ""
+                self.returncode = 0
+
+        return Result()
+
+    monkeypatch.setattr(cli_common.subprocess, "run", fake_run)
+
+    step = PlanStep(1, "echo hi", capabilities={Capability.PROCESS_EXEC})
+    rc = cli_common.execute_steps(
+        [step],
+        log_path=tmp_path / "log.txt",
+        assume_yes=True,
+        dry_run_log=["1. echo hi"],
+    )
+
+    assert rc == 1
+    assert executed == {}
+    log_content = (tmp_path / "session.log").read_text()
+    assert "denied capability: process.exec" in log_content
 
 
 def test_token_expiration(monkeypatch, tmp_path):
