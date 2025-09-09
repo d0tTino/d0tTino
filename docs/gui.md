@@ -11,3 +11,9 @@ The Tauri application offers a minimal interface for sending prompts, reviewing 
 5. Hit **Run** to execute the steps or choose a recipe from the drop-down and run it.
 
 Dropped files trigger the `prompt-file` event and populate the prompt field. The loaded file path is shown below the drop zone so you can confirm which prompt was imported.
+
+The dashboard also surfaces additional context from the backend:
+
+* **Recent Plans** – the last five planning requests are listed for quick reference.
+* **Budget Meter** – remaining LLM budget is visualised with a progress bar and accompanying history.
+* **Plug-in Toggles** – checkboxes enable or disable MCP tools, updating `~/.config/d0tTino/mcp.json`.

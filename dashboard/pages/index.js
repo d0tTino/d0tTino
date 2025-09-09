@@ -139,6 +139,19 @@ export default function Home() {
       .catch(() => setLogs('error'));
   };
 
+  const togglePlugin = (name, enabled) => {
+    if (!window.__TAURI__) return;
+    invoke('toggle_plugin', { name, enable: enabled })
+      .then(() => {
+        setPluginToggles((prev) =>
+          prev.map((p) =>
+            p.name === name ? { ...p, enabled } : p
+          )
+        );
+      })
+      .catch(() => {});
+  };
+
   return (
     <div>
       <h1>UME Dashboard</h1>
@@ -158,7 +171,16 @@ export default function Home() {
           </ul>
         </div>
       )}
-      {budget !== null && <p>Budget: {budget}</p>}
+      {budget !== null && (
+        <div>
+          <h2>Budget</h2>
+          <progress
+            value={budget}
+            max={Math.max(budget, ...budgetHistory, 1)}
+          ></progress>
+          <p>{budget}</p>
+        </div>
+      )}
       {budgetHistory.length > 0 && (
         <div>
           <h2>Budget History</h2>
@@ -175,7 +197,12 @@ export default function Home() {
           {pluginToggles.map((p) => (
             <div key={p.name}>
               <label>
-                <input type="checkbox" checked={p.enabled} readOnly /> {p.name}
+                <input
+                  type="checkbox"
+                  checked={p.enabled}
+                  onChange={(e) => togglePlugin(p.name, e.target.checked)}
+                />{' '}
+                {p.name}
               </label>
             </div>
           ))}

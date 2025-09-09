@@ -147,6 +147,54 @@ raise SystemExit(0 if ok else 1)
         Ok(output.status.success())
     }
 
+    pub async fn toggle_plugin(name: String, enable: bool) -> Result<bool, String> {
+        let cfg_path = if let Ok(home) = std::env::var("HOME") {
+            PathBuf::from(home)
+                .join(".config")
+                .join("d0tTino")
+                .join("mcp.json")
+        } else {
+            return Err("HOME not set".into());
+        };
+        let mut data: serde_json::Map<String, serde_json::Value> = fs::read_to_string(&cfg_path)
+            .ok()
+            .and_then(|s| serde_json::from_str(&s).ok())
+            .and_then(|v: serde_json::Value| v.as_object().cloned())
+            .unwrap_or_default();
+
+        if enable {
+            let reg_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../plugin-registry.json");
+            let reg_json: serde_json::Value = serde_json::from_str(
+                &fs::read_to_string(reg_path).map_err(|e| e.to_string())?,
+            )
+            .map_err(|e| e.to_string())?;
+            let descriptor = reg_json
+                .get("plugins")
+                .and_then(|p| p.get(&name))
+                .and_then(|meta| meta.get("mcp"))
+                .and_then(|m| m.get("descriptor"))
+                .cloned();
+            if let Some(desc) = descriptor {
+                data.insert(name, desc);
+            } else {
+                return Err("plugin not found".into());
+            }
+        } else {
+            data.remove(&name);
+        }
+
+        if let Some(parent) = cfg_path.parent() {
+            let _ = fs::create_dir_all(parent);
+        }
+        let val = serde_json::Value::Object(data);
+        fs::write(
+            &cfg_path,
+            serde_json::to_string_pretty(&val).map_err(|e| e.to_string())?,
+        )
+        .map_err(|e| e.to_string())?;
+        Ok(true)
+    }
+
     pub async fn dashboard() -> Result<Dashboard, String> {
         let mut plans = Vec::new();
         if let Ok(home) = std::env::var("HOME") {

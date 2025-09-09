@@ -49,6 +49,12 @@ async fn record_event(
 }
 
 #[cfg(feature = "gui")]
+#[tauri::command]
+async fn toggle_plugin(name: String, enable: bool) -> Result<bool, String> {
+    ume_tauri::commands::toggle_plugin(name, enable).await
+}
+
+#[cfg(feature = "gui")]
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
@@ -59,6 +65,7 @@ fn main() {
             run_recipe,
             dashboard,
             record_event,
+            toggle_plugin,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
