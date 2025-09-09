@@ -488,6 +488,18 @@ def _cmd_new_plugin(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_plugin_new(args: argparse.Namespace) -> int:
+    """Scaffold an MCP-compliant plug-in."""
+    from scripts import plugin_scaffold
+
+    plugin_scaffold.scaffold_plugin(
+        args.name,
+        description=args.description,
+        output=args.output,
+    )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -508,6 +520,15 @@ def build_parser() -> argparse.ArgumentParser:
     new.add_argument("--description", default="A d0tTino plug-in")
     new.add_argument("--output", default=".", help="Output directory")
     new.set_defaults(func=_cmd_new_plugin)
+
+    plugin_cmd = sub.add_parser("plugin", help="Manage MCP plug-ins")
+    plugin_sub = plugin_cmd.add_subparsers(dest="plugin_command", required=True)
+
+    p_new = plugin_sub.add_parser("new", help="Scaffold a new MCP plug-in")
+    p_new.add_argument("name", help="Plug-in name")
+    p_new.add_argument("--description", default="A d0tTino plug-in")
+    p_new.add_argument("--output", default=".", help="Output directory")
+    p_new.set_defaults(func=_cmd_plugin_new)
 
     backends = sub.add_parser("backends", help="Manage backend plug-ins")
     backend_sub = backends.add_subparsers(dest="backend_command", required=True)

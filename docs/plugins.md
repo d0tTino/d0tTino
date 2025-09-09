@@ -39,6 +39,12 @@ python -m scripts.plugin_scaffold demo
 python -m scripts.plugin_scaffold demo --recipe
 ```
 
+The plug-in helper exposes an equivalent command:
+
+```bash
+python -m scripts.plugins plugin new demo
+```
+
 The script creates a directory with a minimal `pyproject.toml`, an `mcp.json`
 file and a plug-in module that defines a sample `run` function along with
 `mcp_tool` metadata. Edit these stubs to implement your plug-in.
