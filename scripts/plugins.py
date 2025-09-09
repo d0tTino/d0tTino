@@ -117,7 +117,10 @@ def _valid_registry(data: Dict[str, object]) -> bool:
         if isinstance(val, dict):
             pkg = val.get("package")
             mcp_meta = val.get("mcp")
-            return isinstance(pkg, str) and isinstance(mcp_meta, dict)
+            if not (isinstance(pkg, str) and isinstance(mcp_meta, dict)):
+                return False
+            descriptor = mcp_meta.get("descriptor")
+            return isinstance(descriptor, dict)
         return False
 
     return (
@@ -244,17 +247,20 @@ def load_registry(
                     if isinstance(v, str):
                         raw_result[str(k)] = {
                             "package": v,
-                            "mcp": {"server_url": "", "capabilities": []},
+                            "mcp": {"descriptor": {"server_url": "", "capabilities": []}},
                         }
                     elif isinstance(v, dict):
                         pkg = v.get("package")
                         mcp_meta = v.get("mcp")
                         if not isinstance(mcp_meta, dict):
                             mcp_meta = {}
-                        server_url = mcp_meta.get("server_url")
+                        descriptor = mcp_meta.get("descriptor")
+                        if not isinstance(descriptor, dict):
+                            descriptor = {}
+                        server_url = descriptor.get("server_url")
                         if not isinstance(server_url, str):
                             server_url = ""
-                        capabilities = mcp_meta.get("capabilities")
+                        capabilities = descriptor.get("capabilities")
                         if not (
                             isinstance(capabilities, list)
                             and all(isinstance(c, str) for c in capabilities)
@@ -264,8 +270,10 @@ def load_registry(
                             raw_result[str(k)] = {
                                 "package": pkg,
                                 "mcp": {
-                                    "server_url": server_url,
-                                    "capabilities": capabilities,
+                                    "descriptor": {
+                                        "server_url": server_url,
+                                        "capabilities": capabilities,
+                                    }
                                 },
                             }
                 return raw_result
@@ -287,7 +295,9 @@ def load_registry(
             {
                 k: {
                     "package": v,
-                    "mcp": {"server_url": "", "capabilities": []},
+                    "mcp": {
+                        "descriptor": {"server_url": "", "capabilities": []}
+                    },
                 }
                 for k, v in PLUGIN_REGISTRY.items()
             },
@@ -374,11 +384,14 @@ def _cmd_mcp_enable(args: argparse.Namespace) -> int:
         print(f"Unknown MCP plug-in: {name}", file=sys.stderr)
         return 1
     mcp_meta = meta.get("mcp")
-    if not isinstance(mcp_meta, dict) or not mcp_meta.get("server_url"):
-        print(f"No MCP server info for plug-in: {name}", file=sys.stderr)
+    descriptor = None
+    if isinstance(mcp_meta, dict):
+        descriptor = mcp_meta.get("descriptor")
+    if not (isinstance(descriptor, dict) and descriptor.get("server_url")):
+        print(f"No MCP descriptor for plug-in: {name}", file=sys.stderr)
         return 1
     config = _load_mcp_config()
-    config[name] = mcp_meta
+    config[name] = descriptor
     _save_mcp_config(config)
     return 0
 

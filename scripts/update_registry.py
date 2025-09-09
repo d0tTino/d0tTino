@@ -46,9 +46,11 @@ def sync_registry(data: dict[str, object]) -> bool:
 
     Returns ``True`` if ``data`` was modified.
     """
-    default_mcp = {"server_url": "https://example.com", "capabilities": []}
+    default_mcp = {
+        "descriptor": {"server_url": "https://example.com", "capabilities": []}
+    }
     expected_plugins = {
-        name: {"package": pkg, "mcp": default_mcp.copy()}
+        name: {"package": pkg, "mcp": json.loads(json.dumps(default_mcp))}
         for name, pkg in plugins.PLUGIN_REGISTRY.items()
     }
     expected_recipes = plugins.RECIPE_REGISTRY

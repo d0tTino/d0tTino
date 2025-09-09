@@ -226,7 +226,12 @@ def test_mcp_enable_writes_config(monkeypatch, tmp_path):
             return {
                 "dummy": {
                     "package": "pkg",
-                    "mcp": {"server_url": "https://example.com", "capabilities": []},
+                    "mcp": {
+                        "descriptor": {
+                            "server_url": "https://example.com",
+                            "capabilities": [],
+                        }
+                    },
                 }
             }
         return {}
@@ -237,6 +242,7 @@ def test_mcp_enable_writes_config(monkeypatch, tmp_path):
     assert rc == 0
     data = json.loads(cfg.read_text())
     assert data["dummy"]["server_url"] == "https://example.com"
+    assert data["dummy"]["capabilities"] == []
 
 
 def test_mcp_disable_removes_config(monkeypatch, tmp_path):

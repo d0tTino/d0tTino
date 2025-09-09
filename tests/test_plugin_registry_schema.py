@@ -21,5 +21,7 @@ def test_plugins_include_mcp_metadata() -> None:
     for plugin in data.get("plugins", {}).values():
         mcp = plugin.get("mcp")
         assert isinstance(mcp, dict)
-        assert "server_url" in mcp
-        assert "capabilities" in mcp
+        descriptor = mcp.get("descriptor")
+        assert isinstance(descriptor, dict)
+        assert "server_url" in descriptor
+        assert "capabilities" in descriptor

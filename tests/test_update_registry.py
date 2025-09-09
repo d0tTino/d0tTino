@@ -4,7 +4,10 @@ from scripts import update_registry, plugins
 
 
 def test_update_registry_check_recipes(tmp_path, monkeypatch):
-    plugin_objs = {name: {"package": pkg, "mcp": {}} for name, pkg in plugins.PLUGIN_REGISTRY.items()}
+    plugin_objs = {
+        name: {"package": pkg, "mcp": {"descriptor": {}}}
+        for name, pkg in plugins.PLUGIN_REGISTRY.items()
+    }
     data = {"plugins": plugin_objs, "recipes": {"echo": "old"}}
     reg = tmp_path / "plugin-registry.json"
     reg.write_text(json.dumps(data), encoding="utf-8")
@@ -25,7 +28,18 @@ def test_update_registry_rewrites_outdated_file(tmp_path, monkeypatch):
     rc = update_registry.main([])
     assert rc == 0
     expected = {
-        "plugins": {name: {"package": pkg, "mcp": {}} for name, pkg in plugins.PLUGIN_REGISTRY.items()},
+        "plugins": {
+            name: {
+                "package": pkg,
+                "mcp": {
+                    "descriptor": {
+                        "server_url": "https://example.com",
+                        "capabilities": [],
+                    }
+                },
+            }
+            for name, pkg in plugins.PLUGIN_REGISTRY.items()
+        },
         "recipes": plugins.RECIPE_REGISTRY,
     }
     assert json.loads(reg.read_text(encoding="utf-8")) == expected
@@ -39,7 +53,18 @@ def test_update_registry_creates_missing_file(tmp_path, monkeypatch):
     rc = update_registry.main([])
     assert rc == 0
     expected = {
-        "plugins": {name: {"package": pkg, "mcp": {}} for name, pkg in plugins.PLUGIN_REGISTRY.items()},
+        "plugins": {
+            name: {
+                "package": pkg,
+                "mcp": {
+                    "descriptor": {
+                        "server_url": "https://example.com",
+                        "capabilities": [],
+                    }
+                },
+            }
+            for name, pkg in plugins.PLUGIN_REGISTRY.items()
+        },
         "recipes": plugins.RECIPE_REGISTRY,
     }
     assert json.loads(reg.read_text(encoding="utf-8")) == expected

@@ -11,8 +11,10 @@ def test_mcp_adapter_exposes_registry_tools(monkeypatch):
         "dummy": {
             "package": "pkg",
             "mcp": {
-                "server_url": "https://example.com",
-                "capabilities": ["echo"],
+                "descriptor": {
+                    "server_url": "https://example.com",
+                    "capabilities": ["echo"],
+                }
             },
         }
     }
@@ -20,6 +22,7 @@ def test_mcp_adapter_exposes_registry_tools(monkeypatch):
 
     tools = mcp_adapter.get_tools(reg)
     assert tools["dummy"]() == {
+        "name": "dummy",
         "server_url": "https://example.com",
         "capabilities": ["echo"],
     }
@@ -30,8 +33,10 @@ def test_mcp_adapter_tool_descriptors(monkeypatch):
         "dummy": {
             "package": "pkg",
             "mcp": {
-                "server_url": "https://example.com",
-                "capabilities": ["echo"],
+                "descriptor": {
+                    "server_url": "https://example.com",
+                    "capabilities": ["echo"],
+                }
             },
         }
     }
@@ -125,8 +130,10 @@ def test_mcp_adapter_serve_lists_descriptors(monkeypatch):
         "dummy": {
             "package": "pkg",
             "mcp": {
-                "server_url": "https://example.com",
-                "capabilities": ["echo"],
+                "descriptor": {
+                    "server_url": "https://example.com",
+                    "capabilities": ["echo"],
+                }
             },
         }
     }

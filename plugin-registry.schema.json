@@ -19,18 +19,30 @@
             "type": "object",
             "description": "MCP metadata for the plug-in",
             "properties": {
-              "server_url": {
-                "type": "string",
-                "format": "uri",
-                "description": "Base URL for the MCP server"
+              "descriptor": {
+                "type": "object",
+                "description": "MCP descriptor for the plug-in",
+                "properties": {
+                  "server_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Base URL for the MCP server"
+                  },
+                  "capabilities": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Capabilities exposed by the server"
+                  }
+                },
+                "required": ["server_url", "capabilities"],
+                "additionalProperties": false
               },
-              "capabilities": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "Capabilities exposed by the server"
+              "entry_point": {
+                "type": "string",
+                "description": "Optional Python entry point returning a descriptor"
               }
             },
-            "required": ["server_url", "capabilities"],
+            "required": ["descriptor"],
             "additionalProperties": false
           }
         },
