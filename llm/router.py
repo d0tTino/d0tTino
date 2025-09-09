@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 from datetime import date
 
@@ -133,10 +134,36 @@ except ValueError:  # pragma: no cover - invalid env value
 _LAST_MODEL_SOURCE: str | None = None
 
 
+def get_daily_usage() -> tuple[int, int | None]:
+    """Return current daily usage and the configured daily limit."""
+
+    return _DAILY_USAGE, _DAILY_LIMIT
+
+
 def get_budget() -> tuple[int | None, int | None, str | None]:
     """Return remaining and total budget along with the last model source."""
 
     return _BUDGET, _TOTAL_BUDGET, _LAST_MODEL_SOURCE
+
+
+def _warn_if_approaching_caps() -> None:
+    """Emit a warning when budget or daily usage nears its limit."""
+
+    if _TOTAL_BUDGET is not None and _BUDGET is not None:
+        threshold = max(1, _TOTAL_BUDGET // 10)
+        if _BUDGET <= threshold:
+            print(
+                f"Warning: budget nearly exhausted ({_BUDGET} tokens remaining)",
+                file=sys.stderr,
+            )
+    if _DAILY_LIMIT is not None:
+        remaining = _DAILY_LIMIT - _DAILY_USAGE
+        threshold = max(1, _DAILY_LIMIT // 10)
+        if remaining <= threshold:
+            print(
+                f"Warning: daily limit nearly exhausted ({remaining} tokens remaining)",
+                file=sys.stderr,
+            )
 
 
 def _decrement_budget(tokens: int) -> None:
@@ -153,7 +180,10 @@ def _decrement_budget(tokens: int) -> None:
             raise RuntimeError("LLM budget exhausted")
         _BUDGET -= tokens
     if _TOTAL_BUDGET is not None or _DAILY_LIMIT is not None:
-        _save_budget(_BUDGET, _TOTAL_BUDGET, spend=tokens, daily=(_DAILY_DATE, _DAILY_USAGE))
+        _save_budget(
+            _BUDGET, _TOTAL_BUDGET, spend=tokens, daily=(_DAILY_DATE, _DAILY_USAGE)
+        )
+        _warn_if_approaching_caps()
 
 
 def estimate_prompt_complexity(prompt: str) -> int:
@@ -389,4 +419,5 @@ __all__ = [
     "send_prompt",
     "shell_suggest",
     "get_budget",
+    "get_daily_usage",
 ]

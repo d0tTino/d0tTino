@@ -337,6 +337,14 @@ def _cmd_status(args: argparse.Namespace) -> int:
     mode = os.environ.get("LLM_ROUTING_MODE", "auto")
     print(f"Routing mode: {mode}")
     print(f"Last model source: {source or 'unknown'}")
+    usage, limit = router.get_daily_usage()
+    if limit is not None:
+        width = 10
+        filled = int(usage / limit * width)
+        meter = f"[{'#' * filled}{'-' * (width - filled)}]"
+        pct = int(usage / limit * 100)
+        print(f"Daily usage: {usage}/{limit} ({pct}%)")
+        print(f"Daily meter: {meter}")
     return 0
 
 
