@@ -2,6 +2,8 @@
 use std::fs;
 #[cfg(feature = "gui")]
 use tauri::{FileDropEvent, Manager, RunEvent, WindowEvent};
+#[cfg(feature = "gui")]
+use ume_tauri::commands::{ActionDetails, CockpitLogs, Dashboard};
 
 #[cfg(feature = "gui")]
 #[tauri::command]
@@ -35,16 +37,13 @@ async fn run_recipe(name: String, goal: String) -> Result<String, String> {
 
 #[cfg(feature = "gui")]
 #[tauri::command]
-async fn dashboard() -> Result<ume_tauri::commands::Dashboard, String> {
+async fn dashboard() -> Result<Dashboard, String> {
     ume_tauri::commands::dashboard().await
 }
 
 #[cfg(feature = "gui")]
 #[tauri::command]
-async fn record_event(
-    name: String,
-    payload: serde_json::Value,
-) -> Result<bool, String> {
+async fn record_event(name: String, payload: serde_json::Value) -> Result<bool, String> {
     ume_tauri::commands::record_event(name, payload).await
 }
 
@@ -55,7 +54,56 @@ async fn toggle_plugin(name: String, enable: bool) -> Result<bool, String> {
 }
 
 #[cfg(feature = "gui")]
+#[tauri::command]
+async fn cockpit_up() -> Result<ActionDetails, String> {
+    ume_tauri::commands::cockpit_up().await
+}
+
+#[cfg(feature = "gui")]
+#[tauri::command]
+async fn cockpit_down(confirm: bool) -> Result<ActionDetails, String> {
+    ume_tauri::commands::cockpit_down(confirm).await
+}
+
+#[cfg(feature = "gui")]
+#[tauri::command]
+async fn cockpit_new_task(task: String) -> Result<ActionDetails, String> {
+    ume_tauri::commands::cockpit_new_task(task).await
+}
+
+#[cfg(feature = "gui")]
+#[tauri::command]
+async fn cockpit_inject_context(context: String) -> Result<ActionDetails, String> {
+    ume_tauri::commands::cockpit_inject_context(context).await
+}
+
+#[cfg(feature = "gui")]
+#[tauri::command]
+async fn cockpit_research_ingest(path: String) -> Result<ActionDetails, String> {
+    ume_tauri::commands::cockpit_research_ingest(path).await
+}
+
+#[cfg(feature = "gui")]
+#[tauri::command]
+async fn cockpit_wishlist_add(item: String) -> Result<ActionDetails, String> {
+    ume_tauri::commands::cockpit_wishlist_add(item).await
+}
+
+#[cfg(feature = "gui")]
+#[tauri::command]
+async fn cockpit_publish_docs(confirm: bool) -> Result<ActionDetails, String> {
+    ume_tauri::commands::cockpit_publish_docs(confirm).await
+}
+
+#[cfg(feature = "gui")]
+#[tauri::command]
+async fn cockpit_log_snapshot(limit: Option<usize>) -> Result<CockpitLogs, String> {
+    ume_tauri::commands::cockpit_logs(limit).await
+}
+
+#[cfg(feature = "gui")]
 fn main() {
+    let _ = dotenvy::dotenv();
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             plan,
@@ -66,6 +114,14 @@ fn main() {
             dashboard,
             record_event,
             toggle_plugin,
+            cockpit_up,
+            cockpit_down,
+            cockpit_new_task,
+            cockpit_inject_context,
+            cockpit_research_ingest,
+            cockpit_wishlist_add,
+            cockpit_publish_docs,
+            cockpit_log_snapshot,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
@@ -76,10 +132,8 @@ fn main() {
                         if let Ok(content) = fs::read_to_string(path) {
                             if let Some(window) = app_handle.get_window(&label) {
                                 let _ = window.emit("prompt-file", content);
-                                let _ = window.emit(
-                                    "prompt-file-path",
-                                    path.to_string_lossy().to_string(),
-                                );
+                                let _ = window
+                                    .emit("prompt-file-path", path.to_string_lossy().to_string());
                             }
                         }
                     }

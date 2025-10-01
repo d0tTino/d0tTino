@@ -1,16 +1,22 @@
-use std::io::Write;
+use hyper::{
+    service::{make_service_fn, service_fn},
+    Body, Method, Request, Response, Server,
+};
 use std::convert::Infallible;
+use std::io::Write;
 use std::net::SocketAddr;
-use hyper::{service::{make_service_fn, service_fn}, Body, Method, Request, Response, Server};
+use std::sync::Once;
 use tokio::task::JoinHandle;
-use ume_tauri::commands::{list_recipes, open_prompt_file, plan, exec, run_recipe};
+use ume_tauri::commands::{
+    cockpit_down, cockpit_logs, cockpit_up, exec, list_recipes, open_prompt_file, plan, run_recipe,
+};
 
 async fn spawn_server() -> JoinHandle<()> {
+    ensure_pythonpath();
+    std::env::set_var("TINO_API_URL", "http://127.0.0.1:8000");
     async fn handler(req: Request<Body>) -> Result<Response<Body>, Infallible> {
         match (req.method(), req.uri().path()) {
-            (&Method::POST, "/api/plan") => {
-                Ok(Response::new(Body::from("{\"steps\":[\"s\"]}")))
-            }
+            (&Method::POST, "/api/plan") => Ok(Response::new(Body::from("{\"steps\":[\"s\"]}"))),
             (&Method::GET, "/api/exec") => Ok(Response::new(Body::from("ok"))),
             _ => Ok(Response::builder().status(404).body(Body::empty()).unwrap()),
         }
@@ -57,8 +63,7 @@ async fn plan_and_exec_use_server() {
 
 #[tokio::test]
 async fn run_recipe_executes_sample() {
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
-    std::env::set_var("PYTHONPATH", root);
+    ensure_pythonpath();
     let out = run_recipe("sample".to_string(), "hello".to_string())
         .await
         .expect("run recipe");
@@ -67,12 +72,36 @@ async fn run_recipe_executes_sample() {
 }
 
 #[tokio::test]
+async fn cockpit_actions_execute() {
+    ensure_pythonpath();
+    let result = cockpit_up().await.expect("cockpit up");
+    assert!(result.message.contains("Start"));
+    assert!(result.telemetry.is_some());
+
+    let err = cockpit_down(false).await.expect_err("missing confirm");
+    assert!(err.contains("confirmation"));
+
+    let details = cockpit_down(true).await.expect("confirmed down");
+    assert!(details.message.contains("Stop"));
+
+    let logs = cockpit_logs(Some(10)).await.expect("logs");
+    assert!(logs.path.ends_with("cockpit.log"));
+}
+
+fn ensure_pythonpath() {
+    static INIT: Once = Once::new();
+    INIT.call_once(|| {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+        std::env::set_var("PYTHONPATH", root);
+    });
+}
+
+#[tokio::test]
 async fn list_recipes_detects_new_file() {
     use std::fs;
     use std::path::Path;
 
-    let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../scripts/recipes/plugins");
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../scripts/recipes/plugins");
     let file = dir.join("temp_test.py");
     fs::write(&file, "# temp").expect("write file");
 

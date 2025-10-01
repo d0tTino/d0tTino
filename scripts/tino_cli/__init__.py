@@ -1,6 +1,12 @@
-"""Typer-based command line interface for the d0tTino toolkit."""
-from __future__ import annotations
+"""Command bridge for cockpit and automation workflows."""
 
-from .main import app, main
+from .models import CommandResult, DashboardSummary, TelemetryStatus  # noqa: F401
+from .run import main  # noqa: F401
 
-__all__ = ["app", "main"]
+__all__ = [
+    "CommandResult",
+    "DashboardSummary",
+    "TelemetryStatus",
+    "main",
+]
+

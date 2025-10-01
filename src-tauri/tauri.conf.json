@@ -1,8 +1,8 @@
 {
   "build": {
-    "distDir": "../dashboard",
-    "beforeBuildCommand": "",
-    "beforeDevCommand": ""
+    "distDir": "../ui/frontend/dist",
+    "beforeBuildCommand": "cd ../ui/frontend && npm install && npm run build",
+    "beforeDevCommand": "cd ../ui/frontend && npm install && npm run dev"
   },
   "package": {
     "productName": "UME",
