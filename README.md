@@ -81,6 +81,16 @@ Install with your preferred Windows package manager:
 winget install --id Tino.d0tTino -e
 ```
 
+### The `tino` command-line interface
+
+The repository now exposes a consolidated Typer-based CLI entrypoint named
+``tino``. It wraps workstation bootstrap automation, docker-compose stack
+helpers, TaskCascadence orchestration, tino-storm research utilities, UME
+memory helpers, finance synchronisation, wishlist tracking and docs
+publishing. Legacy ``scripts/ai_cli.py`` commands remain available through
+``tino legacy ai`` while emitting a deprecation warning to encourage the
+transition.
+
 Or use Scoop in a single line:
 
 ```powershell
