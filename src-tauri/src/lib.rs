@@ -1,25 +1,18 @@
 pub mod commands {
-    use reqwest::Client;
     use serde::{Deserialize, Serialize};
-    use std::{
-        collections::HashSet,
-        fs::{self, OpenOptions},
-        io::Write,
-        path::PathBuf,
+    use serde_json::Value;
+    use tino_cli_bridge::{
+        self, CockpitLogs as BridgeLogs, CockpitResult as BridgeCockpitResult, DashboardEnvelope,
+        ExecResult, PlanResult, RecipeList, RecipeRun, TelemetryInfo,
     };
 
-    #[derive(Deserialize)]
-    struct PlanResponse {
-        steps: Option<Vec<String>>,
-    }
-
-    #[derive(Serialize)]
+    #[derive(Debug, Serialize, Deserialize, Clone)]
     pub struct PluginInfo {
         pub name: String,
         pub enabled: bool,
     }
 
-    #[derive(Serialize)]
+    #[derive(Debug, Serialize, Deserialize, Clone)]
     pub struct Dashboard {
         pub recent_plans: Vec<String>,
         pub budget: Option<i64>,
@@ -27,260 +20,190 @@ pub mod commands {
         pub plugins: Vec<PluginInfo>,
     }
 
-    pub async fn plan(goal: String) -> Result<Vec<String>, String> {
-        let client = Client::new();
-        let resp = client
-            .post("http://localhost:8000/api/plan")
-            .json(&serde_json::json!({ "goal": goal }))
-            .send()
-            .await
-            .map_err(|e| e.to_string())?;
-        let plan: PlanResponse = resp.json().await.map_err(|e| e.to_string())?;
-        let steps = plan.steps.unwrap_or_default();
-        if let Ok(home) = std::env::var("HOME") {
-            let log_path = PathBuf::from(home)
-                .join(".cache")
-                .join("d0ttino")
-                .join("plans.log");
-            if let Some(parent) = log_path.parent() {
-                let _ = fs::create_dir_all(parent);
-            }
-            if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(log_path) {
-                let _ = writeln!(file, "{}", goal);
-            }
+    #[derive(Debug, Serialize, Deserialize, Clone)]
+    pub struct TelemetryStatus {
+        pub enabled: bool,
+        pub endpoint: Option<String>,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, Clone)]
+    pub struct ActionDetails {
+        pub message: String,
+        pub telemetry: Option<TelemetryStatus>,
+        pub details: Option<Value>,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, Clone)]
+    pub struct CockpitLogs {
+        pub entries: Vec<CockpitLogEntry>,
+        pub path: String,
+    }
+
+    #[derive(Debug, Serialize, Deserialize, Clone)]
+    pub struct CockpitLogEntry {
+        pub timestamp: f64,
+        pub action: String,
+        pub payload: Option<String>,
+        pub exit_code: i32,
+    }
+
+    fn map_telemetry(info: Option<TelemetryInfo>) -> Option<TelemetryStatus> {
+        info.map(|value| TelemetryStatus {
+            enabled: value.enabled,
+            endpoint: value.endpoint,
+        })
+    }
+
+    fn map_action(result: BridgeCockpitResult) -> ActionDetails {
+        ActionDetails {
+            message: result.result.message,
+            telemetry: map_telemetry(result.result.telemetry),
+            details: result.result.details.map(Value::Object),
         }
+    }
+
+    fn map_logs(logs: BridgeLogs) -> CockpitLogs {
+        CockpitLogs {
+            entries: logs
+                .entries
+                .into_iter()
+                .map(|entry| CockpitLogEntry {
+                    timestamp: entry.timestamp,
+                    action: entry.action,
+                    payload: entry.payload,
+                    exit_code: entry.exit_code,
+                })
+                .collect(),
+            path: logs.path,
+        }
+    }
+
+    fn convert_dashboard(envelope: DashboardEnvelope) -> Dashboard {
+        Dashboard {
+            recent_plans: envelope.dashboard.recent_plans,
+            budget: envelope.dashboard.budget,
+            budget_history: envelope.dashboard.budget_history,
+            plugins: envelope
+                .dashboard
+                .plugins
+                .into_iter()
+                .map(|p| PluginInfo {
+                    name: p.name,
+                    enabled: p.enabled,
+                })
+                .collect(),
+        }
+    }
+
+    pub async fn plan(goal: String) -> Result<Vec<String>, String> {
+        let PlanResult { steps, .. } = tino_cli_bridge::plan(&goal)
+            .await
+            .map_err(|err| err.to_string())?;
         Ok(steps)
     }
 
     pub async fn exec(goal: String) -> Result<String, String> {
-        let client = Client::new();
-        let resp = client
-            .get("http://localhost:8000/api/exec")
-            .query(&[("goal", goal)])
-            .send()
+        let ExecResult { output, .. } = tino_cli_bridge::exec(&goal)
             .await
-            .map_err(|e| e.to_string())?;
-        resp.text().await.map_err(|e| e.to_string())
+            .map_err(|err| err.to_string())?;
+        Ok(output)
     }
 
     pub async fn list_recipes() -> Result<Vec<String>, String> {
-        let base = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../scripts/recipes/plugins");
-        let mut names = Vec::new();
-        for entry in fs::read_dir(base).map_err(|e| e.to_string())? {
-            let entry = entry.map_err(|e| e.to_string())?;
-            let path = entry.path();
-            if path.extension().and_then(|s| s.to_str()) == Some("py") {
-                if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
-                    if stem != "__init__" {
-                        names.push(stem.to_string());
-                    }
-                }
-            }
-        }
-        names.sort();
-        Ok(names)
+        let RecipeList { recipes } = tino_cli_bridge::list_recipes()
+            .await
+            .map_err(|err| err.to_string())?;
+        Ok(recipes)
     }
 
     pub async fn open_prompt_file(path: String) -> Result<String, String> {
-        fs::read_to_string(path).map_err(|e| e.to_string())
+        let prompt = tino_cli_bridge::open_prompt_file(&path)
+            .await
+            .map_err(|err| err.to_string())?;
+        Ok(prompt.content)
     }
 
     pub async fn run_recipe(name: String, goal: String) -> Result<String, String> {
-        use tokio::process::Command;
-
-        // first get the recipe steps as JSON from a small Python snippet
-        let output = Command::new("python3")
-            .arg("-c")
-            .arg(
-                "import json,sys,scripts.recipes as r;print(json.dumps(r.discover_recipes()[sys.argv[1]](sys.argv[2])))",
-            )
-            .arg(&name)
-            .arg(&goal)
-            .output()
+        let RecipeRun { log, .. } = tino_cli_bridge::run_recipe(&name, &goal)
             .await
-            .map_err(|e| e.to_string())?;
-        if !output.status.success() {
-            return Err(String::from_utf8_lossy(&output.stderr).to_string());
-        }
-        let steps: Vec<String> =
-            serde_json::from_slice(&output.stdout).map_err(|e| e.to_string())?;
-
-        let mut log = String::new();
-        for step in steps {
-            log.push_str(&format!("$ {}\n", step));
-            let child = if cfg!(target_os = "windows") {
-                Command::new("cmd").arg("/C").arg(&step).output()
-            } else {
-                Command::new("sh").arg("-c").arg(&step).output()
-            };
-            let res = child.await.map_err(|e| e.to_string())?;
-            log.push_str(&String::from_utf8_lossy(&res.stdout));
-            if !res.status.success() {
-                log.push_str(&String::from_utf8_lossy(&res.stderr));
-            }
-            let code = res.status.code().unwrap_or_default();
-            log.push_str(&format!("(exit {})\n\n", code));
-        }
+            .map_err(|err| err.to_string())?;
         Ok(log)
     }
 
-    pub async fn record_event(name: String, payload: serde_json::Value) -> Result<bool, String> {
-        use tokio::process::Command;
-
-        let script = r#"
-import json,sys,telemetry
-name=sys.argv[1]
-payload=json.loads(sys.argv[2])
-ok=telemetry.record_event(name,payload,enabled=True)
-raise SystemExit(0 if ok else 1)
-"#;
-
-        let output = Command::new("python3")
-            .arg("-c")
-            .arg(script)
-            .arg(name)
-            .arg(payload.to_string())
-            .output()
+    pub async fn record_event(name: String, payload: Value) -> Result<bool, String> {
+        let result = tino_cli_bridge::record_event(&name, &payload)
             .await
-            .map_err(|e| e.to_string())?;
-
-        Ok(output.status.success())
+            .map_err(|err| err.to_string())?;
+        Ok(result.success)
     }
 
     pub async fn toggle_plugin(name: String, enable: bool) -> Result<bool, String> {
-        let cfg_path = if let Ok(home) = std::env::var("HOME") {
-            PathBuf::from(home)
-                .join(".config")
-                .join("d0tTino")
-                .join("mcp.json")
-        } else {
-            return Err("HOME not set".into());
-        };
-        let mut data: serde_json::Map<String, serde_json::Value> = fs::read_to_string(&cfg_path)
-            .ok()
-            .and_then(|s| serde_json::from_str(&s).ok())
-            .and_then(|v: serde_json::Value| v.as_object().cloned())
-            .unwrap_or_default();
-
-        if enable {
-            let reg_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../plugin-registry.json");
-            let reg_json: serde_json::Value = serde_json::from_str(
-                &fs::read_to_string(reg_path).map_err(|e| e.to_string())?,
-            )
-            .map_err(|e| e.to_string())?;
-            let descriptor = reg_json
-                .get("plugins")
-                .and_then(|p| p.get(&name))
-                .and_then(|meta| meta.get("mcp"))
-                .and_then(|m| m.get("descriptor"))
-                .cloned();
-            if let Some(desc) = descriptor {
-                data.insert(name, desc);
-            } else {
-                return Err("plugin not found".into());
-            }
-        } else {
-            data.remove(&name);
-        }
-
-        if let Some(parent) = cfg_path.parent() {
-            let _ = fs::create_dir_all(parent);
-        }
-        let val = serde_json::Value::Object(data);
-        fs::write(
-            &cfg_path,
-            serde_json::to_string_pretty(&val).map_err(|e| e.to_string())?,
-        )
-        .map_err(|e| e.to_string())?;
-        Ok(true)
+        let result = tino_cli_bridge::toggle_plugin(&name, enable)
+            .await
+            .map_err(|err| err.to_string())?;
+        Ok(result.success)
     }
 
     pub async fn dashboard() -> Result<Dashboard, String> {
-        let mut plans = Vec::new();
-        if let Ok(home) = std::env::var("HOME") {
-            let log_path = PathBuf::from(&home)
-                .join(".cache")
-                .join("d0ttino")
-                .join("plans.log");
-            if let Ok(content) = fs::read_to_string(log_path) {
-                plans = content
-                    .lines()
-                    .rev()
-                    .take(5)
-                    .map(|s| s.to_string())
-                    .collect();
-            }
-        }
-
-        use tokio::process::Command;
-        let script = r#"
-import json, os, pathlib, llm.router as r
-b, _t, _s = r.get_budget()
-path = os.environ.get('LLM_BUDGET_PATH') or str(r._BUDGET_PATH)
-hist = []
-p = pathlib.Path(path)
-if p.exists():
-    try:
-        hist = json.loads(p.read_text()).get('history', [])
-    except Exception:
-        pass
-print(json.dumps({'budget': b, 'history': hist}))
-"#;
-        let output = Command::new("python3")
-            .arg("-c")
-            .arg(script)
-            .output()
+        let envelope = tino_cli_bridge::dashboard()
             .await
-            .map_err(|e| e.to_string())?;
-        if !output.status.success() {
-            return Err(String::from_utf8_lossy(&output.stderr).to_string());
-        }
-        let val: serde_json::Value =
-            serde_json::from_slice(&output.stdout).map_err(|e| e.to_string())?;
-        let budget = val.get("budget").and_then(|v| v.as_i64());
-        let history = val
-            .get("history")
-            .and_then(|v| v.as_array())
-            .map(|arr| arr.iter().filter_map(|n| n.as_i64()).collect())
-            .unwrap_or_default();
+            .map_err(|err| err.to_string())?;
+        Ok(convert_dashboard(envelope))
+    }
 
-        let mut enabled = HashSet::new();
-        if let Ok(home) = std::env::var("HOME") {
-            let cfg_path = PathBuf::from(&home)
-                .join(".config")
-                .join("d0tTino")
-                .join("mcp.json");
-            if let Ok(content) = fs::read_to_string(cfg_path) {
-                if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
-                    if let Some(map) = json.as_object() {
-                        for name in map.keys() {
-                            enabled.insert(name.clone());
-                        }
-                    }
-                }
-            }
-        }
+    pub async fn cockpit_up() -> Result<ActionDetails, String> {
+        tino_cli_bridge::cockpit_action("cockpit-up", None, false)
+            .await
+            .map(map_action)
+            .map_err(|err| err.to_string())
+    }
 
-        let mut plugins = Vec::new();
-        let reg_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../plugin-registry.json");
-        if let Ok(data) = fs::read_to_string(reg_path) {
-            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&data) {
-                if let Some(map) = json.get("plugins").and_then(|v| v.as_object()) {
-                    for name in map.keys() {
-                        plugins.push(PluginInfo {
-                            name: name.clone(),
-                            enabled: enabled.contains(name),
-                        });
-                    }
-                }
-            }
-        }
+    pub async fn cockpit_down(confirm: bool) -> Result<ActionDetails, String> {
+        tino_cli_bridge::cockpit_action("cockpit-down", None, confirm)
+            .await
+            .map(map_action)
+            .map_err(|err| err.to_string())
+    }
 
-        Ok(Dashboard {
-            recent_plans: plans,
-            budget,
-            budget_history: history,
-            plugins,
-        })
+    pub async fn cockpit_new_task(task: String) -> Result<ActionDetails, String> {
+        tino_cli_bridge::cockpit_action("cockpit-new-task", Some(&task), false)
+            .await
+            .map(map_action)
+            .map_err(|err| err.to_string())
+    }
+
+    pub async fn cockpit_inject_context(context: String) -> Result<ActionDetails, String> {
+        tino_cli_bridge::cockpit_action("cockpit-inject-context", Some(&context), false)
+            .await
+            .map(map_action)
+            .map_err(|err| err.to_string())
+    }
+
+    pub async fn cockpit_research_ingest(path: String) -> Result<ActionDetails, String> {
+        tino_cli_bridge::cockpit_action("cockpit-research-ingest", Some(&path), false)
+            .await
+            .map(map_action)
+            .map_err(|err| err.to_string())
+    }
+
+    pub async fn cockpit_wishlist_add(item: String) -> Result<ActionDetails, String> {
+        tino_cli_bridge::cockpit_action("cockpit-wishlist-add", Some(&item), false)
+            .await
+            .map(map_action)
+            .map_err(|err| err.to_string())
+    }
+
+    pub async fn cockpit_publish_docs(confirm: bool) -> Result<ActionDetails, String> {
+        tino_cli_bridge::cockpit_action("cockpit-publish-docs", None, confirm)
+            .await
+            .map(map_action)
+            .map_err(|err| err.to_string())
+    }
+
+    pub async fn cockpit_logs(limit: Option<usize>) -> Result<CockpitLogs, String> {
+        tino_cli_bridge::cockpit_logs(limit)
+            .await
+            .map(map_logs)
+            .map_err(|err| err.to_string())
     }
 }

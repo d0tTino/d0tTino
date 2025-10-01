@@ -24,11 +24,7 @@ async fn dashboard_returns_recent_plans_budget_and_plugins() {
     .unwrap();
 
     let budget_file = tmp.path().join("budget.json");
-    fs::write(
-        &budget_file,
-        r#"{ "remaining": 5, "total": 10, "history": [1,2,3] }"#,
-    )
-    .unwrap();
+    fs::write(&budget_file, r#"{ "budget": 5, "history": [1,2,3] }"#).unwrap();
     std::env::set_var("LLM_BUDGET_PATH", &budget_file);
 
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
