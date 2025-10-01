@@ -29,6 +29,7 @@ from ume import events as ume_events
 import logging
 import time
 import importlib
+import warnings
 
 SESSION_FILE = Path.home() / ".config" / "d0tTino" / "cli_session.json"
 _session: dict[str, Any] = {}
@@ -45,6 +46,12 @@ def _load_session() -> None:
 _load_session()
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+
+warnings.warn(
+    "scripts.ai_cli is deprecated; use the `tino legacy ai` command instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 initialize()
 
