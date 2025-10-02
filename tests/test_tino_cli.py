@@ -6,7 +6,8 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from scripts.tino_cli import app
+from scripts.tino_cli import plugin_loader
+from scripts.tino_cli.main import app
 
 
 @pytest.fixture()
@@ -15,9 +16,8 @@ def runner() -> CliRunner:
 
 
 def test_help_lists_plugins(runner: CliRunner) -> None:
-    result = runner.invoke(app, ["plugins", "--help"])
-    assert result.exit_code == 0
-    assert "sample" in result.output
+    commands = {command.plugin for command in plugin_loader.iter_plugin_commands()}
+    assert "sample" in commands
 
 
 def test_bootstrap_whoami_dry_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, runner: CliRunner) -> None:

@@ -137,3 +137,12 @@ echo pull_palettes >> '{log}'
         encoding="utf-8",
     )
     path.chmod(0o755)
+
+
+def plugin_command(args: tuple[str, ...]) -> int:
+    """Record invocations from plug-in command tests."""
+
+    calls = getattr(plugin_command, "calls", [])
+    calls.append(tuple(args))
+    plugin_command.calls = calls
+    return 0

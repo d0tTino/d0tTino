@@ -1,12 +1,20 @@
 import json
-import pytest
-
-pytest.importorskip("requests")
-
-import time
 import importlib
+import time
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+import pytest
+import typer
 
 from scripts import plugins
+from scripts.tino_cli import plugin_loader
+from tests import stubs
+
+if TYPE_CHECKING:
+    from typer.testing import CliRunner
+
+pytest.importorskip("requests")
 
 
 def test_default_registry_url_constant_exists():
@@ -277,3 +285,90 @@ def test_builtin_plugins_present(monkeypatch, tmp_path):
     }
     for name, pkg in expected.items():
         assert registry[name] == pkg
+
+
+def test_valid_registry_rejects_bad_descriptor():
+    invalid = {
+        "plugins": {
+            "demo": {
+                "package": "demo",  # minimal metadata
+                "mcp": {"descriptor": "not-a-mapping"},
+            }
+        }
+    }
+    assert plugins._valid_registry(invalid) is False
+
+
+def test_register_plugin_commands_executes_handler(
+    tino_cli_runner: "CliRunner",
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    registry_path = tmp_path / "registry.json"
+    registry = {
+        "plugins": {
+            "demo": {
+                "package": "demo-pkg",
+                "cli": {
+                    "help": "Demo plug-in",
+                    "commands": [
+                        {
+                            "name": "hello",
+                            "help": "Say hello",
+                            "callable": "tests.stubs:plugin_command",
+                        }
+                    ],
+                },
+            }
+        }
+    }
+    registry_path.write_text(json.dumps(registry), encoding="utf-8")
+    monkeypatch.setattr(plugin_loader, "REGISTRY_PATH", registry_path)
+    monkeypatch.setattr(
+        plugin_loader,
+        "_load_registry",
+        lambda path=registry_path: json.loads(registry_path.read_text(encoding="utf-8")),
+    )
+    # Ensure stale call history from other tests does not leak in.
+    stubs.plugin_command.calls = []  # type: ignore[attr-defined]
+
+    app = typer.Typer()
+    plugin_loader.register_plugin_commands(app)
+
+    result = tino_cli_runner.invoke(app, ["demo", "hello", "alpha", "beta"])
+    assert result.exit_code == 0
+    assert stubs.plugin_command.calls[-1] == ("alpha", "beta")  # type: ignore[index]
+
+
+def test_register_plugin_command_falls_back_on_missing_callable(
+    tino_cli_runner: "CliRunner",
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    registry_path = tmp_path / "registry.json"
+    registry = {
+        "plugins": {
+            "demo": {
+                "package": "demo-pkg",
+                "cli": {
+                    "commands": [
+                        {"name": "hello", "help": "Missing handler", "callable": "missing.module:run"}
+                    ]
+                },
+            }
+        }
+    }
+    registry_path.write_text(json.dumps(registry), encoding="utf-8")
+    monkeypatch.setattr(plugin_loader, "REGISTRY_PATH", registry_path)
+    monkeypatch.setattr(
+        plugin_loader,
+        "_load_registry",
+        lambda path=registry_path: json.loads(registry_path.read_text(encoding="utf-8")),
+    )
+
+    app = typer.Typer()
+    plugin_loader.register_plugin_commands(app)
+
+    result = tino_cli_runner.invoke(app, ["demo", "hello"])
+    assert result.exit_code == 1
+    assert "demo-pkg" in result.stderr or "demo-pkg" in result.output
