@@ -16,6 +16,21 @@ from typing import Any, Dict, Iterator
 
 from scripts import plugins as registry
 
+
+def _coerce_plugin_metadata(
+    registry_data: Dict[str, object] | registry.PluginRegistryData | None,
+) -> Dict[str, Dict[str, Any]]:
+    if registry_data is None:
+        return registry.load_registry().mcp_plugins
+    if isinstance(registry_data, registry.PluginRegistryData):
+        return registry_data.mcp_plugins
+    result: Dict[str, Dict[str, Any]] = {}
+    if isinstance(registry_data, dict):
+        for name, meta in registry_data.items():
+            if isinstance(name, str) and isinstance(meta, dict):
+                result[name] = meta
+    return result
+
 __all__ = [
     "iter_tools",
     "get_tools",
@@ -25,7 +40,9 @@ __all__ = [
 ]
 
 
-def iter_tools(registry_data: Dict[str, object] | None = None) -> Iterator[tuple[str, Any]]:
+def iter_tools(
+    registry_data: Dict[str, object] | registry.PluginRegistryData | None = None,
+) -> Iterator[tuple[str, Any]]:
     """Yield ``(name, tool)`` for each plug-in exposing MCP metadata.
 
     ``registry_data`` should be a mapping in the format returned by
@@ -33,10 +50,9 @@ def iter_tools(registry_data: Dict[str, object] | None = None) -> Iterator[tuple
     registry is loaded on demand.
     """
 
-    if registry_data is None:
-        registry_data = registry.load_registry(raw=True)
+    plugin_meta = _coerce_plugin_metadata(registry_data)
 
-    for name, meta in registry_data.items():
+    for name, meta in plugin_meta.items():
         if not isinstance(meta, dict):
             continue
         mcp_meta = meta.get("mcp")
@@ -62,14 +78,16 @@ def iter_tools(registry_data: Dict[str, object] | None = None) -> Iterator[tuple
             yield name, _tool
 
 
-def get_tools(registry_data: Dict[str, object] | None = None) -> Dict[str, Any]:
+def get_tools(
+    registry_data: Dict[str, object] | registry.PluginRegistryData | None = None,
+) -> Dict[str, Any]:
     """Return a mapping of tool names to loaded callables."""
 
     return {name: tool for name, tool in iter_tools(registry_data)}
 
 
 def iter_tool_descriptors(
-    registry_data: Dict[str, object] | None = None,
+    registry_data: Dict[str, object] | registry.PluginRegistryData | None = None,
 ) -> Iterator[tuple[str, Dict[str, Any]]]:
     """Yield ``(name, descriptor)`` for each MCP-enabled plug-in."""
 
@@ -85,14 +103,16 @@ def iter_tool_descriptors(
 
 
 def get_tool_descriptors(
-    registry_data: Dict[str, object] | None = None,
+    registry_data: Dict[str, object] | registry.PluginRegistryData | None = None,
 ) -> Dict[str, Dict[str, Any]]:
     """Return a mapping of tool names to MCP descriptors."""
 
     return {name: desc for name, desc in iter_tool_descriptors(registry_data)}
 
 
-def serve(registry_data: Dict[str, object] | None = None) -> None:
+def serve(
+    registry_data: Dict[str, object] | registry.PluginRegistryData | None = None,
+) -> None:
     """Serve tools over a line-oriented JSON protocol on ``stdin``/``stdout``.
 
     Each request should be a JSON object containing ``tool`` and optional

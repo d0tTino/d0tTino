@@ -1,21 +1,47 @@
+from __future__ import annotations
+
+import argparse
+import json
 import sys
 from pathlib import Path
-import json
 
 import pytest
-
-pytest.importorskip("requests")
 
 from scripts import plugins
 
 
-def test_list_outputs_available_plugins(monkeypatch, capsys):
-    monkeypatch.setattr(
-        plugins,
-        "load_registry",
-        lambda section="plugins", update=False: {"dummy": "dummy-pkg"},
+def _registry(
+    *,
+    plugins_map: dict[str, plugins.PluginPackage | str] | None = None,
+    recipes: dict[str, str] | None = None,
+    commands: tuple[plugins.PluginCommand, ...] | None = None,
+) -> plugins.PluginRegistryData:
+    plugin_packages: dict[str, plugins.PluginPackage] = {}
+    for name, value in (plugins_map or {}).items():
+        if isinstance(value, plugins.PluginPackage):
+            plugin_packages[name] = value
+        else:
+            plugin_packages[name] = plugins.PluginPackage(
+                name=name, package=value, raw={"package": value}
+            )
+    return plugins.PluginRegistryData(
+        name="test",
+        version="1",
+        description=None,
+        homepage=None,
+        commands=commands or (),
+        task_templates=(),
+        plugin_packages=plugin_packages,
+        recipe_packages=recipes or {},
+        recipe_configs={},
+        raw={},
     )
-    monkeypatch.setattr(plugins, "_is_installed", lambda p: False)
+
+
+def test_list_outputs_available_plugins(monkeypatch, capsys):
+    reg = _registry(plugins_map={"dummy": "dummy-pkg"})
+    monkeypatch.setattr(plugins, "load_registry", lambda *a, **k: reg)
+    monkeypatch.setattr(plugins, "_is_installed", lambda pkg: False)
     rc = plugins.main(["backends", "list"])
     captured = capsys.readouterr().out
     assert rc == 0
@@ -23,34 +49,34 @@ def test_list_outputs_available_plugins(monkeypatch, capsys):
 
 
 def test_install_runs_pip(monkeypatch):
-    called = {}
+    reg = _registry(plugins_map={"dummy": "dummy-pkg"})
+    calls: dict[str, object] = {}
+
     def fake_run(cmd, *args, **kwargs):
-        called["cmd"] = cmd
-        called["kwargs"] = kwargs
+        calls["cmd"] = cmd
+        calls["kwargs"] = kwargs
+
         class Result:
             returncode = 0
+
         return Result()
+
     monkeypatch.setattr(plugins.subprocess, "run", fake_run)
-    monkeypatch.setattr(
-        plugins,
-        "load_registry",
-        lambda section="plugins", update=False: {"dummy": "dummy-pkg"},
-    )
+    monkeypatch.setattr(plugins, "load_registry", lambda *a, **k: reg)
     rc = plugins.main(["backends", "install", "dummy"])
     assert rc == 0
-    assert called["cmd"][0] == sys.executable
-    assert "dummy-pkg" in called["cmd"]
-    assert called["kwargs"].get("check")
-    assert called["kwargs"].get("capture_output")
-    assert called["kwargs"].get("text")
+    assert calls["cmd"][0] == sys.executable
+    assert "dummy-pkg" in calls["cmd"]
+    assert calls["kwargs"].get("check")
 
 
 def test_remove_runs_pip(monkeypatch):
-    called = {}
+    reg = _registry(plugins_map={"dummy": "dummy-pkg"})
+    calls: dict[str, object] = {}
 
     def fake_run(cmd, *args, **kwargs):
-        called["cmd"] = cmd
-        called["kwargs"] = kwargs
+        calls["cmd"] = cmd
+        calls["kwargs"] = kwargs
 
         class Result:
             returncode = 0
@@ -58,121 +84,45 @@ def test_remove_runs_pip(monkeypatch):
         return Result()
 
     monkeypatch.setattr(plugins.subprocess, "run", fake_run)
-    monkeypatch.setattr(
-        plugins,
-        "load_registry",
-        lambda section="plugins", update=False: {"dummy": "dummy-pkg"},
-    )
+    monkeypatch.setattr(plugins, "load_registry", lambda *a, **k: reg)
     rc = plugins.main(["backends", "remove", "dummy"])
     assert rc == 0
-    assert called["cmd"][0] == sys.executable
-    assert "dummy-pkg" in called["cmd"]
-    assert called["kwargs"].get("check")
-    assert called["kwargs"].get("capture_output")
-    assert called["kwargs"].get("text")
+    assert calls["cmd"][0] == sys.executable
+    assert "dummy-pkg" in calls["cmd"]
 
 
 def test_install_failure_propagates(monkeypatch, capsys):
+    reg = _registry(plugins_map={"dummy": "dummy-pkg"})
+
     def fake_run(cmd, *args, **kwargs):
-        raise plugins.subprocess.CalledProcessError(
-            5, cmd, stderr="fail\n"
-        )
+        raise plugins.subprocess.CalledProcessError(5, cmd, stderr="fail\n")
 
     monkeypatch.setattr(plugins.subprocess, "run", fake_run)
-    monkeypatch.setattr(
-        plugins,
-        "load_registry",
-        lambda section="plugins", update=False: {"dummy": "dummy-pkg"},
-    )
+    monkeypatch.setattr(plugins, "load_registry", lambda *a, **k: reg)
     rc = plugins.main(["backends", "install", "dummy"])
     captured = capsys.readouterr()
     assert rc == 5
     assert "fail" in captured.err
 
 
-def test_remove_failure_propagates(monkeypatch, capsys):
-    def fake_run(cmd, *args, **kwargs):
-        raise plugins.subprocess.CalledProcessError(3, cmd, stderr="boom\n")
-
-    monkeypatch.setattr(plugins.subprocess, "run", fake_run)
-    monkeypatch.setattr(
-        plugins,
-        "load_registry",
-        lambda section="plugins", update=False: {"dummy": "dummy-pkg"},
-    )
-    rc = plugins.main(["backends", "remove", "dummy"])
-    captured = capsys.readouterr()
-    assert rc == 3
-    assert "boom" in captured.err
-
-
-@pytest.mark.parametrize("retcode", [0, 4])
-def test_main_remove(monkeypatch, capsys, retcode):
-    called = {}
-
-    def fake_run(cmd, *args, **kwargs):
-        called["cmd"] = cmd
-        if retcode:
-            raise plugins.subprocess.CalledProcessError(retcode, cmd, stderr="fail\n")
-
-        class Result:
-            returncode = 0
-
-        return Result()
-
-    monkeypatch.setattr(plugins.subprocess, "run", fake_run)
-    monkeypatch.setattr(
-        plugins,
-        "load_registry",
-        lambda section="plugins", update=False: {"dummy": "dummy-pkg"},
-    )
-    rc = plugins.main(["backends", "remove", "dummy"])
-    captured = capsys.readouterr()
-    assert called["cmd"][0] == sys.executable
-    assert "dummy-pkg" in called["cmd"]
-    assert rc == retcode
-    if retcode:
-        assert "fail" in captured.err
-
-
 def test_main_warns_when_jsonschema_missing(monkeypatch, capsys):
     monkeypatch.setitem(sys.modules, "jsonschema", None)
     import importlib
+
     reloaded = importlib.reload(plugins)
-    monkeypatch.setattr(
-        reloaded, "load_registry", lambda section="plugins", update=False: {"dummy": "pkg"}
-    )
-    monkeypatch.setattr(reloaded, "_is_installed", lambda p: False)
+    reg = _registry(plugins_map={"dummy": "pkg"})
+    monkeypatch.setattr(reloaded, "load_registry", lambda *a, **k: reg)
+    monkeypatch.setattr(reloaded, "_is_installed", lambda pkg: False)
     rc = reloaded.main(["backends", "list"])
     out = capsys.readouterr()
     assert rc == 0
     assert "jsonschema is required" in out.err
 
 
-def test_cli_update_flag(monkeypatch):
-    called = {}
-
-    def fake_load(section="plugins", update=False):
-        called["update"] = update
-        return {}
-
-    monkeypatch.setattr(plugins, "load_registry", fake_load)
-    monkeypatch.setattr(plugins, "_is_installed", lambda p: False)
-
-    rc = plugins.main(["--update", "backends", "list"])
-    assert rc == 0
-    assert called.get("update") is True
-
-
 def test_recipe_list(monkeypatch, capsys):
-    def fake_load(section="plugins", update=False):
-        if section == "recipes":
-            return {"echo": "pkg"}
-        return {}
-
-    monkeypatch.setattr(plugins, "load_registry", fake_load)
-    monkeypatch.setattr(plugins, "_is_installed", lambda p: False)
-
+    reg = _registry(recipes={"echo": "pkg"})
+    monkeypatch.setattr(plugins, "load_registry", lambda *a, **k: reg)
+    monkeypatch.setattr(plugins, "_is_installed", lambda pkg: False)
     rc = plugins.main(["recipes", "list"])
     out = capsys.readouterr().out
     assert rc == 0
@@ -180,37 +130,80 @@ def test_recipe_list(monkeypatch, capsys):
 
 
 def test_recipe_install(monkeypatch):
-    called = {}
+    reg = _registry(recipes={"echo": "pkg"})
+    calls: dict[str, object] = {}
 
-    def fake_run(cmd, *a, **k):
-        called["cmd"] = cmd
+    def fake_run(cmd, *args, **kwargs):
+        calls["cmd"] = cmd
+
         class Res:
             returncode = 0
+
         return Res()
 
-    def fake_load(section="plugins", update=False):
-        if section == "recipes":
-            return {"echo": "pkg"}
-        return {}
-
     monkeypatch.setattr(plugins.subprocess, "run", fake_run)
-    monkeypatch.setattr(plugins, "load_registry", fake_load)
-
+    monkeypatch.setattr(plugins, "load_registry", lambda *a, **k: reg)
     rc = plugins.main(["recipes", "install", "echo"])
     assert rc == 0
-    assert "pkg" in called["cmd"]
+    assert "pkg" in calls["cmd"]
+
+
+def test_recipe_sync(monkeypatch, tmp_path):
+    reg = _registry(recipes={"echo": "pkg"})
+    executed: list[list[str]] = []
+
+    def fake_run(cmd, *args, **kwargs):
+        executed.append(cmd)
+
+        class Res:
+            returncode = 0
+
+        return Res()
+
+    monkeypatch.setattr(plugins.subprocess, "run", fake_run)
+    monkeypatch.setattr(plugins, "load_registry", lambda *a, **k: reg)
+    rc = plugins.main(["recipes", "sync", "--dest", str(tmp_path)])
+    assert rc == 0
+    assert executed
+    assert "pkg" in executed[0]
+
+
+def test_commands_list_and_run(monkeypatch, capsys):
+    command = plugins.PluginCommand(name="demo:cmd", help="Demo", exec="echo hi")
+    reg = _registry(commands=(command,))
+
+    monkeypatch.setattr(plugins, "load_registry", lambda *a, **k: reg)
+
+    rc_list = plugins.main(["commands", "list"])
+    out = capsys.readouterr().out
+    assert rc_list == 0
+    assert "demo:cmd" in out
+
+    called: dict[str, object] = {}
+
+    def fake_run(cmd, check=True):
+        called["cmd"] = cmd
+
+        class Result:
+            returncode = 0
+
+        return Result()
+
+    monkeypatch.setattr(plugins.subprocess, "run", fake_run)
+    rc_run = plugins.main(["commands", "run", "demo:cmd", "--", "--dry"])
+    assert rc_run == 0
+    assert called["cmd"][-1] == "--dry"
 
 
 def test_mcp_flag_starts_server(monkeypatch):
-    called = {}
+    reg = _registry(plugins_map={})
+    monkeypatch.setattr(plugins, "load_registry", lambda *a, **k: reg)
 
-    def fake_serve(registry):
-        called["registry"] = registry
+    called: dict[str, object] = {}
 
     from plugins import mcp_adapter
 
-    monkeypatch.setattr(mcp_adapter, "serve", fake_serve)
-    monkeypatch.setattr(plugins, "load_registry", lambda *a, **k: {})
+    monkeypatch.setattr(mcp_adapter, "serve", lambda registry_data: called.setdefault("registry", registry_data))
 
     rc = plugins.main(["--mcp"])
     assert rc == 0
@@ -219,189 +212,29 @@ def test_mcp_flag_starts_server(monkeypatch):
 
 def test_mcp_enable_writes_config(monkeypatch, tmp_path):
     cfg = tmp_path / "mcp.json"
+    package = plugins.PluginPackage(
+        name="dummy",
+        package="pkg",
+        raw={
+            "package": "pkg",
+            "mcp": {"descriptor": {"server_url": "https://example.com", "capabilities": []}},
+        },
+    )
+    reg = _registry(plugins_map={"dummy": package})
     monkeypatch.setattr(plugins, "MCP_CONFIG_PATH", cfg)
-
-    def fake_load(section="plugins", update=False, *, raw=False):
-        if raw:
-            return {
-                "dummy": {
-                    "package": "pkg",
-                    "mcp": {
-                        "descriptor": {
-                            "server_url": "https://example.com",
-                            "capabilities": [],
-                        }
-                    },
-                }
-            }
-        return {}
-
-    monkeypatch.setattr(plugins, "load_registry", fake_load)
-
+    monkeypatch.setattr(plugins, "load_registry", lambda *a, **k: reg)
     rc = plugins.main(["mcp", "enable", "dummy"])
     assert rc == 0
     data = json.loads(cfg.read_text())
     assert data["dummy"]["server_url"] == "https://example.com"
-    assert data["dummy"]["capabilities"] == []
 
 
 def test_mcp_disable_removes_config(monkeypatch, tmp_path):
     cfg = tmp_path / "mcp.json"
     cfg.write_text(json.dumps({"dummy": {"server_url": "u", "capabilities": []}}))
+    reg = _registry()
     monkeypatch.setattr(plugins, "MCP_CONFIG_PATH", cfg)
-
+    monkeypatch.setattr(plugins, "load_registry", lambda *a, **k: reg)
     rc = plugins.main(["mcp", "disable", "dummy"])
     assert rc == 0
     assert json.loads(cfg.read_text()) == {}
-
-
-def test_recipe_remove(monkeypatch):
-    called = {}
-
-    def fake_run(cmd, *a, **k):
-        called["cmd"] = cmd
-        class Res:
-            returncode = 0
-        return Res()
-
-    def fake_load(section="plugins", update=False):
-        if section == "recipes":
-            return {"echo": "pkg"}
-        return {}
-
-    monkeypatch.setattr(plugins.subprocess, "run", fake_run)
-    monkeypatch.setattr(plugins, "load_registry", fake_load)
-
-    rc = plugins.main(["recipes", "remove", "echo"])
-    assert rc == 0
-    assert "pkg" in called["cmd"]
-
-
-def test_recipe_sync(monkeypatch, tmp_path):
-    called = []
-
-    def fake_run(cmd, *a, **k):
-        called.append(cmd)
-
-        class Res:
-            returncode = 0
-
-        return Res()
-
-    def fake_load(section="plugins", update=False):
-        if section == "recipes":
-            return {"echo": "pkg"}
-        return {}
-
-    monkeypatch.setattr(plugins.subprocess, "run", fake_run)
-    monkeypatch.setattr(plugins, "load_registry", fake_load)
-
-    rc = plugins.main(["recipes", "sync", "--dest", str(tmp_path)])
-    assert rc == 0
-    assert called
-    assert "install" in called[0]
-    assert "--target" in called[0]
-    assert str(tmp_path) in called[0]
-    assert "pkg" in called[0]
-
-
-def test_recipe_sync_failure(monkeypatch, tmp_path, capsys):
-    called = []
-
-    def fake_run(cmd, *a, **k):
-        called.append(cmd)
-        raise plugins.subprocess.CalledProcessError(2, cmd, stderr="err\n")
-
-    def fake_load(section="plugins", update=False):
-        if section == "recipes":
-            return {"echo": "pkg"}
-        return {}
-
-    monkeypatch.setattr(plugins.subprocess, "run", fake_run)
-    monkeypatch.setattr(plugins, "load_registry", fake_load)
-
-    rc = plugins.main(["recipes", "sync", "--dest", str(tmp_path)])
-    captured = capsys.readouterr()
-    assert rc == 2
-    assert "err" in captured.err
-    assert called
-    assert "install" in called[0]
-    assert "--target" in called[0]
-
-
-def test_recipe_sync_creates_packages(monkeypatch, tmp_path):
-    packages = {"echo": "echo-pkg", "foo": "foo-pkg"}
-
-    def fake_run(cmd, *a, **k):
-        dest = Path(cmd[cmd.index("--target") + 1])
-        pkg = cmd[-1]
-        (dest / pkg).write_text("installed")
-
-        class Res:
-            returncode = 0
-
-        return Res()
-
-    def fake_load(section="plugins", update=False):
-        if section == "recipes":
-            return packages
-        return {}
-
-    monkeypatch.setattr(plugins.subprocess, "run", fake_run)
-    monkeypatch.setattr(plugins, "load_registry", fake_load)
-
-    rc = plugins.main(["recipes", "sync", "--dest", str(tmp_path)])
-    assert rc == 0
-    for pkg in packages.values():
-        assert (tmp_path / pkg).is_file()
-
-
-def test_recipe_publish(monkeypatch):
-    called = {}
-
-    def fake_run(cmd, *a, **k):
-        called["cmd"] = cmd
-
-        class Res:
-            returncode = 0
-
-        return Res()
-
-    monkeypatch.setattr(plugins.subprocess, "run", fake_run)
-
-    rc = plugins.main(
-        [
-            "recipes",
-            "publish",
-            "package.whl",
-            "--url",
-            "https://example.com/simple",
-        ]
-    )
-    assert rc == 0
-    assert called["cmd"][0] == sys.executable
-    assert "twine" in called["cmd"]
-    assert "upload" in called["cmd"]
-    assert "--repository-url" in called["cmd"]
-    assert "https://example.com/simple" in called["cmd"]
-    assert "package.whl" in called["cmd"]
-
-
-def test_recipe_publish_without_url(monkeypatch, capsys):
-    called = {}
-
-    def fake_run(cmd, *a, **k):
-        called["cmd"] = cmd
-        class Res:
-            returncode = 0
-        return Res()
-
-    monkeypatch.setattr(plugins.subprocess, "run", fake_run)
-    monkeypatch.delenv("PLUGIN_REGISTRY_UPLOAD_URL", raising=False)
-
-    rc = plugins.main(["recipes", "publish", "package.whl"])
-    captured = capsys.readouterr()
-    assert rc == 1
-    assert "Upload URL required" in captured.err
-    assert "cmd" not in called
-

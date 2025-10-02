@@ -1,48 +1,30 @@
 import json
 
+import json
+
 from scripts import update_registry, plugins
 
 
-def test_update_registry_check_recipes(tmp_path, monkeypatch):
-    plugin_objs = {
-        name: {"package": pkg, "mcp": {"descriptor": {}}}
-        for name, pkg in plugins.PLUGIN_REGISTRY.items()
-    }
-    data = {"plugins": plugin_objs, "recipes": {"echo": "old"}}
+def test_update_registry_check_detects_changes(tmp_path, monkeypatch):
     reg = tmp_path / "plugin-registry.json"
-    reg.write_text(json.dumps(data), encoding="utf-8")
+    reg.write_text(json.dumps({"name": "old", "version": "0", "commands": [], "taskTemplates": []}))
     monkeypatch.setattr(update_registry, "REGISTRY_PATH", reg)
     orig_load = update_registry.load_registry
     monkeypatch.setattr(update_registry, "load_registry", lambda path=reg: orig_load(path))
     rc = update_registry.main(["--check"])
     assert rc == 1
-    assert json.loads(reg.read_text(encoding="utf-8")) == data
+    assert json.loads(reg.read_text(encoding="utf-8"))["name"] == "old"
 
 
 def test_update_registry_rewrites_outdated_file(tmp_path, monkeypatch):
     reg = tmp_path / "plugin-registry.json"
-    reg.write_text(json.dumps({"plugins": {}, "recipes": {}}), encoding="utf-8")
+    reg.write_text(json.dumps({"name": "old", "version": "0", "commands": [], "taskTemplates": []}), encoding="utf-8")
     monkeypatch.setattr(update_registry, "REGISTRY_PATH", reg)
     orig_load = update_registry.load_registry
     monkeypatch.setattr(update_registry, "load_registry", lambda path=reg: orig_load(path))
     rc = update_registry.main([])
     assert rc == 0
-    expected = {
-        "plugins": {
-            name: {
-                "package": pkg,
-                "mcp": {
-                    "descriptor": {
-                        "server_url": "https://example.com",
-                        "capabilities": [],
-                    }
-                },
-            }
-            for name, pkg in plugins.PLUGIN_REGISTRY.items()
-        },
-        "recipes": plugins.RECIPE_REGISTRY,
-    }
-    assert json.loads(reg.read_text(encoding="utf-8")) == expected
+    assert json.loads(reg.read_text(encoding="utf-8")) == plugins._DEFAULT_REGISTRY_RAW
 
 
 def test_update_registry_creates_missing_file(tmp_path, monkeypatch):
@@ -52,22 +34,7 @@ def test_update_registry_creates_missing_file(tmp_path, monkeypatch):
     monkeypatch.setattr(update_registry, "load_registry", lambda path=reg: orig_load(path))
     rc = update_registry.main([])
     assert rc == 0
-    expected = {
-        "plugins": {
-            name: {
-                "package": pkg,
-                "mcp": {
-                    "descriptor": {
-                        "server_url": "https://example.com",
-                        "capabilities": [],
-                    }
-                },
-            }
-            for name, pkg in plugins.PLUGIN_REGISTRY.items()
-        },
-        "recipes": plugins.RECIPE_REGISTRY,
-    }
-    assert json.loads(reg.read_text(encoding="utf-8")) == expected
+    assert json.loads(reg.read_text(encoding="utf-8")) == plugins._DEFAULT_REGISTRY_RAW
 
 
 def test_update_registry_malformed_json(tmp_path, monkeypatch, capsys):

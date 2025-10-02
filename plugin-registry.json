@@ -1,11 +1,62 @@
 {
+  "name": "d0tTino Default Registry",
+  "version": "2024.05",
+  "description": "Built-in plug-ins, reusable task templates, and curated commands shipped with d0tTino.",
+  "homepage": "https://github.com/d0tTino/d0tTino",
+  "commands": [
+    {
+      "name": "aiga:deploy",
+      "help": "Deploy the Autonomous Income-Generating Agent (AIGA) to the active environment.",
+      "exec": "python -m scripts.ai_cli deploy --project aiga",
+      "tags": ["deploy", "aiga"],
+      "examples": [
+        "python scripts/plugins.py commands run aiga:deploy -- --env staging"
+      ]
+    },
+    {
+      "name": "docs:refresh",
+      "help": "Regenerate the public documentation portal from the latest notebooks.",
+      "exec": "python -m scripts.generate_sources_md",
+      "tags": ["docs"]
+    }
+  ],
+  "taskTemplates": [
+    {
+      "id": "weekly-review",
+      "name": "Weekly Review",
+      "description": "Summarise the week's progress, blockers, and next steps for stakeholders.",
+      "prompt": "You are preparing the team's weekly review. Summarise highlights, blockers, and upcoming work using the supplied context.",
+      "variables": [
+        {
+          "name": "context",
+          "description": "Bullet list of notable updates from the past week.",
+          "required": true,
+          "type": "list"
+        },
+        {
+          "name": "audience",
+          "description": "Who will consume the review (e.g. leadership, product, partners).",
+          "default": "leadership"
+        },
+        {
+          "name": "call_to_action",
+          "description": "Optional actions to highlight in the review.",
+          "required": false
+        }
+      ],
+      "metadata": {
+        "category": "reporting",
+        "cadence": "weekly"
+      }
+    }
+  ],
   "plugins": {
     "sample": {
       "package": "d0ttino-sample-plugin",
       "mcp": {
         "descriptor": {
-          "server_url": "https://example.com",
-          "capabilities": []
+          "server_url": "https://example.com/sample",
+          "capabilities": ["status"]
         }
       }
     },
@@ -13,8 +64,8 @@
       "package": "d0ttino-openrouter-plugin",
       "mcp": {
         "descriptor": {
-          "server_url": "https://example.com",
-          "capabilities": []
+          "server_url": "https://example.com/openrouter",
+          "capabilities": ["completion", "embeddings"]
         }
       }
     },
@@ -22,8 +73,8 @@
       "package": "d0ttino-lobechat-plugin",
       "mcp": {
         "descriptor": {
-          "server_url": "https://example.com",
-          "capabilities": []
+          "server_url": "https://example.com/lobechat",
+          "capabilities": ["chat"]
         }
       }
     },
@@ -31,8 +82,8 @@
       "package": "d0ttino-mindbridge-plugin",
       "mcp": {
         "descriptor": {
-          "server_url": "https://example.com",
-          "capabilities": []
+          "server_url": "https://example.com/mindbridge",
+          "capabilities": ["insights"]
         }
       }
     },
@@ -40,8 +91,8 @@
       "package": "d0ttino-anthropic-plugin",
       "mcp": {
         "descriptor": {
-          "server_url": "https://example.com",
-          "capabilities": []
+          "server_url": "https://example.com/anthropic",
+          "capabilities": ["claude"]
         }
       }
     },
@@ -49,8 +100,8 @@
       "package": "d0ttino-mistral-plugin",
       "mcp": {
         "descriptor": {
-          "server_url": "https://example.com",
-          "capabilities": []
+          "server_url": "https://example.com/mistral",
+          "capabilities": ["text"]
         }
       }
     },
@@ -58,8 +109,8 @@
       "package": "d0ttino-lmql-plugin",
       "mcp": {
         "descriptor": {
-          "server_url": "https://example.com",
-          "capabilities": []
+          "server_url": "https://example.com/lmql",
+          "capabilities": ["dsl"]
         }
       }
     },
@@ -68,7 +119,7 @@
       "mcp": {
         "descriptor": {
           "server_url": "https://example.com",
-          "capabilities": []
+          "capabilities": ["echo"]
         }
       }
     }
