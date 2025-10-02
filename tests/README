@@ -41,6 +41,20 @@ The CI workflow installs the runtime requirements with
 Running the same command locally ensures your environment matches the
 automated checks.
 
+## CLI Fixtures and Stubs
+
+The Typer-based `tino` CLI tests use a shared `tino_cli_runner` fixture along
+with `fake_http_service` to intercept outbound HTTP traffic. The latter
+provides a `stub(method, path, payload)` helper so tests can emulate Task
+Cascadence, docs publishing, or other services without reaching the network.
+Telemetry assertions rely on patching `telemetry.record_event`; see
+`tests/test_tino_cli_services.py` for examples.
+
+Tauri command handler tests install a temporary Python module via the
+`TINO_BRIDGE_RECORD` environment variable to capture command arguments. The
+Rust fixtures are self-contained, but you can replicate the behaviour by
+running `cargo test --manifest-path src-tauri/Cargo.toml` locally.
+
 ## Tauri Tests
 
 The CI pipeline also compiles the Tauri application in release mode to run a
