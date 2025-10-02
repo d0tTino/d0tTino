@@ -1,20 +1,5 @@
 #!/usr/bin/env python3
-"""Manage LLM backend and recipe plug-ins.
-
-The plug-in registry is a JSON object with optional ``plugins`` and ``recipes``
-mappings. Each mapping associates a plug-in or recipe name with the pip package
-that provides it::
-
-    {
-        "plugins": {"my_backend": "my-package"},
-        "recipes": {"my_recipe": "my-recipe-package"}
-    }
-
-The registry is fetched from :data:`DEFAULT_REGISTRY_URL` or the
-``PLUGIN_REGISTRY_URL`` environment variable and cached at
-:data:`CACHE_PATH`. The cache time-to-live defaults to 24 hours and can be
-customized via the ``PLUGIN_REGISTRY_TTL`` environment variable.
-"""
+"""Manage plug-ins, registry-provided commands, and task templates."""
 
 from __future__ import annotations
 
@@ -23,13 +8,18 @@ import importlib.metadata
 import json
 import logging
 import os
-from pathlib import Path
+import shlex
 import subprocess
 import sys
 import time
-from typing import Dict, List, Optional, Any, overload, Literal, cast
+from collections import OrderedDict
+from copy import deepcopy
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any, Dict, Iterable, Mapping, MutableMapping, Optional
 
 import requests
+
 try:
     import jsonschema
 except ImportError:  # pragma: no cover - optional dependency
@@ -37,272 +27,371 @@ except ImportError:  # pragma: no cover - optional dependency
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_PATH = REPO_ROOT / "plugin-registry.schema.json"
+REGISTRY_PATH = REPO_ROOT / "plugin-registry.json"
+
+
+@dataclass(frozen=True)
+class PluginCommand:
+    """Executable command contributed by a plug-in."""
+
+    name: str
+    help: str
+    exec: str
+    tags: tuple[str, ...] = ()
+    examples: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class TaskTemplateVariable:
+    """Variable available for substitution in a task template."""
+
+    name: str
+    description: str
+    required: bool = False
+    type: str | None = None
+    default: Any = None
+
+
+@dataclass(frozen=True)
+class TaskTemplateDescriptor:
+    """Reusable task template exposed by the registry."""
+
+    id: str
+    name: str
+    description: str
+    prompt: str
+    variables: tuple[TaskTemplateVariable, ...] = ()
+    metadata: Mapping[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class PluginPackage:
+    """Metadata describing an installable plug-in."""
+
+    name: str
+    package: str
+    raw: Mapping[str, Any] = field(default_factory=dict)
+
+    @property
+    def mcp(self) -> Mapping[str, Any] | None:
+        meta = self.raw.get("mcp") if isinstance(self.raw, Mapping) else None
+        return meta if isinstance(meta, Mapping) else None
+
+    def as_mapping(self) -> Dict[str, Any]:
+        if isinstance(self.raw, Mapping) and self.raw:
+            return deepcopy(dict(self.raw))
+        return {"package": self.package}
+
+
+@dataclass(frozen=True)
+class PluginRegistryData:
+    """Fully parsed plug-in registry payload."""
+
+    name: str
+    version: str
+    description: str | None
+    homepage: str | None
+    commands: tuple[PluginCommand, ...]
+    task_templates: tuple[TaskTemplateDescriptor, ...]
+    plugin_packages: Mapping[str, PluginPackage]
+    recipe_packages: Mapping[str, str]
+    recipe_configs: Mapping[str, str]
+    raw: Mapping[str, Any]
+
+    @property
+    def plugin_package_map(self) -> Dict[str, str]:
+        return {name: pkg.package for name, pkg in self.plugin_packages.items()}
+
+    @property
+    def recipes_map(self) -> Dict[str, str]:
+        return dict(self.recipe_packages)
+
+    @property
+    def mcp_plugins(self) -> Dict[str, Dict[str, Any]]:
+        result: Dict[str, Dict[str, Any]] = {}
+        for name, pkg in self.plugin_packages.items():
+            meta = pkg.as_mapping()
+            if "mcp" in meta:
+                result[name] = meta
+        return result
+
+    def get_command(self, name: str) -> PluginCommand | None:
+        return next((cmd for cmd in self.commands if cmd.name == name), None)
+
+
+logger = logging.getLogger(__name__)
+
+DEFAULT_REGISTRY_URL = (
+    "https://raw.githubusercontent.com/d0tTino/d0tTino/main/plugin-registry.json"
+)
+CACHE_PATH = Path.home() / ".cache" / "d0ttino" / "plugin_registry.json"
+MCP_CONFIG_PATH = Path.home() / ".config" / "d0tTino" / "mcp.json"
+DEFAULT_CACHE_TTL = max(0, int(os.environ.get("PLUGIN_REGISTRY_TTL", "86400")))
+
+
 if jsonschema is not None:
     try:
         with SCHEMA_PATH.open(encoding="utf-8") as fh:
             _REGISTRY_VALIDATOR = jsonschema.Draft202012Validator(json.load(fh))
-    except Exception:
+    except Exception:  # pragma: no cover - fallback to runtime validation
         _REGISTRY_VALIDATOR = None
 else:  # pragma: no cover - optional dependency missing
     _REGISTRY_VALIDATOR = None
 
-# Mapping of plug-in name to pip package used as a fallback when a registry
-# cannot be loaded from the network or cache.
-PLUGIN_REGISTRY: Dict[str, str] = {
-    "sample": "d0ttino-sample-plugin",
-    "openrouter": "d0ttino-openrouter-plugin",
-    "lobechat": "d0ttino-lobechat-plugin",
-    "mindbridge": "d0ttino-mindbridge-plugin",
-    "anthropic": "d0ttino-anthropic-plugin",
-    "mistral": "d0ttino-mistral-plugin",
-    "lmql": "d0ttino-lmql-plugin",
-    "example_mcp": "d0ttino-example-mcp-plugin",
-}
 
-# Mapping of recipe name to pip package used as a fallback when a registry
-# cannot be loaded from the network or cache.
-RECIPE_REGISTRY: Dict[str, str] = {
-    # Curated recipes shipped with the repository
-    "docker_desktop": "d0ttino-docker-desktop-recipe",
-    "fastfetch": "d0ttino-fastfetch-recipe",
-    "git": "d0ttino-git-recipe",
-    "gpu_drivers": "d0ttino-gpu-drivers-recipe",
-    "nodejs": "d0ttino-nodejs-recipe",
-    "powershell": "d0ttino-powershell-recipe",
-    "starship": "d0ttino-starship-recipe",
-    "vscode": "d0ttino-vscode-recipe",
-    "windows_terminal": "d0ttino-windows-terminal-recipe",
-    "wsl": "d0ttino-wsl-recipe",
-    "echo": "d0ttino-echo-recipe",
-}
-
-# Default directory for recipe packages downloaded via ``recipes sync``
-RECIPE_DOWNLOAD_DIR = REPO_ROOT / "scripts" / "recipes" / "packages"
-
-# Default URL for downloading the plug-in registry
-DEFAULT_REGISTRY_URL = "https://raw.githubusercontent.com/d0tTino/d0tTino/main/plugin-registry.json"
-
-
-# Cache file for the remote registry
-CACHE_PATH = Path.home() / ".cache" / "d0ttino" / "plugin_registry.json"
-
-# Configuration file for enabled MCP tools
-MCP_CONFIG_PATH = Path.home() / ".config" / "d0tTino" / "mcp.json"
-
-# Default TTL for the cached registry (24 hours)
-DEFAULT_CACHE_TTL = max(0, int(os.environ.get("PLUGIN_REGISTRY_TTL", "86400")))
-
-# Logger for plug-in management utilities
-logger = logging.getLogger(__name__)
-
-
-def _valid_registry(data: Dict[str, object]) -> bool:
-    """Return True if ``data`` is a valid plug-in registry."""
-
-    # Prefer JSON schema validation when available but fall back to a more
-    # permissive manual check so tests can provide minimal registries using
-    # simple string mappings.
-    if _REGISTRY_VALIDATOR is not None:
-        try:
-            if _REGISTRY_VALIDATOR.is_valid(data):
-                return True
-        except Exception:  # pragma: no cover - validator failure
-            return False
-    plugins = data.get("plugins")
-    recipes = data.get("recipes")
-
-    def _valid_plugin(val: object) -> bool:
-        if isinstance(val, str):
-            return True
-        if isinstance(val, dict):
-            pkg = val.get("package")
-            mcp_meta = val.get("mcp")
-            if not (isinstance(pkg, str) and isinstance(mcp_meta, dict)):
-                return False
-            descriptor = mcp_meta.get("descriptor")
-            return isinstance(descriptor, dict)
-        return False
-
-    return (
-        isinstance(plugins, dict)
-        and all(_valid_plugin(v) for v in plugins.values())
-        and (
-            recipes is None
-            or (
-                isinstance(recipes, dict)
-                and all(isinstance(v, str) for v in recipes.values())
-            )
-        )
-    )
-
-
-def _fetch_registry(url: str) -> Dict[str, object] | None:
-    """Return registry data fetched from ``url`` and update the cache."""
-
+def _load_local_registry() -> Dict[str, Any]:
     try:
-        resp = requests.get(url, timeout=5)
-        resp.raise_for_status()
-        fetched = resp.json()
-        if isinstance(fetched, dict) and _valid_registry(fetched):
-            CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
-            CACHE_PATH.write_text(
-                json.dumps({"timestamp": int(time.time()), "registry": fetched})
+        with REGISTRY_PATH.open(encoding="utf-8") as fh:
+            return json.load(fh)
+    except FileNotFoundError:
+        return {
+            "name": "d0tTino Local Registry",
+            "version": "0",
+            "commands": [],
+            "taskTemplates": [],
+            "plugins": {},
+            "recipes": {},
+            "recipe_configs": {},
+        }
+
+
+_DEFAULT_REGISTRY_RAW = _load_local_registry()
+
+
+def _validate_registry(data: Mapping[str, Any]) -> None:
+    if _REGISTRY_VALIDATOR is not None:
+        _REGISTRY_VALIDATOR.validate(data)
+        return
+    required = ("name", "version", "commands", "taskTemplates")
+    for field in required:
+        if field not in data:
+            raise ValueError(f"registry missing required field: {field}")
+
+
+def _merge_sequence(
+    base: Iterable[Mapping[str, Any]], override: Iterable[Mapping[str, Any]], key: str
+) -> list[Dict[str, Any]]:
+    merged: "OrderedDict[str, Dict[str, Any]]" = OrderedDict()
+    for item in base:
+        value = item.get(key)
+        if isinstance(value, str):
+            merged[value] = deepcopy(dict(item))
+    for item in override:
+        value = item.get(key)
+        if isinstance(value, str):
+            merged[value] = deepcopy(dict(item))
+    return list(merged.values())
+
+
+def _merge_registry(
+    base: Mapping[str, Any], override: Mapping[str, Any]
+) -> Dict[str, Any]:
+    if not override:
+        return deepcopy(dict(base))
+    merged: Dict[str, Any] = deepcopy(dict(base))
+    list_keys = {"commands": "name", "taskTemplates": "id"}
+    for key, value in override.items():
+        if key in list_keys and isinstance(value, list):
+            merged[key] = _merge_sequence(
+                base.get(key, []) if isinstance(base.get(key), list) else [], value, list_keys[key]
             )
-            return fetched
+        elif isinstance(value, dict) and isinstance(base.get(key), dict):
+            new_mapping: Dict[str, Any] = deepcopy(dict(base.get(key, {})))
+            for inner_key, inner_val in value.items():
+                new_mapping[inner_key] = deepcopy(inner_val)
+            merged[key] = new_mapping
+        else:
+            merged[key] = deepcopy(value)
+    return merged
+
+
+def _load_cache() -> tuple[Dict[str, Any] | None, int | None]:
+    if not CACHE_PATH.exists():
+        return None, None
+    try:
+        with CACHE_PATH.open(encoding="utf-8") as fh:
+            cached_raw = json.load(fh)
+    except json.JSONDecodeError:
+        logger.warning("Ignoring corrupt registry cache: %s", CACHE_PATH)
+        try:
+            CACHE_PATH.unlink()
+        except Exception:  # pragma: no cover - best effort cleanup
+            pass
+        return None, None
+    if isinstance(cached_raw, dict) and "registry" in cached_raw and "timestamp" in cached_raw:
+        registry = cached_raw.get("registry")
+        timestamp = cached_raw.get("timestamp")
+        if isinstance(registry, dict) and isinstance(timestamp, int):
+            return registry, timestamp
+    if isinstance(cached_raw, dict):
+        return cached_raw, int(CACHE_PATH.stat().st_mtime)
+    return None, None
+
+
+def _write_cache(data: Mapping[str, Any]) -> None:
+    CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    payload = {"timestamp": int(time.time()), "registry": deepcopy(dict(data))}
+    CACHE_PATH.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def _fetch_registry(url: str) -> Dict[str, Any] | None:
+    try:
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        payload = response.json()
+        if isinstance(payload, dict):
+            merged = _merge_registry(_DEFAULT_REGISTRY_RAW, payload)
+            _validate_registry(merged)
+            _write_cache(payload)
+            return merged
     except requests.exceptions.RequestException as exc:
         logger.warning(
             "Failed to fetch plug-in registry from %s: %s. Using cached registry if available.",
             url,
             exc,
         )
-    except Exception:
-        pass
+    except Exception as exc:  # pragma: no cover - validation failure
+        logger.warning("Discarding invalid registry payload: %s", exc)
     return None
 
 
-@overload
-def load_registry(
-    section: str = "plugins",
-    update: bool = False,
-    ttl: int = DEFAULT_CACHE_TTL,
-    *,
-    raw: Literal[False] = False,
-) -> Dict[str, str]:
-    ...
+def _parse_commands(data: Iterable[Mapping[str, Any]]) -> tuple[PluginCommand, ...]:
+    commands: list[PluginCommand] = []
+    for entry in data:
+        name = entry.get("name")
+        help_text = entry.get("help")
+        exec_cmd = entry.get("exec")
+        if not all(isinstance(val, str) and val for val in (name, help_text, exec_cmd)):
+            continue
+        tags = tuple(tag for tag in entry.get("tags", []) if isinstance(tag, str))
+        examples = tuple(
+            example for example in entry.get("examples", []) if isinstance(example, str)
+        )
+        commands.append(PluginCommand(name=name, help=help_text, exec=exec_cmd, tags=tags, examples=examples))
+    return tuple(commands)
 
 
-@overload
-def load_registry(
-    section: str = "plugins",
-    update: bool = False,
-    ttl: int = DEFAULT_CACHE_TTL,
-    *,
-    raw: Literal[True],
-) -> Dict[str, Any]:
-    ...
+def _parse_variables(data: Iterable[Mapping[str, Any]]) -> tuple[TaskTemplateVariable, ...]:
+    variables: list[TaskTemplateVariable] = []
+    for entry in data:
+        name = entry.get("name")
+        description = entry.get("description")
+        if not (isinstance(name, str) and isinstance(description, str)):
+            continue
+        variables.append(
+            TaskTemplateVariable(
+                name=name,
+                description=description,
+                required=bool(entry.get("required", False)),
+                type=entry.get("type") if isinstance(entry.get("type"), str) else None,
+                default=entry.get("default"),
+            )
+        )
+    return tuple(variables)
 
 
-def load_registry(
-    section: str = "plugins",
-    update: bool = False,
-    ttl: int = DEFAULT_CACHE_TTL,
-    *,
-    raw: bool = False,
-) -> Dict[str, Any]:
-    """Return the registry section with network → cache → default fallback.
+def _parse_templates(data: Iterable[Mapping[str, Any]]) -> tuple[TaskTemplateDescriptor, ...]:
+    templates: list[TaskTemplateDescriptor] = []
+    for entry in data:
+        template_id = entry.get("id")
+        name = entry.get("name")
+        description = entry.get("description")
+        prompt = entry.get("prompt")
+        if not all(isinstance(val, str) and val for val in (template_id, name, description, prompt)):
+            continue
+        metadata = (
+            deepcopy(dict(entry.get("metadata")))
+            if isinstance(entry.get("metadata"), Mapping)
+            else {}
+        )
+        variables = _parse_variables(entry.get("variables", []) if isinstance(entry.get("variables"), list) else [])
+        templates.append(
+            TaskTemplateDescriptor(
+                id=template_id,
+                name=name,
+                description=description,
+                prompt=prompt,
+                variables=variables,
+                metadata=metadata,
+            )
+        )
+    return tuple(templates)
 
-    The registry URL is taken from ``PLUGIN_REGISTRY_URL`` when set and
-    otherwise defaults to :data:`DEFAULT_REGISTRY_URL`. Cached registry data is
-    stored at :data:`CACHE_PATH` and expires after ``ttl`` seconds. The default
-    TTL is derived from ``PLUGIN_REGISTRY_TTL``.
-    """
+
+def _parse_plugins(data: Mapping[str, Any]) -> Dict[str, PluginPackage]:
+    parsed: Dict[str, PluginPackage] = {}
+    for name, value in data.items():
+        if isinstance(value, str):
+            parsed[name] = PluginPackage(name=name, package=value, raw={"package": value})
+        elif isinstance(value, Mapping):
+            package_name = value.get("package")
+            if isinstance(package_name, str):
+                parsed[name] = PluginPackage(name=name, package=package_name, raw=deepcopy(dict(value)))
+    return parsed
+
+
+def _parse_registry(data: Mapping[str, Any]) -> PluginRegistryData:
+    name = str(data.get("name", "d0tTino Registry"))
+    version = str(data.get("version", "0"))
+    description = data.get("description") if isinstance(data.get("description"), str) else None
+    homepage = data.get("homepage") if isinstance(data.get("homepage"), str) else None
+    commands = _parse_commands(data.get("commands", []) if isinstance(data.get("commands"), list) else [])
+    templates = _parse_templates(
+        data.get("taskTemplates", []) if isinstance(data.get("taskTemplates"), list) else []
+    )
+    plugins_section = (
+        data.get("plugins") if isinstance(data.get("plugins"), Mapping) else {}
+    )
+    recipes_section = (
+        data.get("recipes") if isinstance(data.get("recipes"), Mapping) else {}
+    )
+    recipe_configs = (
+        data.get("recipe_configs") if isinstance(data.get("recipe_configs"), Mapping) else {}
+    )
+    return PluginRegistryData(
+        name=name,
+        version=version,
+        description=description,
+        homepage=homepage,
+        commands=commands,
+        task_templates=templates,
+        plugin_packages=_parse_plugins(plugins_section),
+        recipe_packages=deepcopy(dict(recipes_section)),
+        recipe_configs=deepcopy(dict(recipe_configs)),
+        raw=deepcopy(dict(data)),
+    )
+
+
+def load_registry(update: bool = False, ttl: int = DEFAULT_CACHE_TTL) -> PluginRegistryData:
+    """Return the parsed plug-in registry data."""
+
+    base_data = deepcopy(_DEFAULT_REGISTRY_RAW)
+    _validate_registry(base_data)
 
     url = os.environ.get("PLUGIN_REGISTRY_URL", DEFAULT_REGISTRY_URL)
+    cached_data, cached_ts = _load_cache()
     ttl = max(0, ttl)
 
-    cached_ts: int | None = None
-    cached_data: Dict[str, object] | None = None
-
-    if CACHE_PATH.exists():
-        try:
-            with CACHE_PATH.open(encoding="utf-8") as fh:
-                cached_raw = json.load(fh)
-            if (
-                isinstance(cached_raw, dict)
-                and "registry" in cached_raw
-                and "timestamp" in cached_raw
-            ):
-                ts = cached_raw.get("timestamp")
-                reg = cached_raw.get("registry")
-                if isinstance(ts, int) and isinstance(reg, dict) and _valid_registry(reg):
-                    cached_ts = ts
-                    cached_data = reg
-            elif isinstance(cached_raw, dict) and _valid_registry(cached_raw):
-                cached_ts = int(CACHE_PATH.stat().st_mtime)
-                cached_data = cached_raw
-        except json.JSONDecodeError:
-            logger.warning("Ignoring corrupt registry cache: %s", CACHE_PATH)
-            try:
-                CACHE_PATH.unlink()
-            except Exception:
-                pass
-        except Exception:
-            pass
-
-    data: Dict[str, object] | None = None
+    registry_payload: Mapping[str, Any] | None = None
 
     if update or cached_ts is None or ttl == 0 or time.time() - cached_ts > ttl:
-        data = _fetch_registry(url)
-        if data is None:
-            data = cached_data
+        fetched = _fetch_registry(url)
+        if fetched is not None:
+            registry_payload = fetched
+        elif cached_data is not None:
+            registry_payload = _merge_registry(base_data, cached_data)
+    elif cached_data is not None:
+        registry_payload = _merge_registry(base_data, cached_data)
+
+    if registry_payload is None:
+        registry_payload = base_data
     else:
-        data = cached_data
+        try:
+            _validate_registry(registry_payload)
+        except Exception:
+            registry_payload = base_data
 
-    if isinstance(data, dict):
-        mapping = data.get(section) or {}
-        if isinstance(mapping, dict):
-            if raw:
-                raw_result: Dict[str, Any] = {}
-                for k, v in mapping.items():
-                    if isinstance(v, str):
-                        raw_result[str(k)] = {
-                            "package": v,
-                            "mcp": {"descriptor": {"server_url": "", "capabilities": []}},
-                        }
-                    elif isinstance(v, dict):
-                        pkg = v.get("package")
-                        mcp_meta = v.get("mcp")
-                        if not isinstance(mcp_meta, dict):
-                            mcp_meta = {}
-                        descriptor = mcp_meta.get("descriptor")
-                        if not isinstance(descriptor, dict):
-                            descriptor = {}
-                        server_url = descriptor.get("server_url")
-                        if not isinstance(server_url, str):
-                            server_url = ""
-                        capabilities = descriptor.get("capabilities")
-                        if not (
-                            isinstance(capabilities, list)
-                            and all(isinstance(c, str) for c in capabilities)
-                        ):
-                            capabilities = []
-                        if isinstance(pkg, str):
-                            raw_result[str(k)] = {
-                                "package": pkg,
-                                "mcp": {
-                                    "descriptor": {
-                                        "server_url": server_url,
-                                        "capabilities": capabilities,
-                                    }
-                                },
-                            }
-                return raw_result
-            result: Dict[str, str] = {}
-            for k, v in mapping.items():
-                if isinstance(v, str):
-                    result[str(k)] = v
-                elif isinstance(v, dict):
-                    pkg = v.get("package")
-                    if isinstance(pkg, str):
-                        result[str(k)] = pkg
-            return result
-
-    if section == "plugins":
-        if not raw:
-            return PLUGIN_REGISTRY
-        return cast(
-            Dict[str, Any],
-            {
-                k: {
-                    "package": v,
-                    "mcp": {
-                        "descriptor": {"server_url": "", "capabilities": []}
-                    },
-                }
-                for k, v in PLUGIN_REGISTRY.items()
-            },
-        )
-    return RECIPE_REGISTRY  # recipes not used with raw
+    return _parse_registry(registry_payload)
 
 
 def _is_installed(package: str) -> bool:
@@ -320,32 +409,37 @@ def _load_mcp_config() -> Dict[str, Any]:
         return {}
 
 
-def _save_mcp_config(data: Dict[str, Any]) -> None:
+def _save_mcp_config(data: Mapping[str, Any]) -> None:
     MCP_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
-    MCP_CONFIG_PATH.write_text(json.dumps(data, indent=2))
+    MCP_CONFIG_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
-def _cmd_list_impl(section: str, update: bool) -> int:
-    registry = load_registry(section, update=update)
-    for name, package in sorted(registry.items()):
+def _cmd_list_impl(args: argparse.Namespace, section: str) -> int:
+    registry: PluginRegistryData = args.registry
+    if section == "plugins":
+        mapping = registry.plugin_package_map
+    else:
+        mapping = registry.recipes_map
+    for name, package in sorted(mapping.items()):
         status = "installed" if _is_installed(package) else "not installed"
         print(f"{name}\t({package}) - {status}")
     return 0
 
 
 def _cmd_list_backends(args: argparse.Namespace) -> int:
-    return _cmd_list_impl("plugins", args.update)
+    return _cmd_list_impl(args, "plugins")
 
 
-def _run_pip_action(args: argparse.Namespace, section: str, pip_args: List[str]) -> int:
-    """Lookup package from ``section`` and run ``pip`` with ``pip_args``."""
-
-    registry = load_registry(section, update=args.update)
+def _run_pip_action(
+    args: argparse.Namespace, section: str, pip_args: list[str]
+) -> int:
+    registry: PluginRegistryData = args.registry
+    mapping = registry.plugin_package_map if section == "plugins" else registry.recipes_map
     name = args.name
-    if name not in registry:
+    if name not in mapping:
         print(f"Unknown plug-in: {name}", file=sys.stderr)
         return 1
-    pkg = registry[name]
+    pkg = mapping[name]
     try:
         subprocess.run(
             [sys.executable, "-m", "pip", *pip_args, pkg],
@@ -354,10 +448,10 @@ def _run_pip_action(args: argparse.Namespace, section: str, pip_args: List[str])
             text=True,
         )
         return 0
-    except subprocess.CalledProcessError as e:
-        if e.stderr:
-            print(e.stderr, file=sys.stderr, end="")
-        return e.returncode
+    except subprocess.CalledProcessError as exc:
+        if exc.stderr:
+            print(exc.stderr, file=sys.stderr, end="")
+        return exc.returncode
 
 
 def _cmd_install_impl(args: argparse.Namespace, section: str) -> int:
@@ -377,21 +471,17 @@ def _cmd_remove_backend(args: argparse.Namespace) -> int:
 
 
 def _cmd_mcp_enable(args: argparse.Namespace) -> int:
-    registry = load_registry(raw=True, update=args.update)
-    name = args.name
-    meta = registry.get(name)
-    if not isinstance(meta, dict):
-        print(f"Unknown MCP plug-in: {name}", file=sys.stderr)
+    registry: PluginRegistryData = args.registry
+    meta = registry.mcp_plugins.get(args.name)
+    if not meta:
+        print(f"Unknown MCP plug-in: {args.name}", file=sys.stderr)
         return 1
-    mcp_meta = meta.get("mcp")
-    descriptor = None
-    if isinstance(mcp_meta, dict):
-        descriptor = mcp_meta.get("descriptor")
-    if not (isinstance(descriptor, dict) and descriptor.get("server_url")):
-        print(f"No MCP descriptor for plug-in: {name}", file=sys.stderr)
+    descriptor = meta.get("mcp", {}).get("descriptor") if isinstance(meta.get("mcp"), Mapping) else None
+    if not (isinstance(descriptor, Mapping) and descriptor.get("server_url")):
+        print(f"No MCP descriptor for plug-in: {args.name}", file=sys.stderr)
         return 1
     config = _load_mcp_config()
-    config[name] = descriptor
+    config[args.name] = descriptor
     _save_mcp_config(config)
     return 0
 
@@ -407,7 +497,7 @@ def _cmd_mcp_disable(args: argparse.Namespace) -> int:
 
 
 def _cmd_list_recipes(args: argparse.Namespace) -> int:
-    return _cmd_list_impl("recipes", args.update)
+    return _cmd_list_impl(args, "recipes")
 
 
 def _cmd_install_recipes(args: argparse.Namespace) -> int:
@@ -419,11 +509,10 @@ def _cmd_remove_recipes(args: argparse.Namespace) -> int:
 
 
 def _cmd_sync_recipes(args: argparse.Namespace) -> int:
-    """Install recipe packages listed in the registry."""
-    registry = load_registry("recipes", update=args.update)
-    dest = Path(args.dest) if args.dest else RECIPE_DOWNLOAD_DIR
+    registry: PluginRegistryData = args.registry
+    dest = Path(args.dest) if args.dest else REPO_ROOT / "scripts" / "recipes" / "packages"
     dest.mkdir(parents=True, exist_ok=True)
-    for pkg in registry.values():
+    for pkg in registry.recipes_map.values():
         try:
             subprocess.run(
                 [
@@ -448,7 +537,6 @@ def _cmd_sync_recipes(args: argparse.Namespace) -> int:
 
 
 def _cmd_publish_recipes(args: argparse.Namespace) -> int:
-    """Upload a recipe package to a registry."""
     url = args.url or os.environ.get("PLUGIN_REGISTRY_UPLOAD_URL")
     if not url:
         print("Upload URL required (--url or PLUGIN_REGISTRY_UPLOAD_URL)", file=sys.stderr)
@@ -475,33 +563,53 @@ def _cmd_publish_recipes(args: argparse.Namespace) -> int:
         return exc.returncode
 
 
-def _cmd_new_plugin(args: argparse.Namespace) -> int:
-    """Scaffold a new plug-in project."""
-    from scripts import plugin_scaffold
-
-    plugin_scaffold.scaffold_plugin(
-        args.name,
-        recipe=args.recipe,
-        description=args.description,
-        output=args.output,
-    )
+def _cmd_commands_list(args: argparse.Namespace) -> int:
+    registry: PluginRegistryData = args.registry
+    if not registry.commands:
+        print("No plug-in commands are registered.")
+        return 0
+    width = max(len(cmd.name) for cmd in registry.commands)
+    for cmd in registry.commands:
+        print(f"{cmd.name.ljust(width)}  {cmd.help}")
     return 0
 
 
-def _cmd_plugin_new(args: argparse.Namespace) -> int:
-    """Scaffold an MCP-compliant plug-in."""
-    from scripts import plugin_scaffold
+def _cmd_commands_run(args: argparse.Namespace) -> int:
+    registry: PluginRegistryData = args.registry
+    descriptor = registry.get_command(args.name)
+    if descriptor is None:
+        print(f"Unknown plug-in command: {args.name}", file=sys.stderr)
+        return 1
+    cmdline = shlex.split(descriptor.exec)
+    extra = args.args or []
+    if extra and extra[0] == "--":
+        extra = extra[1:]
+    cmdline.extend(extra)
+    try:
+        subprocess.run(cmdline, check=True)
+        return 0
+    except subprocess.CalledProcessError as exc:
+        return exc.returncode
 
-    plugin_scaffold.scaffold_plugin(
-        args.name,
-        description=args.description,
-        output=args.output,
-    )
-    return 0
+
+def _format_epilog(registry: PluginRegistryData | None) -> str | None:
+    if registry is None or not registry.commands:
+        return None
+    width = max(len(cmd.name) for cmd in registry.commands)
+    lines = ["Available plug-in commands:"]
+    for cmd in registry.commands:
+        lines.append(f"  {cmd.name.ljust(width)}  {cmd.help}")
+    lines.append("\nRun 'python scripts/plugins.py commands run <name> -- --extra' to execute a command.")
+    return "\n".join(lines)
 
 
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description=__doc__)
+def build_parser(preview_registry: PluginRegistryData | None = None) -> argparse.ArgumentParser:
+    if preview_registry is None:
+        try:
+            preview_registry = load_registry()
+        except Exception:  # pragma: no cover - help should still render
+            preview_registry = None
+    parser = argparse.ArgumentParser(description=__doc__, epilog=_format_epilog(preview_registry))
     parser.add_argument(
         "--update",
         action="store_true",
@@ -589,22 +697,64 @@ def build_parser() -> argparse.ArgumentParser:
     )
     r_publish.set_defaults(func=_cmd_publish_recipes)
 
+    commands_parser = sub.add_parser("commands", help="List and run plug-in commands")
+    commands_sub = commands_parser.add_subparsers(dest="commands_command", required=True)
+
+    c_list = commands_sub.add_parser("list", help="List plug-in commands")
+    c_list.set_defaults(func=_cmd_commands_list)
+
+    c_run = commands_sub.add_parser(
+        "run",
+        help="Execute a plug-in command. Pass '--' to forward additional arguments.",
+    )
+    c_run.add_argument("name", help="Command name")
+    c_run.add_argument("args", nargs=argparse.REMAINDER)
+    c_run.set_defaults(func=_cmd_commands_run)
+
     return parser
 
 
-def main(argv: Optional[List[str]] = None) -> int:
-    parser = build_parser()
+def _cmd_new_plugin(args: argparse.Namespace) -> int:
+    from scripts import plugin_scaffold
+
+    plugin_scaffold.scaffold_plugin(
+        args.name,
+        recipe=args.recipe,
+        description=args.description,
+        output=args.output,
+    )
+    return 0
+
+
+def _cmd_plugin_new(args: argparse.Namespace) -> int:
+    from scripts import plugin_scaffold
+
+    plugin_scaffold.scaffold_plugin(
+        args.name,
+        description=args.description,
+        output=args.output,
+    )
+    return 0
+
+
+def main(argv: Optional[list[str]] = None) -> int:
     if jsonschema is None:
         print(
             "jsonschema is required for plug-in management. Install it via 'pip install llm[cli]' or 'pip install jsonschema'.",
             file=sys.stderr,
         )
+    parser = build_parser()
     args = parser.parse_args(argv)
+
+    registry = load_registry(update=getattr(args, "update", False))
+    setattr(args, "registry", registry)
+
     if getattr(args, "mcp", False):
         from plugins import mcp_adapter
 
-        mcp_adapter.serve(load_registry(raw=True))
+        mcp_adapter.serve(registry.mcp_plugins)
         return 0
+
     if not hasattr(args, "func"):
         parser.error("a command is required")
     return args.func(args)
@@ -612,4 +762,3 @@ def main(argv: Optional[List[str]] = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

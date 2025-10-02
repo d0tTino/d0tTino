@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from copy import deepcopy
 from pathlib import Path
 
 import jsonschema
@@ -27,7 +28,15 @@ def load_registry(path: Path = REGISTRY_PATH) -> dict[str, object]:
         with path.open(encoding="utf-8") as fh:
             return json.load(fh)
     except FileNotFoundError:
-        return {"plugins": {}, "recipes": {}}
+        return {
+            "name": "d0tTino Registry",
+            "version": "0",
+            "commands": [],
+            "taskTemplates": [],
+            "plugins": {},
+            "recipes": {},
+            "recipe_configs": {},
+        }
 
 
 def load_schema(path: Path = SCHEMA_PATH) -> dict[str, object]:
@@ -46,21 +55,12 @@ def sync_registry(data: dict[str, object]) -> bool:
 
     Returns ``True`` if ``data`` was modified.
     """
-    default_mcp = {
-        "descriptor": {"server_url": "https://example.com", "capabilities": []}
-    }
-    expected_plugins = {
-        name: {"package": pkg, "mcp": json.loads(json.dumps(default_mcp))}
-        for name, pkg in plugins.PLUGIN_REGISTRY.items()
-    }
-    expected_recipes = plugins.RECIPE_REGISTRY
+    expected = deepcopy(plugins._DEFAULT_REGISTRY_RAW)
     changed = False
-    if data.get("plugins") != expected_plugins:
-        data["plugins"] = expected_plugins
-        changed = True
-    if data.get("recipes") != expected_recipes:
-        data["recipes"] = expected_recipes
-        changed = True
+    for key, value in expected.items():
+        if data.get(key) != value:
+            data[key] = deepcopy(value)
+            changed = True
     return changed
 
 

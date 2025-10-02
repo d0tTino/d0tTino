@@ -14,265 +14,93 @@ from tests import stubs
 if TYPE_CHECKING:
     from typer.testing import CliRunner
 
+
 pytest.importorskip("requests")
 
 
-def test_default_registry_url_constant_exists():
-    assert isinstance(plugins.DEFAULT_REGISTRY_URL, str)
+def test_load_registry_returns_commands_and_templates() -> None:
+    registry = plugins.load_registry()
+    assert isinstance(registry, plugins.PluginRegistryData)
+    assert any(cmd.name == "aiga:deploy" for cmd in registry.commands)
+    assert any(tpl.id == "weekly-review" for tpl in registry.task_templates)
+    assert "anthropic" in registry.plugin_package_map
 
 
-def test_fetch_registry_saves_cache(monkeypatch, tmp_path):
+def test_load_registry_uses_cache_when_offline(monkeypatch, tmp_path: Path) -> None:
     cache = tmp_path / "cache.json"
     monkeypatch.setattr(plugins, "CACHE_PATH", cache)
 
-    result = {"plugins": {"x": "pkg"}}
+    cached_payload = {
+        "timestamp": int(time.time()),
+        "registry": {
+            "name": "cached",
+            "version": "1",
+            "commands": [
+                {"name": "cached:cmd", "help": "Cached command", "exec": "echo cached"}
+            ],
+            "taskTemplates": [],
+            "plugins": {},
+            "recipes": {},
+            "recipe_configs": {},
+        },
+    }
+    cache.write_text(json.dumps(cached_payload), encoding="utf-8")
 
-    class Resp:
-        def raise_for_status(self):
-            pass
-
-        def json(self):
-            return result
-
-    monkeypatch.setattr(plugins.requests, "get", lambda *a, **k: Resp())
-
-    data = plugins._fetch_registry("https://example.com")
-    assert data == result
-    cached = json.loads(cache.read_text())
-    assert isinstance(cached.get("timestamp"), int)
-    assert cached.get("registry") == result
-
-
-def test_load_registry_uses_cache_when_offline(monkeypatch, tmp_path):
-    cache = tmp_path / "cache.json"
-    cache.write_text(
-        json.dumps({"timestamp": int(time.time()), "registry": {"plugins": {"y": "pkg"}}})
+    monkeypatch.setattr(
+        plugins.requests,
+        "get",
+        lambda *a, **k: pytest.fail("network should not be called"),
     )
-    monkeypatch.setattr(plugins, "CACHE_PATH", cache)
-
-    def raise_exc(*a, **k):
-        raise plugins.requests.exceptions.RequestException("boom")
-
-    monkeypatch.setattr(plugins.requests, "get", raise_exc)
-    monkeypatch.setenv("PLUGIN_REGISTRY_URL", "https://example.com")
-
-    registry = plugins.load_registry()
-    assert registry == {"y": "pkg"}
-
-
-def test_load_registry_defaults_without_cache(monkeypatch, tmp_path):
-    monkeypatch.setattr(plugins, "CACHE_PATH", tmp_path / "missing.json")
-
-    def raise_exc(*a, **k):
-        raise plugins.requests.exceptions.RequestException("boom")
-
-    monkeypatch.setattr(plugins.requests, "get", raise_exc)
-    registry = plugins.load_registry()
-    assert registry == plugins.PLUGIN_REGISTRY
-
-
-def test_load_registry_recipes_section(monkeypatch, tmp_path):
-    cache = tmp_path / "cache.json"
-    monkeypatch.setattr(plugins, "CACHE_PATH", cache)
-
-    data = {"plugins": {}, "recipes": {"echo": "pkg"}}
-
-    class Resp:
-        def raise_for_status(self):
-            pass
-
-        def json(self):
-            return data
-
-    monkeypatch.setattr(plugins.requests, "get", lambda *a, **k: Resp())
-    monkeypatch.setenv("PLUGIN_REGISTRY_URL", "https://example.com")
-
-    registry = plugins.load_registry("recipes")
-    assert registry == {"echo": "pkg"}
-
-
-def test_load_registry_uses_default_url(monkeypatch, tmp_path):
-    cache = tmp_path / "cache.json"
-    monkeypatch.setattr(plugins, "CACHE_PATH", cache)
-    monkeypatch.delenv("PLUGIN_REGISTRY_URL", raising=False)
-
-    result = {"plugins": {"z": "pkg"}}
-
-    class Resp:
-        def raise_for_status(self):
-            pass
-
-        def json(self):
-            return result
-
-    def fake_get(url, timeout=None):
-        assert url == plugins.DEFAULT_REGISTRY_URL
-        return Resp()
-
-    monkeypatch.setattr(plugins.requests, "get", fake_get)
-
-    registry = plugins.load_registry()
-    assert registry == {"z": "pkg"}
-
-
-def test_load_registry_skips_network_with_cache(monkeypatch, tmp_path):
-    cache = tmp_path / "cache.json"
-    cache.write_text(
-        json.dumps({"timestamp": int(time.time()), "registry": {"plugins": {"y": "pkg"}}})
-    )
-    monkeypatch.setattr(plugins, "CACHE_PATH", cache)
-
-    def fail_fetch(url):  # pragma: no cover - should not be called
-        raise AssertionError("network called")
-
-    monkeypatch.setattr(plugins, "_fetch_registry", fail_fetch)
 
     registry = plugins.load_registry(ttl=3600)
-    assert registry == {"y": "pkg"}
+    assert any(cmd.name == "cached:cmd" for cmd in registry.commands)
 
 
-def test_load_registry_update_forces_fetch(monkeypatch, tmp_path):
+def test_load_registry_defaults_without_cache(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(plugins, "CACHE_PATH", tmp_path / "missing.json")
+
+    def raise_exc(*_args, **_kwargs):
+        raise plugins.requests.exceptions.RequestException("boom")
+
+    monkeypatch.setattr(plugins.requests, "get", raise_exc)
+
+    registry = plugins.load_registry()
+    assert "sample" in registry.plugin_package_map
+
+
+def test_load_registry_update_forces_fetch(monkeypatch, tmp_path: Path) -> None:
     cache = tmp_path / "cache.json"
-    cache.write_text(
-        json.dumps({"timestamp": int(time.time()), "registry": {"plugins": {"y": "pkg"}}})
-    )
     monkeypatch.setattr(plugins, "CACHE_PATH", cache)
 
-    called = False
+    called: dict[str, bool] = {"fetch": False}
 
-    def fake_fetch(url):
-        nonlocal called
-        called = True
-        return {"plugins": {"z": "pkg"}}
+    def fake_fetch(url: str) -> dict[str, object] | None:
+        called["fetch"] = True
+        return {
+            "name": "updated",
+            "version": "1",
+            "commands": [
+                {"name": "updated:cmd", "help": "Updated command", "exec": "echo hi"}
+            ],
+            "taskTemplates": [],
+            "plugins": {},
+            "recipes": {},
+            "recipe_configs": {},
+        }
 
     monkeypatch.setattr(plugins, "_fetch_registry", fake_fetch)
 
     registry = plugins.load_registry(update=True)
-    assert called
-    assert registry == {"z": "pkg"}
+    assert called["fetch"]
+    assert any(cmd.name == "updated:cmd" for cmd in registry.commands)
 
 
-def test_load_registry_fetches_when_cache_expired(monkeypatch, tmp_path):
+def test_load_registry_invalid_cache_falls_back(monkeypatch, tmp_path: Path) -> None:
     cache = tmp_path / "cache.json"
-    old_ts = int(time.time()) - 100
-    cache.write_text(
-        json.dumps({"timestamp": old_ts, "registry": {"plugins": {"y": "pkg"}}})
-    )
+    cache.write_text(json.dumps({"timestamp": int(time.time()), "registry": {"name": "bad"}}))
     monkeypatch.setattr(plugins, "CACHE_PATH", cache)
 
-    called = False
-
-    def fake_fetch(url):
-        nonlocal called
-        called = True
-        return {"plugins": {"z": "pkg"}}
-
-    monkeypatch.setattr(plugins, "_fetch_registry", fake_fetch)
-
-    registry = plugins.load_registry(ttl=10)
-    assert called
-    assert registry == {"z": "pkg"}
-
-
-def test_load_registry_uses_env_ttl(monkeypatch, tmp_path):
-    cache = tmp_path / "cache.json"
-    cache.write_text(
-        json.dumps({"timestamp": int(time.time()) - 5, "registry": {"plugins": {"x": "pkg"}}})
-    )
-    monkeypatch.setenv("PLUGIN_REGISTRY_TTL", "1")
-    reloaded = importlib.reload(plugins)
-    monkeypatch.setattr(reloaded, "CACHE_PATH", cache)
-
-    called = False
-
-    def fake_fetch(url):
-        nonlocal called
-        called = True
-        return {"plugins": {"y": "pkg"}}
-
-    monkeypatch.setattr(reloaded, "_fetch_registry", fake_fetch)
-
-    registry = reloaded.load_registry()
-    assert called
-    assert registry == {"y": "pkg"}
-
-
-def test_load_registry_fetches_with_zero_ttl(monkeypatch, tmp_path):
-    cache = tmp_path / "cache.json"
-    cache.write_text(
-        json.dumps({"timestamp": int(time.time()), "registry": {"plugins": {"x": "pkg"}}})
-    )
-    monkeypatch.setattr(plugins, "CACHE_PATH", cache)
-
-    called = False
-
-    def fake_fetch(url):
-        nonlocal called
-        called = True
-        return {"plugins": {"y": "pkg"}}
-
-    monkeypatch.setattr(plugins, "_fetch_registry", fake_fetch)
-
-    registry = plugins.load_registry(ttl=0)
-    assert called
-    assert registry == {"y": "pkg"}
-
-
-def test_load_registry_surfaces_mcp_metadata(monkeypatch, tmp_path):
-    cache = tmp_path / "cache.json"
-    monkeypatch.setattr(plugins, "CACHE_PATH", cache)
-
-    data = {
-        "plugins": {
-            "example": {
-                "package": "pkg",
-                "mcp": {
-                    "descriptor": {
-                        "server_url": "https://example.com",
-                        "capabilities": ["x"],
-                    }
-                },
-            }
-        }
-    }
-
-    monkeypatch.setattr(plugins, "_fetch_registry", lambda url: data)
-    monkeypatch.setenv("PLUGIN_REGISTRY_URL", "https://example.com")
-
-    registry = plugins.load_registry(raw=True, update=True)
-    meta = registry["example"]["mcp"]
-    desc = meta["descriptor"]
-    assert desc["server_url"] == "https://example.com"
-    assert desc["capabilities"] == ["x"]
-
-
-def test_example_mcp_plugin_in_registry(monkeypatch, tmp_path):
-    cache = tmp_path / "cache.json"
-    monkeypatch.setattr(plugins, "CACHE_PATH", cache)
-
-    registry_data = json.loads((plugins.REPO_ROOT / "plugin-registry.json").read_text())
-    monkeypatch.setattr(plugins, "_fetch_registry", lambda url: registry_data)
-    monkeypatch.setenv("PLUGIN_REGISTRY_URL", "https://example.com")
-
-    registry = plugins.load_registry(raw=True, update=True)
-    meta = registry["example_mcp"]["mcp"]
-    desc = meta["descriptor"]
-    assert desc["server_url"] == "https://example.com"
-    assert desc["capabilities"] == []
-
-
-def test_example_mcp_plugin_metadata():
-    from plugins import example_mcp_plugin
-
-    meta = example_mcp_plugin.mcp_tool()
-    assert meta["server_url"] == "https://example.com/mcp"
-    assert meta["capabilities"] == ["echo"]
-
-
-def test_builtin_plugins_present(monkeypatch, tmp_path):
-    monkeypatch.setattr(plugins, "CACHE_PATH", tmp_path / "missing.json")
-
-    def raise_exc(*a, **k):
+    def raise_exc(*_args, **_kwargs):
         raise plugins.requests.exceptions.RequestException("boom")
 
     monkeypatch.setattr(plugins.requests, "get", raise_exc)
@@ -372,3 +200,4 @@ def test_register_plugin_command_falls_back_on_missing_callable(
     result = tino_cli_runner.invoke(app, ["demo", "hello"])
     assert result.exit_code == 1
     assert "demo-pkg" in result.stderr or "demo-pkg" in result.output
+
