@@ -18,10 +18,25 @@ class StormClient(BaseClient):
         payload = {"topic": topic, "source": source}
         return self.request(state, "post", "/research/ingest", json_payload=payload, telemetry_action="ingest")
 
-    def draft(self, state: CLIState, *, topic: str, hints: Mapping[str, str] | None = None) -> RequestResult | None:
+    def draft(
+        self,
+        state: CLIState,
+        *,
+        topic: str,
+        hints: Mapping[str, object] | None = None,
+        doc: str | None = None,
+        anchor: str | None = None,
+        prompt: str | None = None,
+    ) -> RequestResult | None:
         payload: dict[str, object] = {"topic": topic}
         if hints:
             payload["hints"] = hints
+        if doc:
+            payload["doc"] = doc
+        if anchor:
+            payload["anchor"] = anchor
+        if prompt:
+            payload["prompt"] = prompt
         return self.request(state, "post", "/research/draft", json_payload=payload, telemetry_action="draft")
 
 

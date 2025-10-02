@@ -23,8 +23,20 @@ class TaskCascadenceClient(BaseClient):
     def status(self, state: CLIState, task_id: str) -> RequestResult | None:
         return self.request(state, "get", f"/tasks/{task_id}", telemetry_action="status")
 
-    def signal(self, state: CLIState, task_id: str, *, signal: str) -> RequestResult | None:
-        body = {"signal": signal}
+    def signal(
+        self,
+        state: CLIState,
+        task_id: str,
+        *,
+        signal: str,
+        link: str | None = None,
+        note: str | None = None,
+    ) -> RequestResult | None:
+        body: dict[str, object] = {"signal": signal}
+        if link:
+            body["link"] = link
+        if note:
+            body["note"] = note
         return self.request(
             state,
             "post",
