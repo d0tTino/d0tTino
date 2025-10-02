@@ -1,24 +1,40 @@
 import io
 import json
-import types
 import sys
+import types
 
 from plugins import mcp, mcp_adapter
+from scripts import plugins
+
+
+def _registry() -> plugins.PluginRegistryData:
+    raw_meta = {
+        "package": "pkg",
+        "mcp": {
+            "descriptor": {
+                "server_url": "https://example.com",
+                "capabilities": ["echo"],
+            }
+        },
+    }
+    package = plugins.PluginPackage(name="dummy", package="pkg", raw=raw_meta)
+    return plugins.PluginRegistryData(
+        name="test",
+        version="1",
+        description=None,
+        homepage=None,
+        commands=(),
+        task_templates=(),
+        plugin_packages={"dummy": package},
+        recipe_packages={},
+        recipe_configs={},
+        raw={"plugins": {"dummy": raw_meta}, "name": "test", "version": "1", "commands": [], "taskTemplates": []},
+    )
 
 
 def test_mcp_adapter_exposes_registry_tools(monkeypatch):
-    reg = {
-        "dummy": {
-            "package": "pkg",
-            "mcp": {
-                "descriptor": {
-                    "server_url": "https://example.com",
-                    "capabilities": ["echo"],
-                }
-            },
-        }
-    }
-    monkeypatch.setattr(mcp_adapter.registry, "load_registry", lambda raw=True: reg)
+    reg = _registry()
+    monkeypatch.setattr(mcp_adapter.registry, "load_registry", lambda: reg)
 
     tools = mcp_adapter.get_tools(reg)
     assert tools["dummy"]() == {
@@ -29,18 +45,8 @@ def test_mcp_adapter_exposes_registry_tools(monkeypatch):
 
 
 def test_mcp_adapter_tool_descriptors(monkeypatch):
-    reg = {
-        "dummy": {
-            "package": "pkg",
-            "mcp": {
-                "descriptor": {
-                    "server_url": "https://example.com",
-                    "capabilities": ["echo"],
-                }
-            },
-        }
-    }
-    monkeypatch.setattr(mcp_adapter.registry, "load_registry", lambda raw=True: reg)
+    reg = _registry()
+    monkeypatch.setattr(mcp_adapter.registry, "load_registry", lambda: reg)
 
     desc = mcp_adapter.get_tool_descriptors(reg)
     assert desc["dummy"] == {
@@ -126,17 +132,7 @@ def test_ai_cli_does_not_enable_mcp_without_flag(monkeypatch, tmp_path):
 
 
 def test_mcp_adapter_serve_lists_descriptors(monkeypatch):
-    reg = {
-        "dummy": {
-            "package": "pkg",
-            "mcp": {
-                "descriptor": {
-                    "server_url": "https://example.com",
-                    "capabilities": ["echo"],
-                }
-            },
-        }
-    }
+    reg = _registry()
 
     monkeypatch.setattr(mcp_adapter.sys, "stdin", io.StringIO(json.dumps({"command": "list_tools"}) + "\n"))
     stdout = io.StringIO()

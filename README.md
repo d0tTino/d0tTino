@@ -104,6 +104,22 @@ Detailed Winget instructions are available in
 Explore curated setup commands in
 [docs/recipes.md](docs/recipes.md).
 
+### Plug-in registry format
+
+The plug-in registry (`plugin-registry.json`) now ships curated CLI commands and
+task templates alongside package metadata. Each registry payload includes the
+following top-level fields:
+
+* `name` and `version` identify the bundle that was loaded.
+* `commands` is an array of executable command descriptors containing a
+  `name`, `help`, and shell `exec` string (with optional `tags` and `examples`).
+  These entries are surfaced in the `python scripts/plugins.py commands` CLI.
+* `taskTemplates` provides reusable task scaffolds. Each template defines an
+  `id`, human-readable `name`, `description`, `prompt`, and optional
+  `variables` metadata that describes the available substitutions.
+* `plugins`, `recipes`, and `recipe_configs` remain available for package
+  management and continue to work with existing CLI workflows.
+
 ---
 
 ## Changelog (auto‑updated)

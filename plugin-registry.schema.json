@@ -2,68 +2,209 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.com/d0ttino/plugin-registry.schema.json",
   "title": "d0tTino Plug-in Registry",
-  "description": "Mapping of plug-in and recipe names to pip packages.",
+  "description": "Metadata describing packaged plug-ins, executable commands, and reusable task templates.",
   "type": "object",
+  "required": ["name", "version", "commands", "taskTemplates"],
+  "additionalProperties": false,
   "properties": {
+    "name": {
+      "type": "string",
+      "description": "Human readable name for this registry bundle"
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic or date-based version for the registry payload"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description of the registry contents"
+    },
+    "homepage": {
+      "type": "string",
+      "format": "uri",
+      "description": "Optional URL with additional documentation"
+    },
+    "commands": {
+      "type": "array",
+      "description": "Executable commands contributed by plug-ins",
+      "items": {"$ref": "#/$defs/command"},
+      "uniqueItems": true,
+      "default": []
+    },
+    "taskTemplates": {
+      "type": "array",
+      "description": "Reusable task templates",
+      "items": {"$ref": "#/$defs/taskTemplate"},
+      "default": []
+    },
     "plugins": {
       "type": "object",
-      "additionalProperties": {
-        "type": "object",
-        "required": ["package", "mcp"],
-        "properties": {
-          "package": {
-            "type": "string",
-            "description": "Name of the pip package containing the plug-in"
-          },
-          "mcp": {
-            "type": "object",
-            "description": "MCP metadata for the plug-in",
-            "properties": {
-              "descriptor": {
-                "type": "object",
-                "description": "MCP descriptor for the plug-in",
-                "properties": {
-                  "server_url": {
-                    "type": "string",
-                    "format": "uri",
-                    "description": "Base URL for the MCP server"
-                  },
-                  "capabilities": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "Capabilities exposed by the server"
-                  }
-                },
-                "required": ["server_url", "capabilities"],
-                "additionalProperties": false
-              },
-              "entry_point": {
-                "type": "string",
-                "description": "Optional Python entry point returning a descriptor"
-              }
-            },
-            "required": ["descriptor"],
-            "additionalProperties": false
-          }
-        },
-        "additionalProperties": false
-      }
+      "description": "Optional mapping of plug-in names to package metadata",
+      "additionalProperties": {"$ref": "#/$defs/pluginPackage"},
+      "default": {}
     },
     "recipes": {
       "type": "object",
+      "description": "Optional mapping of recipe identifiers to package names",
       "additionalProperties": {
         "type": "string",
-        "format": "uri",
-        "description": "URL to the pip package containing the recipe"
-      }
+        "description": "Package or URL providing the recipe"
+      },
+      "default": {}
     },
     "recipe_configs": {
       "type": "object",
+      "description": "Optional mapping of recipe identifiers to configuration files",
       "additionalProperties": {
         "type": "string",
-        "description": "Path to winget configuration file for the recipe"
-      }
+        "description": "Path or URL to the recipe's configuration file"
+      },
+      "default": {}
     }
   },
-  "additionalProperties": false
+  "$defs": {
+    "command": {
+      "type": "object",
+      "required": ["name", "help", "exec"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Unique identifier for the command"
+        },
+        "help": {
+          "type": "string",
+          "description": "Short help string used in CLI output"
+        },
+        "exec": {
+          "type": "string",
+          "description": "Shell command executed for this entry"
+        },
+        "tags": {
+          "type": "array",
+          "description": "Optional tags describing the command",
+          "items": {"type": "string"},
+          "uniqueItems": true,
+          "default": []
+        },
+        "examples": {
+          "type": "array",
+          "description": "Optional usage examples",
+          "items": {"type": "string"},
+          "default": []
+        }
+      }
+    },
+    "taskTemplate": {
+      "type": "object",
+      "required": ["id", "name", "description", "prompt"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identifier used to reference the template"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human readable template name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Summary of when to use the template"
+        },
+        "prompt": {
+          "type": "string",
+          "description": "Prompt text or instructions provided to the agent"
+        },
+        "variables": {
+          "type": "array",
+          "description": "Template variables available for substitution",
+          "items": {"$ref": "#/$defs/templateVariable"},
+          "default": []
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional plug-in specific metadata",
+          "additionalProperties": true,
+          "default": {}
+        }
+      }
+    },
+    "templateVariable": {
+      "type": "object",
+      "required": ["name", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Variable name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Explanation of the variable"
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Indicates whether the variable must be supplied",
+          "default": false
+        },
+        "type": {
+          "type": "string",
+          "description": "Optional type hint for the variable"
+        },
+        "default": {
+          "description": "Optional default value",
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "array",
+            "object",
+            "null"
+          ]
+        }
+      }
+    },
+    "pluginPackage": {
+      "type": "object",
+      "required": ["package"],
+      "additionalProperties": false,
+      "properties": {
+        "package": {
+          "type": "string",
+          "description": "Name of the pip package containing the plug-in"
+        },
+        "mcp": {
+          "type": "object",
+          "description": "MCP metadata for the plug-in",
+          "properties": {
+            "descriptor": {
+              "type": "object",
+              "description": "Descriptor returned by the MCP plug-in",
+              "properties": {
+                "server_url": {
+                  "type": "string",
+                  "format": "uri",
+                  "description": "Base URL for the MCP server"
+                },
+                "capabilities": {
+                  "type": "array",
+                  "items": {"type": "string"},
+                  "description": "Capabilities exposed by the server"
+                }
+              },
+              "required": ["server_url", "capabilities"],
+              "additionalProperties": true
+            },
+            "entry_point": {
+              "type": "string",
+              "description": "Optional Python entry point returning a descriptor"
+            }
+          },
+          "required": ["descriptor"],
+          "additionalProperties": true
+        }
+      }
+    }
+  }
 }

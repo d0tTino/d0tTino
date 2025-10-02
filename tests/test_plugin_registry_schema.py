@@ -16,12 +16,13 @@ def test_plugin_registry_schema_valid() -> None:
     jsonschema.validate(data, schema, format_checker=FormatChecker())
 
 
-def test_plugins_include_mcp_metadata() -> None:
+def test_registry_documents_commands_and_templates() -> None:
     data = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
-    for plugin in data.get("plugins", {}).values():
-        mcp = plugin.get("mcp")
-        assert isinstance(mcp, dict)
-        descriptor = mcp.get("descriptor")
-        assert isinstance(descriptor, dict)
-        assert "server_url" in descriptor
-        assert "capabilities" in descriptor
+    commands = {cmd["name"]: cmd for cmd in data["commands"]}
+    assert "aiga:deploy" in commands
+    assert commands["aiga:deploy"]["exec"].startswith("python -m")
+
+    templates = {tpl["id"]: tpl for tpl in data["taskTemplates"]}
+    assert "weekly-review" in templates
+    template = templates["weekly-review"]
+    assert template["metadata"]["cadence"] == "weekly"
