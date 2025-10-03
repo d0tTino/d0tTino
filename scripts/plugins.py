@@ -16,7 +16,7 @@ from collections import OrderedDict
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterable, Mapping, MutableMapping, Optional
+from typing import Any, Dict, Iterable, Mapping, Optional
 
 import requests
 
@@ -39,6 +39,32 @@ class PluginCommand:
     exec: str
     tags: tuple[str, ...] = ()
     examples: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class PluginCLICommandDescriptor:
+    """Command descriptor declared within a plug-in's ``cli`` section."""
+
+    name: str
+    help: str
+    exec: str | None = None
+    callable: str | None = None
+    tags: tuple[str, ...] = ()
+    examples: tuple[str, ...] = ()
+
+    def has_exec(self) -> bool:
+        return isinstance(self.exec, str) and bool(self.exec)
+
+    def has_callable(self) -> bool:
+        return isinstance(self.callable, str) and bool(self.callable)
+
+
+@dataclass(frozen=True)
+class PluginCLIMetadata:
+    """CLI metadata exposed by a plug-in entry."""
+
+    help: str | None
+    commands: tuple[PluginCLICommandDescriptor, ...]
 
 
 @dataclass(frozen=True)
@@ -71,6 +97,7 @@ class PluginPackage:
     name: str
     package: str
     raw: Mapping[str, Any] = field(default_factory=dict)
+    cli: PluginCLIMetadata | None = None
 
     @property
     def mcp(self) -> Mapping[str, Any] | None:
@@ -163,9 +190,35 @@ def _validate_registry(data: Mapping[str, Any]) -> None:
         _REGISTRY_VALIDATOR.validate(data)
         return
     required = ("name", "version", "commands", "taskTemplates")
-    for field in required:
-        if field not in data:
-            raise ValueError(f"registry missing required field: {field}")
+    for key in required:
+        if key not in data:
+            raise ValueError(f"registry missing required field: {key}")
+
+
+def validate_registry_payload(data: Mapping[str, Any]) -> None:
+    """Public wrapper for schema validation used by CLI loaders and tests."""
+
+    _validate_registry(data)
+
+
+def _valid_registry(data: Mapping[str, Any]) -> bool:
+    """Return ``True`` when ``data`` passes lightweight structural validation."""
+
+    try:
+        validate_registry_payload(data)
+    except Exception:
+        return False
+    plugins_section = data.get("plugins")
+    if isinstance(plugins_section, Mapping):
+        for value in plugins_section.values():
+            if not isinstance(value, Mapping):
+                continue
+            mcp_meta = value.get("mcp")
+            if isinstance(mcp_meta, Mapping):
+                descriptor = mcp_meta.get("descriptor")
+                if descriptor is not None and not isinstance(descriptor, Mapping):
+                    return False
+    return True
 
 
 def _merge_sequence(
@@ -271,6 +324,47 @@ def _parse_commands(data: Iterable[Mapping[str, Any]]) -> tuple[PluginCommand, .
     return tuple(commands)
 
 
+def _parse_plugin_cli_commands(data: Iterable[Mapping[str, Any]]) -> tuple[PluginCLICommandDescriptor, ...]:
+    commands: list[PluginCLICommandDescriptor] = []
+    for entry in data:
+        name = entry.get("name")
+        help_text = entry.get("help")
+        exec_cmd = entry.get("exec")
+        callable_name = entry.get("callable")
+        if not (isinstance(name, str) and name and isinstance(help_text, str) and help_text):
+            continue
+        exec_value = exec_cmd if isinstance(exec_cmd, str) and exec_cmd else None
+        callable_value = callable_name if isinstance(callable_name, str) and callable_name else None
+        if exec_value is None and callable_value is None:
+            continue
+        tags = tuple(tag for tag in entry.get("tags", []) if isinstance(tag, str))
+        examples = tuple(
+            example for example in entry.get("examples", []) if isinstance(example, str)
+        )
+        commands.append(
+            PluginCLICommandDescriptor(
+                name=name,
+                help=help_text,
+                exec=exec_value,
+                callable=callable_value,
+                tags=tags,
+                examples=examples,
+            )
+        )
+    return tuple(commands)
+
+
+def _parse_plugin_cli(data: Mapping[str, Any]) -> PluginCLIMetadata | None:
+    if not data:
+        return None
+    help_text = data.get("help") if isinstance(data.get("help"), str) else None
+    commands_raw = data.get("commands") if isinstance(data.get("commands"), list) else []
+    commands = _parse_plugin_cli_commands(commands_raw)
+    if not help_text and not commands:
+        return None
+    return PluginCLIMetadata(help=help_text, commands=commands)
+
+
 def _parse_variables(data: Iterable[Mapping[str, Any]]) -> tuple[TaskTemplateVariable, ...]:
     variables: list[TaskTemplateVariable] = []
     for entry in data:
@@ -326,7 +420,17 @@ def _parse_plugins(data: Mapping[str, Any]) -> Dict[str, PluginPackage]:
         elif isinstance(value, Mapping):
             package_name = value.get("package")
             if isinstance(package_name, str):
-                parsed[name] = PluginPackage(name=name, package=package_name, raw=deepcopy(dict(value)))
+                cli_meta = (
+                    _parse_plugin_cli(value.get("cli"))
+                    if isinstance(value.get("cli"), Mapping)
+                    else None
+                )
+                parsed[name] = PluginPackage(
+                    name=name,
+                    package=package_name,
+                    raw=deepcopy(dict(value)),
+                    cli=cli_meta,
+                )
     return parsed
 
 
@@ -362,6 +466,13 @@ def _parse_registry(data: Mapping[str, Any]) -> PluginRegistryData:
     )
 
 
+def parse_registry_payload(data: Mapping[str, Any]) -> PluginRegistryData:
+    """Parse a registry payload after validating it against the schema."""
+
+    validate_registry_payload(data)
+    return _parse_registry(data)
+
+
 def load_registry(update: bool = False, ttl: int = DEFAULT_CACHE_TTL) -> PluginRegistryData:
     """Return the parsed plug-in registry data."""
 
@@ -385,13 +496,11 @@ def load_registry(update: bool = False, ttl: int = DEFAULT_CACHE_TTL) -> PluginR
 
     if registry_payload is None:
         registry_payload = base_data
-    else:
-        try:
-            _validate_registry(registry_payload)
-        except Exception:
-            registry_payload = base_data
 
-    return _parse_registry(registry_payload)
+    try:
+        return parse_registry_payload(registry_payload)
+    except Exception:
+        return parse_registry_payload(base_data)
 
 
 def _is_installed(package: str) -> bool:

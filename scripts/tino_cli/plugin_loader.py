@@ -3,14 +3,21 @@ from __future__ import annotations
 
 import importlib
 import json
+import shlex
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterator, List, Optional
 
 import typer
 
+from scripts import plugins
+
+from .executor import execute_command
+from .state import CLIState
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 REGISTRY_PATH = REPO_ROOT / "plugin-registry.json"
+
 
 @dataclass(slots=True)
 class PluginCommand:
@@ -19,16 +26,24 @@ class PluginCommand:
     plugin: str
     name: str
     help: str
-    handler: Callable[[tuple[str, ...]], int]
+    tags: tuple[str, ...] = ()
+    examples: tuple[str, ...] = ()
+    exec: str | None = None
+    callable: str | None = None
+    package: str | None = None
 
 
-def _load_registry(path: Path = REGISTRY_PATH) -> dict[str, object]:
+def _load_registry(path: Path = REGISTRY_PATH) -> plugins.PluginRegistryData | None:
     if not path.exists():
-        return {}
+        return None
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return {}
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    try:
+        return plugins.parse_registry_payload(payload)
+    except Exception:
+        return None
 
 
 def _import_callable(qualname: str) -> Callable[[tuple[str, ...]], int] | None:
@@ -45,88 +60,187 @@ def _import_callable(qualname: str) -> Callable[[tuple[str, ...]], int] | None:
     return None
 
 
-def iter_plugin_commands() -> Iterator[PluginCommand]:
-    """Yield :class:`PluginCommand` objects from ``plugin-registry.json``."""
-
-    registry = _load_registry()
-    plugins = registry.get("plugins")
-    if not isinstance(plugins, dict):
-        return
-    for name, raw_meta in plugins.items():
-        if isinstance(raw_meta, str):
-            help_text = f"Commands for the {name} plug-in (install {raw_meta})."
-            handler = _fallback_handler(name, raw_meta)
-            yield PluginCommand(name=name, help=help_text, plugin=name, handler=handler)
-            continue
-        if not isinstance(raw_meta, dict):
-            continue
-        cli_meta = raw_meta.get("cli", {})
-        help_text = cli_meta.get("help") if isinstance(cli_meta, dict) else None
-        if not help_text:
-            package = raw_meta.get("package", "unknown package")
-            help_text = f"Commands for the {name} plug-in (install {package})."
-        commands = []
-        if isinstance(cli_meta, dict):
-            commands = cli_meta.get("commands", [])
-        if not commands:
-            handler = _fallback_handler(name, raw_meta.get("package", "<unknown>"))
-            yield PluginCommand(name=name, help=help_text, plugin=name, handler=handler)
-            continue
-        for command_meta in commands:
-            if not isinstance(command_meta, dict):
-                continue
-            cmd_name = command_meta.get("name") or name
-            cmd_help = command_meta.get("help") or help_text
-            qualname = command_meta.get("callable")
-            handler = _import_callable(qualname) if isinstance(qualname, str) else None
-            if handler is None:
-                package = raw_meta.get("package", "<unknown>")
-                handler = _fallback_handler(name, package)
-            yield PluginCommand(plugin=name, name=cmd_name, help=cmd_help, handler=handler)
-    return
+def _normalise_args(args: Optional[List[str]], *, command_name: str | None = None) -> List[str]:
+    values = list(args or [])
+    if command_name and values and values[0] == command_name:
+        values = values[1:]
+    if values and values[0] == "--":
+        values = values[1:]
+    return values
 
 
-def _fallback_handler(plugin: str, package: str) -> Callable[[tuple[str, ...]], int]:
-    def _handler(args: tuple[str, ...]) -> int:  # noqa: ARG001 - forwarded command
-        typer.echo(
-            f"The '{plugin}' plug-in is not installed. Install '{package}' to use this command.",
-            err=True,
-        )
-        return 1
-
-    return _handler
+def _resolve_state(ctx: typer.Context) -> CLIState | None:
+    state = getattr(ctx, "obj", None)
+    if isinstance(state, CLIState):
+        return state
+    return None
 
 
-def register_plugin_commands(app: typer.Typer) -> None:
-    """Attach plug-in commands to ``app`` under their plug-in names."""
-
-    grouped: dict[str, list[PluginCommand]] = {}
-    for command in iter_plugin_commands():
-        grouped.setdefault(command.plugin, []).append(command)
-    for plugin, commands in sorted(grouped.items()):
-        help_text = commands[0].help if commands else f"Commands for plug-in {plugin}."
-        plugin_app = typer.Typer(help=help_text)
-
-        for command in commands:
-            plugin_app.command(command.name, help=command.help)(_wrap_handler(command.handler))
-
-        app.add_typer(plugin_app, name=plugin)
+def _format_help(help_text: str, tags: tuple[str, ...], examples: tuple[str, ...]) -> str:
+    sections: list[str] = []
+    if tags:
+        sections.append("Tags: " + ", ".join(tags))
+    if examples:
+        formatted = "\n".join(f"  {example}" for example in examples)
+        sections.append(f"Examples:\n{formatted}")
+    if sections:
+        return f"{help_text}\n\n" + "\n\n".join(sections)
+    return help_text
 
 
-def _wrap_handler(handler: Callable[[tuple[str, ...]], int]) -> Callable[[List[str]], None]:
+def _fallback_message(plugin: str, package: str | None) -> str:
+    package_hint = package or "the corresponding package"
+    return f"The '{plugin}' plug-in is not installed. Install '{package_hint}' to use this command."
+
+
+def _wrap_callable(
+    handler: Callable[[tuple[str, ...]], int], *, command_name: str | None = None
+) -> Callable[[typer.Context, Optional[List[str]]], None]:
     def _command(
+        ctx: typer.Context,
         args: Optional[List[str]] = typer.Argument(
             None,
             metavar="ARGS...",
             help="Arguments forwarded to the plug-in handler.",
             show_default=False,
-        )
+        ),
     ) -> None:
-        forwarded = tuple(args or [])
+        forwarded = tuple(_normalise_args(args, command_name=command_name))
         code = handler(forwarded)
         raise typer.Exit(code)
 
     return _command
+
+
+def _wrap_exec(
+    exec_command: str,
+    *,
+    require_confirm: bool = False,
+    command_name: str | None = None,
+) -> Callable[[typer.Context, Optional[List[str]]], None]:
+    def _command(
+        ctx: typer.Context,
+        args: Optional[List[str]] = typer.Argument(
+            None,
+            metavar="ARGS...",
+            help="Arguments forwarded to the plug-in command.",
+            show_default=False,
+        ),
+    ) -> None:
+        forwarded = _normalise_args(args, command_name=command_name)
+        command = shlex.split(exec_command)
+        command.extend(forwarded)
+        state = _resolve_state(ctx)
+        code = execute_command(command, state=state, require_confirm=require_confirm)
+        raise typer.Exit(code)
+
+    return _command
+
+
+def _wrap_fallback(
+    plugin: str,
+    package: str | None,
+    *,
+    command_name: str | None = None,
+) -> Callable[[typer.Context, Optional[List[str]]], None]:
+    message = _fallback_message(plugin, package)
+
+    def _command(
+        ctx: typer.Context,
+        args: Optional[List[str]] = typer.Argument(
+            None,
+            metavar="ARGS...",
+            help="Arguments forwarded to the plug-in handler.",
+            show_default=False,
+        ),
+    ) -> None:  # noqa: ARG001 - forwarded command
+        _normalise_args(args, command_name=command_name)
+        typer.echo(message, err=True)
+        raise typer.Exit(1)
+
+    return _command
+
+
+def _plugin_help(plugin: str, package: plugins.PluginPackage) -> str:
+    cli_meta = package.cli
+    if cli_meta and cli_meta.help:
+        return cli_meta.help
+    return f"Commands for the {plugin} plug-in (install {package.package})."
+
+
+def iter_plugin_commands() -> Iterator[PluginCommand]:
+    """Yield :class:`PluginCommand` objects from ``plugin-registry.json``."""
+
+    registry = _load_registry()
+    if registry is None:
+        return
+    for name, package in registry.plugin_packages.items():
+        cli_meta = package.cli
+        if cli_meta is None or not cli_meta.commands:
+            yield PluginCommand(
+                plugin=name,
+                name="install",
+                help=_plugin_help(name, package),
+                package=package.package,
+            )
+            continue
+        for descriptor in cli_meta.commands:
+            yield PluginCommand(
+                plugin=name,
+                name=descriptor.name,
+                help=descriptor.help,
+                tags=descriptor.tags,
+                examples=descriptor.examples,
+                exec=descriptor.exec,
+                callable=descriptor.callable,
+                package=package.package,
+            )
+
+
+def _register_registry_commands(app: typer.Typer, registry: plugins.PluginRegistryData) -> None:
+    for descriptor in registry.commands:
+        help_text = _format_help(descriptor.help, descriptor.tags, descriptor.examples)
+        app.command(descriptor.name, help=help_text)(
+            _wrap_exec(descriptor.exec, command_name=descriptor.name)
+        )
+
+
+def register_plugin_commands(app: typer.Typer) -> None:
+    """Attach plug-in commands to ``app`` under their plug-in names."""
+
+    registry = _load_registry()
+    if registry is None:
+        return
+
+    _register_registry_commands(app, registry)
+
+    for plugin, package in sorted(registry.plugin_packages.items()):
+        plugin_app = typer.Typer(help=_plugin_help(plugin, package))
+        cli_meta = package.cli
+        commands = list(cli_meta.commands) if cli_meta else []
+        if not commands:
+            plugin_app.command("install", help=_fallback_message(plugin, package.package))(
+                _wrap_fallback(plugin, package.package, command_name="install")
+            )
+            app.add_typer(plugin_app, name=plugin)
+            continue
+        for descriptor in commands:
+            help_text = _format_help(descriptor.help, descriptor.tags, descriptor.examples)
+            if descriptor.exec:
+                plugin_app.command(descriptor.name, help=help_text)(
+                    _wrap_exec(descriptor.exec, command_name=descriptor.name)
+                )
+                continue
+            handler = _import_callable(descriptor.callable) if descriptor.callable else None
+            if handler is None:
+                plugin_app.command(descriptor.name, help=help_text)(
+                    _wrap_fallback(plugin, package.package, command_name=descriptor.name)
+                )
+                continue
+            plugin_app.command(descriptor.name, help=help_text)(
+                _wrap_callable(handler, command_name=descriptor.name)
+            )
+        app.add_typer(plugin_app, name=plugin)
 
 
 __all__ = ["register_plugin_commands", "iter_plugin_commands", "PluginCommand"]

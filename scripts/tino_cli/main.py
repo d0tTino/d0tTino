@@ -6,7 +6,7 @@ import os
 import shlex
 import subprocess
 from pathlib import Path
-from typing import Iterable, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import typer
 
@@ -14,6 +14,7 @@ from telemetry import analytics_default
 
 from .clients import DocsClient, FinanceClient, StormClient, TaskCascadenceClient, UMEClient
 from .config import load_env_defaults
+from .executor import execute_command
 from .plugin_loader import register_plugin_commands
 from .state import CLIState
 
@@ -57,18 +58,6 @@ def main(
 bootstrap_app = typer.Typer(help="Bootstrap local tooling and environments.")
 
 
-def _run_command(state: CLIState, command: Iterable[str], *, require_confirm: bool = False) -> int:
-    command_list = list(command)
-    printable = " ".join(shlex.quote(arg) for arg in command_list)
-    if state.dry_run:
-        typer.echo(f"[dry-run] {printable}")
-        return 0
-    if require_confirm and not state.confirm:
-        typer.echo("Use --confirm to execute this command.", err=True)
-        return 1
-    return subprocess.call(command_list)
-
-
 @bootstrap_app.command("init")
 def bootstrap_init(ctx: typer.Context, quick: bool = typer.Option(False, "--quick", help="Skip optional setup.")) -> None:
     """Initialise local tooling by delegating to ``install.sh``."""
@@ -78,7 +67,7 @@ def bootstrap_init(ctx: typer.Context, quick: bool = typer.Option(False, "--quic
     command = ["bash", str(script)]
     if quick:
         command.append("--quick")
-    code = _run_command(state, command, require_confirm=True)
+    code = execute_command(command, state=state, require_confirm=True)
     raise typer.Exit(code)
 
 
@@ -88,7 +77,7 @@ def bootstrap_doctor(ctx: typer.Context) -> None:
 
     state = _get_state(ctx)
     script = Path("scripts") / "check-hooks.sh"
-    code = _run_command(state, ["bash", str(script)])
+    code = execute_command(["bash", str(script)], state=state)
     raise typer.Exit(code)
 
 
@@ -129,7 +118,7 @@ def stack_up(ctx: typer.Context, service: Optional[str] = typer.Argument(None)) 
     command = list(_compose_command("up", "-d"))
     if service:
         command.append(service)
-    code = _run_command(state, command, require_confirm=True)
+    code = execute_command(command, state=state, require_confirm=True)
     raise typer.Exit(code)
 
 
@@ -139,7 +128,7 @@ def stack_down(ctx: typer.Context) -> None:
 
     state = _get_state(ctx)
     command = _compose_command("down")
-    code = _run_command(state, command, require_confirm=True)
+    code = execute_command(command, state=state, require_confirm=True)
     raise typer.Exit(code)
 
 
