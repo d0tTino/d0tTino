@@ -83,13 +83,32 @@ winget install --id Tino.d0tTino -e
 
 ### The `tino` command-line interface
 
-The repository now exposes a consolidated Typer-based CLI entrypoint named
-``tino``. It wraps workstation bootstrap automation, docker-compose stack
-helpers, TaskCascadence orchestration, tino-storm research utilities, UME
-memory helpers, finance synchronisation, wishlist tracking and docs
-publishing. Legacy ``scripts/ai_cli.py`` commands remain available through
-``tino legacy ai`` while emitting a deprecation warning to encourage the
-transition.
+The consolidated Typer-based CLI entrypoint is ``tino``. Use
+``tino --help`` to view the canonical subcommands that ship with the
+refactored surface:
+
+| Command | Description |
+| --- | --- |
+| ``tino init`` | Bootstrap local tooling via ``install.sh`` (requires ``--confirm`` to run installers). |
+| ``tino doctor`` | Run environment checks and Git hook validation. |
+| ``tino whoami`` | Print the current CLI state, including ``--dry-run`` and telemetry settings. |
+| ``tino up`` / ``tino down`` | Manage the docker-compose stack, optionally targeting a single service. Both respect ``--confirm`` before mutating services. |
+| ``tino logs`` | Stream docker-compose logs; use ``--confirm`` to acknowledge the interactive stream. |
+| ``tino task …`` | Manage TaskCascadence tasks (``run``, ``status``, ``signal``). ``signal`` always requires ``--confirm``. |
+| ``tino research …`` | Access tino-storm research helpers (``ingest``, ``draft``). |
+| ``tino idea`` | Submit a quick idea/event to UME memory without opening the group commands. |
+| ``tino mem …`` | Query UME memories with structured filters. |
+| ``tino finance …`` | Snapshot or synchronise finance data; ``sync`` refuses to run without ``--confirm``. |
+| ``tino wishlist …`` | Append or list wishlist items tracked in ``metadata/wishlist.json``. |
+| ``tino docs publish`` | Publish generated documentation, honouring ``TINO_DOC_TARGET`` when the target is omitted. |
+| ``tino plugins …`` | Run plug-in supplied commands that are loaded dynamically from ``plugin-registry.json``. |
+| ``tino legacy ai`` | Shim for ``scripts/ai_cli.py`` for backwards compatibility. |
+
+Global flags provide safety rails: ``--dry-run`` prints commands without
+execution, and ``--confirm`` is required for actions that change remote or
+stateful services. The CLI also honours new environment variables introduced
+in the refactor, such as ``TINO_CLI_LOG`` (log destination for command
+transcripts) and ``TINO_DOC_TARGET`` (default documentation publish target).
 
 Or use Scoop in a single line:
 
@@ -113,7 +132,9 @@ following top-level fields:
 * `name` and `version` identify the bundle that was loaded.
 * `commands` is an array of executable command descriptors containing a
   `name`, `help`, and shell `exec` string (with optional `tags` and `examples`).
-  These entries are surfaced in the `python scripts/plugins.py commands` CLI.
+  These entries surface under the `tino plugins` namespace. Each command can
+  expose extra tags or examples that are rendered when running
+  `tino plugins --help` or `tino plugins <plugin> --help`.
 * `taskTemplates` provides reusable task scaffolds. Each template defines an
   `id`, human-readable `name`, `description`, `prompt`, and optional
   `variables` metadata that describes the available substitutions.

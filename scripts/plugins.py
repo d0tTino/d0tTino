@@ -708,7 +708,7 @@ def _format_epilog(registry: PluginRegistryData | None) -> str | None:
     lines = ["Available plug-in commands:"]
     for cmd in registry.commands:
         lines.append(f"  {cmd.name.ljust(width)}  {cmd.help}")
-    lines.append("\nRun 'python scripts/plugins.py commands run <name> -- --extra' to execute a command.")
+    lines.append("\nRun 'tino plugins <name> [-- extra args]' to execute a command.")
     return "\n".join(lines)
 
 

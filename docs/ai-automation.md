@@ -8,6 +8,11 @@ This document outlines how the repository manages tasks related to local AI work
 - **Task automation** – shell and PowerShell scripts handle linting, testing, and deployment.
 - **Extensibility** – additional prompts and workflows can be added under `llm/prompts`.
 
+> **Note:** The legacy `ai` / `ai-cli` entry points remain available through
+> `tino legacy ai …` while the new `tino` commands mature. Examples below use the
+> familiar syntax and can be prefixed with `tino legacy ai` when running inside
+> the consolidated CLI.
+
 ## Installation
 
 1. Ensure Python 3.10 or higher is installed.
@@ -44,19 +49,22 @@ Example ``pyproject.toml`` snippet:
 my_backend = "my_package.plugins:backend"
 ```
 
-Install a community backend using the helper. For example:
+Install a community backend with `pip install` and then inspect the loader's
+output:
 
 ```bash
-python -m scripts.plugins backends install openrouter
+pip install d0ttino-openrouter-plugin
+tino plugins openrouter --help
 ```
 
 
 ## MCP Adapter
 
-Expose registered plug-ins over the [Model Context Protocol](https://github.com/modelcontextprotocol) with the CLI:
+Expose registered plug-ins over the [Model Context Protocol](https://github.com/modelcontextprotocol)
+with the compatibility shim:
 
 ```bash
-python -m scripts.ai_cli mcp
+tino legacy ai mcp
 ```
 
 The command reads JSON requests on standard input and writes responses on standard output, making plug-in tools available to any MCP client.

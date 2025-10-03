@@ -19,12 +19,13 @@ modify entries in `sources.json`.
 
 ## Querying sources
 
-The `ai-cli` tool can list or filter entries from the JSON file using the
-`sources` subcommand. Filter by name substring, category, or one or more tags:
+The ``tino`` CLI keeps the legacy ``ai-cli`` surface available under the
+``tino legacy ai`` shim. Use it to list or filter entries from the JSON file
+with the familiar ``sources`` subcommand:
 
 ```bash
-python -m scripts.ai_cli sources --tag python
-python -m scripts.ai_cli sources --category Framework --tag python
+tino legacy ai sources --tag python
+tino legacy ai sources --category Framework --tag python
 ```
 ## Enriching Source Information
 
