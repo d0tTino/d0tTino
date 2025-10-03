@@ -4,13 +4,23 @@ from __future__ import annotations
 
 import json
 import os
+import shlex
 import subprocess
 import time
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List
+from typing import Any, Callable, Dict, Iterable, List, Sequence
 
 from telemetry import record_event
 
+from .main import (
+    build_state,
+    compose_command,
+    docs_publish_operation,
+    idea_submit_operation,
+    research_ingest_operation,
+    task_run_operation,
+    wishlist_add_operation,
+)
 from .models import ActionSpec, CommandResult
 from .utils import ensure_cache_dir, telemetry_status
 
@@ -21,6 +31,7 @@ class ActionStep:
 
     index: int
     command: str
+    args: Sequence[str] | None = None
 
 
 DEFAULT_ACTIONS: dict[str, ActionSpec] = {
@@ -66,6 +77,12 @@ DEFAULT_ACTIONS: dict[str, ActionSpec] = {
 
 
 def _render_steps(spec: ActionSpec, payload: str | None) -> List[ActionStep]:
+    if spec.name == "cockpit-up":
+        command = compose_command("up", "-d")
+        return [ActionStep(1, shlex.join(command), command)]
+    if spec.name == "cockpit-down":
+        command = compose_command("down")
+        return [ActionStep(1, shlex.join(command), command)]
     rendered: List[ActionStep] = []
     for idx, raw in enumerate(spec.steps, start=1):
         rendered.append(ActionStep(idx, raw.format(payload=payload or "")))
@@ -84,12 +101,20 @@ def _execute_steps(steps: Iterable[ActionStep], log_path: os.PathLike[str]) -> t
     with open(log_path, "w", encoding="utf-8") as handle:
         for step in steps:
             handle.write(f"$ {step.command}\n")
-            proc = subprocess.run(
-                _shell_command(step.command),
-                capture_output=True,
-                text=True,
-                check=False,
-            )
+            if step.args:
+                proc = subprocess.run(
+                    list(step.args),
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+            else:
+                proc = subprocess.run(
+                    _shell_command(step.command),
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
             if proc.stdout:
                 handle.write(proc.stdout)
             if proc.stderr:
@@ -98,6 +123,96 @@ def _execute_steps(steps: Iterable[ActionStep], log_path: os.PathLike[str]) -> t
             handle.write(f"(exit {exit_code})\n\n")
             log_entries.append(step.command)
     return exit_code, log_entries
+
+
+def _invoke_callable(
+    log_path: os.PathLike[str],
+    command: str,
+    call: Callable[[], Any],
+) -> tuple[int, list[str], dict[str, Any]]:
+    commands = [command]
+    details: dict[str, Any] = {}
+    exit_code = 0
+    with open(log_path, "w", encoding="utf-8") as handle:
+        handle.write(f"$ {command}\n")
+        try:
+            result = call()
+        except Exception as exc:  # noqa: BLE001 - bubble up error context
+            exit_code = 1
+            message = str(exc)
+            handle.write(message + "\n")
+            details["error"] = message
+        else:
+            payload = getattr(result, "payload", result)
+            if payload is not None:
+                try:
+                    serialized = json.dumps(payload, indent=2)
+                except TypeError:
+                    serialized = str(payload)
+                handle.write(serialized + "\n")
+                details["response"] = payload
+        handle.write(f"(exit {exit_code})\n")
+    return exit_code, commands, details
+
+
+def _error_action(log_path: os.PathLike[str], command: str, message: str) -> tuple[int, list[str], dict[str, Any]]:
+    commands = [command]
+    with open(log_path, "w", encoding="utf-8") as handle:
+        handle.write(f"$ {command}\n")
+        handle.write(message + "\n")
+        handle.write("(exit 1)\n")
+    return 1, commands, {"error": message}
+
+
+def _research_action_payload(raw: str) -> tuple[str, str]:
+    if "::" in raw:
+        topic, source = raw.split("::", 1)
+        topic = topic.strip() or "adhoc"
+        source = source.strip()
+        return topic, source
+    return "adhoc", raw.strip()
+
+
+def _run_special_action(
+    name: str,
+    payload: str | None,
+    confirm: bool,
+    log_path: os.PathLike[str],
+) -> tuple[int, list[str], dict[str, Any]]:
+    state = build_state(dry_run=False, confirm=confirm)
+    if name == "cockpit-new-task":
+        if not payload:
+            return _error_action(log_path, "task run <missing>", "Task description required.")
+        task_name = payload
+        command = f"task run {shlex.quote(task_name)}"
+        return _invoke_callable(log_path, command, lambda: task_run_operation(state, task_name, payload=None))
+    if name == "cockpit-inject-context":
+        if not payload:
+            return _error_action(log_path, "idea <missing>", "Context payload required.")
+        context = payload
+        command = f"idea {shlex.quote(context)}"
+        return _invoke_callable(log_path, command, lambda: idea_submit_operation(state, text=context))
+    if name == "cockpit-research-ingest":
+        if not payload:
+            return _error_action(log_path, "research ingest <missing>", "Source path or URL required.")
+        topic, source = _research_action_payload(payload)
+        command = f"research ingest {shlex.quote(topic)} {shlex.quote(source)}"
+        return _invoke_callable(
+            log_path,
+            command,
+            lambda: research_ingest_operation(state, topic=topic, source=source),
+        )
+    if name == "cockpit-wishlist-add":
+        if not payload:
+            return _error_action(log_path, "wishlist add <missing>", "Wishlist item required.")
+        item = payload
+        command = f"wishlist add {shlex.quote(item)}"
+        return _invoke_callable(log_path, command, lambda: wishlist_add_operation(state, url=item, tags=None))
+    if name == "cockpit-publish-docs":
+        target = payload or os.environ.get("TINO_DOC_TARGET", "latest")
+        command = f"docs publish {shlex.quote(target)}"
+        return _invoke_callable(log_path, command, lambda: docs_publish_operation(state, target=target, site=None, version=None))
+    raise ValueError(f"Unknown action: {name}")
 
 
 def run_action(name: str, *, payload: str | None = None, confirm: bool = False) -> CommandResult:
@@ -113,8 +228,12 @@ def run_action(name: str, *, payload: str | None = None, confirm: bool = False) 
     log_path = spec.log_path(cache_dir)
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
-    steps = _render_steps(spec, payload)
-    exit_code, rendered_commands = _execute_steps(steps, log_path)
+    details_extra: Dict[str, Any] = {}
+    if name in {"cockpit-up", "cockpit-down"}:
+        steps = _render_steps(spec, payload)
+        exit_code, rendered_commands = _execute_steps(steps, log_path)
+    else:
+        exit_code, rendered_commands, details_extra = _run_special_action(name, payload, confirm, log_path)
 
     timestamp = time.time()
     audit_path = cache_dir / "cockpit.log"
@@ -147,6 +266,8 @@ def run_action(name: str, *, payload: str | None = None, confirm: bool = False) 
     }
     if payload:
         details["payload"] = payload
+    if details_extra:
+        details.update(details_extra)
     message = f"{spec.description} (exit {exit_code})"
     return CommandResult(message=message, telemetry=telemetry, details=details)
 

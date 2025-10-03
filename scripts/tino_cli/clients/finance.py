@@ -15,6 +15,9 @@ class FinanceClient(BaseClient):
         super().__init__(name="finance", config=FINANCE)
 
     def summarize(self, state: CLIState, *, period: str) -> RequestResult | None:
+        return self.snapshot(state, period=period)
+
+    def snapshot(self, state: CLIState, *, period: str) -> RequestResult | None:
         payload = {"period": period}
         return self.request(state, "post", "/finance/report", json_payload=payload, telemetry_action="report")
 

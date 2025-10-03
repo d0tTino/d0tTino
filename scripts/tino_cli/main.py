@@ -8,11 +8,18 @@ import subprocess
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+
 import typer
 
 from telemetry import analytics_default
 
-from .clients import DocsClient, FinanceClient, StormClient, TaskCascadenceClient, UMEClient
+from .clients import (
+    DocsClient,
+    FinanceClient,
+    StormClient,
+    TaskCascadenceClient,
+    UMEClient,
+)
 from .config import load_env_defaults
 from .executor import execute_command
 from .plugin_loader import register_plugin_commands
@@ -20,16 +27,25 @@ from .state import CLIState
 
 app = typer.Typer(help="Automation interface for d0tTino tooling.", no_args_is_help=True)
 
+COMPOSE_FILE = Path("docker-compose.yml")
+WISHLIST_PATH = Path("metadata") / "wishlist.json"
 
-def _set_state(ctx: typer.Context, *, dry_run: bool, confirm: bool) -> CLIState:
+
+def build_state(*, dry_run: bool, confirm: bool) -> CLIState:
+    """Create a :class:`CLIState` populated with environment defaults."""
+
     load_env_defaults()
     log_path = Path(os.environ.get("TINO_CLI_LOG", "tino-cli.log"))
-    state = CLIState(
+    return CLIState(
         dry_run=dry_run,
         confirm=confirm,
         telemetry_enabled=analytics_default(),
         log_path=log_path,
     )
+
+
+def _set_state(ctx: typer.Context, *, dry_run: bool, confirm: bool) -> CLIState:
+    state = build_state(dry_run=dry_run, confirm=confirm)
     ctx.obj = state
     return state
 
@@ -39,6 +55,198 @@ def _get_state(ctx: typer.Context) -> CLIState:
     if isinstance(state, CLIState):
         return state
     raise RuntimeError("CLI state not initialised")
+
+
+def run_shell_command(
+    state: CLIState,
+    command: Sequence[str],
+    *,
+    require_confirm: bool = False,
+    confirm_message: str = "Use --confirm to execute this command.",
+) -> int:
+    """Execute ``command`` respecting ``dry_run`` and ``confirm`` flags."""
+
+
+@bootstrap_app.command("init")
+def bootstrap_init(ctx: typer.Context, quick: bool = typer.Option(False, "--quick", help="Skip optional setup.")) -> None:
+    """Initialise local tooling by delegating to ``install.sh``."""
+    printable = shlex.join(command)
+    if state.dry_run:
+        typer.echo(f"[dry-run] {printable}")
+        return 0
+    if require_confirm and not state.confirm:
+        typer.echo(confirm_message, err=True)
+        return 1
+    return subprocess.call(list(command))
+
+
+def compose_command(*args: str) -> tuple[str, ...]:
+    """Return a docker compose command tuple."""
+
+    return ("docker", "compose", "-f", str(COMPOSE_FILE), *args)
+
+
+def init_tooling(state: CLIState, *, quick: bool = False) -> int:
+    script = Path("scripts") / "install.sh"
+    command = ["bash", str(script)]
+    if quick:
+        command.append("--quick")
+    code = execute_command(command, state=state, require_confirm=True)
+    raise typer.Exit(code)
+
+    return run_shell_command(state, command, require_confirm=True)
+
+
+def run_doctor(state: CLIState) -> int:
+    script = Path("scripts") / "check-hooks.sh"
+    code = execute_command(["bash", str(script)], state=state)
+    raise typer.Exit(code)
+    return run_shell_command(state, ["bash", str(script)])
+
+
+def show_whoami(state: CLIState) -> dict[str, object]:
+    return {
+        "confirm": state.confirm,
+        "telemetry": state.telemetry_enabled,
+        "log_path": str(state.log_path),
+    }
+
+
+def start_services(state: CLIState, service: str | None = None) -> int:
+    command: list[str] = list(compose_command("up", "-d"))
+    if service:
+        command.append(service)
+    return run_shell_command(state, command, require_confirm=True)
+
+
+def stop_services(state: CLIState) -> int:
+    command = compose_command("down")
+    return run_shell_command(state, command, require_confirm=True)
+
+
+def stream_logs(state: CLIState, service: str) -> int:
+    command = compose_command("logs", "-f", service)
+    return run_shell_command(
+        state,
+        command,
+        require_confirm=True,
+        confirm_message="Use --confirm to stream live logs.",
+    )
+
+
+def task_run_operation(
+    state: CLIState,
+    task: str,
+    *,
+    payload: Mapping[str, object] | None = None,
+):
+    client = TaskCascadenceClient()
+    return client.run(state, task, payload=payload)
+
+    state = _get_state(ctx)
+    command = list(_compose_command("up", "-d"))
+    if service:
+        command.append(service)
+    code = execute_command(command, state=state, require_confirm=True)
+    raise typer.Exit(code)
+
+def task_status_operation(state: CLIState, task_id: str):
+    client = TaskCascadenceClient()
+    return client.status(state, task_id)
+
+
+def task_signal_operation(
+    state: CLIState,
+    task_id: str,
+    *,
+    signal: str,
+    link: str | None = None,
+    note: str | None = None,
+):
+    client = TaskCascadenceClient()
+    return client.signal(state, task_id, signal=signal, link=link, note=note)
+
+
+def research_ingest_operation(state: CLIState, *, topic: str, source: str):
+    client = StormClient()
+    return client.ingest(state, topic=topic, source=source)
+
+
+def research_draft_operation(
+    state: CLIState,
+    *,
+    topic: str,
+    hints: Mapping[str, object] | None = None,
+    doc: str | None = None,
+    anchor: str | None = None,
+    prompt: str | None = None,
+):
+    client = StormClient()
+    return client.draft(state, topic=topic, hints=hints or None, doc=doc, anchor=anchor, prompt=prompt)
+
+
+def idea_submit_operation(state: CLIState, *, text: str):
+    client = UMEClient()
+    return client.submit_idea(state, text=text)
+
+
+def mem_query_operation(
+    state: CLIState,
+    *,
+    query: str,
+    filters: Mapping[str, object] | None = None,
+):
+    client = UMEClient()
+    return client.query(state, query=query, filters=filters)
+
+
+def finance_snapshot_operation(state: CLIState, *, period: str):
+    client = FinanceClient()
+    return client.snapshot(state, period=period)
+
+
+def finance_sync_operation(state: CLIState, *, provider: str):
+    client = FinanceClient()
+    return client.sync(state, provider=provider)
+
+
+def wishlist_add_operation(state: CLIState, *, url: str, tags: Sequence[str] | None = None) -> dict[str, object]:
+    entry: dict[str, object] = {"url": url}
+    if tags:
+        entry["tags"] = list(tags)
+    if state.dry_run:
+        return {"entry": entry, "path": str(WISHLIST_PATH)}
+    try:
+        if WISHLIST_PATH.exists():
+            data = json.loads(WISHLIST_PATH.read_text(encoding="utf-8"))
+            if not isinstance(data, list):
+                data = []
+        else:
+            data = []
+    except json.JSONDecodeError:
+        data = []
+    data.append(entry)
+    WISHLIST_PATH.parent.mkdir(parents=True, exist_ok=True)
+    WISHLIST_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    return {"entry": entry, "path": str(WISHLIST_PATH)}
+
+
+def docs_publish_operation(
+    state: CLIState,
+    *,
+    target: str,
+    site: str | None = None,
+    version: str | None = None,
+):
+    client = DocsClient()
+    return client.publish(state, target=target, site=site, version=version)
+
+
+def _render_response(result) -> None:
+    if result is None:
+        return
+    payload = getattr(result, "payload", result)
+    typer.echo(json.dumps(payload, indent=2))
 
 
 @app.callback()
@@ -52,210 +260,160 @@ def main(
     _set_state(ctx, dry_run=dry_run, confirm=confirm)
 
 
-# ---------------------------------------------------------------------------
-# Bootstrap helpers
-# ---------------------------------------------------------------------------
-bootstrap_app = typer.Typer(help="Bootstrap local tooling and environments.")
-
-
-@bootstrap_app.command("init")
-def bootstrap_init(ctx: typer.Context, quick: bool = typer.Option(False, "--quick", help="Skip optional setup.")) -> None:
-    """Initialise local tooling by delegating to ``install.sh``."""
-
+@app.command("init")
+def cli_init(ctx: typer.Context, quick: bool = typer.Option(False, "--quick", help="Skip optional setup.")) -> None:
     state = _get_state(ctx)
-    script = Path("scripts") / "install.sh"
-    command = ["bash", str(script)]
-    if quick:
-        command.append("--quick")
+    command = _compose_command("down")
     code = execute_command(command, state=state, require_confirm=True)
+    code = init_tooling(state, quick=quick)
     raise typer.Exit(code)
 
 
-@bootstrap_app.command("doctor")
-def bootstrap_doctor(ctx: typer.Context) -> None:
-    """Run repository health checks."""
-
+@app.command("doctor")
+def cli_doctor(ctx: typer.Context) -> None:
     state = _get_state(ctx)
-    script = Path("scripts") / "check-hooks.sh"
-    code = execute_command(["bash", str(script)], state=state)
+    code = run_doctor(state)
     raise typer.Exit(code)
 
 
-@bootstrap_app.command("whoami")
-def bootstrap_whoami(ctx: typer.Context) -> None:
-    """Display the CLI execution context."""
-
+@app.command("whoami")
+def cli_whoami(ctx: typer.Context) -> None:
     state = _get_state(ctx)
     if state.dry_run:
         typer.echo("[dry-run] Displaying CLI state")
         raise typer.Exit(0)
-    typer.echo(json.dumps({
-        "confirm": state.confirm,
-        "telemetry": state.telemetry_enabled,
-        "log_path": str(state.log_path),
-    }, indent=2))
+    typer.echo(json.dumps(show_whoami(state), indent=2))
 
 
-app.add_typer(bootstrap_app, name="bootstrap")
-
-
-# ---------------------------------------------------------------------------
-# Stack orchestration (docker-compose)
-# ---------------------------------------------------------------------------
-stack_app = typer.Typer(help="Orchestrate local docker-compose services.")
-COMPOSE_FILE = Path("docker-compose.yml")
-
-
-def _compose_command(*args: str) -> Tuple[str, ...]:
-    return ("docker", "compose", "-f", str(COMPOSE_FILE), *args)
-
-
-@stack_app.command("up")
-def stack_up(ctx: typer.Context, service: Optional[str] = typer.Argument(None)) -> None:
-    """Start services defined in docker-compose."""
-
+@app.command("up")
+def cli_up(ctx: typer.Context, service: str | None = typer.Argument(None, help="Optional service name.")) -> None:
     state = _get_state(ctx)
-    command = list(_compose_command("up", "-d"))
-    if service:
-        command.append(service)
-    code = execute_command(command, state=state, require_confirm=True)
+    code = start_services(state, service)
     raise typer.Exit(code)
 
 
-@stack_app.command("down")
-def stack_down(ctx: typer.Context) -> None:
-    """Stop services defined in docker-compose."""
-
+@app.command("down")
+def cli_down(ctx: typer.Context) -> None:
     state = _get_state(ctx)
-    command = _compose_command("down")
-    code = execute_command(command, state=state, require_confirm=True)
+    code = stop_services(state)
     raise typer.Exit(code)
 
 
-@stack_app.command("logs")
-def stack_logs(ctx: typer.Context, service: str = typer.Argument(..., help="Service name.")) -> None:
-    """Stream logs for ``service`` via docker-compose."""
-
+@app.command("logs")
+def cli_logs(ctx: typer.Context, service: str = typer.Argument(..., help="Service name.")) -> None:
     state = _get_state(ctx)
-    command = list(_compose_command("logs", "-f", service))
-    if state.dry_run:
-        typer.echo(f"[dry-run] {' '.join(map(shlex.quote, command))}")
-        raise typer.Exit(0)
-    if not state.confirm:
-        typer.echo("Use --confirm to stream live logs.", err=True)
-        raise typer.Exit(1)
-    raise typer.Exit(subprocess.call(command))
+    code = stream_logs(state, service)
+    raise typer.Exit(code)
 
 
-app.add_typer(stack_app, name="stack")
-
-
-# ---------------------------------------------------------------------------
-# TaskCascadence
-# ---------------------------------------------------------------------------
 task_app = typer.Typer(help="Interact with TaskCascadence services.")
 
 
-def _render_response(result) -> None:
-    if result is None:
-        return
-    typer.echo(json.dumps(result.payload, indent=2))
-
-
 @task_app.command("run")
-def task_run(ctx: typer.Context, task: str = typer.Argument(..., help="Task identifier"), payload: Optional[str] = typer.Option(None, "--payload", help="JSON payload.")) -> None:
+def task_run(
+    ctx: typer.Context,
+    task: str = typer.Argument(..., help="Task identifier"),
+    payload: str | None = typer.Option(None, "--payload", help="JSON payload."),
+) -> None:
     state = _get_state(ctx)
-    client = TaskCascadenceClient()
     body = json.loads(payload) if payload else None
-    result = client.run(state, task, payload=body)
+    result = task_run_operation(state, task, payload=body)
     _render_response(result)
 
 
 @task_app.command("status")
 def task_status(ctx: typer.Context, task_id: str = typer.Argument(...)) -> None:
     state = _get_state(ctx)
-    client = TaskCascadenceClient()
-    result = client.status(state, task_id)
+    result = task_status_operation(state, task_id)
     _render_response(result)
 
 
 @task_app.command("signal")
-def task_signal(ctx: typer.Context, task_id: str = typer.Argument(...), signal: str = typer.Option(..., "--signal", help="Signal name.")) -> None:
+def task_signal(
+    ctx: typer.Context,
+    task_id: str = typer.Argument(...),
+    signal: str = typer.Option(..., "--signal", help="Signal name."),
+    link: str | None = typer.Option(None, "--link", help="Optional link payload."),
+    note: str | None = typer.Option(None, "--note", help="Optional note payload."),
+) -> None:
     state = _get_state(ctx)
     if not state.confirm:
         typer.echo("Use --confirm to send signals to remote tasks.", err=True)
         raise typer.Exit(1)
-    client = TaskCascadenceClient()
-    result = client.signal(state, task_id, signal=signal)
+    result = task_signal_operation(state, task_id, signal=signal, link=link, note=note)
     _render_response(result)
 
 
 app.add_typer(task_app, name="task")
 
 
-# ---------------------------------------------------------------------------
-# Research helpers
-# ---------------------------------------------------------------------------
 research_app = typer.Typer(help="Interact with tino-storm research services.")
 
 
 @research_app.command("ingest")
-def research_ingest(ctx: typer.Context, topic: str = typer.Argument(...), source: str = typer.Argument(...)) -> None:
+def research_ingest(
+    ctx: typer.Context,
+    topic: str = typer.Argument(..., help="Research topic."),
+    source: str = typer.Argument(..., help="Source URL or path."),
+) -> None:
     state = _get_state(ctx)
-    client = StormClient()
-    result = client.ingest(state, topic=topic, source=source)
+    result = research_ingest_operation(state, topic=topic, source=source)
     _render_response(result)
 
 
 @research_app.command("draft")
-def research_draft(ctx: typer.Context, topic: str = typer.Argument(...), hint: Optional[str] = typer.Option(None, "--hint", help="JSON object of hints.")) -> None:
+def research_draft(
+    ctx: typer.Context,
+    topic: str = typer.Argument(...),
+    hint: str | None = typer.Option(None, "--hint", help="JSON object of hints."),
+    doc: str | None = typer.Option(None, "--doc", help="Document identifier or path."),
+    anchor: str | None = typer.Option(None, "--anchor", help="Anchor identifier."),
+    prompt: str | None = typer.Option(None, "--prompt", help="Prompt override."),
+) -> None:
     state = _get_state(ctx)
     hints = json.loads(hint) if hint else None
-    client = StormClient()
-    result = client.draft(state, topic=topic, hints=hints or None)
+    result = research_draft_operation(state, topic=topic, hints=hints, doc=doc, anchor=anchor, prompt=prompt)
     _render_response(result)
 
 
 app.add_typer(research_app, name="research")
 
 
-# ---------------------------------------------------------------------------
-# UME memory helpers
-# ---------------------------------------------------------------------------
-ume_app = typer.Typer(help="Capture ideas and query UME memories.")
-
-
-@ume_app.command("idea")
+@app.command("idea")
 def ume_idea(ctx: typer.Context, text: str = typer.Argument(..., help="Idea text.")) -> None:
     state = _get_state(ctx)
-    client = UMEClient()
-    result = client.submit_idea(state, text=text)
+    result = idea_submit_operation(state, text=text)
     _render_response(result)
 
 
-@ume_app.command("mem")
-def ume_memory_query(ctx: typer.Context, query: str = typer.Argument(..., help="Query text."), filters: Optional[str] = typer.Option(None, "--filters", help="JSON filters.")) -> None:
+mem_app = typer.Typer(help="Query stored UME memories.")
+
+
+@mem_app.command("query")
+def ume_memory_query(
+    ctx: typer.Context,
+    query: str = typer.Argument(..., help="Query text."),
+    filters: str | None = typer.Option(None, "--filters", help="JSON filters."),
+) -> None:
     state = _get_state(ctx)
-    client = UMEClient()
     payload = json.loads(filters) if filters else None
-    result = client.query(state, query=query, filters=payload)
+    result = mem_query_operation(state, query=query, filters=payload)
     _render_response(result)
 
 
-app.add_typer(ume_app, name="ume")
+app.add_typer(mem_app, name="mem")
 
 
-# ---------------------------------------------------------------------------
-# Finance helpers
-# ---------------------------------------------------------------------------
 finance_app = typer.Typer(help="Finance reporting utilities.")
 
 
-@finance_app.command("report")
-def finance_report(ctx: typer.Context, period: str = typer.Option("monthly", "--period", help="Reporting period.")) -> None:
+@finance_app.command("snapshot")
+def finance_snapshot(
+    ctx: typer.Context,
+    period: str = typer.Option("monthly", "--period", help="Reporting period."),
+) -> None:
     state = _get_state(ctx)
-    client = FinanceClient()
-    result = client.summarize(state, period=period)
+    result = finance_snapshot_operation(state, period=period)
     _render_response(result)
 
 
@@ -265,35 +423,29 @@ def finance_sync(ctx: typer.Context, provider: str = typer.Argument(...)) -> Non
     if not state.confirm:
         typer.echo("Use --confirm to trigger finance synchronisation.", err=True)
         raise typer.Exit(1)
-    client = FinanceClient()
-    result = client.sync(state, provider=provider)
+    result = finance_sync_operation(state, provider=provider)
     _render_response(result)
 
 
 app.add_typer(finance_app, name="finance")
 
 
-# ---------------------------------------------------------------------------
-# Wishlist helpers
-# ---------------------------------------------------------------------------
 wishlist_app = typer.Typer(help="Track wishlist items for the platform.")
-WISHLIST_PATH = Path("metadata") / "wishlist.json"
 
 
 @wishlist_app.command("add")
-def wishlist_add(ctx: typer.Context, item: str = typer.Argument(...), link: Optional[str] = typer.Option(None, "--link", help="Optional URL.")) -> None:
+def wishlist_add(
+    ctx: typer.Context,
+    url: str = typer.Argument(..., help="Item URL."),
+    tags: str | None = typer.Option(None, "--tags", help="Comma separated tags."),
+) -> None:
     state = _get_state(ctx)
+    parsed_tags = [tag.strip() for tag in (tags.split(",") if tags else []) if tag.strip()]
+    result = wishlist_add_operation(state, url=url, tags=parsed_tags)
     if state.dry_run:
-        typer.echo(f"[dry-run] add wishlist item: {item}")
-        raise typer.Exit(0)
-    if not WISHLIST_PATH.exists():
-        data = []
-    else:
-        data = json.loads(WISHLIST_PATH.read_text(encoding="utf-8"))
-    data.append({"item": item, "link": link})
-    WISHLIST_PATH.parent.mkdir(parents=True, exist_ok=True)
-    WISHLIST_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")
-    typer.echo(f"Added wishlist item '{item}'.")
+        typer.echo(f"[dry-run] add wishlist item: {json.dumps(result['entry'])}")
+        return
+    typer.echo(f"Added wishlist item '{url}'.")
 
 
 @wishlist_app.command("list")
@@ -308,33 +460,81 @@ def wishlist_list(ctx: typer.Context) -> None:
 app.add_typer(wishlist_app, name="wishlist")
 
 
-# ---------------------------------------------------------------------------
-# Documentation publishing
-# ---------------------------------------------------------------------------
 docs_app = typer.Typer(help="Publish documentation updates.")
 
 
 @docs_app.command("publish")
-def docs_publish(ctx: typer.Context, site: str = typer.Argument(...), version: Optional[str] = typer.Option(None, "--version", help="Version label.")) -> None:
+def docs_publish(
+    ctx: typer.Context,
+    target: str = typer.Argument(..., help="Document path or identifier."),
+    site: str | None = typer.Option(None, "--site", help="Documentation site."),
+    version: str | None = typer.Option(None, "--version", help="Version label."),
+) -> None:
     state = _get_state(ctx)
-    client = DocsClient()
-    result = client.publish(state, site=site, version=version)
+    result = docs_publish_operation(state, target=target, site=site, version=version)
     _render_response(result)
 
 
 app.add_typer(docs_app, name="docs")
 
 
-# ---------------------------------------------------------------------------
-# Legacy compatibility
-# ---------------------------------------------------------------------------
+# Compatibility shims -------------------------------------------------------
+
+bootstrap_app = typer.Typer(help="Bootstrap local tooling and environments.", hidden=True)
+
+
+@bootstrap_app.command("init")
+def bootstrap_init(ctx: typer.Context, quick: bool = typer.Option(False, "--quick")) -> None:
+    state = _get_state(ctx)
+    code = init_tooling(state, quick=quick)
+    raise typer.Exit(code)
+
+
+@bootstrap_app.command("doctor")
+def bootstrap_doctor(ctx: typer.Context) -> None:
+    state = _get_state(ctx)
+    code = run_doctor(state)
+    raise typer.Exit(code)
+
+
+@bootstrap_app.command("whoami")
+def bootstrap_whoami(ctx: typer.Context) -> None:
+    cli_whoami(ctx)
+
+
+app.add_typer(bootstrap_app, name="bootstrap")
+
+
+stack_app = typer.Typer(help="Legacy stack orchestration commands.", hidden=True)
+
+
+@stack_app.command("up")
+def stack_up(ctx: typer.Context, service: str | None = typer.Argument(None)) -> None:
+    cli_up(ctx, service)
+
+
+@stack_app.command("down")
+def stack_down(ctx: typer.Context) -> None:
+    cli_down(ctx)
+
+
+@stack_app.command("logs")
+def stack_logs(ctx: typer.Context, service: str = typer.Argument(...)) -> None:
+    cli_logs(ctx, service)
+
+
+app.add_typer(stack_app, name="stack")
+
+
+# Legacy compatibility ------------------------------------------------------
+
 legacy_app = typer.Typer(help="Compatibility shims for legacy CLIs.")
 
 
 @legacy_app.command("ai")
 def legacy_ai(
     ctx: typer.Context,
-    args: Optional[List[str]] = typer.Argument(None, help="Arguments forwarded to scripts.ai_cli.", show_default=False),
+    args: list[str] | None = typer.Argument(None, help="Arguments forwarded to scripts.ai_cli.", show_default=False),
 ) -> None:
     state = _get_state(ctx)
     if state.dry_run:
@@ -350,9 +550,8 @@ def legacy_ai(
 app.add_typer(legacy_app, name="legacy")
 
 
-# ---------------------------------------------------------------------------
-# Plugin commands
-# ---------------------------------------------------------------------------
+# Plug-in commands ----------------------------------------------------------
+
 plugins_app = typer.Typer(help="Commands exposed by installed plug-ins.")
 register_plugin_commands(plugins_app)
 app.add_typer(plugins_app, name="plugins")
