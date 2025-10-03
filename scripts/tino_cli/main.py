@@ -6,8 +6,7 @@ import os
 import shlex
 import subprocess
 from pathlib import Path
-from typing import List, Optional, Tuple
-
+from typing import Mapping, Sequence
 
 import typer
 
@@ -21,7 +20,6 @@ from .clients import (
     UMEClient,
 )
 from .config import load_env_defaults
-from .executor import execute_command
 from .plugin_loader import register_plugin_commands
 from .state import CLIState
 
@@ -66,10 +64,6 @@ def run_shell_command(
 ) -> int:
     """Execute ``command`` respecting ``dry_run`` and ``confirm`` flags."""
 
-
-@bootstrap_app.command("init")
-def bootstrap_init(ctx: typer.Context, quick: bool = typer.Option(False, "--quick", help="Skip optional setup.")) -> None:
-    """Initialise local tooling by delegating to ``install.sh``."""
     printable = shlex.join(command)
     if state.dry_run:
         typer.echo(f"[dry-run] {printable}")
@@ -91,16 +85,11 @@ def init_tooling(state: CLIState, *, quick: bool = False) -> int:
     command = ["bash", str(script)]
     if quick:
         command.append("--quick")
-    code = execute_command(command, state=state, require_confirm=True)
-    raise typer.Exit(code)
-
     return run_shell_command(state, command, require_confirm=True)
 
 
 def run_doctor(state: CLIState) -> int:
     script = Path("scripts") / "check-hooks.sh"
-    code = execute_command(["bash", str(script)], state=state)
-    raise typer.Exit(code)
     return run_shell_command(state, ["bash", str(script)])
 
 
@@ -143,12 +132,6 @@ def task_run_operation(
     client = TaskCascadenceClient()
     return client.run(state, task, payload=payload)
 
-    state = _get_state(ctx)
-    command = list(_compose_command("up", "-d"))
-    if service:
-        command.append(service)
-    code = execute_command(command, state=state, require_confirm=True)
-    raise typer.Exit(code)
 
 def task_status_operation(state: CLIState, task_id: str):
     client = TaskCascadenceClient()
@@ -250,7 +233,7 @@ def _render_response(result) -> None:
 
 
 @app.callback()
-def main(
+def _configure_app(
     ctx: typer.Context,
     confirm: bool = typer.Option(False, "--confirm", help="Execute actions that change remote state."),
     dry_run: bool = typer.Option(False, "--dry-run", help="Preview actions without executing them."),
@@ -263,8 +246,6 @@ def main(
 @app.command("init")
 def cli_init(ctx: typer.Context, quick: bool = typer.Option(False, "--quick", help="Skip optional setup.")) -> None:
     state = _get_state(ctx)
-    command = _compose_command("down")
-    code = execute_command(command, state=state, require_confirm=True)
     code = init_tooling(state, quick=quick)
     raise typer.Exit(code)
 
@@ -450,7 +431,7 @@ def wishlist_add(
 
 @wishlist_app.command("list")
 def wishlist_list(ctx: typer.Context) -> None:
-    state = _get_state(ctx)
+    _get_state(ctx)
     if not WISHLIST_PATH.exists():
         typer.echo("Wishlist is empty.")
         return

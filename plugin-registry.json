@@ -7,10 +7,10 @@
     {
       "name": "aiga:deploy",
       "help": "Deploy the Autonomous Income-Generating Agent (AIGA) to the active environment.",
-      "exec": "python -m scripts.ai_cli deploy --project aiga",
+      "exec": "tino legacy ai deploy --project aiga",
       "tags": ["deploy", "aiga"],
       "examples": [
-        "python scripts/plugins.py commands run aiga:deploy -- --env staging"
+        "tino --confirm plugins aiga:deploy -- --env staging"
       ]
     },
     {

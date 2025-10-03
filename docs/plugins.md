@@ -24,8 +24,9 @@ backend becomes available to the routing utilities.
 
    register_backend("my_backend", backend)
    ```
-4. Install the package with `pip install -e .` and run `ai-cli plugin backends list`
-   to ensure it loads.
+4. Install the package with `pip install -e .` and run
+   `tino plugins --help` to confirm that the loader detects the new command. The
+   Typer help output includes any tags and example invocations you defined.
 5. Open a pull request adding your package to
    [plugin-registry.json](../plugin-registry.json) so others can install it via
    the registry.
@@ -37,12 +38,6 @@ Use `scripts/plugin_scaffold.py` to bootstrap a backend or recipe package:
 ```bash
 python -m scripts.plugin_scaffold demo
 python -m scripts.plugin_scaffold demo --recipe
-```
-
-The plug-in helper exposes an equivalent command:
-
-```bash
-python -m scripts.plugins plugin new demo
 ```
 
 The script creates a directory with a minimal `pyproject.toml`, an `mcp.json`
@@ -103,73 +98,41 @@ See `llm/backends/plugins/sample.py` for a full example.
 3. Publish the package to PyPI or install it locally with `pip install -e .`.
 4. Add your backend to
    [plugin-registry.json](../plugin-registry.json) and open a pull request so
-   others can install it using `ai-cli plugin backends install`.
+   others can discover it via ``tino plugins`` (for example,
+   ``tino plugins <your-plugin> install``).
 
 ## Managing Plug-ins
 
-Use the `ai-cli plugin` subcommand or the `plugins` helper to install or remove
-third-party backends and recipes. The helper script mirrors the CLI commands
-and can be invoked with `python -m scripts.plugins`.
+Use the ``tino plugins`` namespace to discover and execute plug-in supplied
+commands. The loader renders command help with any tags or examples declared in
+``plugin-registry.json`` and forwards arguments transparently.
 
 ```bash
-# List available plug-ins
-ai-cli plugin backends list
+# List curated commands that apply globally
+tino plugins --help
 
-# The helper script exposes the same subcommands
-python -m scripts.plugins backends list
+# Inspect commands contributed by a specific plug-in package
+tino plugins anthropic --help
 
-# Install a plug-in
-ai-cli plugin backends install sample
-ai-cli plugin backends install anthropic
-ai-cli plugin backends install mistral
-ai-cli plugin backends install lmql
+# Run a command defined in the registry's top-level command list
+tino --confirm plugins aiga:deploy -- --env staging
 
-# Install a built-in backend with the helper script
-python -m scripts.plugins backends install openrouter
-
-# Remove a plug-in
-ai-cli plugin backends remove sample
-
-# Or remove it via the helper
-python -m scripts.plugins backends remove openrouter
+# Invoke a plug-in scoped command (prints installation hints if missing)
+tino plugins openrouter install
 ```
 
-Recipe packages are managed via the `recipes` subcommand:
+Any command marked as ``confirm_required`` in the registry will refuse to run
+until you append ``--confirm`` before ``plugins``. When a command references a
+callable from the installed package the loader imports it directly; otherwise it
+falls back to the provided ``exec`` string. Commands can also advertise tags and
+example invocations which appear automatically in the Typer help output.
 
-```bash
-ai-cli plugin recipes list
-ai-cli plugin recipes install echo
-ai-cli plugin recipes remove echo
-ai-cli plugin recipes sync
-ai-cli plugin recipes publish dist/my_recipe-0.1-py3-none-any.whl --url https://example.com/simple
-
-# The same actions are available via the helper script
-python -m scripts.plugins recipes sync
-python -m scripts.plugins recipes publish dist/my_recipe-0.1-py3-none-any.whl --url https://example.com/simple
-```
-
-`recipes sync` downloads and installs the recipe packages listed in the
-registry into `scripts/recipes/packages` so they can be used offline. Run the
-helper directly to sync packages to the default location:
-
-```bash
-python -m scripts.plugins recipes sync
-```
-
-Use `--dest` to specify a custom download directory:
-
-```bash
-python -m scripts.plugins recipes sync --dest /tmp/recipe_pkgs
-```
-
-Use `recipes publish` to upload a built recipe package to a registry. The helper
-invokes `twine upload` under the hood, so make sure `twine` is installed:
-
-```bash
-python -m scripts.plugins recipes publish dist/my_recipe-0.1-py3-none-any.whl --url https://example.com/simple
-```
-
-Set `PLUGIN_REGISTRY_UPLOAD_URL` to configure the default upload target.
+Recipe packages continue to live in the registry and are consumed by the cockpit
+or other automation surfaces. Use ``tino plugins`` commands exposed by recipe
+packages (for example, ``tino plugins recipes sync`` when provided) to keep
+local caches up to date. The loader caches registry metadata in
+``~/.cache/d0ttino``; override the location or TTL with ``PLUGIN_REGISTRY_URL``
+and ``PLUGIN_REGISTRY_TTL`` when testing new registries.
 
 ### Adding Your Plug-in
 
@@ -258,36 +221,16 @@ pip install -e examples/plugins/echo_recipe
 pip install -e examples/plugins/sample_recipe
 ```
 
-Alternatively set `PLUGIN_REGISTRY_URL` to the local registry file and
-use the helper script to install them:
+Set `PLUGIN_REGISTRY_URL` to a local registry file and rerun `tino plugins
+--help` to preview how the loader will render your commands before publishing
+them. The CLI caches registry data at
+`~/.cache/d0ttino/plugin_registry.json`. Override the cache behaviour with the
+environment variables below:
 
-```bash
-PLUGIN_REGISTRY_URL=plugin-registry.json python -m scripts.plugins backends install openrouter
-```
-
-You can also use the helper script to install them from the
-registry:
-
-```bash
-python -m scripts.plugins backends install openrouter
-python -m scripts.plugins backends install lobechat
-python -m scripts.plugins backends install mindbridge
-python -m scripts.plugins backends install anthropic
-python -m scripts.plugins backends install mistral
-python -m scripts.plugins backends install lmql
-python -m scripts.plugins recipes install echo
-```
-
-### Registry Environment Variables
-
-Configure how the helper script fetches and caches the plug-in registry using
-the following variables:
-
-- `PLUGIN_REGISTRY_URL` – Override the registry URL.
+- `PLUGIN_REGISTRY_URL` – Override the registry URL (supports `file://` paths).
 - `PLUGIN_REGISTRY_TTL` – Cache time-to-live in seconds (defaults to 86400).
 
-The registry is cached at `~/.cache/d0ttino/plugin_registry.json`. Set the TTL
-to `0` to always fetch a fresh copy.
+Set the TTL to `0` to always fetch a fresh copy during development.
 
 ## Built-in Backends
 
@@ -345,13 +288,10 @@ See `scripts/recipes/plugins/sample.py` for a simple example. Additional
 examples for common automation tasks are provided in the same directory with
 `build`, `test` and `deploy` recipes.
 An installable package is available under `examples/plugins/sample_recipe`.
-Publish a built wheel with `recipes publish` and sync recipes from a registry
-with `recipes sync`:
-
-```bash
-python -m scripts.plugins recipes publish dist/build_recipe-0.1-py3-none-any.whl --url https://example.com/simple
-python -m scripts.plugins recipes sync
-```
+Publish a built wheel using your preferred packaging workflow (for example,
+``python -m build`` followed by ``twine upload``). Expose management helpers
+such as ``recipes sync`` via your plug-in metadata so they appear under
+``tino plugins`` for downstream users.
 
 ## Cookiecutter Template
 
@@ -368,11 +308,11 @@ via the appropriate entry point.
 
 ## Running a Recipe
 
-Use the ``ai-cli recipe`` subcommand to execute a named recipe. The command
-loads available recipes via ``discover_recipes()`` and runs the shell commands
-it returns interactively.
+Use the compatibility shim ``tino legacy ai recipe`` to execute a named recipe.
+The command loads available recipes via ``discover_recipes()`` and runs the
+shell commands it returns interactively.
 
 ```bash
-ai-cli recipe sample "Show my goal"
-ai-cli recipe build "Project"
+tino legacy ai recipe sample "Show my goal"
+tino legacy ai recipe build "Project"
 ```

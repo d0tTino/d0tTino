@@ -108,11 +108,11 @@ the server.
 
 ## Viewing Basic Stats
 
-Run `ai-cli stats` to retrieve events from `EVENTS_URL` and print a short
+Run ``tino legacy ai stats`` to retrieve events from ``EVENTS_URL`` and print a short
 summary:
 
 ```bash
-EVENTS_URL=https://example.com ai-cli stats
+EVENTS_URL=https://example.com tino legacy ai stats
 ```
 
 The command displays the total number of recorded runs, the overall success
@@ -120,11 +120,11 @@ rate, and the average latency in milliseconds.
 
 ## Viewing Aggregated Metrics
 
-Run `ai-cli metrics` to fetch weekly totals of successful `ai-do` runs.
+Run ``tino legacy ai metrics`` to fetch weekly totals of successful ``ai-do`` runs.
 Use `--aggregates-url` (or set `NSM_URL`) to read precomputed totals:
 
 ```bash
-NSM_URL=https://example.com/nsm ai-cli metrics --aggregates-url https://example.com/nsm
+NSM_URL=https://example.com/nsm tino legacy ai metrics --aggregates-url https://example.com/nsm
 ```
 
 The output mirrors `nsm_stats.py` and prints `developer,week,count` CSV rows.
