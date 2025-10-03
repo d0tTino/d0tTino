@@ -1,5 +1,4 @@
 import json
-import importlib
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -16,6 +15,20 @@ if TYPE_CHECKING:
 
 
 pytest.importorskip("requests")
+
+
+def _registry_payload(**overrides: object) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "name": "test-registry",
+        "version": "1",
+        "commands": [],
+        "taskTemplates": [],
+        "plugins": {},
+        "recipes": {},
+        "recipe_configs": {},
+    }
+    payload.update(overrides)
+    return payload
 
 
 def test_load_registry_returns_commands_and_templates() -> None:
@@ -112,7 +125,7 @@ def test_load_registry_invalid_cache_falls_back(monkeypatch, tmp_path: Path) -> 
         "lmql": "d0ttino-lmql-plugin",
     }
     for name, pkg in expected.items():
-        assert registry[name] == pkg
+        assert registry.plugin_package_map[name] == pkg
 
 
 def test_valid_registry_rejects_bad_descriptor():
@@ -133,8 +146,8 @@ def test_register_plugin_commands_executes_handler(
     monkeypatch: pytest.MonkeyPatch,
 ):
     registry_path = tmp_path / "registry.json"
-    registry = {
-        "plugins": {
+    registry = _registry_payload(
+        plugins={
             "demo": {
                 "package": "demo-pkg",
                 "cli": {
@@ -149,14 +162,11 @@ def test_register_plugin_commands_executes_handler(
                 },
             }
         }
-    }
+    )
     registry_path.write_text(json.dumps(registry), encoding="utf-8")
     monkeypatch.setattr(plugin_loader, "REGISTRY_PATH", registry_path)
-    monkeypatch.setattr(
-        plugin_loader,
-        "_load_registry",
-        lambda path=registry_path: json.loads(registry_path.read_text(encoding="utf-8")),
-    )
+    registry_data = plugins.parse_registry_payload(registry)
+    monkeypatch.setattr(plugin_loader, "_load_registry", lambda path=registry_path: registry_data)
     # Ensure stale call history from other tests does not leak in.
     stubs.plugin_command.calls = []  # type: ignore[attr-defined]
 
@@ -174,8 +184,8 @@ def test_register_plugin_command_falls_back_on_missing_callable(
     monkeypatch: pytest.MonkeyPatch,
 ):
     registry_path = tmp_path / "registry.json"
-    registry = {
-        "plugins": {
+    registry = _registry_payload(
+        plugins={
             "demo": {
                 "package": "demo-pkg",
                 "cli": {
@@ -185,14 +195,11 @@ def test_register_plugin_command_falls_back_on_missing_callable(
                 },
             }
         }
-    }
+    )
     registry_path.write_text(json.dumps(registry), encoding="utf-8")
     monkeypatch.setattr(plugin_loader, "REGISTRY_PATH", registry_path)
-    monkeypatch.setattr(
-        plugin_loader,
-        "_load_registry",
-        lambda path=registry_path: json.loads(registry_path.read_text(encoding="utf-8")),
-    )
+    registry_data = plugins.parse_registry_payload(registry)
+    monkeypatch.setattr(plugin_loader, "_load_registry", lambda path=registry_path: registry_data)
 
     app = typer.Typer()
     plugin_loader.register_plugin_commands(app)
@@ -200,4 +207,43 @@ def test_register_plugin_command_falls_back_on_missing_callable(
     result = tino_cli_runner.invoke(app, ["demo", "hello"])
     assert result.exit_code == 1
     assert "demo-pkg" in result.stderr or "demo-pkg" in result.output
+
+
+def test_plugins_cli_runs_exec_command(
+    tino_cli_runner: "CliRunner",
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    registry = _registry_payload(
+        commands=[
+            {
+                "name": "demo:exec",
+                "help": "Demo exec",
+                "exec": "echo demo",
+                "tags": ["demo"],
+                "examples": ["tino plugins demo:exec -- --flag value"],
+            }
+        ],
+        plugins={},
+    )
+    registry_data = plugins.parse_registry_payload(registry)
+    monkeypatch.setattr(plugin_loader, "_load_registry", lambda *_: registry_data)
+
+    calls: dict[str, object] = {}
+
+    def fake_execute(command, *, state=None, require_confirm=False):
+        calls["command"] = list(command)
+        calls["state"] = state
+        calls["confirm"] = require_confirm
+        return 0
+
+    monkeypatch.setattr(plugin_loader, "execute_command", fake_execute)
+
+    app = typer.Typer()
+    plugin_loader.register_plugin_commands(app)
+
+    result = tino_cli_runner.invoke(app, ["demo:exec", "--", "--flag", "value"])
+    assert result.exit_code == 0
+    assert calls["command"] == ["echo", "demo", "--flag", "value"]
+    assert calls["state"] is None
+    assert calls["confirm"] is False
 
