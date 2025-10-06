@@ -164,13 +164,15 @@ def _error_action(log_path: os.PathLike[str], command: str, message: str) -> tup
     return 1, commands, {"error": message}
 
 
-def _research_action_payload(raw: str) -> tuple[str, str]:
+def _research_action_payload(raw: str) -> tuple[str, str | None]:
+    topic: str | None = None
+    source = raw.strip()
     if "::" in raw:
-        topic, source = raw.split("::", 1)
-        topic = topic.strip() or "adhoc"
-        source = source.strip()
-        return topic, source
-    return "adhoc", raw.strip()
+        topic_part, source_part = raw.split("::", 1)
+        source = source_part.strip()
+        parsed_topic = topic_part.strip()
+        topic = parsed_topic or None
+    return source, topic
 
 
 def _run_special_action(
@@ -195,8 +197,10 @@ def _run_special_action(
     if name == "cockpit-research-ingest":
         if not payload:
             return _error_action(log_path, "research ingest <missing>", "Source path or URL required.")
-        topic, source = _research_action_payload(payload)
-        command = f"research ingest {shlex.quote(topic)} {shlex.quote(source)}"
+        source, topic = _research_action_payload(payload)
+        command = f"research ingest {shlex.quote(source)}"
+        if topic:
+            command += f" --topic {shlex.quote(topic)}"
         return _invoke_callable(
             log_path,
             command,
