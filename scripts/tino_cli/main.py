@@ -150,6 +150,7 @@ def task_signal_operation(
     return client.signal(state, task_id, signal=signal, link=link, note=note)
 
 
+def research_ingest_operation(state: CLIState, *, source: str, topic: str | None = None):
 def research_ingest_operation(state: CLIState, *, topic: str | None, source: str):
     client = StormClient()
     return client.ingest(state, topic=topic, source=source)
@@ -158,6 +159,7 @@ def research_ingest_operation(state: CLIState, *, topic: str | None, source: str
 def research_draft_operation(
     state: CLIState,
     *,
+    topic: str | None = None,
     topic: str | None,
     hints: Mapping[str, object] | None = None,
     doc: str | None = None,
@@ -267,9 +269,9 @@ def cli_whoami(ctx: typer.Context) -> None:
 
 
 @app.command("up")
-def cli_up(ctx: typer.Context, service: str | None = typer.Argument(None, help="Optional service name.")) -> None:
+def cli_up(ctx: typer.Context, service: str = typer.Argument(None, help="Optional service name.")) -> None:
     state = _get_state(ctx)
-    code = start_services(state, service)
+    code = start_services(state, service or None)
     raise typer.Exit(code)
 
 
@@ -294,7 +296,7 @@ task_app = typer.Typer(help="Interact with TaskCascadence services.")
 def task_run(
     ctx: typer.Context,
     task: str = typer.Argument(..., help="Task identifier"),
-    payload: str | None = typer.Option(None, "--payload", help="JSON payload."),
+    payload: str = typer.Option(None, "--payload", help="JSON payload."),
 ) -> None:
     state = _get_state(ctx)
     body = json.loads(payload) if payload else None
@@ -314,14 +316,14 @@ def task_signal(
     ctx: typer.Context,
     task_id: str = typer.Argument(...),
     signal: str = typer.Option(..., "--signal", help="Signal name."),
-    link: str | None = typer.Option(None, "--link", help="Optional link payload."),
-    note: str | None = typer.Option(None, "--note", help="Optional note payload."),
+    link: str = typer.Option(None, "--link", help="Optional link payload."),
+    note: str = typer.Option(None, "--note", help="Optional note payload."),
 ) -> None:
     state = _get_state(ctx)
     if not state.confirm:
         typer.echo("Use --confirm to send signals to remote tasks.", err=True)
         raise typer.Exit(1)
-    result = task_signal_operation(state, task_id, signal=signal, link=link, note=note)
+    result = task_signal_operation(state, task_id, signal=signal, link=link or None, note=note or None)
     _render_response(result)
 
 
@@ -334,26 +336,33 @@ research_app = typer.Typer(help="Interact with tino-storm research services.")
 @research_app.command("ingest")
 def research_ingest(
     ctx: typer.Context,
-    topic: str = typer.Argument(..., help="Research topic."),
     source: str = typer.Argument(..., help="Source URL or path."),
+    topic: str = typer.Option(None, "--topic", help="Optional research topic."),
 ) -> None:
     state = _get_state(ctx)
-    result = research_ingest_operation(state, topic=topic, source=source)
+    result = research_ingest_operation(state, source=source, topic=topic or None)
     _render_response(result)
 
 
 @research_app.command("draft")
 def research_draft(
     ctx: typer.Context,
-    topic: str = typer.Argument(...),
-    hint: str | None = typer.Option(None, "--hint", help="JSON object of hints."),
-    doc: str | None = typer.Option(None, "--doc", help="Document identifier or path."),
-    anchor: str | None = typer.Option(None, "--anchor", help="Anchor identifier."),
-    prompt: str | None = typer.Option(None, "--prompt", help="Prompt override."),
+    topic: str = typer.Option(None, "--topic", help="Optional research topic."),
+    hint: str = typer.Option(None, "--hint", help="JSON object of hints."),
+    doc: str = typer.Option(None, "--doc", help="Document identifier or path."),
+    anchor: str = typer.Option(None, "--anchor", help="Anchor identifier."),
+    prompt: str = typer.Option(None, "--prompt", help="Prompt override."),
 ) -> None:
     state = _get_state(ctx)
     hints = json.loads(hint) if hint else None
-    result = research_draft_operation(state, topic=topic, hints=hints, doc=doc, anchor=anchor, prompt=prompt)
+    result = research_draft_operation(
+        state,
+        topic=topic or None,
+        hints=hints,
+        doc=doc or None,
+        anchor=anchor or None,
+        prompt=prompt or None,
+    )
     _render_response(result)
 
 
@@ -374,7 +383,7 @@ mem_app = typer.Typer(help="Query stored UME memories.")
 def ume_memory_query(
     ctx: typer.Context,
     query: str = typer.Argument(..., help="Query text."),
-    filters: str | None = typer.Option(None, "--filters", help="JSON filters."),
+    filters: str = typer.Option(None, "--filters", help="JSON filters."),
 ) -> None:
     state = _get_state(ctx)
     payload = json.loads(filters) if filters else None
@@ -418,7 +427,7 @@ wishlist_app = typer.Typer(help="Track wishlist items for the platform.")
 def wishlist_add(
     ctx: typer.Context,
     url: str = typer.Argument(..., help="Item URL."),
-    tags: str | None = typer.Option(None, "--tags", help="Comma separated tags."),
+    tags: str = typer.Option(None, "--tags", help="Comma separated tags."),
 ) -> None:
     state = _get_state(ctx)
     parsed_tags = [tag.strip() for tag in (tags.split(",") if tags else []) if tag.strip()]
@@ -448,11 +457,11 @@ docs_app = typer.Typer(help="Publish documentation updates.")
 def docs_publish(
     ctx: typer.Context,
     target: str = typer.Argument(..., help="Document path or identifier."),
-    site: str | None = typer.Option(None, "--site", help="Documentation site."),
-    version: str | None = typer.Option(None, "--version", help="Version label."),
+    site: str = typer.Option(None, "--site", help="Documentation site."),
+    version: str = typer.Option(None, "--version", help="Version label."),
 ) -> None:
     state = _get_state(ctx)
-    result = docs_publish_operation(state, target=target, site=site, version=version)
+    result = docs_publish_operation(state, target=target, site=site or None, version=version or None)
     _render_response(result)
 
 
@@ -490,8 +499,8 @@ stack_app = typer.Typer(help="Legacy stack orchestration commands.", hidden=True
 
 
 @stack_app.command("up")
-def stack_up(ctx: typer.Context, service: str | None = typer.Argument(None)) -> None:
-    cli_up(ctx, service)
+def stack_up(ctx: typer.Context, service: str = typer.Argument(None)) -> None:
+    cli_up(ctx, service or None)
 
 
 @stack_app.command("down")
@@ -515,7 +524,7 @@ legacy_app = typer.Typer(help="Compatibility shims for legacy CLIs.")
 @legacy_app.command("ai")
 def legacy_ai(
     ctx: typer.Context,
-    args: list[str] | None = typer.Argument(None, help="Arguments forwarded to scripts.ai_cli.", show_default=False),
+    args: list[str] = typer.Argument(None, help="Arguments forwarded to scripts.ai_cli.", show_default=False),
 ) -> None:
     state = _get_state(ctx)
     if state.dry_run:

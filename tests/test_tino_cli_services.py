@@ -219,6 +219,70 @@ def test_logs_confirm_invokes_subprocess(
     assert captured[0][-1] == "ume"
 
 
+@pytest.mark.parametrize(
+    "topic_args",
+    (
+        pytest.param([], id="without-topic"),
+        pytest.param(["--topic", "widgets"], id="with-topic"),
+    ),
+)
+def test_research_ingest_supports_optional_topic(
+    tino_cli_runner: "CliRunner",
+    fake_http_service: dict,
+    monkeypatch: pytest.MonkeyPatch,
+    topic_args: list[str],
+) -> None:
+    recorded = _enable_telemetry(monkeypatch)
+    fake_http_service["stub"]("post", "/research/ingest", {"ok": True})
+
+    args = ["research", "ingest", "https://example.com/source", *topic_args]
+    result = tino_cli_runner.invoke(app, args)
+
+    assert result.exit_code == 0
+    assert json.loads(result.output) == {"ok": True}
+
+    call = fake_http_service["calls"][0]
+    assert call["url"].endswith("/research/ingest")
+    expected_payload = {"source": "https://example.com/source"}
+    if topic_args:
+        expected_payload["topic"] = topic_args[-1]
+    assert call["json_payload"] == expected_payload
+
+    assert recorded
+    assert recorded[0][1]["status"] == 200
+
+
+@pytest.mark.parametrize(
+    "topic_args",
+    (
+        pytest.param([], id="without-topic"),
+        pytest.param(["--topic", "gizmos"], id="with-topic"),
+    ),
+)
+def test_research_draft_supports_optional_topic(
+    tino_cli_runner: "CliRunner",
+    fake_http_service: dict,
+    monkeypatch: pytest.MonkeyPatch,
+    topic_args: list[str],
+) -> None:
+    recorded = _enable_telemetry(monkeypatch)
+    fake_http_service["stub"]("post", "/research/draft", {"draft": "ok"})
+
+    args = ["research", "draft", "--doc", "doc-42", *topic_args]
+    result = tino_cli_runner.invoke(app, args)
+
+    assert result.exit_code == 0
+    assert json.loads(result.output) == {"draft": "ok"}
+
+    call = fake_http_service["calls"][0]
+    assert call["url"].endswith("/research/draft")
+    expected_payload = {"doc": "doc-42"}
+    if topic_args:
+        expected_payload["topic"] = topic_args[-1]
+    assert call["json_payload"] == expected_payload
+
+    assert recorded
+    assert recorded[0][1]["status"] == 200
 def test_cockpit_research_ingest_without_topic(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     recorded: dict[str, object] = {}
 
