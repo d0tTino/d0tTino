@@ -171,6 +171,15 @@ def _research_action_payload(raw: str) -> tuple[str | None, str]:
         source = source.strip()
         return topic, source
     return None, raw.strip()
+def _research_action_payload(raw: str) -> tuple[str, str | None]:
+    topic: str | None = None
+    source = raw.strip()
+    if "::" in raw:
+        topic_part, source_part = raw.split("::", 1)
+        source = source_part.strip()
+        parsed_topic = topic_part.strip()
+        topic = parsed_topic or None
+    return source, topic
 
 
 def _run_special_action(
@@ -199,6 +208,10 @@ def _run_special_action(
         command = f"research ingest {shlex.quote(source)}"
         if topic:
             command = f"{command} --topic {shlex.quote(topic)}"
+        source, topic = _research_action_payload(payload)
+        command = f"research ingest {shlex.quote(source)}"
+        if topic:
+            command += f" --topic {shlex.quote(topic)}"
         return _invoke_callable(
             log_path,
             command,

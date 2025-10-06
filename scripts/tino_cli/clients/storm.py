@@ -15,6 +15,13 @@ class StormClient(BaseClient):
         super().__init__(name="storm", config=STORM)
 
     def ingest(self, state: CLIState, *, topic: str | None, source: str) -> RequestResult | None:
+    def ingest(
+        self,
+        state: CLIState,
+        *,
+        topic: str | None,
+        source: str,
+    ) -> RequestResult | None:
         payload: dict[str, object] = {"source": source}
         if topic is not None:
             payload["topic"] = topic

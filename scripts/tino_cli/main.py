@@ -151,6 +151,7 @@ def task_signal_operation(
 
 
 def research_ingest_operation(state: CLIState, *, source: str, topic: str | None = None):
+def research_ingest_operation(state: CLIState, *, topic: str | None, source: str):
     client = StormClient()
     return client.ingest(state, topic=topic, source=source)
 
@@ -159,6 +160,7 @@ def research_draft_operation(
     state: CLIState,
     *,
     topic: str | None = None,
+    topic: str | None,
     hints: Mapping[str, object] | None = None,
     doc: str | None = None,
     anchor: str | None = None,

@@ -2,12 +2,18 @@
 from __future__ import annotations
 
 import json
+import shlex
 from pathlib import Path
 from typing import TYPE_CHECKING
+from types import SimpleNamespace
 
 import pytest
 
+from scripts.tino_cli import actions
+from scripts.tino_cli.clients.storm import StormClient
 from scripts.tino_cli.main import app
+from scripts.tino_cli.models import TelemetryStatus
+from scripts.tino_cli.state import CLIState
 
 if TYPE_CHECKING:
     from typer.testing import CliRunner
@@ -277,5 +283,77 @@ def test_research_draft_supports_optional_topic(
 
     assert recorded
     assert recorded[0][1]["status"] == 200
+def test_cockpit_research_ingest_without_topic(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    recorded: dict[str, object] = {}
+
+    monkeypatch.setattr(actions, "ensure_cache_dir", lambda: tmp_path)
+    monkeypatch.setattr(actions, "build_state", lambda *, dry_run, confirm: SimpleNamespace(dry_run=dry_run, confirm=confirm))
+    monkeypatch.setattr(actions, "telemetry_status", lambda: TelemetryStatus(enabled=False))
+
+    class _Result:
+        payload = {"ok": True}
+
+    def _fake_ingest(state, *, topic, source):  # noqa: ANN001 - dynamic signature for test
+        recorded["topic"] = topic
+        recorded["source"] = source
+        return _Result()
+
+    monkeypatch.setattr(actions, "research_ingest_operation", _fake_ingest)
+
+    result = actions.run_action("cockpit-research-ingest", payload="https://example.com", confirm=False)
+
+    expected_command = f"research ingest {shlex.quote('https://example.com')}"
+    assert result.details["commands"] == [expected_command]
+    assert recorded == {"topic": None, "source": "https://example.com"}
+
+    log_path = Path(result.details["log_path"])
+    assert log_path.exists()
+    assert "--topic" not in log_path.read_text(encoding="utf-8")
+
+
+def test_cockpit_research_ingest_with_topic(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    recorded: dict[str, object] = {}
+
+    monkeypatch.setattr(actions, "ensure_cache_dir", lambda: tmp_path)
+    monkeypatch.setattr(actions, "build_state", lambda *, dry_run, confirm: SimpleNamespace(dry_run=dry_run, confirm=confirm))
+    monkeypatch.setattr(actions, "telemetry_status", lambda: TelemetryStatus(enabled=False))
+
+    class _Result:
+        payload = {"ok": True}
+
+    def _fake_ingest(state, *, topic, source):  # noqa: ANN001 - dynamic signature for test
+        recorded["topic"] = topic
+        recorded["source"] = source
+        return _Result()
+
+    monkeypatch.setattr(actions, "research_ingest_operation", _fake_ingest)
+
+    result = actions.run_action(
+        "cockpit-research-ingest",
+        payload="growth::https://example.com/plan.pdf",
+        confirm=False,
+    )
+
+    expected_command = (
+        f"research ingest {shlex.quote('https://example.com/plan.pdf')} --topic {shlex.quote('growth')}"
+    )
+    assert result.details["commands"] == [expected_command]
+    assert recorded == {"topic": "growth", "source": "https://example.com/plan.pdf"}
+
+    log_contents = Path(result.details["log_path"]).read_text(encoding="utf-8")
+    assert "--topic" in log_contents
+
+
+def test_storm_client_ingest_topic_handling(fake_http_service: dict, tmp_path: Path) -> None:
+    fake_http_service["stub"]("post", "/research/ingest", {"ok": True})
+    state = CLIState(dry_run=False, confirm=True, telemetry_enabled=False, log_path=tmp_path / "cli.log")
+    client = StormClient()
+
+    client.ingest(state, topic=None, source="https://example.com/notes")
+    client.ingest(state, topic="growth", source="https://example.com/notes")
+
+    first, second = fake_http_service["calls"][:2]
+    assert first["json_payload"] == {"source": "https://example.com/notes"}
+    assert second["json_payload"] == {"source": "https://example.com/notes", "topic": "growth"}
 
 
