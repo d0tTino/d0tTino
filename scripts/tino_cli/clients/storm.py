@@ -14,21 +14,31 @@ class StormClient(BaseClient):
     def __init__(self) -> None:
         super().__init__(name="storm", config=STORM)
 
-    def ingest(self, state: CLIState, *, topic: str, source: str) -> RequestResult | None:
-        payload = {"topic": topic, "source": source}
+    def ingest(
+        self,
+        state: CLIState,
+        *,
+        topic: str | None,
+        source: str,
+    ) -> RequestResult | None:
+        payload: dict[str, object] = {"source": source}
+        if topic is not None:
+            payload["topic"] = topic
         return self.request(state, "post", "/research/ingest", json_payload=payload, telemetry_action="ingest")
 
     def draft(
         self,
         state: CLIState,
         *,
-        topic: str,
+        topic: str | None,
         hints: Mapping[str, object] | None = None,
         doc: str | None = None,
         anchor: str | None = None,
         prompt: str | None = None,
     ) -> RequestResult | None:
-        payload: dict[str, object] = {"topic": topic}
+        payload: dict[str, object] = {}
+        if topic is not None:
+            payload["topic"] = topic
         if hints:
             payload["hints"] = hints
         if doc:
