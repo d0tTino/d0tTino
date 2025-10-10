@@ -98,7 +98,7 @@ refactored surface:
 | ``tino research …`` | Access tino-storm research helpers (``ingest``, ``draft``). |
 | ``tino idea`` | Submit a quick idea/event to UME memory without opening the group commands. |
 | ``tino mem …`` | Query UME memories with structured filters. |
-| ``tino finance …`` | Snapshot or synchronise finance data; ``sync`` refuses to run without ``--confirm``. |
+| ``tino finance …`` | Snapshot or synchronise finance data; use ``snapshot --month YYYY-MM`` (or ``--period``) to target a window, and ``sync`` refuses to run without ``--confirm``. |
 | ``tino wishlist …`` | Append or list wishlist items tracked in ``metadata/wishlist.json``. |
 | ``tino docs publish`` | Publish generated documentation, honouring ``TINO_DOC_TARGET`` when the target is omitted. |
 | ``tino plugins …`` | Run plug-in supplied commands that are loaded dynamically from ``plugin-registry.json``. |
