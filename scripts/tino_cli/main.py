@@ -6,7 +6,7 @@ import os
 import shlex
 import subprocess
 from pathlib import Path
-from typing import Mapping, Sequence
+from typing import Mapping, Optional, Sequence
 
 import typer
 
@@ -150,8 +150,12 @@ def task_signal_operation(
     return client.signal(state, task_id, signal=signal, link=link, note=note)
 
 
-def research_ingest_operation(state: CLIState, *, source: str, topic: str | None = None):
-def research_ingest_operation(state: CLIState, *, topic: str | None, source: str):
+def research_ingest_operation(
+    state: CLIState,
+    *,
+    topic: str | None = None,
+    source: str,
+):
     client = StormClient()
     return client.ingest(state, topic=topic, source=source)
 
@@ -160,7 +164,6 @@ def research_draft_operation(
     state: CLIState,
     *,
     topic: str | None = None,
-    topic: str | None,
     hints: Mapping[str, object] | None = None,
     doc: str | None = None,
     anchor: str | None = None,
@@ -185,9 +188,11 @@ def mem_query_operation(
     return client.query(state, query=query, filters=filters)
 
 
-def finance_snapshot_operation(state: CLIState, *, period: str):
+def finance_snapshot_operation(
+    state: CLIState, *, period: str, month: Optional[str] = None
+):
     client = FinanceClient()
-    return client.snapshot(state, period=period)
+    return client.snapshot(state, period=period, month=month)
 
 
 def finance_sync_operation(state: CLIState, *, provider: str):
@@ -401,9 +406,10 @@ finance_app = typer.Typer(help="Finance reporting utilities.")
 def finance_snapshot(
     ctx: typer.Context,
     period: str = typer.Option("monthly", "--period", help="Reporting period."),
+    month: Optional[str] = typer.Option(None, "--month", help="Specific month (YYYY-MM)."),
 ) -> None:
     state = _get_state(ctx)
-    result = finance_snapshot_operation(state, period=period)
+    result = finance_snapshot_operation(state, period=period, month=month or None)
     _render_response(result)
 
 

@@ -14,7 +14,6 @@ class StormClient(BaseClient):
     def __init__(self) -> None:
         super().__init__(name="storm", config=STORM)
 
-    def ingest(self, state: CLIState, *, topic: str | None, source: str) -> RequestResult | None:
     def ingest(
         self,
         state: CLIState,
