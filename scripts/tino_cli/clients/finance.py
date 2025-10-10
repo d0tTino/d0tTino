@@ -14,11 +14,17 @@ class FinanceClient(BaseClient):
     def __init__(self) -> None:
         super().__init__(name="finance", config=FINANCE)
 
-    def summarize(self, state: CLIState, *, period: str) -> RequestResult | None:
-        return self.snapshot(state, period=period)
+    def summarize(
+        self, state: CLIState, *, period: str, month: str | None = None
+    ) -> RequestResult | None:
+        return self.snapshot(state, period=period, month=month)
 
-    def snapshot(self, state: CLIState, *, period: str) -> RequestResult | None:
+    def snapshot(
+        self, state: CLIState, *, period: str, month: str | None = None
+    ) -> RequestResult | None:
         payload = {"period": period}
+        if month:
+            payload["month"] = month
         return self.request(state, "post", "/finance/report", json_payload=payload, telemetry_action="report")
 
     def sync(self, state: CLIState, *, provider: str) -> RequestResult | None:
