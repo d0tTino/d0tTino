@@ -94,7 +94,7 @@ refactored surface:
 | ``tino whoami`` | Print the current CLI state, including ``--dry-run`` and telemetry settings. |
 | ``tino up`` / ``tino down`` | Manage the docker-compose stack, optionally targeting a single service. Both respect ``--confirm`` before mutating services. |
 | ``tino logs`` | Stream docker-compose logs; use ``--confirm`` to acknowledge the interactive stream. |
-| ``tino task …`` | Manage TaskCascadence tasks (``run``, ``status``, ``signal``). ``signal`` always requires ``--confirm``. |
+| ``tino task run <task_name> [--json payload]`` | Execute TaskCascadence tasks; ``status`` and ``signal`` remain available (``signal`` always requires ``--confirm``). |
 | ``tino research …`` | Access tino-storm research helpers (``ingest``, ``draft``). |
 | ``tino idea`` | Submit a quick idea/event to UME memory without opening the group commands. |
 | ``tino mem …`` | Query UME memories with structured filters. |

@@ -33,7 +33,7 @@ The cockpit buttons are thin wrappers over canonical ``tino`` commands:
 | **Recipes ▸ Run** | ``python -m scripts.tino_cli run-recipe <name> <goal>`` | Mirrors the Typer recipe helpers and records telemetry if enabled.
 | **Cockpit ▸ Up** | ``tino --confirm up`` | Requires confirmation inside the GUI before issuing ``docker compose up -d``. Windows hosts use ``cmd /C`` while Bash shells use ``/bin/sh -c``; the bridge handles both.
 | **Cockpit ▸ Down** | ``tino --confirm down`` | Stops the compose stack and is gated behind the confirmation toggle.
-| **New Task** | ``tino task run <payload>`` | The dialog payload becomes the ``task`` argument.
+| **New Task** | ``tino task run <task_name> [--json payload]`` | Enter a task name and optional JSON body; the dialog maps it to ``--json``.
 | **Inject Context** | ``tino idea <payload>`` | Stores quick notes via the UME bridge.
 | **Research Ingest** | ``tino research ingest <topic> <source>`` | The GUI accepts ``topic::source`` or a raw URL and forwards the parsed values to the CLI.
 | **Wishlist Add** | ``tino wishlist add <url>`` | Adds entries to ``metadata/wishlist.json`` just like the CLI.
