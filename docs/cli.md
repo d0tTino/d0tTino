@@ -28,11 +28,11 @@ status. ``TINO_CLI_LOG`` controls where transcripts are written when
 
 ## Task lifecycle with confirmations
 
-TaskCascadence helpers live under ``tino task``. Run a task and monitor its
-status:
+TaskCascadence helpers live under ``tino task``. Run a task with an optional
+JSON payload and monitor its status:
 
 ```bash
-tino task run weekly-report --payload '{"period": "last-week"}'
+tino task run weekly-report --json '{"period": "last-week"}'
 tino task status 01HRZ73CJT37P9QZD7XQ3E5A4V
 ```
 
