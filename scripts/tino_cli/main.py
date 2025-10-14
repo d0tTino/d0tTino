@@ -301,7 +301,7 @@ task_app = typer.Typer(help="Interact with TaskCascadence services.")
 def task_run(
     ctx: typer.Context,
     task: str = typer.Argument(..., help="Task identifier"),
-    payload: str = typer.Option(None, "--payload", help="JSON payload."),
+    payload: str = typer.Option(None, "--payload", "--json", help="JSON payload."),
 ) -> None:
     state = _get_state(ctx)
     body = json.loads(payload) if payload else None

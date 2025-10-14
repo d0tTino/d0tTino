@@ -97,6 +97,38 @@ def test_task_run_invokes_remote_service(
     assert enabled is True
 
 
+def test_task_run_accepts_json_alias(
+    tino_cli_runner: "CliRunner",
+    fake_http_service: dict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    recorded = _enable_telemetry(monkeypatch)
+    fake_http_service["stub"](
+        "post",
+        "/tasks/run",
+        {"status": "queued", "task": "demo"},
+    )
+
+    result = tino_cli_runner.invoke(
+        app,
+        ["task", "run", "demo", "--json", json.dumps({"foo": 42})],
+    )
+
+    assert result.exit_code == 0
+    assert json.loads(result.output) == {"status": "queued", "task": "demo"}
+
+    call = fake_http_service["calls"][0]
+    assert call["method"] == "post"
+    assert call["url"].endswith("/tasks/run")
+    assert call["json_payload"] == {"task": "demo", "payload": {"foo": 42}}
+
+    assert recorded
+    _, payload, enabled = recorded[0]
+    assert payload["status"] == 200
+    assert payload["url"].endswith("/tasks/run")
+    assert enabled is True
+
+
 def test_task_signal_requires_confirmation(
     tino_cli_runner: "CliRunner",
     fake_http_service: dict,
