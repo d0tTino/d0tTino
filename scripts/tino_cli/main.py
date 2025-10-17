@@ -320,7 +320,11 @@ def task_status(ctx: typer.Context, task_id: str = typer.Argument(...)) -> None:
 def task_signal(
     ctx: typer.Context,
     task_id: str = typer.Argument(...),
-    signal: str = typer.Option(..., "--signal", help="Signal name."),
+    signal: str | None = typer.Option(
+        None,
+        "--signal",
+        help="Signal name. Defaults to link, note, or link_and_note based on payload.",
+    ),
     link: str = typer.Option(None, "--link", help="Optional link payload."),
     note: str = typer.Option(None, "--note", help="Optional note payload."),
 ) -> None:
@@ -328,7 +332,26 @@ def task_signal(
     if not state.confirm:
         typer.echo("Use --confirm to send signals to remote tasks.", err=True)
         raise typer.Exit(1)
-    result = task_signal_operation(state, task_id, signal=signal, link=link or None, note=note or None)
+    resolved_link = link or None
+    resolved_note = note or None
+    resolved_signal = signal or None
+    if resolved_signal is None:
+        payload_hints: list[str] = []
+        if resolved_link:
+            payload_hints.append("link")
+        if resolved_note:
+            payload_hints.append("note")
+        if not payload_hints:
+            typer.echo("Provide --signal or include --link/--note payload.", err=True)
+            raise typer.Exit(1)
+        resolved_signal = "_and_".join(payload_hints)
+    result = task_signal_operation(
+        state,
+        task_id,
+        signal=resolved_signal,
+        link=resolved_link,
+        note=resolved_note,
+    )
     _render_response(result)
 
 
