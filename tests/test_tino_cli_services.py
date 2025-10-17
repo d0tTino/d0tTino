@@ -179,6 +179,58 @@ def test_task_signal_with_confirmation_hits_api(
     assert any(evt[0].endswith("signal") for evt in recorded)
 
 
+@pytest.mark.parametrize(
+    "options, expected",
+    (
+        pytest.param(["--link", "https://example.com"], "link", id="link-only"),
+        pytest.param(["--note", "Investigate"], "note", id="note-only"),
+        pytest.param(
+            ["--link", "https://example.com", "--note", "Investigate"],
+            "link_and_note",
+            id="link-and-note",
+        ),
+    ),
+)
+def test_task_signal_derives_signal_from_payload(
+    tino_cli_runner: "CliRunner",
+    fake_http_service: dict,
+    monkeypatch: pytest.MonkeyPatch,
+    options: list[str],
+    expected: str,
+) -> None:
+    _enable_telemetry(monkeypatch)
+    fake_http_service["stub"]("post", "/tasks/abc123/signal", {"ok": True})
+
+    result = tino_cli_runner.invoke(
+        app,
+        [
+            "--confirm",
+            "task",
+            "signal",
+            "abc123",
+            *options,
+        ],
+    )
+
+    assert result.exit_code == 0
+    call = fake_http_service["calls"][0]
+    assert call["json_payload"]["signal"] == expected
+
+
+def test_task_signal_requires_payload_when_signal_missing(
+    tino_cli_runner: "CliRunner",
+    fake_http_service: dict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _enable_telemetry(monkeypatch)
+
+    result = tino_cli_runner.invoke(app, ["--confirm", "task", "signal", "abc123"])
+
+    assert result.exit_code == 1
+    assert "Provide --signal" in result.output
+    assert fake_http_service["calls"] == []
+
+
 def test_docs_publish_uses_configured_endpoint(
     tino_cli_runner: "CliRunner",
     fake_http_service: dict,
