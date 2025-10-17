@@ -152,49 +152,54 @@ pub mod commands {
     }
 
     pub async fn cockpit_up() -> Result<ActionDetails, String> {
-        tino_cli_bridge::cockpit_action("cockpit-up", None, false)
+        tino_cli_bridge::cockpit_action("cockpit-up", None, false, None)
             .await
             .map(map_action)
             .map_err(|err| err.to_string())
     }
 
     pub async fn cockpit_down(confirm: bool) -> Result<ActionDetails, String> {
-        tino_cli_bridge::cockpit_action("cockpit-down", None, confirm)
+        tino_cli_bridge::cockpit_action("cockpit-down", None, confirm, None)
             .await
             .map(map_action)
             .map_err(|err| err.to_string())
     }
 
     pub async fn cockpit_new_task(task: String) -> Result<ActionDetails, String> {
-        tino_cli_bridge::cockpit_action("cockpit-new-task", Some(&task), false)
+        tino_cli_bridge::cockpit_action("cockpit-new-task", Some(&task), false, None)
             .await
             .map(map_action)
             .map_err(|err| err.to_string())
     }
 
-    pub async fn cockpit_inject_context(context: String) -> Result<ActionDetails, String> {
-        tino_cli_bridge::cockpit_action("cockpit-inject-context", Some(&context), false)
+    pub async fn cockpit_inject_context(job_id: String, context: String) -> Result<ActionDetails, String> {
+        tino_cli_bridge::cockpit_action(
+            "cockpit-inject-context",
+            Some(&context),
+            false,
+            Some(&job_id),
+        )
             .await
             .map(map_action)
             .map_err(|err| err.to_string())
     }
 
     pub async fn cockpit_research_ingest(path: String) -> Result<ActionDetails, String> {
-        tino_cli_bridge::cockpit_action("cockpit-research-ingest", Some(&path), false)
+        tino_cli_bridge::cockpit_action("cockpit-research-ingest", Some(&path), false, None)
             .await
             .map(map_action)
             .map_err(|err| err.to_string())
     }
 
     pub async fn cockpit_wishlist_add(item: String) -> Result<ActionDetails, String> {
-        tino_cli_bridge::cockpit_action("cockpit-wishlist-add", Some(&item), false)
+        tino_cli_bridge::cockpit_action("cockpit-wishlist-add", Some(&item), false, None)
             .await
             .map(map_action)
             .map_err(|err| err.to_string())
     }
 
     pub async fn cockpit_publish_docs(confirm: bool) -> Result<ActionDetails, String> {
-        tino_cli_bridge::cockpit_action("cockpit-publish-docs", None, confirm)
+        tino_cli_bridge::cockpit_action("cockpit-publish-docs", None, confirm, None)
             .await
             .map(map_action)
             .map_err(|err| err.to_string())
@@ -290,16 +295,27 @@ SIMPLE = {
 
 def _cockpit_action(command: str, args: list[str]) -> dict:
     payload = ""
-    if args and not args[0].startswith("--"):
-        payload = args[0]
-    confirm = "--confirm" in args
+    confirm = False
+    job_id = None
+    index = 0
+    while index < len(args):
+        arg = args[index]
+        if arg == "--confirm":
+            confirm = True
+        elif arg == "--job-id":
+            index += 1
+            if index < len(args):
+                job_id = args[index]
+        elif not arg.startswith("--") and not payload:
+            payload = arg
+        index += 1
     return {
         "status": "ok",
         "data": {
             "result": {
                 "message": f"{command}:{payload}",
                 "telemetry": None,
-                "details": {"confirm": confirm, "payload": payload},
+                "details": {"confirm": confirm, "payload": payload, "job_id": job_id},
             }
         },
     }
@@ -423,6 +439,36 @@ if __name__ == "__main__":
             .iter()
             .any(|call| call.get(0) == Some(&"cockpit-new-task".to_string())
                 && call.iter().any(|arg| arg.contains("write tests"))));
+    }
+
+    #[tokio::test]
+    async fn cockpit_inject_context_forwards_job_id() {
+        let _lock = guard();
+        let (temp_dir, record_path) = write_stub_cli();
+        let _env = EnvGuard::install(temp_dir.path(), &record_path);
+
+        let result = commands::cockpit_inject_context("job-42".into(), "context blob".into())
+            .await
+            .expect("cockpit inject context");
+        assert!(result.message.contains("context blob"));
+        let details = result.details.unwrap();
+        assert_eq!(
+            details.get("payload"),
+            Some(&Value::String("context blob".into()))
+        );
+        assert_eq!(
+            details.get("job_id"),
+            Some(&Value::String("job-42".into()))
+        );
+
+        let calls = read_calls(&record_path);
+        assert!(calls.iter().any(|call| {
+            call.len() >= 4
+                && call[0] == "cockpit-inject-context"
+                && call[1] == "context blob"
+                && call[2] == "--job-id"
+                && call[3] == "job-42"
+        }));
     }
 
     #[tokio::test]

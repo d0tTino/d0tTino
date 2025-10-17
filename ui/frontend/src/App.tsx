@@ -46,7 +46,6 @@ const ACTIONS: ActionDescriptor[] = [
     key: "inject-context",
     label: "Inject Context",
     command: "cockpit_inject_context",
-    prompt: "Context payload",
   },
   {
     key: "research-ingest",
@@ -112,11 +111,36 @@ const App = (): JSX.Element => {
 
   const handleAction = useCallback(
     async (action: ActionDescriptor) => {
-      let payload: string | null = null;
-      if (action.prompt) {
-        payload = window.prompt(action.prompt) ?? null;
-        if (!payload) {
+      const args: Record<string, unknown> = {};
+      if (action.command === "cockpit_inject_context") {
+        const jobId = window.prompt("Job identifier") ?? null;
+        if (!jobId) {
           return;
+        }
+        const context = window.prompt(action.prompt ?? "Context payload") ?? null;
+        if (!context) {
+          return;
+        }
+        args.jobId = jobId;
+        args.context = context;
+      } else {
+        let payload: string | null = null;
+        if (action.prompt) {
+          payload = window.prompt(action.prompt) ?? null;
+          if (!payload) {
+            return;
+          }
+        }
+        if (payload) {
+          args[
+            action.command === "cockpit_new_task"
+              ? "task"
+              : action.command === "cockpit_research_ingest"
+              ? "path"
+              : action.command === "cockpit_wishlist_add"
+              ? "item"
+              : "payload"
+          ] = payload;
         }
       }
       if (action.confirm) {
@@ -129,10 +153,6 @@ const App = (): JSX.Element => {
       try {
         setBusyKey(action.key);
         setStatus(`Running ${action.label}…`);
-        const args: Record<string, unknown> = {};
-        if (payload) {
-          args[action.command === "cockpit_new_task" ? "task" : action.command === "cockpit_inject_context" ? "context" : action.command === "cockpit_research_ingest" ? "path" : action.command === "cockpit_wishlist_add" ? "item" : "payload"] = payload;
-        }
         if (action.confirm) {
           args.confirm = true;
         }

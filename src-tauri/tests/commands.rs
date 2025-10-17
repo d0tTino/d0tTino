@@ -3,6 +3,7 @@ use hyper::{
     Body, Method, Request, Response, Server,
 };
 use std::convert::Infallible;
+use std::ffi::OsString;
 use std::io::Write;
 use std::net::SocketAddr;
 use std::sync::Once;
@@ -92,7 +93,27 @@ fn ensure_pythonpath() {
     static INIT: Once = Once::new();
     INIT.call_once(|| {
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
-        std::env::set_var("PYTHONPATH", root);
+
+        let mut pythonpath = OsString::new();
+        pythonpath.push(&root);
+        if let Some(existing) = std::env::var_os("PYTHONPATH") {
+            if !existing.is_empty() {
+                pythonpath.push(if cfg!(windows) { ";" } else { ":" });
+                pythonpath.push(existing);
+            }
+        }
+        std::env::set_var("PYTHONPATH", pythonpath);
+
+        let stub_bin = root.join("scripts").join("bin");
+        let mut new_path = OsString::new();
+        new_path.push(&stub_bin);
+        if let Some(existing) = std::env::var_os("PATH") {
+            if !existing.is_empty() {
+                new_path.push(if cfg!(windows) { ";" } else { ":" });
+                new_path.push(existing);
+            }
+        }
+        std::env::set_var("PATH", new_path);
     });
 }
 

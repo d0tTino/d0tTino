@@ -73,8 +73,9 @@ async fn cockpit_new_task(task: String) -> Result<ActionDetails, String> {
 
 #[cfg(feature = "gui")]
 #[tauri::command]
-async fn cockpit_inject_context(context: String) -> Result<ActionDetails, String> {
-    ume_tauri::commands::cockpit_inject_context(context).await
+#[allow(non_snake_case)]
+async fn cockpit_inject_context(jobId: String, context: String) -> Result<ActionDetails, String> {
+    ume_tauri::commands::cockpit_inject_context(jobId, context).await
 }
 
 #[cfg(feature = "gui")]
