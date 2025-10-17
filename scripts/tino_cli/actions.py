@@ -16,9 +16,9 @@ from .main import (
     build_state,
     compose_command,
     docs_publish_operation,
-    idea_submit_operation,
     research_ingest_operation,
     task_run_operation,
+    task_signal_operation,
     wishlist_add_operation,
 )
 from .models import ActionSpec, CommandResult
@@ -165,21 +165,36 @@ def _error_action(log_path: os.PathLike[str], command: str, message: str) -> tup
 
 
 def _research_action_payload(raw: str) -> tuple[str | None, str]:
-    if "::" in raw:
-        topic, source = raw.split("::", 1)
-        topic = topic.strip() or None
-        source = source.strip()
-        return topic, source
-    return None, raw.strip()
-def _research_action_payload(raw: str) -> tuple[str, str | None]:
-    topic: str | None = None
+    """Return (topic, source) extracted from ``raw``."""
+
     source = raw.strip()
+    topic: str | None = None
     if "::" in raw:
         topic_part, source_part = raw.split("::", 1)
         source = source_part.strip()
         parsed_topic = topic_part.strip()
         topic = parsed_topic or None
-    return source, topic
+    return topic, source
+
+
+def _parse_context_payload(job_id: str | None, payload: str | None) -> tuple[str | None, str]:
+    """Extract ``job_id`` and ``message`` for context injection."""
+
+    message = (payload or "").strip()
+    parsed_job = job_id.strip() if job_id else None
+    if not parsed_job and payload and "::" in payload:
+        raw_job, raw_message = payload.split("::", 1)
+        parsed_job = raw_job.strip() or None
+        message = raw_message.strip()
+    return parsed_job, message
+
+
+def _looks_like_url(value: str) -> bool:
+    if not value:
+        return False
+    if value.startswith("http://") or value.startswith("https://"):
+        return True
+    return False
 
 
 def _run_special_action(
@@ -187,6 +202,8 @@ def _run_special_action(
     payload: str | None,
     confirm: bool,
     log_path: os.PathLike[str],
+    *,
+    job_id: str | None = None,
 ) -> tuple[int, list[str], dict[str, Any]]:
     state = build_state(dry_run=False, confirm=confirm)
     if name == "cockpit-new-task":
@@ -196,19 +213,45 @@ def _run_special_action(
         command = f"task run {shlex.quote(task_name)}"
         return _invoke_callable(log_path, command, lambda: task_run_operation(state, task_name, payload=None))
     if name == "cockpit-inject-context":
-        if not payload:
-            return _error_action(log_path, "idea <missing>", "Context payload required.")
-        context = payload
-        command = f"idea {shlex.quote(context)}"
-        return _invoke_callable(log_path, command, lambda: idea_submit_operation(state, text=context))
+        parsed_job, message = _parse_context_payload(job_id, payload)
+        if not parsed_job:
+            return _error_action(
+                log_path,
+                "task signal context <missing>",
+                "Task identifier required for context injection.",
+            )
+        if not message:
+            return _error_action(
+                log_path,
+                "task signal context <missing>",
+                "Context message required for injection.",
+            )
+
+        is_link = _looks_like_url(message)
+        link = message if is_link else None
+        note = None if is_link else message
+
+        command = f"task signal context {shlex.quote(parsed_job)}"
+        if is_link:
+            command += f" --link {shlex.quote(message)}"
+        else:
+            command += f" --note {shlex.quote(message)}"
+
+        return _invoke_callable(
+            log_path,
+            command,
+            lambda: task_signal_operation(
+                state,
+                parsed_job,
+                signal="context",
+                link=link,
+                note=note,
+            ),
+        )
     if name == "cockpit-research-ingest":
         if not payload:
             return _error_action(log_path, "research ingest <missing>", "Source path or URL required.")
         topic, source = _research_action_payload(payload)
-        command = f"research ingest {shlex.quote(source)}"
-        if topic:
-            command = f"{command} --topic {shlex.quote(topic)}"
-        source, topic = _research_action_payload(payload)
         command = f"research ingest {shlex.quote(source)}"
         if topic:
             command += f" --topic {shlex.quote(topic)}"
@@ -230,7 +273,13 @@ def _run_special_action(
     raise ValueError(f"Unknown action: {name}")
 
 
-def run_action(name: str, *, payload: str | None = None, confirm: bool = False) -> CommandResult:
+def run_action(
+    name: str,
+    *,
+    payload: str | None = None,
+    confirm: bool = False,
+    job_id: str | None = None,
+) -> CommandResult:
     """Execute a cockpit action described by ``name``."""
 
     spec = DEFAULT_ACTIONS.get(name)
@@ -248,7 +297,13 @@ def run_action(name: str, *, payload: str | None = None, confirm: bool = False) 
         steps = _render_steps(spec, payload)
         exit_code, rendered_commands = _execute_steps(steps, log_path)
     else:
-        exit_code, rendered_commands, details_extra = _run_special_action(name, payload, confirm, log_path)
+        exit_code, rendered_commands, details_extra = _run_special_action(
+            name,
+            payload,
+            confirm,
+            log_path,
+            job_id=job_id,
+        )
 
     timestamp = time.time()
     audit_path = cache_dir / "cockpit.log"

@@ -72,7 +72,10 @@ def build_parser() -> argparse.ArgumentParser:
         "cockpit-publish-docs",
     ]:
         action_parser = sub.add_parser(action)
-        if action in {"cockpit-new-task", "cockpit-inject-context", "cockpit-research-ingest", "cockpit-wishlist-add"}:
+        if action == "cockpit-inject-context":
+            action_parser.add_argument("job", nargs="?")
+            action_parser.add_argument("message", nargs=argparse.REMAINDER)
+        elif action in {"cockpit-new-task", "cockpit-research-ingest", "cockpit-wishlist-add"}:
             action_parser.add_argument("payload")
         action_parser.add_argument("--confirm", action="store_true")
 
@@ -111,11 +114,25 @@ def main(argv: list[str] | None = None) -> int:
         return _run_handler(api.cockpit_logs, limit=args.limit)
     if args.command.startswith("cockpit-"):
         payload = getattr(args, "payload", None)
+        job_id = None
+        if args.command == "cockpit-inject-context":
+            job_arg = getattr(args, "job", None)
+            message_parts = getattr(args, "message", None) or []
+            if message_parts:
+                payload = " ".join(message_parts).strip()
+            else:
+                payload = getattr(args, "payload", None)
+            job_id = job_arg
+            if job_arg and "::" in job_arg and not payload:
+                job_part, message_part = job_arg.split("::", 1)
+                job_id = job_part.strip() or None
+                payload = message_part.strip()
         return _run_handler(
             api.cockpit_action,
             args.command,
             payload=payload,
             confirm=args.confirm,
+            job_id=job_id,
         )
 
     parser.error("Unknown command")

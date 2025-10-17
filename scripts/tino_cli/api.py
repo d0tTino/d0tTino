@@ -227,10 +227,16 @@ def dashboard() -> dict[str, Any]:
     return {"dashboard": asdict(summary)}
 
 
-def cockpit_action(name: str, *, payload: str | None = None, confirm: bool = False) -> dict[str, Any]:
+def cockpit_action(
+    name: str,
+    *,
+    payload: str | None = None,
+    confirm: bool = False,
+    job_id: str | None = None,
+) -> dict[str, Any]:
     """Execute a named cockpit action."""
 
-    result = run_action(name, payload=payload, confirm=confirm)
+    result = run_action(name, payload=payload, confirm=confirm, job_id=job_id)
     return {"result": {
         "message": result.message,
         "telemetry": asdict(result.telemetry) if result.telemetry else None,
