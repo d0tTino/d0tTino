@@ -125,10 +125,15 @@ pub async fn cockpit_action(
     action: &str,
     payload: Option<&str>,
     confirm: bool,
+    job_id: Option<&str>,
 ) -> Result<CockpitResult, CliError> {
     let mut args: Vec<std::ffi::OsString> = vec![action.into()];
     if let Some(value) = payload {
         args.push(value.into());
+    }
+    if let Some(id) = job_id {
+        args.push("--job-id".into());
+        args.push(id.into());
     }
     if confirm {
         args.push("--confirm".into());

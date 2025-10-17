@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Minimal docker stub for test environments.
+if [[ "$1" == "compose" ]]; then
+  shift
+  # Skip optional -f path argument
+  if [[ "$1" == "-f" ]]; then
+    shift 2 || true
+  fi
+fi
+printf '[docker stub] %s\n' "$*" >&2
+exit 0
