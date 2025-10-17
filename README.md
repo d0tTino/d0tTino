@@ -110,6 +110,18 @@ stateful services. The CLI also honours new environment variables introduced
 in the refactor, such as ``TINO_CLI_LOG`` (log destination for command
 transcripts) and ``TINO_DOC_TARGET`` (default documentation publish target).
 
+Signals now infer the type based on the provided payload. Use ``--link`` for
+URL-based updates and ``--note`` for inline messages; the CLI chooses the
+appropriate signal shape automatically. For example:
+
+```shell
+tino task signal my-task-id --link https://status.example.com/incident/123 --confirm
+```
+
+The above emits a ``link`` signal without needing ``--type link``. Swap in
+``--note`` for free-form text updates when sharing progress notes or status
+summaries.
+
 Or use Scoop in a single line:
 
 ```powershell
