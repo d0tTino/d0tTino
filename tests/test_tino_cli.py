@@ -4,6 +4,10 @@ import json
 from pathlib import Path
 
 import pytest
+import typer.main
+import click
+import typing
+import types
 from typer.testing import CliRunner
 
 from scripts.tino_cli import plugin_loader
@@ -13,6 +17,28 @@ from scripts.tino_cli.main import app
 @pytest.fixture()
 def runner() -> CliRunner:
     return CliRunner()
+
+
+@pytest.fixture(autouse=True)
+def _typer_optional_support(monkeypatch: pytest.MonkeyPatch) -> None:
+    original = typer.main.get_click_type
+
+    def _patched(*, annotation, parameter_info):  # type: ignore[override]
+        if isinstance(annotation, types.UnionType):
+            args = typing.get_args(annotation)
+            if all(arg in {str, type(None)} for arg in args):
+                return click.STRING
+        if isinstance(annotation, str):
+            normalized = annotation.replace(" ", "").replace("typing.", "")
+            normalized = normalized.replace("NoneType", "None")
+            parts = normalized.split("|")
+            if all(part in {"str", "None"} for part in parts):
+                return click.STRING
+            if any(part in {"list[str]", "List[str]"} for part in parts):
+                return click.STRING
+        return original(annotation=annotation, parameter_info=parameter_info)
+
+    monkeypatch.setattr(typer.main, "get_click_type", _patched)
 
 
 def test_help_lists_plugins(runner: CliRunner) -> None:
@@ -42,3 +68,42 @@ def test_task_run_dry_run(monkeypatch: pytest.MonkeyPatch, runner: CliRunner) ->
     result = runner.invoke(app, ["--dry-run", "task", "run", "demo", "--payload", json.dumps({"foo": "bar"})])
     assert result.exit_code == 0
     assert "[dry-run] POST" in result.output
+
+
+def test_whoami_identity(monkeypatch: pytest.MonkeyPatch, runner: CliRunner, tmp_path: Path) -> None:
+    monkeypatch.chdir(Path(__file__).resolve().parent.parent)
+    log_path = tmp_path / "whoami.log"
+    monkeypatch.setenv("TINO_CLI_LOG", str(log_path))
+    monkeypatch.setenv("USER", "cli-user")
+    monkeypatch.setenv("GROUP", "cli-group")
+    monkeypatch.setenv("EMAIL", "cli-user@example.test")
+    monkeypatch.setenv("EVENTS_ENABLED", "1")
+    monkeypatch.setenv("EVENTS_URL", "https://events.example.test")
+    monkeypatch.setenv("TINO_API_URL", "https://api.example.test")
+    monkeypatch.setenv("TASKCASCADENCE_URL", "https://tasks.example.test")
+    monkeypatch.setenv("STORM_URL", "https://storm.example.test")
+    monkeypatch.setenv("UME_URL", "https://ume.example.test")
+    monkeypatch.setenv("FINANCE_URL", "https://finance.example.test")
+    monkeypatch.setenv("DOCS_URL", "https://docs.example.test")
+
+    result = runner.invoke(app, ["whoami"])
+    assert result.exit_code == 0
+
+    payload = json.loads(result.output)
+    identity = payload.get("identity") or {}
+    assert identity.get("user") == "cli-user"
+    assert identity.get("group") == "cli-group"
+    assert identity.get("email") == "cli-user@example.test"
+
+    endpoints = payload.get("endpoints") or {}
+    assert endpoints.get("api") == "https://api.example.test"
+    assert endpoints.get("taskcascadence") == "https://tasks.example.test"
+    assert endpoints.get("storm") == "https://storm.example.test"
+    assert endpoints.get("ume") == "https://ume.example.test"
+    assert endpoints.get("finance") == "https://finance.example.test"
+    assert endpoints.get("docs") == "https://docs.example.test"
+
+    telemetry = payload.get("telemetry") or {}
+    assert telemetry.get("enabled") is True
+    assert telemetry.get("endpoint") == "https://events.example.test"
+    assert payload.get("log_path") == str(log_path)
