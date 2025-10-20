@@ -31,6 +31,9 @@ from .config import (
 from .plugin_loader import register_plugin_commands
 from .state import CLIState, snapshot_identity, stable_dict
 
+API_URL_ENV = "TINO_API_URL"
+DEFAULT_API_URL = "http://127.0.0.1:8000"
+
 app = typer.Typer(help="Automation interface for d0tTino tooling.", no_args_is_help=True)
 
 COMPOSE_FILE = Path("docker-compose.yml")
@@ -114,13 +117,51 @@ def run_doctor(state: CLIState) -> int:
     return run_shell_command(state, ["bash", str(script)])
 
 
+def _identity_metadata() -> dict[str, str]:
+    """Return information about the current CLI identity."""
+
+    fields = {
+        "user": os.environ.get("USER") or os.environ.get("USERNAME"),
+        "group": os.environ.get("GROUP") or os.environ.get("USERDOMAIN"),
+        "email": os.environ.get("EMAIL"),
+    }
+    return {key: value for key, value in fields.items() if value}
+
+
+def _endpoint_metadata() -> dict[str, str]:
+    """Return resolved service endpoints for the CLI."""
+
+    load_env_defaults()
+    api_base = os.environ.get(API_URL_ENV, DEFAULT_API_URL)
+    return {
+        "api": api_base.rstrip("/"),
+        "taskcascadence": TASKCASCADENCE.resolve(),
+        "storm": STORM.resolve(),
+        "ume": UME.resolve(),
+        "finance": FINANCE.resolve(),
+        "docs": DOCS.resolve(),
+    }
+
+
+def _telemetry_metadata(state: CLIState) -> dict[str, object]:
+    """Return telemetry status including endpoint when enabled."""
+
+    endpoint = os.environ.get("EVENTS_URL") if state.telemetry_enabled else None
+    return {
+        "enabled": state.telemetry_enabled,
+        "endpoint": endpoint,
+    }
+
+
 def show_whoami(state: CLIState) -> dict[str, object]:
     identity = stable_dict(dict(state.identity))
     services = stable_dict(dict(state.services))
     payload = {
         "confirm": state.confirm,
-        "telemetry": state.telemetry_enabled,
+        "telemetry": _telemetry_metadata(state),
         "log_path": str(state.log_path),
+        "identity": _identity_metadata(),
+        "endpoints": _endpoint_metadata(),
         "identity": identity,
         "services": services,
     }
