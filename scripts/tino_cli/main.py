@@ -29,6 +29,7 @@ from .config import (
     load_env_defaults,
 )
 from .doctor import gather_report
+from .doctor import gather_diagnostics
 from .plugin_loader import register_plugin_commands
 from .state import CLIState, snapshot_identity, stable_dict
 
@@ -122,6 +123,9 @@ def run_doctor(state: CLIState) -> int:
     if state.dry_run:
         return 0
     return 0 if report.ok else 1
+    report = gather_diagnostics(state)
+    typer.echo(json.dumps(report, indent=2))
+    return 0 if report.get("summary", {}).get("status") != "error" else 1
 
 
 def _identity_metadata() -> dict[str, str]:
@@ -161,15 +165,16 @@ def _telemetry_metadata(state: CLIState) -> dict[str, object]:
 
 
 def show_whoami(state: CLIState) -> dict[str, object]:
-    identity = stable_dict(dict(state.identity))
+    identity_env = _identity_metadata()
+    identity_state = stable_dict(dict(state.identity))
+    combined_identity = stable_dict({**identity_env, **identity_state})
     services = stable_dict(dict(state.services))
     payload = {
         "confirm": state.confirm,
         "telemetry": _telemetry_metadata(state),
         "log_path": str(state.log_path),
-        "identity": _identity_metadata(),
         "endpoints": _endpoint_metadata(),
-        "identity": identity,
+        "identity": combined_identity,
         "services": services,
     }
     return stable_dict(payload)
