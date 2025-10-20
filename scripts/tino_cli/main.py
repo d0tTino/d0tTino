@@ -25,10 +25,11 @@ from .config import (
     STORM,
     TASKCASCADENCE,
     UME,
+    ServiceConfig,
     load_env_defaults,
 )
 from .plugin_loader import register_plugin_commands
-from .state import CLIState
+from .state import CLIState, snapshot_identity, stable_dict
 
 API_URL_ENV = "TINO_API_URL"
 DEFAULT_API_URL = "http://127.0.0.1:8000"
@@ -39,16 +40,29 @@ COMPOSE_FILE = Path("docker-compose.yml")
 WISHLIST_PATH = Path("metadata") / "wishlist.json"
 
 
+_SERVICE_CONFIGS: tuple[tuple[str, ServiceConfig], ...] = (
+    ("docs", DOCS),
+    ("finance", FINANCE),
+    ("storm", STORM),
+    ("taskcascadence", TASKCASCADENCE),
+    ("ume", UME),
+)
+
+
 def build_state(*, dry_run: bool, confirm: bool) -> CLIState:
     """Create a :class:`CLIState` populated with environment defaults."""
 
     load_env_defaults()
     log_path = Path(os.environ.get("TINO_CLI_LOG", "tino-cli.log"))
+    identity = snapshot_identity()
+    services = stable_dict({name: config.resolve() for name, config in _SERVICE_CONFIGS})
     return CLIState(
         dry_run=dry_run,
         confirm=confirm,
         telemetry_enabled=analytics_default(),
         log_path=log_path,
+        identity=identity,
+        services=services,
     )
 
 
@@ -140,13 +154,18 @@ def _telemetry_metadata(state: CLIState) -> dict[str, object]:
 
 
 def show_whoami(state: CLIState) -> dict[str, object]:
-    return {
+    identity = stable_dict(dict(state.identity))
+    services = stable_dict(dict(state.services))
+    payload = {
         "confirm": state.confirm,
         "telemetry": _telemetry_metadata(state),
         "log_path": str(state.log_path),
         "identity": _identity_metadata(),
         "endpoints": _endpoint_metadata(),
+        "identity": identity,
+        "services": services,
     }
+    return stable_dict(payload)
 
 
 def start_services(state: CLIState, service: str | None = None) -> int:
@@ -368,7 +387,7 @@ def task_status(ctx: typer.Context, task_id: str = typer.Argument(...)) -> None:
 def task_signal(
     ctx: typer.Context,
     task_id: str = typer.Argument(...),
-    signal: str | None = typer.Option(
+    signal: Optional[str] = typer.Option(
         None,
         "--signal",
         help="Signal name. Defaults to link, note, or link_and_note based on payload.",

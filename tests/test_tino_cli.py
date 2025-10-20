@@ -55,6 +55,34 @@ def test_bootstrap_whoami_dry_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
     assert "[dry-run]" in result.output
 
 
+def test_whoami_reports_identity_and_services(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, runner: CliRunner
+) -> None:
+    monkeypatch.chdir(Path(__file__).resolve().parent.parent)
+    monkeypatch.setenv("TINO_CLI_LOG", str(tmp_path / "cli.log"))
+    monkeypatch.setenv("USER", "cli-tester")
+    monkeypatch.setenv("HOSTNAME", "cli-host")
+    monkeypatch.setenv("TASKCASCADENCE_URL", "http://example.local/tasks")
+    monkeypatch.setenv("STORM_URL", "http://example.local/storm")
+    monkeypatch.setenv("UME_URL", "http://example.local/ume")
+    monkeypatch.setenv("FINANCE_URL", "http://example.local/finance")
+    monkeypatch.setenv("DOCS_URL", "http://example.local/docs")
+
+    result = runner.invoke(app, ["whoami"])
+    assert result.exit_code == 0
+
+    data = json.loads(result.output)
+    assert data["identity"]["USER"] == "cli-tester"
+    assert data["identity"]["HOSTNAME"] == "cli-host"
+    assert data["services"] == {
+        "docs": "http://example.local/docs",
+        "finance": "http://example.local/finance",
+        "storm": "http://example.local/storm",
+        "taskcascadence": "http://example.local/tasks",
+        "ume": "http://example.local/ume",
+    }
+
+
 def test_wishlist_add_dry_run(monkeypatch: pytest.MonkeyPatch, runner: CliRunner, tmp_path: Path) -> None:
     monkeypatch.chdir(Path(__file__).resolve().parent.parent)
     monkeypatch.setenv("TINO_CLI_LOG", str(tmp_path / "log"))
