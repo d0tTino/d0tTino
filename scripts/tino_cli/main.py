@@ -28,6 +28,7 @@ from .config import (
     ServiceConfig,
     load_env_defaults,
 )
+from .doctor import gather_report
 from .doctor import gather_diagnostics
 from .plugin_loader import register_plugin_commands
 from .state import CLIState, snapshot_identity, stable_dict
@@ -114,6 +115,14 @@ def init_tooling(state: CLIState, *, quick: bool = False) -> int:
 
 
 def run_doctor(state: CLIState) -> int:
+    report = gather_report(skip_checks=state.dry_run)
+    payload = report.to_dict()
+    if state.dry_run:
+        payload.setdefault("summary", {})["dry_run"] = True
+    typer.echo(json.dumps(payload, indent=2))
+    if state.dry_run:
+        return 0
+    return 0 if report.ok else 1
     report = gather_diagnostics(state)
     typer.echo(json.dumps(report, indent=2))
     return 0 if report.get("summary", {}).get("status") != "error" else 1
