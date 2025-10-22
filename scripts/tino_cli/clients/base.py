@@ -81,16 +81,23 @@ class BaseClient:
         timeout: int = DEFAULT_TIMEOUT,
         allow_redirects: bool = True,
         telemetry_action: str | None = None,
+        telemetry_extra: Mapping[str, Any] | None = None,
     ) -> RequestResult | None:
         """Perform an HTTP request or print a dry-run preview."""
 
         url = self._build_url(path)
         action = telemetry_action or method.lower()
+        extra_payload: dict[str, Any] | None = None
+        if telemetry_extra:
+            extra_payload = dict(telemetry_extra)
         if state.dry_run:
             typer.echo(f"[dry-run] {method.upper()} {url}")
             if json_payload:
                 typer.echo(json.dumps(json_payload, indent=2))
-            self._record(state=state, action=action, url=url, extra={"dry_run": True})
+            dry_run_extra = {"dry_run": True}
+            if extra_payload:
+                dry_run_extra.update(extra_payload)
+            self._record(state=state, action=action, url=url, extra=dry_run_extra)
             return None
         start = time.perf_counter()
         response = self.session.request(
@@ -113,6 +120,7 @@ class BaseClient:
             url=url,
             duration_ms=duration_ms,
             status=response.status_code,
+            extra=extra_payload,
         )
         response.raise_for_status()
         return RequestResult(

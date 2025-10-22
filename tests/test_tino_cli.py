@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+# ruff: noqa: E402
+
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -10,7 +13,13 @@ import typing
 import types
 from typer.testing import CliRunner
 
+_doctor_stub = types.ModuleType("scripts.tino_cli.doctor")
+_doctor_stub.gather_report = lambda *args, **kwargs: None  # type: ignore[assignment]
+_doctor_stub.gather_diagnostics = lambda *args, **kwargs: None  # type: ignore[assignment]
+sys.modules.setdefault("scripts.tino_cli.doctor", _doctor_stub)
+
 from scripts.tino_cli import plugin_loader
+from scripts.tino_cli.clients import docs as docs_module
 from scripts.tino_cli.main import app
 
 
@@ -89,6 +98,98 @@ def test_wishlist_add_dry_run(monkeypatch: pytest.MonkeyPatch, runner: CliRunner
     result = runner.invoke(app, ["--dry-run", "wishlist", "add", "Test item"])
     assert result.exit_code == 0
     assert "Test item" in result.output
+
+
+def test_docs_publish_env_target(monkeypatch: pytest.MonkeyPatch, runner: CliRunner, tmp_path: Path) -> None:
+    project_root = Path(__file__).resolve().parent.parent
+    monkeypatch.chdir(project_root)
+    monkeypatch.setenv("TINO_CLI_LOG", str(tmp_path / "cli.log"))
+    monkeypatch.setenv("TINO_DOC_TARGET", "env-target")
+
+    captured: dict[str, object] = {}
+
+    def fake_publish(
+        self,
+        state,  # type: ignore[no-untyped-def]
+        *,
+        target: str,
+        site: str | None = None,
+        version: str | None = None,
+        telemetry_extra: dict[str, object] | None = None,
+    ) -> dict[str, object]:
+        captured.update(
+            {
+                "target": target,
+                "site": site,
+                "version": version,
+                "telemetry_extra": telemetry_extra,
+            }
+        )
+        return {"target": target, "site": site}
+
+    monkeypatch.setattr(docs_module.DocsClient, "publish", fake_publish, raising=False)
+
+    result = runner.invoke(app, ["docs", "publish", "--site", "example"])
+
+    assert result.exit_code == 0
+    assert captured == {
+        "target": "env-target",
+        "site": "example",
+        "version": None,
+        "telemetry_extra": {"used_env_target": True},
+    }
+
+
+def test_docs_publish_requires_target(monkeypatch: pytest.MonkeyPatch, runner: CliRunner, tmp_path: Path) -> None:
+    project_root = Path(__file__).resolve().parent.parent
+    monkeypatch.chdir(project_root)
+    monkeypatch.setenv("TINO_CLI_LOG", str(tmp_path / "cli.log"))
+    monkeypatch.delenv("TINO_DOC_TARGET", raising=False)
+
+    result = runner.invoke(app, ["docs", "publish"])
+
+    assert result.exit_code != 0
+    assert "Document target required" in result.output
+
+
+def test_docs_publish_explicit_target(monkeypatch: pytest.MonkeyPatch, runner: CliRunner, tmp_path: Path) -> None:
+    project_root = Path(__file__).resolve().parent.parent
+    monkeypatch.chdir(project_root)
+    monkeypatch.setenv("TINO_CLI_LOG", str(tmp_path / "cli.log"))
+    monkeypatch.setenv("TINO_DOC_TARGET", "env-target")
+
+    captured: dict[str, object] = {}
+
+    def fake_publish(
+        self,
+        state,  # type: ignore[no-untyped-def]
+        *,
+        target: str,
+        site: str | None = None,
+        version: str | None = None,
+        telemetry_extra: dict[str, object] | None = None,
+    ) -> dict[str, object]:
+        captured.update(
+            {
+                "target": target,
+                "site": site,
+                "version": version,
+                "telemetry_extra": telemetry_extra,
+            }
+        )
+        return {"target": target}
+
+    monkeypatch.setattr(docs_module.DocsClient, "publish", fake_publish, raising=False)
+
+    result = runner.invoke(app, ["docs", "publish", "manual-target"])
+
+    assert result.exit_code == 0
+    assert captured == {
+        "target": "manual-target",
+        "site": None,
+        "version": None,
+        "telemetry_extra": {"used_env_target": False},
+    }
 
 
 def test_task_run_dry_run(monkeypatch: pytest.MonkeyPatch, runner: CliRunner) -> None:

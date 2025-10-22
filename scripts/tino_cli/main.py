@@ -303,12 +303,23 @@ def wishlist_add_operation(state: CLIState, *, url: str, tags: Sequence[str] | N
 def docs_publish_operation(
     state: CLIState,
     *,
-    target: str,
+    target: str | None,
     site: str | None = None,
     version: str | None = None,
 ):
+    resolved_target = target or os.environ.get("TINO_DOC_TARGET")
+    if not resolved_target:
+        raise ValueError("Document target required. Provide an argument or set TINO_DOC_TARGET.")
+    fallback_used = target is None
     client = DocsClient()
-    return client.publish(state, target=target, site=site, version=version)
+    telemetry_extra = {"used_env_target": fallback_used}
+    return client.publish(
+        state,
+        target=resolved_target,
+        site=site,
+        version=version,
+        telemetry_extra=telemetry_extra,
+    )
 
 
 def _render_response(result) -> None:
@@ -564,11 +575,24 @@ docs_app = typer.Typer(help="Publish documentation updates.")
 @docs_app.command("publish")
 def docs_publish(
     ctx: typer.Context,
+    target: str | None = typer.Argument(
+        None,
+        help="Document path or identifier. Defaults to $TINO_DOC_TARGET when omitted.",
+    ),
     target: str | None = typer.Argument(None, help="Document path or identifier."),
     site: str = typer.Option(None, "--site", help="Documentation site."),
     version: str = typer.Option(None, "--version", help="Version label."),
 ) -> None:
     state = _get_state(ctx)
+    try:
+        result = docs_publish_operation(
+            state,
+            target=target or None,
+            site=site or None,
+            version=version or None,
+        )
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc), param_hint="target") from exc
     resolved_target = target or os.environ.get("TINO_DOC_TARGET") or "latest"
     result = docs_publish_operation(
         state,
