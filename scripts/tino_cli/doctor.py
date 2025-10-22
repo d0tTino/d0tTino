@@ -1,8 +1,5 @@
-"""Environment validation helpers for the ``tino doctor`` command."""
-
-from __future__ import annotations
-
 """Diagnostic helpers for the ``tino doctor`` command."""
+
 from __future__ import annotations
 
 import os
