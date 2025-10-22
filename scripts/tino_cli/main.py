@@ -190,6 +190,7 @@ def start_services(state: CLIState, service: str | None = None) -> int:
 def stop_services(state: CLIState, service: str | None = None) -> int:
     if service:
         command = compose_command("rm", "-s", "-f", service)
+        command = compose_command("rm", "--stop", "--force", service)
     else:
         command = compose_command("down")
     return run_shell_command(state, command, require_confirm=True)
@@ -378,6 +379,7 @@ def cli_down(
     ctx: typer.Context,
     service: str = typer.Argument(None, help="Optional service name."),
 ) -> None:
+def cli_down(ctx: typer.Context, service: str = typer.Argument(None, help="Optional service name.")) -> None:
     state = _get_state(ctx)
     code = stop_services(state, service or None)
     raise typer.Exit(code)
@@ -592,7 +594,7 @@ def docs_publish(
     try:
         result = docs_publish_operation(
             state,
-            target=target or None,
+            target=target,
             site=site or None,
             version=version or None,
         )
