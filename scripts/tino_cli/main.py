@@ -564,12 +564,18 @@ docs_app = typer.Typer(help="Publish documentation updates.")
 @docs_app.command("publish")
 def docs_publish(
     ctx: typer.Context,
-    target: str = typer.Argument(..., help="Document path or identifier."),
+    target: str | None = typer.Argument(None, help="Document path or identifier."),
     site: str = typer.Option(None, "--site", help="Documentation site."),
     version: str = typer.Option(None, "--version", help="Version label."),
 ) -> None:
     state = _get_state(ctx)
-    result = docs_publish_operation(state, target=target, site=site or None, version=version or None)
+    resolved_target = target or os.environ.get("TINO_DOC_TARGET") or "latest"
+    result = docs_publish_operation(
+        state,
+        target=resolved_target,
+        site=site or None,
+        version=version or None,
+    )
     _render_response(result)
 
 
