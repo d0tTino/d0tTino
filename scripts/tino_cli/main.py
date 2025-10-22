@@ -189,6 +189,7 @@ def start_services(state: CLIState, service: str | None = None) -> int:
 
 def stop_services(state: CLIState, service: str | None = None) -> int:
     if service:
+        command = compose_command("rm", "-s", "-f", service)
         command = compose_command("rm", "--stop", "--force", service)
     else:
         command = compose_command("down")
@@ -374,6 +375,10 @@ def cli_up(ctx: typer.Context, service: str = typer.Argument(None, help="Optiona
 
 
 @app.command("down")
+def cli_down(
+    ctx: typer.Context,
+    service: str = typer.Argument(None, help="Optional service name."),
+) -> None:
 def cli_down(ctx: typer.Context, service: str = typer.Argument(None, help="Optional service name.")) -> None:
     state = _get_state(ctx)
     code = stop_services(state, service or None)
@@ -637,8 +642,8 @@ def stack_up(ctx: typer.Context, service: str = typer.Argument(None)) -> None:
 
 
 @stack_app.command("down")
-def stack_down(ctx: typer.Context) -> None:
-    cli_down(ctx)
+def stack_down(ctx: typer.Context, service: str = typer.Argument(None)) -> None:
+    cli_down(ctx, service or None)
 
 
 @stack_app.command("logs")
