@@ -579,6 +579,7 @@ def docs_publish(
         None,
         help="Document path or identifier. Defaults to $TINO_DOC_TARGET when omitted.",
     ),
+    target: str | None = typer.Argument(None, help="Document path or identifier."),
     site: str = typer.Option(None, "--site", help="Documentation site."),
     version: str = typer.Option(None, "--version", help="Version label."),
 ) -> None:
@@ -592,6 +593,13 @@ def docs_publish(
         )
     except ValueError as exc:
         raise typer.BadParameter(str(exc), param_hint="target") from exc
+    resolved_target = target or os.environ.get("TINO_DOC_TARGET") or "latest"
+    result = docs_publish_operation(
+        state,
+        target=resolved_target,
+        site=site or None,
+        version=version or None,
+    )
     _render_response(result)
 
 
