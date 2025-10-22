@@ -187,8 +187,11 @@ def start_services(state: CLIState, service: str | None = None) -> int:
     return run_shell_command(state, command, require_confirm=True)
 
 
-def stop_services(state: CLIState) -> int:
-    command = compose_command("down")
+def stop_services(state: CLIState, service: str | None = None) -> int:
+    if service:
+        command = compose_command("rm", "-s", "-f", service)
+    else:
+        command = compose_command("down")
     return run_shell_command(state, command, require_confirm=True)
 
 
@@ -371,9 +374,12 @@ def cli_up(ctx: typer.Context, service: str = typer.Argument(None, help="Optiona
 
 
 @app.command("down")
-def cli_down(ctx: typer.Context) -> None:
+def cli_down(
+    ctx: typer.Context,
+    service: str = typer.Argument(None, help="Optional service name."),
+) -> None:
     state = _get_state(ctx)
-    code = stop_services(state)
+    code = stop_services(state, service or None)
     raise typer.Exit(code)
 
 
@@ -579,7 +585,6 @@ def docs_publish(
         None,
         help="Document path or identifier. Defaults to $TINO_DOC_TARGET when omitted.",
     ),
-    target: str | None = typer.Argument(None, help="Document path or identifier."),
     site: str = typer.Option(None, "--site", help="Documentation site."),
     version: str = typer.Option(None, "--version", help="Version label."),
 ) -> None:
@@ -593,13 +598,6 @@ def docs_publish(
         )
     except ValueError as exc:
         raise typer.BadParameter(str(exc), param_hint="target") from exc
-    resolved_target = target or os.environ.get("TINO_DOC_TARGET") or "latest"
-    result = docs_publish_operation(
-        state,
-        target=resolved_target,
-        site=site or None,
-        version=version or None,
-    )
     _render_response(result)
 
 
@@ -642,8 +640,8 @@ def stack_up(ctx: typer.Context, service: str = typer.Argument(None)) -> None:
 
 
 @stack_app.command("down")
-def stack_down(ctx: typer.Context) -> None:
-    cli_down(ctx)
+def stack_down(ctx: typer.Context, service: str = typer.Argument(None)) -> None:
+    cli_down(ctx, service or None)
 
 
 @stack_app.command("logs")
