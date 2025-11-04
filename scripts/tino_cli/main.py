@@ -190,7 +190,6 @@ def start_services(state: CLIState, service: str | None = None) -> int:
 def stop_services(state: CLIState, service: str | None = None) -> int:
     if service:
         command = compose_command("rm", "-s", "-f", service)
-        command = compose_command("rm", "--stop", "--force", service)
     else:
         command = compose_command("down")
     return run_shell_command(state, command, require_confirm=True)
@@ -379,7 +378,6 @@ def cli_down(
     ctx: typer.Context,
     service: str = typer.Argument(None, help="Optional service name."),
 ) -> None:
-def cli_down(ctx: typer.Context, service: str = typer.Argument(None, help="Optional service name.")) -> None:
     state = _get_state(ctx)
     code = stop_services(state, service or None)
     raise typer.Exit(code)
@@ -583,7 +581,7 @@ docs_app = typer.Typer(help="Publish documentation updates.")
 @docs_app.command("publish")
 def docs_publish(
     ctx: typer.Context,
-    target: str | None = typer.Argument(
+    target: str = typer.Argument(
         None,
         help="Document path or identifier. Defaults to $TINO_DOC_TARGET when omitted.",
     ),
@@ -591,10 +589,11 @@ def docs_publish(
     version: str = typer.Option(None, "--version", help="Version label."),
 ) -> None:
     state = _get_state(ctx)
+    resolved_target = target or None
     try:
         result = docs_publish_operation(
             state,
-            target=target,
+            target=resolved_target,
             site=site or None,
             version=version or None,
         )
