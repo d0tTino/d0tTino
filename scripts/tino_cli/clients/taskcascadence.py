@@ -45,5 +45,35 @@ class TaskCascadenceClient(BaseClient):
             telemetry_action="signal",
         )
 
+    def get_schedule(self, state: CLIState) -> RequestResult | None:
+        """Return the current automation schedule."""
 
-__all__ = ["TaskCascadenceClient"]
+        return self.request(state, "get", "/schedule", telemetry_action="get_schedule")
+
+    def update_schedule(self, state: CLIState, *, schedule: Mapping[str, Any]) -> RequestResult | None:
+        """Update the automation schedule with ``schedule`` values."""
+
+        return self.request(
+            state,
+            "patch",
+            "/schedule",
+            json_payload=schedule,
+            telemetry_action="update_schedule",
+        )
+
+
+def get_schedule(state: CLIState) -> RequestResult | None:
+    """Return the TaskCascadence schedule using a convenience client."""
+
+    client = TaskCascadenceClient()
+    return client.get_schedule(state)
+
+
+def update_schedule(state: CLIState, *, schedule: Mapping[str, Any]) -> RequestResult | None:
+    """Update the TaskCascadence schedule using a convenience client."""
+
+    client = TaskCascadenceClient()
+    return client.update_schedule(state, schedule=schedule)
+
+
+__all__ = ["TaskCascadenceClient", "get_schedule", "update_schedule"]
