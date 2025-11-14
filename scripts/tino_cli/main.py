@@ -379,7 +379,7 @@ def cli_down(
     service: str = typer.Argument(None, help="Optional service name."),
 ) -> None:
     state = _get_state(ctx)
-    code = stop_services(state, service or None)
+    code = stop_services(state, service)
     raise typer.Exit(code)
 
 
