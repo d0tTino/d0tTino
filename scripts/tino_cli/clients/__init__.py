@@ -5,7 +5,7 @@ from .base import BaseClient, RequestResult
 from .docs import DocsClient
 from .finance import FinanceClient
 from .storm import StormClient
-from .taskcascadence import TaskCascadenceClient
+from .taskcascadence import TaskCascadenceClient, get_schedule, update_schedule
 from .ume import UMEClient
 
 __all__ = [
@@ -15,5 +15,7 @@ __all__ = [
     "FinanceClient",
     "StormClient",
     "TaskCascadenceClient",
+    "get_schedule",
+    "update_schedule",
     "UMEClient",
 ]

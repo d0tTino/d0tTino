@@ -7,6 +7,8 @@ from .base import BaseClient, RequestResult
 from ..config import TASKCASCADENCE
 from ..state import CLIState
 
+_SCHEDULE_PATH = "/schedule"
+
 
 class TaskCascadenceClient(BaseClient):
     """Typed convenience wrapper around the TaskCascadence API."""
@@ -48,7 +50,7 @@ class TaskCascadenceClient(BaseClient):
     def get_schedule(self, state: CLIState) -> RequestResult | None:
         """Return the current automation schedule."""
 
-        return self.request(state, "get", "/schedule", telemetry_action="get_schedule")
+        return self.request(state, "get", _SCHEDULE_PATH, telemetry_action="get_schedule")
 
     def update_schedule(self, state: CLIState, *, schedule: Mapping[str, Any]) -> RequestResult | None:
         """Update the automation schedule with ``schedule`` values."""
@@ -56,7 +58,7 @@ class TaskCascadenceClient(BaseClient):
         return self.request(
             state,
             "patch",
-            "/schedule",
+            _SCHEDULE_PATH,
             json_payload=schedule,
             telemetry_action="update_schedule",
         )
