@@ -61,6 +61,32 @@ def test_get_schedule_success(fake_http_service: dict, monkeypatch: pytest.Monke
     assert "duration_ms" in payload
 
 
+def test_update_schedule_success(fake_http_service: dict, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    fake_http_service["stub"]("patch", "/schedule", {"ok": True})
+    events = _capture_events(monkeypatch)
+
+    state = _build_state(tmp_path, dry_run=False, telemetry_enabled=True)
+    client = TaskCascadenceClient()
+
+    result = client.update_schedule(state, schedule={"timezone": "UTC"})
+
+    assert result is not None
+    assert result.payload == {"ok": True}
+
+    assert fake_http_service["calls"][0]["method"] == "patch"
+    assert fake_http_service["calls"][0]["url"].endswith("/schedule")
+    assert fake_http_service["calls"][0]["json_payload"] == {"timezone": "UTC"}
+
+    assert len(events) == 1
+    name, payload, enabled = events[0]
+    assert name == "tino_cli.taskcascadence.update_schedule"
+    assert enabled is True
+    assert payload["action"] == "update_schedule"
+    assert payload["url"].endswith("/schedule")
+    assert payload["status"] == 200
+    assert "duration_ms" in payload
+
+
 def test_update_schedule_dry_run(fake_http_service: dict, monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     events = _capture_events(monkeypatch)
 
