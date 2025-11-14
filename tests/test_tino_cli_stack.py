@@ -99,3 +99,21 @@ def test_down_command_delegates_to_stop_services(
     result = tino_cli_runner.invoke(app, ["down", "ume"])
     assert result.exit_code == 0
     assert calls == [None, "ume"]
+
+
+def test_down_command_uses_stop_services_exit_code(
+    monkeypatch: pytest.MonkeyPatch, tino_cli_runner
+) -> None:
+    calls: list[str | None] = []
+
+    def _fake_stop(state, service: str | None = None) -> int:  # pragma: no cover - trivial
+        calls.append(service)
+        return 7
+
+    main_module = sys.modules["scripts.tino_cli.main"]
+    monkeypatch.setattr(main_module, "stop_services", _fake_stop)
+
+    result = tino_cli_runner.invoke(app, ["down"])
+
+    assert result.exit_code == 7
+    assert calls == [None]
