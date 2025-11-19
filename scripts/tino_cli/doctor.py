@@ -1,4 +1,11 @@
-"""Diagnostic helpers for the ``tino doctor`` command."""
+"""Diagnostic helpers for the ``tino doctor`` command.
+
+This module exposes both the legacy :func:`gather_report` interface that powers
+``tino doctor`` as well as the richer :func:`gather_diagnostics` payload used by
+other tooling.  Both entry points now derive their data from the same
+check-building helpers so the summary, individual check results, and details all
+remain consistent regardless of the consumer.
+"""
 
 from __future__ import annotations
 
@@ -8,7 +15,13 @@ import socket
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable, Mapping, Sequence, TYPE_CHECKING
+from urllib.parse import urlparse
+
+from .env import iter_env_lines
+
+if TYPE_CHECKING:
+    from .state import CLIState
 
 
 @dataclass(slots=True)
@@ -62,6 +75,10 @@ class DoctorReport:
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _CHECK_HOOKS = _REPO_ROOT / "scripts" / "check-hooks.sh"
 _REQUIRED_PORTS: tuple[int, ...] = (4222, 5678, 8082, 8065, 8080, 8081, 8000)
+_STATUS_ERROR = "error"
+_STATUS_OK = "ok"
+_STATUS_WARNING = "warning"
+_STATUS_SKIPPED = "skipped"
 
 
 def _check_docker_engine() -> DoctorCheck:
@@ -172,39 +189,55 @@ def _check_git_hooks() -> DoctorCheck:
     )
 
 
+_CHECK_BUILDERS: Mapping[str, str] = {
+    "docker": "_check_docker_engine",
+    "ports": "_check_required_ports",
+    "git-hooks": "_check_git_hooks",
+}
+
+
+def _build_doctor_checks(
+    *, skip_checks: bool = False, names: Iterable[str] | None = None
+) -> dict[str, DoctorCheck]:
+    """Return :class:`DoctorCheck` objects for the requested check names."""
+
+    ordered_names = tuple(names) if names is not None else tuple(_CHECK_BUILDERS.keys())
+    checks: dict[str, DoctorCheck] = {}
+    if skip_checks:
+        for name in ordered_names:
+            checks[name] = DoctorCheck(name, True, "Check skipped (dry-run).")
+        return checks
+
+    for name in ordered_names:
+        builder_name = _CHECK_BUILDERS.get(name)
+        if builder_name is None:  # pragma: no cover - defensive guard for programming errors
+            raise KeyError(f"Unknown doctor check: {name}")
+        builder = globals().get(builder_name)
+        if not callable(builder):  # pragma: no cover - defensive guard
+            raise TypeError(f"Invalid builder configured for '{name}': {builder}")
+        checks[name] = builder()
+    return checks
+
+
+def _payload_from_doctor_check(check: DoctorCheck) -> dict[str, Any]:
+    """Translate :class:`DoctorCheck` data into a diagnostics payload."""
+
+    payload: dict[str, Any] = {
+        "status": _STATUS_OK if check.ok else _STATUS_ERROR,
+        "ok": check.ok,
+        "message": check.message,
+    }
+    if check.details:
+        payload["details"] = check.details
+    return payload
+
+
 def gather_report(*, skip_checks: bool = False) -> DoctorReport:
     """Collect the doctor report, optionally skipping expensive checks."""
 
-    if skip_checks:
-        checks = [
-            DoctorCheck("docker", True, "Check skipped (dry-run)."),
-            DoctorCheck("ports", True, "Check skipped (dry-run)."),
-            DoctorCheck("git-hooks", True, "Check skipped (dry-run)."),
-        ]
-        return DoctorReport(checks)
-
-    checks = [
-        _check_docker_engine(),
-        _check_required_ports(),
-        _check_git_hooks(),
-    ]
+    checks = list(_build_doctor_checks(skip_checks=skip_checks).values())
     return DoctorReport(checks)
 
-
-__all__ = ["DoctorCheck", "DoctorReport", "gather_report"]
-from typing import Any, Mapping, Sequence, TYPE_CHECKING
-from urllib.parse import urlparse
-
-from .env import _REPO_ROOT, iter_env_lines
-
-if TYPE_CHECKING:
-    from .state import CLIState
-
-
-_STATUS_ERROR = "error"
-_STATUS_OK = "ok"
-_STATUS_WARNING = "warning"
-_STATUS_SKIPPED = "skipped"
 
 _ENV_HINTS = ("TOKEN", "API_KEY", "PASSWORD", "USERNAME", "SECRET")
 
@@ -216,42 +249,6 @@ class CheckSummary:
     status: str
     errors: int = 0
     warnings: int = 0
-
-
-def _docker_check() -> dict[str, Any]:
-    """Return Docker availability information."""
-
-    executable = shutil.which("docker")
-    if not executable:
-        return {
-            "status": _STATUS_ERROR,
-            "available": False,
-            "message": "Docker CLI not found on PATH.",
-        }
-
-    try:
-        result = subprocess.run(
-            ["docker", "--version"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-    except OSError as exc:  # pragma: no cover - exercised in environments without docker
-        return {
-            "status": _STATUS_ERROR,
-            "available": False,
-            "message": f"Failed to execute docker: {exc}",
-        }
-
-    output = (result.stdout or result.stderr or "").strip()
-    status = _STATUS_OK if result.returncode == 0 else _STATUS_ERROR
-    message = output or None
-    return {
-        "status": status,
-        "available": True,
-        "message": message,
-        "return_code": result.returncode,
-    }
 
 
 def _service_endpoints(services: Mapping[str, str], *, dry_run: bool) -> dict[str, Any]:
@@ -367,38 +364,6 @@ def _env_tokens_check() -> dict[str, Any]:
     }
 
 
-def _git_hooks_check() -> dict[str, Any]:
-    """Return git hook configuration status."""
-
-    try:
-        result = subprocess.run(
-            ["git", "config", "--get", "core.hooksPath"],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-    except OSError as exc:  # pragma: no cover - git unavailable in execution environment
-        return {
-            "status": _STATUS_ERROR,
-            "hooks_path": None,
-            "message": f"Failed to query git configuration: {exc}",
-        }
-
-    hooks_path = result.stdout.strip()
-    if hooks_path:
-        message = f"Git hooks path is set to '{hooks_path}'"
-        status = _STATUS_OK
-    else:
-        message = "Git hooks are not configured. Run ./scripts/setup-hooks.sh to enable them."
-        status = _STATUS_WARNING
-
-    return {
-        "status": status,
-        "hooks_path": hooks_path or None,
-        "message": message,
-    }
-
-
 def _summarise(checks: Mapping[str, Mapping[str, Any]]) -> CheckSummary:
     """Aggregate overall severity from individual checks."""
 
@@ -422,11 +387,14 @@ def _summarise(checks: Mapping[str, Mapping[str, Any]]) -> CheckSummary:
 def gather_diagnostics(state: CLIState) -> dict[str, Any]:
     """Return a structured diagnostics report for the CLI environment."""
 
+    shared_checks = _build_doctor_checks(
+        skip_checks=state.dry_run, names=("docker", "git-hooks")
+    )
     checks = {
-        "docker": _docker_check(),
+        "docker": _payload_from_doctor_check(shared_checks["docker"]),
         "services": _service_endpoints(state.services, dry_run=state.dry_run),
         "env_tokens": _env_tokens_check(),
-        "git_hooks": _git_hooks_check(),
+        "git_hooks": _payload_from_doctor_check(shared_checks["git-hooks"]),
     }
     summary = _summarise(checks)
     return {
@@ -441,4 +409,4 @@ def gather_diagnostics(state: CLIState) -> dict[str, Any]:
     }
 
 
-__all__ = ["gather_diagnostics"]
+__all__ = ["DoctorCheck", "DoctorReport", "gather_report", "gather_diagnostics"]
