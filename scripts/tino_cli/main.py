@@ -120,8 +120,6 @@ def run_doctor(state: CLIState) -> int:
     if state.dry_run:
         payload.setdefault("summary", {})["dry_run"] = True
     typer.echo(json.dumps(payload, indent=2))
-    if state.dry_run:
-        return 0
     return 0 if report.ok else 1
     report = gather_diagnostics(state)
     typer.echo(json.dumps(report, indent=2))
