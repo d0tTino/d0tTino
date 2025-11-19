@@ -4,8 +4,12 @@ import json
 import sys
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
+from typing import TYPE_CHECKING
 
 import pytest
+
+if TYPE_CHECKING:
+    from typer.testing import CliRunner
 
 if "scripts.tino_cli.doctor" not in sys.modules:
     _doctor_stub = ModuleType("scripts.tino_cli.doctor")
@@ -15,7 +19,7 @@ if "scripts.tino_cli.doctor" not in sys.modules:
             return {}
 
     _doctor_stub.gather_report = lambda skip_checks=False: _Report()
-    _doctor_stub.gather_diagnostics = lambda: []
+    _doctor_stub.gather_diagnostics = lambda *args, **kwargs: []
     sys.modules["scripts.tino_cli.doctor"] = _doctor_stub
 
 from scripts.tino_cli.clients.docs import DocsClient
