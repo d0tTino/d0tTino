@@ -18,6 +18,8 @@ from .clients import (
     StormClient,
     TaskCascadenceClient,
     UMEClient,
+    get_schedule,
+    update_schedule,
 )
 from .config import (
     DOCS,
@@ -387,6 +389,53 @@ def cli_logs(ctx: typer.Context, service: str = typer.Argument(..., help="Servic
 task_app = typer.Typer(help="Interact with TaskCascadence services.")
 
 
+schedule_app = typer.Typer(help="Inspect and manage task automation schedules.")
+
+
+@schedule_app.command("list")
+def task_schedule_list(ctx: typer.Context) -> None:
+    """Fetch the configured automation schedule."""
+
+    state = _get_state(ctx)
+    result = get_schedule(state)
+    _render_response(result)
+
+
+def _parse_schedule_payload(value: str) -> Mapping[str, object]:
+    try:
+        payload = json.loads(value)
+    except json.JSONDecodeError as exc:  # noqa: PERF203 - typer error construction is cheap
+        raise typer.BadParameter("Schedule payload must be valid JSON.") from exc
+    if not isinstance(payload, Mapping):
+        raise typer.BadParameter("Schedule payload must be a JSON object.")
+    return payload
+
+
+@schedule_app.command("update")
+def task_schedule_update(
+    ctx: typer.Context,
+    schedule: str = typer.Option(..., "--schedule", "--json", help="JSON schedule payload."),
+) -> None:
+    """Update the automation schedule via the TaskCascadence API."""
+
+    state = _get_state(ctx)
+    payload = _parse_schedule_payload(schedule)
+
+    if state.dry_run:
+        typer.echo("[dry-run] Preview schedule update payload:")
+        typer.echo(json.dumps(payload, indent=2))
+        result = update_schedule(state, schedule=payload)
+        _render_response(result)
+        return
+
+    if not state.confirm:
+        typer.echo("Use --confirm to update the automation schedule.", err=True)
+        raise typer.Exit(1)
+
+    result = update_schedule(state, schedule=payload)
+    _render_response(result)
+
+
 @task_app.command("run")
 def task_run(
     ctx: typer.Context,
@@ -444,6 +493,8 @@ def task_signal(
     )
     _render_response(result)
 
+
+task_app.add_typer(schedule_app, name="schedule")
 
 app.add_typer(task_app, name="task")
 
