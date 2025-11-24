@@ -95,6 +95,8 @@ refactored surface:
 | ``tino up`` / ``tino down`` | Manage the docker-compose stack, optionally targeting a single service. Both respect ``--confirm`` before mutating services. |
 | ``tino logs`` | Stream docker-compose logs; use ``--confirm`` to acknowledge the interactive stream. |
 | ``tino task run <task_name> [--json payload]`` | Execute TaskCascadence tasks; ``status`` and ``signal`` remain available (``signal`` always requires ``--confirm``). |
+| ``tino task schedule list`` | Inspect the TaskCascadence schedule without mutating it (respects ``--dry-run`` for previews). |
+| ``tino task schedule update --json '{...}'`` | Patch the schedule using a JSON payload; always refuses to run without ``--confirm``. |
 | ``tino research …`` | Access tino-storm research helpers (``ingest``, ``draft``). |
 | ``tino idea`` | Submit a quick idea/event to UME memory without opening the group commands. |
 | ``tino mem …`` | Query UME memories with structured filters. |
@@ -121,6 +123,23 @@ tino task signal my-task-id --link https://status.example.com/incident/123 --con
 The above emits a ``link`` signal without needing ``--type link``. Swap in
 ``--note`` for free-form text updates when sharing progress notes or status
 summaries.
+
+#### Task schedule helpers
+
+Schedule visibility now lives alongside other ``tino task`` helpers. ``tino task
+schedule list`` shows the current automation windows without requiring
+confirmation so you can diff changes in ``--dry-run`` mode. ``tino task schedule
+update`` expects a JSON body that mirrors the TaskCascadence schedule schema
+and refuses to run unless you supply both a valid ``--json`` payload and
+``--confirm``. For example:
+
+```shell
+tino --confirm task schedule update --json '{"cron": "0 12 * * *", "task": "midday-report"}'
+```
+
+This pattern ensures you preview the structure of the new schedule before it is
+persisted, and you can pipe JSON in from a file or ``jq`` when drafting more
+complex updates.
 
 Or use Scoop in a single line:
 
