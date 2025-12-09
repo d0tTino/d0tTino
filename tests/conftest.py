@@ -8,7 +8,26 @@ from urllib.parse import urlparse
 
 import pytest
 import requests
-from typer.testing import CliRunner
+
+_site_packages = (
+    Path(sys.executable).resolve().parent.parent
+    / "lib"
+    / f"python{sys.version_info.major}.{sys.version_info.minor}"
+    / "site-packages"
+)
+_typer_init = _site_packages / "typer" / "__init__.py"
+_typer_spec = importlib.util.spec_from_file_location("typer", _typer_init)
+if _typer_spec and _typer_spec.loader:
+    sys.modules.pop("typer", None)
+    for _name in list(sys.modules):
+        if _name.startswith("typer."):
+            sys.modules.pop(_name, None)
+    _typer_module = importlib.util.module_from_spec(_typer_spec)
+    _typer_module.__path__ = [str(_typer_init.parent)]
+    sys.modules["typer"] = _typer_module
+    _typer_spec.loader.exec_module(_typer_module)
+
+from typer.testing import CliRunner  # noqa: E402
 
 if importlib.util.find_spec("llm") is None:
     # Ensure the repository root is on sys.path when running tests directly

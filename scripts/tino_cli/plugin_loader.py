@@ -11,6 +11,7 @@ from typing import Callable, Iterator, List, Optional
 import typer
 
 from scripts import plugins
+from telemetry import analytics_default, record_event
 
 from .executor import execute_command
 from .state import CLIState
@@ -33,17 +34,57 @@ class PluginCommand:
     package: str | None = None
 
 
-def _load_registry(path: Path = REGISTRY_PATH) -> plugins.PluginRegistryData | None:
+def _load_registry(path: Path | None = None) -> plugins.PluginRegistryData | None:
+    path = path or REGISTRY_PATH
     if not path.exists():
+        typer.echo(f"Plug-in registry not found at {path}.", err=True)
+        record_event(
+            "plugin_registry",
+            {"status": "missing", "path": str(path)},
+            enabled=analytics_default(),
+        )
         return None
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError) as exc:
+        typer.echo(f"Failed to load plug-in registry at {path}: {exc}", err=True)
+        record_event(
+            "plugin_registry",
+            {"status": "invalid", "reason": "read_error", "detail": str(exc)},
+            enabled=analytics_default(),
+        )
+        return None
+    try:
+        plugins.validate_registry_payload(payload)
+    except Exception as exc:
+        detail = getattr(exc, "message", None) or str(exc)
+        location = getattr(exc, "json_path", None) or getattr(exc, "path", None)
+        context = f" at {location}" if location else ""
+        typer.echo(
+            f"Invalid plug-in registry schema{context}: {detail}.",
+            err=True,
+        )
+        record_event(
+            "plugin_registry",
+            {
+                "status": "invalid",
+                "reason": "schema_validation",
+                "detail": detail,
+                "location": str(location) if location else None,
+            },
+            enabled=analytics_default(),
+        )
         return None
     try:
         return plugins.parse_registry_payload(payload)
-    except Exception:
-        return None
+    except Exception as exc:
+        typer.echo(f"Failed to parse plug-in registry: {exc}", err=True)
+        record_event(
+            "plugin_registry",
+            {"status": "invalid", "reason": "parse_error", "detail": str(exc)},
+            enabled=analytics_default(),
+        )
+    return None
 
 
 def _import_callable(qualname: str) -> Callable[[tuple[str, ...]], int] | None:
@@ -203,6 +244,11 @@ def _register_registry_commands(app: typer.Typer, registry: plugins.PluginRegist
         app.command(descriptor.name, help=help_text)(
             _wrap_exec(descriptor.exec, command_name=descriptor.name)
         )
+        record_event(
+            "plugin_command_registration",
+            {"plugin": "registry", "command": descriptor.name, "status": "registered"},
+            enabled=analytics_default(),
+        )
 
 
 def register_plugin_commands(app: typer.Typer) -> None:
@@ -222,6 +268,16 @@ def register_plugin_commands(app: typer.Typer) -> None:
             plugin_app.command("install", help=_fallback_message(plugin, package.package))(
                 _wrap_fallback(plugin, package.package, command_name="install")
             )
+            record_event(
+                "plugin_command_registration",
+                {
+                    "plugin": plugin,
+                    "command": "install",
+                    "status": "fallback",
+                    "reason": "no_cli_commands",
+                },
+                enabled=analytics_default(),
+            )
             app.add_typer(plugin_app, name=plugin)
             continue
         for descriptor in commands:
@@ -230,15 +286,45 @@ def register_plugin_commands(app: typer.Typer) -> None:
                 plugin_app.command(descriptor.name, help=help_text)(
                     _wrap_exec(descriptor.exec, command_name=descriptor.name)
                 )
+                record_event(
+                    "plugin_command_registration",
+                    {
+                        "plugin": plugin,
+                        "command": descriptor.name,
+                        "status": "registered",
+                        "source": "exec",
+                    },
+                    enabled=analytics_default(),
+                )
                 continue
             handler = _import_callable(descriptor.callable) if descriptor.callable else None
             if handler is None:
                 plugin_app.command(descriptor.name, help=help_text)(
                     _wrap_fallback(plugin, package.package, command_name=descriptor.name)
                 )
+                record_event(
+                    "plugin_command_registration",
+                    {
+                        "plugin": plugin,
+                        "command": descriptor.name,
+                        "status": "skipped",
+                        "reason": "missing_callable",
+                    },
+                    enabled=analytics_default(),
+                )
                 continue
             plugin_app.command(descriptor.name, help=help_text)(
                 _wrap_callable(handler, command_name=descriptor.name)
+            )
+            record_event(
+                "plugin_command_registration",
+                {
+                    "plugin": plugin,
+                    "command": descriptor.name,
+                    "status": "registered",
+                    "source": "callable",
+                },
+                enabled=analytics_default(),
             )
         app.add_typer(plugin_app, name=plugin)
 
