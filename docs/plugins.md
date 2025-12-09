@@ -83,6 +83,10 @@ See `llm/backends/plugins/sample.py` for a full example.
 
 ## Contributing new back-ends
 
+Review the [Constellation Technical Requirements](../TECHNICAL_REQUIREMENTS.md)
+before submitting plug-in updates to ensure your registry entries, CLI surfacing
+and validation expectations match the canonical contract.
+
 1. Package your implementation as a normal Python distribution with a
    `pyproject.toml` file.
 2. Expose the backend via the `llm.plugins` entry point:
