@@ -1,4 +1,6 @@
 #[cfg(feature = "gui")]
+mod commands;
+#[cfg(feature = "gui")]
 use std::fs;
 #[cfg(feature = "gui")]
 use tauri::{FileDropEvent, Manager, RunEvent, WindowEvent};
@@ -106,6 +108,7 @@ async fn cockpit_log_snapshot(limit: Option<usize>) -> Result<CockpitLogs, Strin
 fn main() {
     let _ = dotenvy::dotenv();
     tauri::Builder::default()
+        .manage(commands::LogStreamer::default())
         .invoke_handler(tauri::generate_handler![
             plan,
             exec,
@@ -123,6 +126,18 @@ fn main() {
             cockpit_wishlist_add,
             cockpit_publish_docs,
             cockpit_log_snapshot,
+            commands::tino_start,
+            commands::tino_stop,
+            commands::tino_task_run,
+            commands::tino_task_signal,
+            commands::tino_research_ingest,
+            commands::tino_research_draft,
+            commands::tino_wishlist_add,
+            commands::tino_finance_snapshot,
+            commands::tino_docs_publish,
+            commands::tino_whoami,
+            commands::start_log_stream,
+            commands::stop_log_stream,
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")

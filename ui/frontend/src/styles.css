@@ -19,7 +19,7 @@ main {
   min-height: 100vh;
   padding: 2rem;
   gap: 1.5rem;
-  max-width: 960px;
+  max-width: 1180px;
   margin: 0 auto;
 }
 
@@ -40,6 +40,31 @@ section {
   border-radius: 12px;
   padding: 1.25rem;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card h2 {
+  margin: 0;
 }
 
 .button-grid {
@@ -108,6 +133,65 @@ button:hover:not(:disabled) {
 .telemetry-indicator.off {
   background: rgba(248, 113, 113, 0.14);
   color: #fecaca;
+}
+
+.endpoints {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.endpoint-pill {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.toggles {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.toggles label {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-weight: 600;
+}
+
+.grid .card button {
+  width: fit-content;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field input,
+.field select {
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(17, 24, 39, 0.7);
+  color: #f8fafc;
+}
+
+.field.two-column {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.button-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .log-stream {

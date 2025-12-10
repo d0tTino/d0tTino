@@ -172,16 +172,19 @@ pub mod commands {
             .map_err(|err| err.to_string())
     }
 
-    pub async fn cockpit_inject_context(job_id: String, context: String) -> Result<ActionDetails, String> {
+    pub async fn cockpit_inject_context(
+        job_id: String,
+        context: String,
+    ) -> Result<ActionDetails, String> {
         tino_cli_bridge::cockpit_action(
             "cockpit-inject-context",
             Some(&context),
             false,
             Some(&job_id),
         )
-            .await
-            .map(map_action)
-            .map_err(|err| err.to_string())
+        .await
+        .map(map_action)
+        .map_err(|err| err.to_string())
     }
 
     pub async fn cockpit_research_ingest(path: String) -> Result<ActionDetails, String> {
@@ -456,10 +459,7 @@ if __name__ == "__main__":
             details.get("payload"),
             Some(&Value::String("context blob".into()))
         );
-        assert_eq!(
-            details.get("job_id"),
-            Some(&Value::String("job-42".into()))
-        );
+        assert_eq!(details.get("job_id"), Some(&Value::String("job-42".into())));
 
         let calls = read_calls(&record_path);
         assert!(calls.iter().any(|call| {
