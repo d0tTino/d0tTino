@@ -8,19 +8,24 @@ if ! command -v stow >/dev/null 2>&1; then
 fi
 
 usage() {
-    cat <<'USAGE'
-Usage: $(basename "$0") [--dry-run] [--target DIR]
+    cat <<USAGE
+Usage: $(basename "$0") [--dry-run] [--target DIR] [--packages LIST] [--host NAME]
 
 Link dotfile packages into the target directory using GNU Stow.
 
   -n, --dry-run      Show what would be done without modifying files
   -t, --target DIR   Target directory (defaults to $HOME)
+  -p, --packages     Comma-separated package list (defaults to: shell,nvim,tmux,terminal)
+      --host NAME    Apply host overlay from hosts/NAME after core packages
   -h, --help         Show this help message
 USAGE
 }
 
 dry_run=0
 target="$HOME"
+packages_csv=""
+host_name=""
+core_packages=(shell nvim tmux terminal)
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -40,6 +45,22 @@ while [[ $# -gt 0 ]]; do
             usage
             exit 0
             ;;
+        -p|--packages)
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --packages requires a comma-separated list" >&2
+                exit 1
+            fi
+            packages_csv="$2"
+            shift 2
+            ;;
+        --host)
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --host requires a hostname" >&2
+                exit 1
+            fi
+            host_name="$2"
+            shift 2
+            ;;
         *)
             echo "Unknown option: $1" >&2
             usage
@@ -48,7 +69,32 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-stow_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../dotfiles" && pwd)"
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+dotfiles_dir="$repo_root/dotfiles"
+hosts_dir="$repo_root/hosts"
+
+declare -a selected_packages=()
+if [[ -n "$packages_csv" ]]; then
+    IFS=',' read -r -a selected_packages <<< "$packages_csv"
+else
+    selected_packages=("${core_packages[@]}")
+fi
+
+for pkg in "${selected_packages[@]}"; do
+    if [[ -z "$pkg" ]]; then
+        echo "Error: empty package name in --packages list" >&2
+        exit 1
+    fi
+    if [[ ! -d "$dotfiles_dir/$pkg" ]]; then
+        echo "Error: dotfiles package '$pkg' does not exist" >&2
+        exit 1
+    fi
+done
+
+if [[ -n "$host_name" && ! -d "$hosts_dir/$host_name" ]]; then
+    echo "Error: host overlay '$host_name' does not exist" >&2
+    exit 1
+fi
 
 if [[ ! -d "$target" ]]; then
     if [[ $dry_run -eq 1 ]]; then
@@ -59,10 +105,11 @@ if [[ ! -d "$target" ]]; then
 fi
 
 link_package() {
-    local pkg="$1"
+    local base_dir="$1"
+    local pkg="$2"
     echo "Processing $pkg" >&2
     local output
-    output=$(stow -d "$stow_dir" -t "$target" -nv "$pkg" 2>&1 || true)
+    output=$(stow -d "$base_dir" -t "$target" -nv "$pkg" 2>&1 || true)
     if echo "$output" | grep -q "existing target"; then
         echo "$output"
         if [[ $dry_run -eq 1 ]]; then
@@ -79,13 +126,16 @@ link_package() {
         done
     fi
     if [[ $dry_run -eq 1 ]]; then
-        stow -d "$stow_dir" -t "$target" -nv "$pkg"
+        stow -d "$base_dir" -t "$target" -nv "$pkg"
     else
-        stow -d "$stow_dir" -t "$target" -v "$pkg"
+        stow -d "$base_dir" -t "$target" -v "$pkg"
     fi
 }
 
-for pkg_path in "$stow_dir"/*; do
-    [[ -d "$pkg_path" ]] || continue
-    link_package "$(basename "$pkg_path")"
+for pkg in "${selected_packages[@]}"; do
+    link_package "$dotfiles_dir" "$pkg"
 done
+
+if [[ -n "$host_name" ]]; then
+    link_package "$hosts_dir" "$host_name"
+fi
