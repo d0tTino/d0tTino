@@ -30,7 +30,8 @@ sudo apt-get install -y \
     build-essential \
     starship \
     zoxide \
-    curl
+    curl \
+    zsh
 
 # Verify that curl is available; exit with a helpful message if not.
 if ! command -v curl >/dev/null; then
@@ -64,6 +65,12 @@ if ! command -v zoxide >/dev/null; then
     fi
 fi
 
+# Ensure zsh is available.
+if ! command -v zsh >/dev/null; then
+    echo "Error: zsh installation failed." >&2
+    exit 1
+fi
+
 # Provide helpful symlinks for batcat and fdfind if they exist
 if command -v batcat >/dev/null && ! command -v bat >/dev/null; then
     sudo ln -sf "$(command -v batcat)" /usr/local/bin/bat
@@ -72,22 +79,15 @@ if command -v fdfind >/dev/null && ! command -v fd >/dev/null; then
     sudo ln -sf "$(command -v fdfind)" /usr/local/bin/fd
 fi
 
-# Add starship and zoxide initialization to ~/.bashrc if missing
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-bashrc="$HOME/.bashrc"
-if [ ! -f "$bashrc" ]; then
-    touch "$bashrc"
-fi
-if ! grep -Fq 'starship init bash' "$bashrc" 2>/dev/null; then
-    starship_config_path="$repo_root/starship.toml"
-    {
-        printf 'starship_config="%s"\n' "$starship_config_path"
-        printf 'if command -v starship >/dev/null; then\n'
-        printf '    eval "$(starship init bash --config \"$starship_config\")"\n'
-        printf 'fi\n'
-        printf 'if command -v zoxide >/dev/null; then\n'
-        printf '    eval "$(zoxide init bash)"\n'
-        printf 'fi\n'
-    } >>"$bashrc"
+# Set zsh as the default shell only when it is not already the login shell.
+zsh_path="$(command -v zsh)"
+if command -v chsh >/dev/null; then
+    current_shell="$(getent passwd "$(id -un)" 2>/dev/null | cut -d: -f7 || true)"
+    if [ -z "$current_shell" ]; then
+        current_shell="${SHELL:-}"
+    fi
 
+    if [ "$current_shell" != "$zsh_path" ]; then
+        chsh -s "$zsh_path"
+    fi
 fi

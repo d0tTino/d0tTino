@@ -1,21 +1,13 @@
-# Basic shell settings that should work everywhere
+# Bash compatibility shim.
+# d0tTino uses zsh as the primary interactive shell configuration.
 
-# Only continue if running interactively
 case $- in
-    *i*) ;;
-      *) return ;;
+    *i*)
+        if [ -n "${BASH_VERSION:-}" ]; then
+            printf 'This environment is configured for zsh. Run `zsh` or set it as your login shell.\n' >&2
+        fi
+        ;;
+    *)
+        return
+        ;;
 esac
-
-# History settings
-export HISTSIZE=1000
-export HISTFILESIZE=2000
-export HISTCONTROL=ignoredups:erasedups
-shopt -s histappend
-
-# Useful aliases
-alias ll='ls -alF'
-alias la='ls -A'
-alias l='ls -CF'
-
-# Simple prompt
-PS1='\u@\h:\w\$ '
