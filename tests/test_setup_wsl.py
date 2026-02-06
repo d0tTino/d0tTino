@@ -4,6 +4,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
+
 def create_exe(path, contents="#!/usr/bin/env bash\n"):
     path.write_text(contents)
     path.chmod(0o755)
@@ -18,16 +19,22 @@ def test_setup_wsl_symlinks(tmp_path):
 
     # Stub commands
     apt_log = fake_root / "apt_history"
-    apt_stub = f"#!/usr/bin/env bash\n" \
-               f"echo \"$@\" >> \"{apt_log}\"\n" \
-               "if [[ $1 == install ]]; then\n" \
-               f"  touch {bin_dir}/starship {bin_dir}/zoxide\n" \
-               f"  chmod 755 {bin_dir}/starship {bin_dir}/zoxide\n" \
-               "fi\n"
+    apt_stub = (
+        "#!/usr/bin/env bash\n"
+        f"echo \"$@\" >> \"{apt_log}\"\n"
+        "if [[ $1 == install ]]; then\n"
+        f"  touch {bin_dir}/starship {bin_dir}/zoxide {bin_dir}/zsh\n"
+        f"  chmod 755 {bin_dir}/starship {bin_dir}/zoxide {bin_dir}/zsh\n"
+        "fi\n"
+    )
     create_exe(bin_dir / "apt-get", apt_stub)
     create_exe(bin_dir / "sudo", "#!/bin/sh\n\"$@\"\n")
     create_exe(bin_dir / "batcat")
     create_exe(bin_dir / "fdfind")
+    create_exe(bin_dir / "getent", "#!/usr/bin/env bash\necho \"$2:x:1000:1000::/home/$2:/bin/bash\"\n")
+    chsh_log = fake_root / "chsh_history"
+    create_exe(bin_dir / "chsh", f"#!/usr/bin/env bash\necho \"$@\" >> \"{chsh_log}\"\n")
+
     # ln wrapper that redirects /usr/local/bin to FAKE_ROOT
     ln_script = """#!/usr/bin/env bash
 last=${@: -1}
@@ -43,7 +50,7 @@ fi
 
     env = os.environ.copy()
     env.update({
-        "PATH": f"{bin_dir}:{env['PATH']}",
+        "PATH": f"{bin_dir}:/bin",
         "FAKE_ROOT": str(fake_root),
         "HOME": str(fake_root),
     })
@@ -75,14 +82,47 @@ fi
         "build-essential",
         "starship",
         "zoxide",
+        "zsh",
     ]
     for pkg in required:
         assert pkg in install_args
 
-    bashrc = fake_root / ".bashrc"
-    bash_text = bashrc.read_text()
-    assert "starship init bash" in bash_text
-    assert "zoxide init bash" in bash_text
+    assert chsh_log.read_text().strip() == f"-s {bin_dir / 'zsh'}"
+    assert not (fake_root / ".bashrc").exists()
+
+
+def test_setup_wsl_skips_chsh_when_zsh_is_already_default(tmp_path):
+    fake_root = tmp_path
+    bin_dir = fake_root / "bin"
+    bin_dir.mkdir(parents=True)
+
+    create_exe(bin_dir / "apt-get", "#!/usr/bin/env bash\nexit 0\n")
+    create_exe(bin_dir / "sudo", "#!/bin/sh\n\"$@\"\n")
+    create_exe(bin_dir / "curl", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "starship", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "zoxide", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "zsh", "#!/bin/sh\nexit 0\n")
+    create_exe(
+        bin_dir / "getent",
+        f"#!/usr/bin/env bash\necho \"$2:x:1000:1000::/home/$2:{bin_dir / 'zsh'}\"\n",
+    )
+    chsh_log = fake_root / "chsh_history"
+    create_exe(bin_dir / "chsh", f"#!/usr/bin/env bash\necho \"$@\" >> \"{chsh_log}\"\n")
+
+    env = os.environ.copy()
+    env.update({
+        "PATH": f"{bin_dir}:/bin",
+        "HOME": str(fake_root),
+    })
+
+    subprocess.run(
+        ["/bin/bash", str(REPO_ROOT / "scripts" / "setup-wsl.sh")],
+        check=True,
+        env=env,
+        cwd=tmp_path,
+    )
+
+    assert not chsh_log.exists()
 
 
 def test_setup_wsl_requires_sudo(tmp_path):
@@ -95,6 +135,7 @@ def test_setup_wsl_requires_sudo(tmp_path):
     create_exe(bin_dir / "curl", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "starship", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "zoxide", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "zsh", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "id", "#!/bin/sh\necho 1000\n")
 
     (bin_dir / "grep").symlink_to("/usr/bin/grep")
@@ -126,6 +167,7 @@ def test_setup_wsl_root_without_sudo(tmp_path):
     create_exe(bin_dir / "curl", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "starship", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "zoxide", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "zsh", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "id", "#!/bin/sh\necho 0\n")
 
     (bin_dir / "grep").symlink_to("/usr/bin/grep")
@@ -152,6 +194,7 @@ def test_setup_wsl_requires_apt_get(tmp_path):
     create_exe(bin_dir / "curl", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "starship", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "zoxide", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "zsh", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "id", "#!/bin/sh\necho 0\n")
 
     (bin_dir / "grep").symlink_to("/usr/bin/grep")
@@ -186,6 +229,7 @@ def test_setup_wsl_starship_install_failure(tmp_path):
     create_exe(bin_dir / "apt-get", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "sudo", "#!/bin/sh\n\"$@\"\n")
     create_exe(bin_dir / "curl", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "zsh", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "id", "#!/bin/sh\necho 0\n")
 
     (bin_dir / "grep").symlink_to("/usr/bin/grep")
@@ -222,6 +266,7 @@ def test_setup_wsl_zoxide_install_failure(tmp_path):
     create_exe(bin_dir / "sudo", "#!/bin/sh\n\"$@\"\n")
     create_exe(bin_dir / "curl", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "starship", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "zsh", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "id", "#!/bin/sh\necho 0\n")
 
     (bin_dir / "grep").symlink_to("/usr/bin/grep")
@@ -247,4 +292,3 @@ def test_setup_wsl_zoxide_install_failure(tmp_path):
 
     assert result.returncode != 0
     assert "zoxide installation failed" in result.stderr
-   
