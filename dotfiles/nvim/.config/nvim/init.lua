@@ -1,2 +1,3 @@
-vim.o.number = true
-vim.o.relativenumber = true
+require("config.options")
+require("config.keymaps")
+require("config.lazy")
