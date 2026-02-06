@@ -132,6 +132,27 @@ Then open the log and review the slowest entries.
 
 ## Terminal Tools: fastfetch, btm & Nushell/Starship
 
+## tmux baseline config and TPM plugins
+
+The repository includes a baseline tmux configuration at [`dotfiles/tmux/.tmux.conf`](../dotfiles/tmux/.tmux.conf) with:
+
+- Mouse mode enabled and larger scrollback history.
+- Truecolor-capable terminal settings (`tmux-256color` + RGB terminal features).
+- A status line styled to match the Blacklight palette.
+- Ergonomic pane/window navigation and a `prefix + r` config reload binding.
+
+TPM is bootstrapped automatically (cloned on first startup if missing) with:
+
+- `tmux-plugins/tpm`
+- `tmux-plugins/tmux-resurrect`
+- `tmux-plugins/tmux-continuum`
+
+Useful TPM shortcuts after launching tmux:
+
+- `prefix + I` – install plugins.
+- `prefix + U` – update plugins.
+- `prefix + Alt + u` – remove plugins not currently listed.
+
 ### fastfetch
 Display system information each time a shell starts.
 
