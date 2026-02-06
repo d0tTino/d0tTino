@@ -114,6 +114,22 @@ New-Item -ItemType SymbolicLink -Path $Env:USERPROFILE\\AppData\\Local\\Packages
 
 These examples assume the repository is cloned in a convenient location. Adjust the paths to match your setup.
 
+## Neovim first run and startup profiling
+
+The `dotfiles/nvim` package uses `lazy.nvim` for plugin management and bootstraps itself on first launch.
+
+1. Start Neovim normally (`nvim`).
+2. Wait for `lazy.nvim` to clone and install plugins.
+3. Run `:Lazy sync` if you want to force a full sync/update pass.
+
+To inspect startup performance:
+
+```bash
+nvim --startuptime /tmp/nvim-startup.log +qa
+```
+
+Then open the log and review the slowest entries.
+
 ## Terminal Tools: fastfetch, btm & Nushell/Starship
 
 ### fastfetch
