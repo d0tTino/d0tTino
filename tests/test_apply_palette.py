@@ -15,8 +15,9 @@ def test_apply_palette_updates_configs(tmp_path: Path) -> None:
     dest = tmp_path / "repo"
     (dest / "windows-terminal").mkdir(parents=True)
     (dest / "palettes").mkdir()
+    (dest / "dotfiles" / "shell" / ".config").mkdir(parents=True, exist_ok=True)
 
-    shutil.copy(repo_root / "starship.toml", dest / "starship.toml")
+    shutil.copy(repo_root / "dotfiles" / "shell" / ".config" / "starship.toml", dest / "dotfiles" / "shell" / ".config" / "starship.toml")
     shutil.copy(repo_root / "windows-terminal" / "settings.json", dest / "windows-terminal" / "settings.json")
     for p in (repo_root / "palettes").glob("*.toml"):
         shutil.copy(p, dest / "palettes" / p.name)
@@ -25,7 +26,7 @@ def test_apply_palette_updates_configs(tmp_path: Path) -> None:
 
     import tomllib
 
-    data = tomllib.loads((dest / "starship.toml").read_text())
+    data = tomllib.loads((dest / "dotfiles" / "shell" / ".config" / "starship.toml").read_text())
     assert data.get("palette") == "dracula"
     assert "dracula" in data.get("palettes", {})
 
@@ -42,7 +43,8 @@ def test_apply_palette_unknown_palette(tmp_path: Path) -> None:
     dest = tmp_path / "repo"
     (dest / "windows-terminal").mkdir(parents=True)
     (dest / "palettes").mkdir()
-    shutil.copy(repo_root / "starship.toml", dest / "starship.toml")
+    (dest / "dotfiles" / "shell" / ".config").mkdir(parents=True, exist_ok=True)
+    shutil.copy(repo_root / "dotfiles" / "shell" / ".config" / "starship.toml", dest / "dotfiles" / "shell" / ".config" / "starship.toml")
     shutil.copy(repo_root / "windows-terminal" / "settings.json", dest / "windows-terminal" / "settings.json")
     for p in (repo_root / "palettes").glob("*.toml"):
         shutil.copy(p, dest / "palettes" / p.name)
@@ -58,7 +60,8 @@ def test_apply_palette_missing_key(tmp_path: Path) -> None:
     dest = tmp_path / "repo"
     (dest / "windows-terminal").mkdir(parents=True)
     (dest / "palettes").mkdir()
-    shutil.copy(repo_root / "starship.toml", dest / "starship.toml")
+    (dest / "dotfiles" / "shell" / ".config").mkdir(parents=True, exist_ok=True)
+    shutil.copy(repo_root / "dotfiles" / "shell" / ".config" / "starship.toml", dest / "dotfiles" / "shell" / ".config" / "starship.toml")
     shutil.copy(repo_root / "windows-terminal" / "settings.json", dest / "windows-terminal" / "settings.json")
     # create palette file with wrong key
     (dest / "palettes" / "foo.toml").write_text("[bar]\nfoo='bar'\n", encoding="utf-8")
@@ -74,6 +77,7 @@ def test_apply_palette_missing_starship(tmp_path: Path) -> None:
     dest = tmp_path / "repo"
     (dest / "windows-terminal").mkdir(parents=True)
     (dest / "palettes").mkdir()
+    (dest / "dotfiles" / "shell" / ".config").mkdir(parents=True, exist_ok=True)
     shutil.copy(repo_root / "windows-terminal" / "settings.json", dest / "windows-terminal" / "settings.json")
     for p in (repo_root / "palettes").glob("*.toml"):
         shutil.copy(p, dest / "palettes" / p.name)
@@ -89,7 +93,8 @@ def test_apply_palette_missing_wt_settings(tmp_path: Path) -> None:
     dest = tmp_path / "repo"
     (dest / "windows-terminal").mkdir(parents=True)
     (dest / "palettes").mkdir()
-    shutil.copy(repo_root / "starship.toml", dest / "starship.toml")
+    (dest / "dotfiles" / "shell" / ".config").mkdir(parents=True, exist_ok=True)
+    shutil.copy(repo_root / "dotfiles" / "shell" / ".config" / "starship.toml", dest / "dotfiles" / "shell" / ".config" / "starship.toml")
     for p in (repo_root / "palettes").glob("*.toml"):
         shutil.copy(p, dest / "palettes" / p.name)
 

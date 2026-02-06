@@ -30,8 +30,9 @@ def test_apply_updates_configs(tmp_path):
     dest = tmp_path / "repo"
     (dest / "windows-terminal").mkdir(parents=True)
     (dest / "palettes").mkdir()
+    (dest / "dotfiles" / "shell" / ".config").mkdir(parents=True, exist_ok=True)
 
-    shutil.copy(repo_root / "starship.toml", dest / "starship.toml")
+    shutil.copy(repo_root / "dotfiles" / "shell" / ".config" / "starship.toml", dest / "dotfiles" / "shell" / ".config" / "starship.toml")
     shutil.copy(repo_root / "windows-terminal" / "settings.json", dest / "windows-terminal" / "settings.json")
     for p in (repo_root / "palettes").glob("*.toml"):
         shutil.copy(p, dest / "palettes" / p.name)
@@ -51,7 +52,7 @@ def test_apply_updates_configs(tmp_path):
     )
 
     import tomllib
-    data = tomllib.loads((dest / "starship.toml").read_text())
+    data = tomllib.loads((dest / "dotfiles" / "shell" / ".config" / "starship.toml").read_text())
     assert data.get("palette") == "dracula"
     assert "dracula" in data.get("palettes", {})
 
@@ -67,7 +68,8 @@ def test_apply_unknown_palette_errors(tmp_path):
     dest = tmp_path / "repo"
     (dest / "windows-terminal").mkdir(parents=True)
     (dest / "palettes").mkdir()
-    shutil.copy(repo_root / "starship.toml", dest / "starship.toml")
+    (dest / "dotfiles" / "shell" / ".config").mkdir(parents=True, exist_ok=True)
+    shutil.copy(repo_root / "dotfiles" / "shell" / ".config" / "starship.toml", dest / "dotfiles" / "shell" / ".config" / "starship.toml")
     shutil.copy(
         repo_root / "windows-terminal" / "settings.json",
         dest / "windows-terminal" / "settings.json",
@@ -93,6 +95,7 @@ def test_apply_missing_starship_errors(tmp_path):
     dest = tmp_path / "repo"
     (dest / "windows-terminal").mkdir(parents=True)
     (dest / "palettes").mkdir()
+    (dest / "dotfiles" / "shell" / ".config").mkdir(parents=True, exist_ok=True)
 
     # Only copy windows-terminal settings
 
@@ -124,8 +127,9 @@ def test_apply_missing_wt_settings_errors(tmp_path):
     dest = tmp_path / "repo"
     (dest / "windows-terminal").mkdir(parents=True)
     (dest / "palettes").mkdir()
+    (dest / "dotfiles" / "shell" / ".config").mkdir(parents=True, exist_ok=True)
 
-    shutil.copy(repo_root / "starship.toml", dest / "starship.toml")
+    shutil.copy(repo_root / "dotfiles" / "shell" / ".config" / "starship.toml", dest / "dotfiles" / "shell" / ".config" / "starship.toml")
     for p in (repo_root / "palettes").glob("*.toml"):
         shutil.copy(p, dest / "palettes" / p.name)
 

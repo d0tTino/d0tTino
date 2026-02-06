@@ -30,7 +30,7 @@ EXPECTED_COLORS = {
 }
 
 def load_starship():
-    return tomllib.loads(Path('starship.toml').read_text())
+    return tomllib.loads(Path('dotfiles/shell/.config/starship.toml').read_text())
 
 def test_blacklight_format_and_newline():
     data = load_starship()

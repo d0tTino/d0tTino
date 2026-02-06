@@ -1,11 +1,16 @@
 # Desktop Configuration
 
-Settings specific to a desktop environment live under `dotfiles/desktop`.
+Desktop-specific overrides now live in host overlays under `hosts/desktop`.
 
 ## Usage
 
 1. Clone the repository.
-2. Run `stow desktop` from the repository root to link the files.
-3. Restart your window manager or desktop session to apply the changes.
-
-These settings cover themes, keybindings and other UI tweaks.
+2. Apply the shared dotfile packages you need, for example:
+   ```bash
+   stow --target="$HOME" dotfiles/shell dotfiles/terminal dotfiles/tmux
+   ```
+3. Apply the desktop host overlay:
+   ```bash
+   stow --target="$HOME" hosts/desktop
+   ```
+4. Source `~/.config/tino/host-overrides.sh` from your shell startup file if you use host environment variables.

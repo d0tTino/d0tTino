@@ -19,7 +19,7 @@ mkdir -p "$config_dir"
 if [[ -e "$config_file" ]]; then
     echo "Configuration already exists at $config_file"
 else
-    cp "$repo_root/dotfiles/ghostty/ghostty.toml" "$config_file"
+    cp "$repo_root/dotfiles/terminal/.config/ghostty/ghostty.toml" "$config_file"
     echo "Configuration copied to $config_file"
 fi
 

@@ -48,7 +48,7 @@ def apply_palette(palette_name: str, repo_root: Path) -> None:
     colors = palettes[palette_name]
 
     # Update starship.toml
-    starship = repo_root / "starship.toml"
+    starship = repo_root / "dotfiles" / "shell" / ".config" / "starship.toml"
     if not starship.exists():
         print(f"Error: {starship} not found", file=sys.stderr)
         raise SystemExit(1)

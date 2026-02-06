@@ -174,6 +174,24 @@ following top-level fields:
 
 ---
 
+
+## Dotfiles layout
+
+Dotfiles are organized into explicit stow-style packages under `dotfiles/` with optional host overlays in `hosts/`:
+
+- `dotfiles/shell` → `.zshrc`, `.bashrc`, and `~/.config/starship.toml`
+- `dotfiles/nvim` → `~/.config/nvim/...`
+- `dotfiles/tmux` → `.tmux.conf`
+- `dotfiles/terminal` → terminal config (`~/.config/ghostty/ghostty.toml`)
+- `hosts/desktop` and `hosts/work_laptop` → machine-specific overrides
+
+Example:
+
+```bash
+stow --target="$HOME" dotfiles/shell dotfiles/nvim dotfiles/tmux dotfiles/terminal
+stow --target="$HOME" hosts/desktop   # or hosts/work_laptop
+```
+
 ## Changelog (auto‑updated)
 
 - **2025‑08‑09** — Refreshed featured projects; clarified implemented vs planned features; added privacy language; added auto‑update changelog; reclassified DeepThought as legacy and marked tino‑storm as experimental.
