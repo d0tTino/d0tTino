@@ -10,7 +10,7 @@ usage: thm [-h] {apply,list-palettes} ...
 - `apply <name>` – install the given palette into your configuration files.
 - `list-palettes` – show all palettes available under the `palettes/` directory.
 
-Running `apply` now updates both `starship.toml` and
+Running `apply` now updates both `dotfiles/shell/.config/starship.toml` and
 `windows-terminal/settings.json` so the prompt and terminal share the same
 colors. Palettes are defined under `palettes/` – besides the default
 `blacklight` scheme, example palettes such as `dracula` and

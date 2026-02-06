@@ -84,29 +84,30 @@ Whether it’s spinning up a new LLM pipeline at dawn or fine-tuning memory grap
 
 This repository includes example setups for various tools:
 
-- `dotfiles/common` – shell settings shared across machines.
-- `dotfiles/desktop` – configs unique to a desktop environment.
-- `dotfiles/work_laptop` – configs for a work laptop.
+- `dotfiles/shell` – `.zshrc`, `.bashrc`, and `~/.config/starship.toml`.
+- `dotfiles/nvim` – Neovim package (`~/.config/nvim/...`).
+- `dotfiles/tmux` – `.tmux.conf`.
+- `dotfiles/terminal` – terminal emulator configuration (`~/.config/ghostty/ghostty.toml`).
+- `hosts/desktop` and `hosts/work_laptop` – host overlays for machine-specific tweaks.
 - `windows-terminal` – minimal starter `settings.json` for Windows Terminal. The
   file is built from `common-profiles.json` using `generate_settings.py`.
 - `tablet-config/windows-terminal` – full example configuration for a tablet.
-- `starship.toml` – example Starship prompt configuration.
 - `vscode` – basic VS Code user settings.
 
 ### Linking on macOS/Linux
 
 ```bash
 # inside your home directory
-ln -s /path/to/repo/dotfiles/common/.bashrc ~/.bashrc
+ln -s /path/to/repo/dotfiles/shell/.bashrc ~/.bashrc
 ln -s /path/to/repo/vscode/settings.json ~/.config/Code/User/settings.json
-ln -s /path/to/repo/starship.toml ~/.config/starship.toml
+ln -s /path/to/repo/dotfiles/shell/.config/starship.toml ~/.config/starship.toml
 ```
 
 ### Linking on Windows (PowerShell)
 
 ```powershell
 New-Item -ItemType SymbolicLink -Path $Env:USERPROFILE\\.config\\starship.toml \
-  -Target C:\\path\\to\\repo\\starship.toml
+  -Target C:\\path\\to\\repo\\dotfiles\\shell\\.config\\starship.toml
 New-Item -ItemType SymbolicLink -Path $Env:USERPROFILE\\AppData\\Local\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json \
   -Target C:\\path\\to\\repo\\windows-terminal\\settings.json
 ```
@@ -162,11 +163,11 @@ mkdir ~/.cache/starship
 starship init nu | save --force ~/.cache/starship/init.nu
 source ~/.cache/starship/init.nu
 ```
-Customize the prompt by editing [`starship.toml`](../starship.toml) in this repository.
+Customize the prompt by editing [`dotfiles/shell/.config/starship.toml`](../dotfiles/shell/.config/starship.toml) in this repository.
 
 ## Blacklight Palette & Shortcuts
 
-The repository ships a unified **Blacklight** color scheme used by Windows Terminal and the Starship prompt. Run [`install-windows-terminal.ps1`](../scripts/install-windows-terminal.ps1) to copy `windows-terminal/settings.json` into the Windows Terminal *LocalState* folder. Then place [`starship.toml`](../starship.toml) in `~/.config/starship.toml` (or `%USERPROFILE%\.config\starship.toml` on Windows) so both tools share the same colors.
+The repository ships a unified **Blacklight** color scheme used by Windows Terminal and the Starship prompt. Run [`install-windows-terminal.ps1`](../scripts/install-windows-terminal.ps1) to copy `windows-terminal/settings.json` into the Windows Terminal *LocalState* folder. Then place [`dotfiles/shell/.config/starship.toml`](../dotfiles/shell/.config/starship.toml) in `~/.config/starship.toml` (or `%USERPROFILE%\.config\starship.toml` on Windows) so both tools share the same colors.
 
 After applying the palette, Windows Terminal defines these shortcuts:
 
@@ -212,8 +213,10 @@ traditional command palette is available with **Ctrl+Shift+P**.
 
    ```bash
    cd ~/d0tTino
-   stow shell
-   stow vim
+   stow dotfiles/shell
+   stow dotfiles/nvim
+   stow dotfiles/tmux
+   stow dotfiles/terminal
    ```
 
    Stow cleanly manages symlinks, letting you enable or disable packages with `stow -D <name>`.
@@ -257,11 +260,11 @@ detects Debian/Ubuntu, Arch and macOS automatically:
 2. **Link the Starship configuration** so the prompt uses this repository's
    theme:
    ```bash
-   ln -sf $(pwd)/starship.toml ~/.config/starship.toml
+   ln -sf $(pwd)/dotfiles/shell/.config/starship.toml ~/.config/starship.toml
    ```
    ```powershell
    New-Item -ItemType SymbolicLink -Path $Env:USERPROFILE\.config\starship.toml `
-     -Target (Join-Path $PWD 'starship.toml')
+     -Target (Join-Path $PWD 'dotfiles/shell/.config/starship.toml')
    ```
 
 ### Example profile entries
@@ -290,7 +293,7 @@ screenshot:
 mkdir -p ~/.config/fastfetch ~/.config/bottom
 cp dotfiles/fastfetch/config.conf ~/.config/fastfetch/
 cp dotfiles/btm/config.toml ~/.config/bottom/bottom.toml
-ln -sf $(pwd)/starship.toml ~/.config/starship.toml
+ln -sf $(pwd)/dotfiles/shell/.config/starship.toml ~/.config/starship.toml
 ```
 
 Zed's preferences include several built-in color themes. Select the dark theme
@@ -307,7 +310,7 @@ that most closely matches the screenshot from **Settings → Appearance**.
    into the Windows Terminal LocalState folder.
 2. **Link the Starship configuration** so the prompt matches the screenshot:
    ```bash
-   ln -sf $(pwd)/starship.toml ~/.config/starship.toml
+   ln -sf $(pwd)/dotfiles/shell/.config/starship.toml ~/.config/starship.toml
    ```
    Make sure `~/.config/nushell/config.nu` sets `\$env.STARSHIP_CONFIG` to this
    path so Starship loads the file automatically.
