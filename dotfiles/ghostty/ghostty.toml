@@ -1,0 +1,42 @@
+# Managed Ghostty profile (Blacklight palette shared across Starship/tmux)
+font-family = "JetBrainsMono Nerd Font"
+font-size = 13
+
+# Window + background polish
+background = "#000000"
+background-opacity = 0.92
+window-padding-x = 10
+window-padding-y = 8
+window-theme = "dark"
+
+# Cursor + rendering behavior
+cursor-color = "#FC17DA"
+cursor-style = "block"
+cursor-style-blink = true
+shell-integration-features = "cursor,sudo,title"
+copy-on-select = true
+confirm-close-surface = false
+
+# Core UX preferences
+window-title = "Ghostty"
+window-save-state = "always"
+macos-titlebar-style = "tabs"
+mouse-hide-while-typing = true
+
+# Blacklight terminal colors (aligned with tmux + starship)
+palette = "0=#000000"
+palette = "1=#ff66c4"
+palette = "2=#b2ff59"
+palette = "3=#ffff66"
+palette = "4=#66b2ff"
+palette = "5=#845CFF"
+palette = "6=#66fff2"
+palette = "7=#f2f2f2"
+palette = "8=#666666"
+palette = "9=#ff66c4"
+palette = "10=#b2ff59"
+palette = "11=#ffff66"
+palette = "12=#66b2ff"
+palette = "13=#FC17DA"
+palette = "14=#66fff2"
+palette = "15=#ffffff"

@@ -66,3 +66,21 @@ def test_setup_ghostty_installs_and_copies(tmp_path: Path) -> None:
     assert cargo_log.read_text().strip() == "install --locked ghostty"
     config_file = Path(env["XDG_CONFIG_HOME"]) / "ghostty/ghostty.toml"
     assert config_file.exists()
+
+
+def test_managed_ghostty_config_has_required_keys() -> None:
+    config_path = REPO_ROOT / "dotfiles" / "ghostty" / "ghostty.toml"
+    contents = config_path.read_text()
+
+    required = [
+        "font-family = ",
+        "font-size = ",
+        "background-opacity = ",
+        "cursor-style = ",
+        "window-title = ",
+    ]
+    for key in required:
+        assert key in contents
+
+    palette_entries = [line for line in contents.splitlines() if line.startswith("palette = ")]
+    assert len(palette_entries) >= 16

@@ -87,7 +87,7 @@ This repository includes example setups for various tools:
 - `dotfiles/shell` – `.zshrc`, `.bashrc`, and `~/.config/starship.toml`.
 - `dotfiles/nvim` – Neovim package (`~/.config/nvim/...`).
 - `dotfiles/tmux` – `.tmux.conf`.
-- `dotfiles/terminal` – terminal emulator configuration (`~/.config/ghostty/ghostty.toml`).
+- `dotfiles/ghostty/ghostty.toml` – canonical Ghostty configuration managed by `scripts/setup-ghostty.sh`.
 - `hosts/desktop` and `hosts/work_laptop` – host overlays for machine-specific tweaks.
 - `windows-terminal` – minimal starter `settings.json` for Windows Terminal. The
   file is built from `common-profiles.json` using `generate_settings.py`.
@@ -253,7 +253,7 @@ traditional command palette is available with **Ctrl+Shift+P**.
    stow dotfiles/shell
    stow dotfiles/nvim
    stow dotfiles/tmux
-   stow dotfiles/terminal
+   ./scripts/setup-ghostty.sh
    ```
 
    Stow cleanly manages symlinks, letting you enable or disable packages with `stow -D <name>`.

@@ -7,7 +7,7 @@ Desktop-specific overrides now live in host overlays under `hosts/desktop`.
 1. Clone the repository.
 2. Apply the shared dotfile packages you need, for example:
    ```bash
-   stow --target="$HOME" dotfiles/shell dotfiles/terminal dotfiles/tmux
+   stow --target="$HOME" dotfiles/shell dotfiles/tmux
    ```
 3. Apply the desktop host overlay:
    ```bash
