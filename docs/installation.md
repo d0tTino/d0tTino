@@ -350,11 +350,13 @@ On Windows you can call the PowerShell wrapper or use `bootstrap.ps1` with the
 cargo install ghostty
 ```
 
-Configuration lives in `~/.config/ghostty/ghostty.toml`. A minimal example enables ligatures and sets the window title:
+Ghostty is the standard terminal profile in this repository. `scripts/setup-ghostty.sh` copies the managed config from `dotfiles/ghostty/ghostty.toml` into `~/.config/ghostty/ghostty.toml`, including Nerd Font defaults, Blacklight colors, opacity, and cursor polish settings.
 
 ```toml
-use_ligatures = true
-window_title = "Ghostty"
+font-family = "JetBrainsMono Nerd Font"
+font-size = 13
+background-opacity = 0.92
+cursor-style = "block"
 ```
 
 Launch `ghostty` instead of your default terminal to try it out.

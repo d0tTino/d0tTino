@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Install Ghostty via cargo if not already installed
+# Install Ghostty via cargo if not already installed.
+# This script also provisions the repository-managed rich profile
+# (font, Blacklight colors, opacity, and UI polish settings).
 if ! command -v cargo >/dev/null 2>&1; then
     echo "Error: cargo is required to install Ghostty" >&2
     exit 1
@@ -19,7 +21,7 @@ mkdir -p "$config_dir"
 if [[ -e "$config_file" ]]; then
     echo "Configuration already exists at $config_file"
 else
-    cp "$repo_root/dotfiles/terminal/.config/ghostty/ghostty.toml" "$config_file"
+    cp "$repo_root/dotfiles/ghostty/ghostty.toml" "$config_file"
     echo "Configuration copied to $config_file"
 fi
 
