@@ -52,6 +52,39 @@ install_terminal() {
 
 install_terminal
 
+ensure_shallow_plugin_repo() {
+    local repo_url="$1"
+    local repo_name="$2"
+    local plugin_dir="$HOME/.local/share/zsh/plugins/$repo_name"
+
+    mkdir -p "$HOME/.local/share/zsh/plugins"
+
+    if [ -d "$plugin_dir/.git" ]; then
+        git -C "$plugin_dir" remote set-url origin "$repo_url"
+        git -C "$plugin_dir" fetch --depth 1 origin
+
+        local origin_head=""
+        origin_head="$(git -C "$plugin_dir" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || true)"
+        if [ -z "$origin_head" ]; then
+            git -C "$plugin_dir" remote set-head origin --auto >/dev/null 2>&1 || true
+            origin_head="$(git -C "$plugin_dir" symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || true)"
+        fi
+
+        if [ -n "$origin_head" ]; then
+            git -C "$plugin_dir" checkout --quiet "${origin_head#origin/}" 2>/dev/null || true
+            git -C "$plugin_dir" reset --hard "$origin_head"
+        fi
+    elif [ -d "$plugin_dir" ]; then
+        echo "Error: $plugin_dir exists but is not a git repository." >&2
+        exit 1
+    else
+        git clone --depth 1 "$repo_url" "$plugin_dir"
+    fi
+}
+
+ensure_shallow_plugin_repo "https://github.com/zsh-users/zsh-autosuggestions" "zsh-autosuggestions"
+ensure_shallow_plugin_repo "https://github.com/zsh-users/zsh-syntax-highlighting" "zsh-syntax-highlighting"
+
 # Verify that curl is available; exit with a helpful message if not.
 if ! command -v curl >/dev/null; then
     echo "Error: curl is required but could not be installed." >&2
