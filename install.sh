@@ -54,7 +54,7 @@ if $setup_docker; then args+=(--setup-docker); fi
 if [[ -n $docker_image ]]; then args+=(--image "$docker_image"); fi
 if $dry_run; then args+=(--dry-run); fi
 
-if command -v pwsh >/dev/null 2>&1; then
+if [[ ${OSTYPE:-} == msys* || ${OSTYPE:-} == cygwin* || ${OSTYPE:-} == win32* || ${OSTYPE:-} == windows* ]] && command -v pwsh >/dev/null 2>&1; then
     cmd=(pwsh -NoLogo -NoProfile -File "$scripts/helpers/install_common.ps1" "${args[@]}")
 else
     cmd=(bash "$scripts/install_common.sh" "${args[@]}")

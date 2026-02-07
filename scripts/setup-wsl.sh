@@ -31,7 +31,26 @@ sudo apt-get install -y \
     starship \
     zoxide \
     curl \
-    zsh
+    zsh \
+    neovim \
+    tmux
+
+install_terminal() {
+    local terminal="alacritty"
+
+    if command -v "$terminal" >/dev/null 2>&1; then
+        return
+    fi
+
+    sudo apt-get install -y "$terminal"
+
+    if ! command -v "$terminal" >/dev/null 2>&1; then
+        echo "Error: $terminal installation failed." >&2
+        exit 1
+    fi
+}
+
+install_terminal
 
 # Verify that curl is available; exit with a helpful message if not.
 if ! command -v curl >/dev/null; then
