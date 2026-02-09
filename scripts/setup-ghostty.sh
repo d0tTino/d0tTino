@@ -33,12 +33,14 @@ source_if_exists() {
     fi
 }
 
+# Load shared defaults first, then host-specific overrides from
+# ~/.config/tino/host-overrides.sh using TINO_TERMINAL_* variables.
 source_if_exists "$config_home/tino/terminal-defaults.sh"
 source_if_exists "$config_home/tino/host-overrides.sh"
 
-background_opacity="${TERMINAL_OPACITY:-0.92}"
-max_fps="${TERMINAL_FPS:-60}"
-effects="${TERMINAL_EFFECTS:-\"crt\"}"
+background_opacity="${TINO_TERMINAL_OPACITY:-0.92}"
+max_fps="${TINO_TERMINAL_FPS:-120}"
+effects="${TINO_TERMINAL_EFFECTS:-on}"
 
 template_contents="$(<"$canonical_template")"
 rendered_config="${template_contents//__BACKGROUND_OPACITY__/$background_opacity}"
