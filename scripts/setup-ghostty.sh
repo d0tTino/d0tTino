@@ -13,22 +13,43 @@ if ! command -v ghostty >/dev/null 2>&1; then
     cargo install --locked ghostty
 fi
 
-config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty"
+config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
+config_dir="$config_home/ghostty"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-canonical_source="$repo_root/dotfiles/ghostty/ghostty.toml"
+canonical_template="$repo_root/dotfiles/ghostty/ghostty.toml.tmpl"
 config_file="$config_dir/ghostty.toml"
 mkdir -p "$config_dir"
 
-if [[ ! -f "$canonical_source" ]]; then
-    echo "Error: managed Ghostty config is missing at $canonical_source" >&2
+if [[ ! -f "$canonical_template" ]]; then
+    echo "Error: managed Ghostty template is missing at $canonical_template" >&2
     exit 1
 fi
 
-if [[ -e "$config_file" ]]; then
-    echo "Configuration already exists at $config_file"
+source_if_exists() {
+    local file_path="$1"
+    if [[ -f "$file_path" ]]; then
+        # shellcheck disable=SC1090
+        source "$file_path"
+    fi
+}
+
+source_if_exists "$config_home/tino/terminal-defaults.sh"
+source_if_exists "$config_home/tino/host-overrides.sh"
+
+background_opacity="${TERMINAL_OPACITY:-0.92}"
+max_fps="${TERMINAL_FPS:-60}"
+effects="${TERMINAL_EFFECTS:-\"crt\"}"
+
+template_contents="$(<"$canonical_template")"
+rendered_config="${template_contents//__BACKGROUND_OPACITY__/$background_opacity}"
+rendered_config="${rendered_config//__MAX_FPS__/$max_fps}"
+rendered_config="${rendered_config//__EFFECTS__/$effects}"
+
+if [[ -f "$config_file" ]] && [[ "$(<"$config_file")" == "$rendered_config" ]]; then
+    echo "Configuration already up to date at $config_file"
 else
-    cp "$canonical_source" "$config_file"
-    echo "Configuration copied to $config_file"
+    printf '%s\n' "$rendered_config" >"$config_file"
+    echo "Configuration rendered to $config_file"
 fi
 
 echo "Ghostty installed."
