@@ -29,7 +29,7 @@
   "profiles": {
     "defaults": {
       "font": {
-        "face": "CascaydiaCove Nerd Font",
+        "face": "CaskaydiaCove Nerd Font",
         "weight": "normal"
       },
       "opacity": 20
