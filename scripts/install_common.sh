@@ -76,6 +76,96 @@ run_pwsh() {
     fi
 }
 
+plugin_root="$HOME/.local/share/zsh/plugins"
+autosuggest_repo="https://github.com/zsh-users/zsh-autosuggestions"
+syntax_highlight_repo="https://github.com/zsh-users/zsh-syntax-highlighting"
+
+clone_plugin_if_missing() {
+    local repo_url=$1
+    local destination=$2
+    if [[ -d "$destination/.git" ]]; then
+        echo "Plugin already installed at $destination"
+        return
+    fi
+    if [[ -e "$destination" ]]; then
+        echo "Skipping $destination because it exists and is not a git checkout" >&2
+        return
+    fi
+
+    run_cmd mkdir -p "$(dirname "$destination")"
+    run_cmd git clone "$repo_url" "$destination"
+}
+
+update_zshrc_plugins() {
+    local zshrc="$HOME/.zshrc"
+    local start="# >>> d0tTino zsh plugins >>>"
+    local end="# <<< d0tTino zsh plugins <<<"
+    local desired
+    desired=$(cat <<EOF
+$start
+source "$plugin_root/zsh-autosuggestions/zsh-autosuggestions.zsh"
+source "$plugin_root/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+eval "\$(starship init zsh)"
+$end
+EOF
+)
+
+    if [[ -f "$zshrc" ]] && grep -Fq "$start" "$zshrc" && grep -Fq "$end" "$zshrc"; then
+        local tmp
+        tmp=$(mktemp)
+        awk -v start="$start" -v end="$end" -v block="$desired" '
+            $0 == start {
+                print block
+                in_block = 1
+                next
+            }
+            in_block && $0 == end {
+                in_block = 0
+                next
+            }
+            !in_block { print }
+        ' "$zshrc" > "$tmp"
+        if ! cmp -s "$tmp" "$zshrc"; then
+            run_cmd cp "$tmp" "$zshrc"
+        fi
+        rm -f "$tmp"
+        return
+    fi
+
+    if [[ -f "$zshrc" ]] && grep -Fq "$start" "$zshrc"; then
+        return
+    fi
+
+    if [[ ! -f "$zshrc" ]]; then
+        run_cmd touch "$zshrc"
+    fi
+    if [[ -s "$zshrc" ]]; then
+        run_cmd printf "\n%s\n" "$desired" >> "$zshrc"
+    else
+        run_cmd printf "%s\n" "$desired" >> "$zshrc"
+    fi
+}
+
+prompt_set_default_shell() {
+    local zsh_path
+    zsh_path="$(command -v zsh)"
+    local current_shell="${SHELL:-}"
+
+    if [[ -z "$zsh_path" || "$current_shell" == "$zsh_path" ]]; then
+        return
+    fi
+
+    if [[ ! -t 0 ]]; then
+        echo "Skipping shell change prompt in non-interactive mode"
+        return
+    fi
+
+    read -r -p "Set default shell to $zsh_path using chsh? [y/N] " response
+    if [[ $response =~ ^[Yy]$ ]]; then
+        run_cmd chsh -s "$zsh_path"
+    fi
+}
+
 install_winget=false
 install_windows_terminal=false
 install_wsl=false
@@ -121,6 +211,12 @@ if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == 
     run_pwsh fix-path.ps1
     run_pwsh helpers/install_common.ps1
 else
+    ensure_deps zsh starship
+    clone_plugin_if_missing "$autosuggest_repo" "$plugin_root/zsh-autosuggestions"
+    clone_plugin_if_missing "$syntax_highlight_repo" "$plugin_root/zsh-syntax-highlighting"
+    update_zshrc_plugins
+    prompt_set_default_shell
+
     run_cmd bash "$scripts/setup-hooks.sh"
     run_cmd bash "$scripts/helpers/install_fonts.sh"
     run_cmd bash "$scripts/helpers/sync_palettes.sh"
