@@ -1,1 +1,1 @@
-Dry run: pwsh -NoLogo -NoProfile -File scripts/helpers/install_common.ps1 --dry-run
+Dry run: bash scripts/install_common.sh --dry-run

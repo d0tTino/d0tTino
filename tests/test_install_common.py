@@ -11,6 +11,13 @@ def create_exe(path: Path, contents: str = "#!/usr/bin/env bash\n") -> None:
     path.chmod(0o755)
 
 
+def create_git_stub(path: Path, log_path: Path) -> None:
+    create_exe(
+        path,
+        f"#!/usr/bin/env bash\necho \"$@\" >> '{log_path}'\nif [[ $1 == clone ]]; then\n  /bin/mkdir -p \"$3/.git\"\nfi\n",
+    )
+
+
 def test_install_common_runs_without_ostype(tmp_path: Path) -> None:
     repo_root = Path(__file__).resolve().parents[1]
     repo = tmp_path / "repo"
@@ -36,8 +43,20 @@ def test_install_common_runs_without_ostype(tmp_path: Path) -> None:
     for f in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
         f.chmod(0o755)
 
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    git_log = tmp_path / "git.log"
+    create_exe(bin_dir / "curl")
+    create_exe(bin_dir / "unzip")
+    create_exe(bin_dir / "zsh")
+    create_exe(bin_dir / "starship", "#!/usr/bin/env bash\nif [[ $1 == init && $2 == zsh ]]; then\n  echo 'STARSHIP_INIT'\nfi\n")
+    create_git_stub(bin_dir / "git", git_log)
+    (bin_dir / "bash").symlink_to("/bin/bash")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+
     env = os.environ.copy()
     env.pop("OSTYPE", None)
+    env.update({"PATH": f"{bin_dir}:/usr/bin:/bin"})
 
     subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
 
@@ -74,21 +93,20 @@ def test_install_common_installs_missing_deps_dnf(tmp_path: Path) -> None:
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     dnf_log = tmp_path / "dnf.log"
+    git_log = tmp_path / "git.log"
     create_exe(
         bin_dir / "dnf",
-        f"#!/usr/bin/env bash\necho \"$@\" >> '{dnf_log}'\nif [[ $1 == install ]]; then\n  shift\n  for pkg in \"$@\"; do\n    /bin/touch '{bin_dir}'/$pkg\n    /bin/chmod 755 '{bin_dir}'/$pkg\n  done\nfi\n",
+        f"#!/usr/bin/env bash\necho \"$@\" >> '{dnf_log}'\nif [[ $1 == install ]]; then\n  shift\n  if [[ $1 == -y ]]; then\n    shift\n  fi\n  for pkg in \"$@\"; do\n    if [[ $pkg == git ]]; then\n      cat > '{bin_dir}'/git <<'EOF'\n#!/usr/bin/env bash\necho \"$@\" >> '{git_log}'\nif [[ $1 == clone ]]; then\n  /bin/mkdir -p \"$3/.git\"\nfi\nEOF\n      /bin/chmod 755 '{bin_dir}'/git\n    elif [[ $pkg == starship ]]; then\n      cat > '{bin_dir}'/starship <<'EOF'\n#!/usr/bin/env bash\nif [[ $1 == init && $2 == zsh ]]; then\n  echo 'STARSHIP_INIT'\nfi\nEOF\n      /bin/chmod 755 '{bin_dir}'/starship\n    else\n      cat > '{bin_dir}'/$pkg <<'EOF'\n#!/usr/bin/env bash\nexit 0\nEOF\n      /bin/chmod 755 '{bin_dir}'/$pkg\n    fi\n  done\nfi\n",
     )
     create_exe(bin_dir / "sudo", "#!/usr/bin/env bash\n\"$@\"\n")
     (bin_dir / "bash").symlink_to("/bin/bash")
     (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+    (bin_dir / "cat").symlink_to("/bin/cat")
 
     subprocess.run(["git", "init"], cwd=repo, check=True)
 
     env = os.environ.copy()
-    env.update({
-        "OSTYPE": "linux-gnu",
-        "PATH": str(bin_dir),
-    })
+    env.update({"OSTYPE": "linux-gnu", "PATH": str(bin_dir)})
 
     subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
 
@@ -97,6 +115,8 @@ def test_install_common_installs_missing_deps_dnf(tmp_path: Path) -> None:
     assert any("curl" in line for line in lines)
     assert any("unzip" in line for line in lines)
     assert any("git" in line for line in lines)
+    assert any("zsh" in line for line in lines)
+    assert any("starship" in line for line in lines)
 
 
 def test_install_common_installs_missing_deps_pacman(tmp_path: Path) -> None:
@@ -126,21 +146,20 @@ def test_install_common_installs_missing_deps_pacman(tmp_path: Path) -> None:
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     pac_log = tmp_path / "pacman.log"
+    git_log = tmp_path / "git.log"
     create_exe(
         bin_dir / "pacman",
-        f"#!/usr/bin/env bash\necho \"$@\" >> '{pac_log}'\nif [[ $1 == -S ]]; then\n  shift\n  if [[ $1 == --noconfirm ]]; then\n    shift\n  fi\n  for pkg in \"$@\"; do\n    /bin/touch '{bin_dir}'/$pkg\n    /bin/chmod 755 '{bin_dir}'/$pkg\n  done\nfi\n",
+        f"#!/usr/bin/env bash\necho \"$@\" >> '{pac_log}'\nif [[ $1 == -S ]]; then\n  shift\n  if [[ $1 == --noconfirm ]]; then\n    shift\n  fi\n  for pkg in \"$@\"; do\n    if [[ $pkg == git ]]; then\n      cat > '{bin_dir}'/git <<'EOF'\n#!/usr/bin/env bash\necho \"$@\" >> '{git_log}'\nif [[ $1 == clone ]]; then\n  /bin/mkdir -p \"$3/.git\"\nfi\nEOF\n      /bin/chmod 755 '{bin_dir}'/git\n    elif [[ $pkg == starship ]]; then\n      cat > '{bin_dir}'/starship <<'EOF'\n#!/usr/bin/env bash\nif [[ $1 == init && $2 == zsh ]]; then\n  echo 'STARSHIP_INIT'\nfi\nEOF\n      /bin/chmod 755 '{bin_dir}'/starship\n    else\n      cat > '{bin_dir}'/$pkg <<'EOF'\n#!/usr/bin/env bash\nexit 0\nEOF\n      /bin/chmod 755 '{bin_dir}'/$pkg\n    fi\n  done\nfi\n",
     )
     create_exe(bin_dir / "sudo", "#!/usr/bin/env bash\n\"$@\"\n")
     (bin_dir / "bash").symlink_to("/bin/bash")
     (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+    (bin_dir / "cat").symlink_to("/bin/cat")
 
     subprocess.run(["git", "init"], cwd=repo, check=True)
 
     env = os.environ.copy()
-    env.update({
-        "OSTYPE": "linux-gnu",
-        "PATH": str(bin_dir),
-    })
+    env.update({"OSTYPE": "linux-gnu", "PATH": str(bin_dir)})
 
     subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
 
@@ -149,6 +168,8 @@ def test_install_common_installs_missing_deps_pacman(tmp_path: Path) -> None:
     assert any("curl" in line for line in lines)
     assert any("unzip" in line for line in lines)
     assert any("git" in line for line in lines)
+    assert any("zsh" in line for line in lines)
+    assert any("starship" in line for line in lines)
 
 
 def test_install_common_setup_flags_linux(tmp_path: Path) -> None:
@@ -188,8 +209,20 @@ def test_install_common_setup_flags_linux(tmp_path: Path) -> None:
     ]:
         f.chmod(0o755)
 
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    git_log = tmp_path / "git.log"
+    create_exe(bin_dir / "curl")
+    create_exe(bin_dir / "unzip")
+    create_exe(bin_dir / "zsh")
+    create_exe(bin_dir / "starship", "#!/usr/bin/env bash\nif [[ $1 == init && $2 == zsh ]]; then\n  echo 'STARSHIP_INIT'\nfi\n")
+    create_git_stub(bin_dir / "git", git_log)
+    (bin_dir / "bash").symlink_to("/bin/bash")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+
     env = os.environ.copy()
     env["OSTYPE"] = "linux-gnu"
+    env["PATH"] = f"{bin_dir}:/usr/bin:/bin"
     subprocess.run(
         [
             "/bin/bash",
@@ -263,3 +296,121 @@ def test_install_common_setup_flags_windows(tmp_path: Path) -> None:
     assert "install_common.ps1" in lines
     assert "setup-wsl.ps1" in lines
     assert "setup-docker.ps1" in lines
+
+
+def test_install_common_sets_up_zsh_plugins_and_zshrc(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / "repo_zsh"
+    repo.mkdir()
+
+    scripts_dir = repo / "scripts"
+    helpers_dir = scripts_dir / "helpers"
+    helpers_dir.mkdir(parents=True)
+
+    shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+
+    log = tmp_path / "install.log"
+    for path, line in [
+        (scripts_dir / "setup-hooks.sh", "setup_hooks"),
+        (helpers_dir / "install_fonts.sh", "install_fonts"),
+        (helpers_dir / "sync_palettes.sh", "sync_palettes"),
+    ]:
+        path.write_text(f"#!/usr/bin/env bash\necho {line} >> '{log}'\n", encoding="utf-8")
+        path.chmod(0o755)
+
+    home_dir = tmp_path / "home"
+    home_dir.mkdir()
+    zshrc = home_dir / ".zshrc"
+    zshrc.write_text("# existing\n", encoding="utf-8")
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    apt_log = tmp_path / "apt.log"
+    git_log = tmp_path / "git.log"
+
+    create_exe(
+        bin_dir / "apt-get",
+        f"#!/usr/bin/env bash\necho \"$@\" >> '{apt_log}'\nif [[ $1 == install ]]; then\n  shift\n  if [[ $1 == -y ]]; then\n    shift\n  fi\n  for pkg in \"$@\"; do\n    /bin/touch '{bin_dir}'/$pkg\n    /bin/chmod 755 '{bin_dir}'/$pkg\n  done\nfi\n",
+    )
+    create_exe(
+        bin_dir / "git",
+        f"#!/usr/bin/env bash\necho \"$@\" >> '{git_log}'\nif [[ $1 == clone ]]; then\n  /bin/mkdir -p \"$3/.git\"\nfi\n",
+    )
+    create_exe(bin_dir / "starship", "#!/usr/bin/env bash\nif [[ $1 == init && $2 == zsh ]]; then\n  echo 'STARSHIP_INIT'\nfi\n")
+    create_exe(bin_dir / "sudo", "#!/usr/bin/env bash\n\"$@\"\n")
+    (bin_dir / "bash").symlink_to("/bin/bash")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+
+    env = os.environ.copy()
+    env.update({
+        "OSTYPE": "linux-gnu",
+        "PATH": f"{bin_dir}:/usr/bin:/bin",
+        "HOME": str(home_dir),
+        "SHELL": "/bin/bash",
+    })
+
+    subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
+
+    zshrc_content = zshrc.read_text(encoding="utf-8")
+    assert 'source "' + str(home_dir / ".local/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh") + '"' in zshrc_content
+    assert 'source "' + str(home_dir / ".local/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh") + '"' in zshrc_content
+    assert 'eval "$(starship init zsh)"' in zshrc_content
+
+    apt_lines = apt_log.read_text(encoding="utf-8").splitlines()
+    assert any("install -y" in line and "zsh" in line for line in apt_lines)
+
+    git_lines = git_log.read_text(encoding="utf-8").splitlines()
+    assert sum(1 for line in git_lines if line.startswith("clone ")) == 2
+
+
+def test_install_common_zsh_plugin_setup_is_idempotent(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / "repo_zsh_idempotent"
+    repo.mkdir()
+
+    scripts_dir = repo / "scripts"
+    helpers_dir = scripts_dir / "helpers"
+    helpers_dir.mkdir(parents=True)
+
+    shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+
+    for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
+        path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+        path.chmod(0o755)
+
+    home_dir = tmp_path / "home"
+    home_dir.mkdir()
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    git_log = tmp_path / "git.log"
+
+    create_exe(bin_dir / "curl")
+    create_exe(bin_dir / "unzip")
+    create_exe(bin_dir / "zsh")
+    create_exe(bin_dir / "starship", "#!/usr/bin/env bash\nif [[ $1 == init && $2 == zsh ]]; then\n  echo 'STARSHIP_INIT'\nfi\n")
+    create_exe(
+        bin_dir / "git",
+        f"#!/usr/bin/env bash\necho \"$@\" >> '{git_log}'\nif [[ $1 == clone ]]; then\n  /bin/mkdir -p \"$3/.git\"\nfi\n",
+    )
+    create_exe(bin_dir / "sudo", "#!/usr/bin/env bash\n\"$@\"\n")
+    (bin_dir / "bash").symlink_to("/bin/bash")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+
+    env = os.environ.copy()
+    env.update({
+        "OSTYPE": "linux-gnu",
+        "PATH": f"{bin_dir}:/usr/bin:/bin",
+        "HOME": str(home_dir),
+        "SHELL": "/bin/bash",
+    })
+
+    subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
+    subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
+
+    zshrc_content = (home_dir / ".zshrc").read_text(encoding="utf-8")
+    assert zshrc_content.count("# >>> d0tTino zsh plugins >>>") == 1
+    assert zshrc_content.count('eval "$(starship init zsh)"') == 1
+
+    clone_lines = [line for line in git_log.read_text(encoding="utf-8").splitlines() if line.startswith("clone ")]
+    assert len(clone_lines) == 2
