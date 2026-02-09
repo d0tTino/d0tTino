@@ -42,10 +42,51 @@ background_opacity="${TINO_TERMINAL_OPACITY:-0.92}"
 max_fps="${TINO_TERMINAL_FPS:-120}"
 effects="${TINO_TERMINAL_EFFECTS:-on}"
 
+validate_number() {
+    local value="$1"
+    local name="$2"
+    local pattern="$3"
+
+    if [[ ! "$value" =~ $pattern ]]; then
+        echo "Error: $name must be numeric, got '$value'" >&2
+        exit 1
+    fi
+}
+
+normalize_effects_to_toml() {
+    local raw_value="$1"
+    local value
+
+    value="$(printf '%s' "$raw_value" | tr '[:upper:]' '[:lower:]')"
+    case "$value" in
+        high|balanced|on|true|yes|1)
+            printf '%s' "true"
+            ;;
+        off|false|no|0|none)
+            printf '%s' "false"
+            ;;
+        *.glsl|*/*)
+            # Treat shader file paths as TOML strings.
+            local escaped_value
+            escaped_value="${raw_value//\\/\\\\}"
+            escaped_value="${escaped_value//\"/\\\"}"
+            printf '"%s"' "$escaped_value"
+            ;;
+        *)
+            echo "Error: unknown TINO_TERMINAL_EFFECTS '$raw_value'. Use one of: on, off, balanced, high, true, false, or a shader path (*.glsl)." >&2
+            exit 1
+            ;;
+    esac
+}
+
+validate_number "$background_opacity" "TINO_TERMINAL_OPACITY" '^[0-9]+([.][0-9]+)?$'
+validate_number "$max_fps" "TINO_TERMINAL_FPS" '^[0-9]+$'
+effects_toml="$(normalize_effects_to_toml "$effects")"
+
 template_contents="$(<"$canonical_template")"
 rendered_config="${template_contents//__BACKGROUND_OPACITY__/$background_opacity}"
 rendered_config="${rendered_config//__MAX_FPS__/$max_fps}"
-rendered_config="${rendered_config//__EFFECTS__/$effects}"
+rendered_config="${rendered_config//__CUSTOM_SHADER__/$effects_toml}"
 
 if [[ -f "$config_file" ]] && [[ "$(<"$config_file")" == "$rendered_config" ]]; then
     echo "Configuration already up to date at $config_file"
