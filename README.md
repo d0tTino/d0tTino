@@ -182,15 +182,27 @@ Dotfiles are organized into explicit stow-style packages under `dotfiles/` with 
 - `dotfiles/shell` → `.zshrc`, `.bashrc`, and `~/.config/starship.toml`
 - `dotfiles/nvim` → `~/.config/nvim/...`
 - `dotfiles/tmux` → `.tmux.conf`
+- `dotfiles/terminal` → shared terminal defaults in `~/.config/tino/terminal-defaults.sh`
 - `dotfiles/ghostty/ghostty.toml` → **canonical** Ghostty config; `scripts/setup-ghostty.sh` deploys it to `~/.config/ghostty/ghostty.toml`
 - `hosts/desktop` and `hosts/work_laptop` → machine-specific overrides
 
 Example:
 
 ```bash
-stow --target="$HOME" dotfiles/shell dotfiles/nvim dotfiles/tmux
-stow --target="$HOME" hosts/desktop   # or hosts/work_laptop
+# Core defaults first (includes terminal defaults)
+stow --target="$HOME" --dir=dotfiles shell nvim tmux terminal
+
+# Host overlay second (desktop OR work_laptop)
+stow --target="$HOME" --dir=hosts desktop
+# stow --target="$HOME" --dir=hosts work_laptop
 ```
+
+Expected behavior:
+
+- `dotfiles/terminal` provides shared defaults in `~/.config/tino/terminal-defaults.sh`.
+- Host overlay packages only contain diffs in `~/.config/tino/host-overrides.sh`.
+- On shell startup, `.zshrc` loads defaults first and then host overrides, so host values win when both define the same variable.
+- `scripts/install_dotfiles.sh --host <name>` follows the same order: core packages, then host overlay.
 
 ## Changelog (auto‑updated)
 
