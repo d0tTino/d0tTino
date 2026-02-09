@@ -19,7 +19,9 @@ if [[ -r "$HOME/.config/tino/host-overrides.sh" ]]; then
     source "$HOME/.config/tino/host-overrides.sh"
 fi
 
-eval "$(starship init zsh)"
+if command -v starship >/dev/null; then
+    eval "$(starship init zsh)"
+fi
 
 if command -v zoxide >/dev/null; then
     eval "$(zoxide init zsh)"
