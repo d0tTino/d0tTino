@@ -182,7 +182,7 @@ Dotfiles are organized into explicit stow-style packages under `dotfiles/` with 
 - `dotfiles/shell` → `.zshrc`, `.bashrc`, and `~/.config/starship.toml`
 - `dotfiles/nvim` → `~/.config/nvim/...`
 - `dotfiles/tmux` → `.tmux.conf`
-- `dotfiles/ghostty/ghostty.toml` → managed Ghostty config copied by `scripts/setup-ghostty.sh`
+- `dotfiles/ghostty/ghostty.toml` → **canonical** Ghostty config; `scripts/setup-ghostty.sh` deploys it to `~/.config/ghostty/ghostty.toml`
 - `hosts/desktop` and `hosts/work_laptop` → machine-specific overrides
 
 Example:

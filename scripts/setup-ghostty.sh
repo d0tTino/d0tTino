@@ -15,15 +15,20 @@ fi
 
 config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+canonical_source="$repo_root/dotfiles/ghostty/ghostty.toml"
 config_file="$config_dir/ghostty.toml"
 mkdir -p "$config_dir"
+
+if [[ ! -f "$canonical_source" ]]; then
+    echo "Error: managed Ghostty config is missing at $canonical_source" >&2
+    exit 1
+fi
 
 if [[ -e "$config_file" ]]; then
     echo "Configuration already exists at $config_file"
 else
-    cp "$repo_root/dotfiles/ghostty/ghostty.toml" "$config_file"
+    cp "$canonical_source" "$config_file"
     echo "Configuration copied to $config_file"
 fi
 
 echo "Ghostty installed."
-

@@ -70,7 +70,10 @@ def test_setup_ghostty_installs_and_copies(tmp_path: Path) -> None:
 
 def test_managed_ghostty_config_has_required_keys() -> None:
     config_path = REPO_ROOT / "dotfiles" / "ghostty" / "ghostty.toml"
+    legacy_config_path = REPO_ROOT / "dotfiles" / "terminal" / ".config" / "ghostty" / "ghostty.toml"
     contents = config_path.read_text()
+
+    assert not legacy_config_path.exists()
 
     required = [
         "font-family = ",
@@ -84,3 +87,11 @@ def test_managed_ghostty_config_has_required_keys() -> None:
 
     palette_entries = [line for line in contents.splitlines() if line.startswith("palette = ")]
     assert len(palette_entries) >= 16
+
+
+def test_setup_script_uses_canonical_config_path() -> None:
+    script_path = REPO_ROOT / "scripts" / "setup-ghostty.sh"
+    script_contents = script_path.read_text()
+
+    assert 'canonical_source="$repo_root/dotfiles/ghostty/ghostty.toml"' in script_contents
+    assert "dotfiles/terminal/.config/ghostty/ghostty.toml" not in script_contents
