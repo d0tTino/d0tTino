@@ -87,7 +87,7 @@ This repository includes example setups for various tools:
 - `dotfiles/shell` – `.zshrc`, `.bashrc`, and `~/.config/starship.toml`.
 - `dotfiles/nvim` – Neovim package (`~/.config/nvim/...`).
 - `dotfiles/tmux` – `.tmux.conf`.
-- `dotfiles/ghostty/ghostty.toml.tmpl` – canonical Ghostty configuration template managed by `scripts/setup-ghostty.sh`.
+- `dotfiles/ghostty/ghostty.toml.tmpl` – canonical Ghostty configuration template (source of truth) managed by `scripts/setup-ghostty.sh`.
 - `scripts/install_common.sh` – standard bootstrap entrypoint; installs `curl`, `unzip`, `git` everywhere, then on macOS/Linux installs `zsh`, `starship`, `tmux`, `neovim`, `cargo`, and runs `scripts/setup-ghostty.sh` for Ghostty. On Windows it runs PowerShell setup and does not attempt Ghostty install.
 - `scripts/setup-wsl.sh` – WSL bootstrap helper; installs the same base stack and then runs `scripts/setup-ghostty.sh` so WSL follows the same managed Ghostty profile (Blacklight theme + Nerd Font defaults).
 - `hosts/desktop` and `hosts/work_laptop` – host overlays for machine-specific tweaks.
@@ -128,6 +128,8 @@ Platform behavior is explicit:
 
 - **Linux/macOS/WSL**: installs shell/editor/multiplexer stack (`zsh`, `starship`, `tmux`, `neovim`, `cargo`) and then installs/configures **Ghostty** via `scripts/setup-ghostty.sh` for a single canonical terminal path and shared theme behavior.
 - **Windows**: runs the PowerShell bootstrap path and optional Windows Terminal/WSL setup flags; native Ghostty install is intentionally skipped on Windows itself.
+
+For Ghostty, `scripts/setup-ghostty.sh` renders `dotfiles/ghostty/ghostty.toml.tmpl` into `~/.config/ghostty/ghostty.toml`. Template values are driven by terminal defaults from `~/.config/tino/terminal-defaults.sh` and host-specific overrides from `~/.config/tino/host-overrides.sh`.
 
 Optional alternative: use Windows Terminal as your host terminal app while running Ghostty inside WSL for the managed Linux profile, or keep Windows Terminal-only settings for native PowerShell workflows.
 
