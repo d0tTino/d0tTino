@@ -88,6 +88,7 @@ This repository includes example setups for various tools:
 - `dotfiles/nvim` – Neovim package (`~/.config/nvim/...`).
 - `dotfiles/tmux` – `.tmux.conf`.
 - `dotfiles/ghostty/ghostty.toml` – canonical Ghostty configuration managed by `scripts/setup-ghostty.sh`.
+- `scripts/install_common.sh` – standard bootstrap entrypoint; installs `curl`, `unzip`, `git` everywhere, then on macOS/Linux installs `zsh`, `starship`, `tmux`, `neovim`, `cargo`, and runs `scripts/setup-ghostty.sh` for Ghostty. On Windows it runs PowerShell setup and does not attempt Ghostty install.
 - `hosts/desktop` and `hosts/work_laptop` – host overlays for machine-specific tweaks.
 - `windows-terminal` – minimal starter `settings.json` for Windows Terminal. The
   file is built from `common-profiles.json` using `generate_settings.py`.
@@ -113,6 +114,19 @@ New-Item -ItemType SymbolicLink -Path $Env:USERPROFILE\\AppData\\Local\\Packages
 ```
 
 These examples assume the repository is cloned in a convenient location. Adjust the paths to match your setup.
+
+## Standard bootstrap command
+
+From the repository root run:
+
+```bash
+./scripts/install_common.sh
+```
+
+Platform behavior is explicit:
+
+- **Linux/macOS**: installs shell/editor/multiplexer stack (`zsh`, `starship`, `tmux`, `neovim`, `cargo`) and then installs/configures **Ghostty** via `scripts/setup-ghostty.sh`.
+- **Windows**: runs the PowerShell bootstrap path and optional Windows Terminal/WSL setup flags; Ghostty is intentionally skipped.
 
 ## Neovim first run and startup profiling
 
@@ -253,7 +267,7 @@ traditional command palette is available with **Ctrl+Shift+P**.
    stow dotfiles/shell
    stow dotfiles/nvim
    stow dotfiles/tmux
-   ./scripts/setup-ghostty.sh
+   ./scripts/install_common.sh
    ```
 
    Stow cleanly manages symlinks, letting you enable or disable packages with `stow -D <name>`.

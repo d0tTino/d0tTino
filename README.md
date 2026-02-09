@@ -184,6 +184,7 @@ Dotfiles are organized into explicit stow-style packages under `dotfiles/` with 
 - `dotfiles/tmux` → `.tmux.conf`
 - `dotfiles/terminal` → shared terminal defaults in `~/.config/tino/terminal-defaults.sh`
 - `dotfiles/ghostty/ghostty.toml` → **canonical** Ghostty config; `scripts/setup-ghostty.sh` deploys it to `~/.config/ghostty/ghostty.toml`
+- `scripts/install_common.sh` → standard bootstrap script; on macOS/Linux it installs `zsh`, `starship`, `tmux`, `neovim`, `cargo`, and then runs `scripts/setup-ghostty.sh` to install/configure Ghostty (Windows skips Ghostty and keeps Windows Terminal flow).
 - `hosts/desktop` and `hosts/work_laptop` → machine-specific overrides
 
 Example:
@@ -203,6 +204,12 @@ Expected behavior:
 - Host overlay packages only contain diffs in `~/.config/tino/host-overrides.sh`.
 - On shell startup, `.zshrc` loads defaults first and then host overrides, so host values win when both define the same variable.
 - `scripts/install_dotfiles.sh --host <name>` follows the same order: core packages, then host overlay.
+
+Standard bootstrap command (repo root):
+
+```bash
+./scripts/install_common.sh
+```
 
 ## Changelog (auto‑updated)
 
