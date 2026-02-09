@@ -29,6 +29,13 @@ run_cmd() {
 ensure_deps() {
     local missing=()
     for cmd in "$@"; do
+        if [[ $cmd == "neovim" ]]; then
+            if ! command -v nvim >/dev/null 2>&1; then
+                missing+=("$cmd")
+            fi
+            continue
+        fi
+
         if ! command -v "$cmd" >/dev/null 2>&1; then
             missing+=("$cmd")
         fi
@@ -64,6 +71,20 @@ ensure_deps() {
             exit 1
         fi
     fi
+}
+
+install_terminal_emulator() {
+    case $OSTYPE in
+        darwin*|linux*)
+            run_cmd bash "$scripts/setup-ghostty.sh"
+            ;;
+        msys*|cygwin*|win32*|windows*)
+            echo "Skipping Ghostty install on Windows; use Windows Terminal setup options instead."
+            ;;
+        *)
+            echo "Skipping terminal emulator install for unsupported platform: $OSTYPE"
+            ;;
+    esac
 }
 
 run_pwsh() {
@@ -211,11 +232,12 @@ if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == 
     run_pwsh fix-path.ps1
     run_pwsh helpers/install_common.ps1
 else
-    ensure_deps zsh starship
+    ensure_deps zsh starship tmux neovim cargo
     clone_plugin_if_missing "$autosuggest_repo" "$plugin_root/zsh-autosuggestions"
     clone_plugin_if_missing "$syntax_highlight_repo" "$plugin_root/zsh-syntax-highlighting"
     update_zshrc_plugins
     prompt_set_default_shell
+    install_terminal_emulator
 
     run_cmd bash "$scripts/setup-hooks.sh"
     run_cmd bash "$scripts/helpers/install_fonts.sh"
