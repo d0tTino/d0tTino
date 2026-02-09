@@ -1,3 +1,4 @@
 # Example configuration for Ghostty terminal
 use_ligatures = true
 window_title = "Ghostty"
+font-family = "CaskaydiaCove Nerd Font"
