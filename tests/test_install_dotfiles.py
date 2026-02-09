@@ -120,3 +120,46 @@ def test_install_dotfiles_selective_packages_and_host_order(tmp_path: Path) -> N
     calls = stow_log.read_text().strip().splitlines()
     package_calls = [line.rsplit(" ", 1)[-1] for line in calls if line]
     assert package_calls == ["tmux", "tmux", "shell", "shell", "desktop", "desktop"]
+
+
+def test_install_dotfiles_core_then_host_overlay_order(tmp_path: Path) -> None:
+    repo = _setup_repo(tmp_path)
+    stow_log = tmp_path / "stow.log"
+
+    stub_dir = tmp_path / "bin"
+    stub_dir.mkdir()
+    _write_stub_stow(stub_dir / "stow")
+
+    env = os.environ.copy()
+    env["PATH"] = f"{stub_dir}:{env['PATH']}"
+    env["STOW_LOG"] = str(stow_log)
+
+    subprocess.run(
+        [
+            "/bin/bash",
+            "scripts/install_dotfiles.sh",
+            "--dry-run",
+            "--host",
+            "desktop",
+        ],
+        cwd=repo,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    calls = stow_log.read_text().strip().splitlines()
+    package_calls = [line.rsplit(" ", 1)[-1] for line in calls if line]
+    assert package_calls == [
+        "shell",
+        "shell",
+        "nvim",
+        "nvim",
+        "tmux",
+        "tmux",
+        "terminal",
+        "terminal",
+        "desktop",
+        "desktop",
+    ]

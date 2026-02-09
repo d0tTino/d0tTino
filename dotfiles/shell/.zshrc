@@ -10,6 +10,15 @@ if [[ -r "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]
     source "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 fi
 
+
+if [[ -r "$HOME/.config/tino/terminal-defaults.sh" ]]; then
+    source "$HOME/.config/tino/terminal-defaults.sh"
+fi
+
+if [[ -r "$HOME/.config/tino/host-overrides.sh" ]]; then
+    source "$HOME/.config/tino/host-overrides.sh"
+fi
+
 eval "$(starship init zsh)"
 
 if command -v zoxide >/dev/null; then
