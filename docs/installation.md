@@ -180,8 +180,11 @@ You can also pass `--install-wsl` to `install.sh` or `-InstallWSL` to
 
 Run the provided script from the repository root to install the basic tools on
 a fresh Ubuntu/WSL instance. The script uses `apt-get` and may prompt for your
-password. Invoke it directly inside WSL or pass `--setup-wsl` to `install.sh` or
-`-SetupWSL` to `bootstrap.ps1` from Windows to run it via `wsl.exe`:
+password. It follows the same canonical terminal path as Linux/macOS by
+installing and configuring **Ghostty** through `scripts/setup-ghostty.sh`,
+including the managed Blacklight theme and Nerd Font defaults. Invoke it
+directly inside WSL or pass `--setup-wsl` to `install.sh` or `-SetupWSL` to
+`bootstrap.ps1` from Windows to run it via `wsl.exe`:
 
 ```bash
 sudo bash scripts/setup-wsl.sh
@@ -350,7 +353,7 @@ On Windows you can call the PowerShell wrapper or use `bootstrap.ps1` with the
 cargo install ghostty
 ```
 
-Ghostty is the standard terminal profile in this repository. `scripts/setup-ghostty.sh` copies the managed config from `dotfiles/ghostty/ghostty.toml` into `~/.config/ghostty/ghostty.toml`, including Nerd Font defaults, Blacklight colors, opacity, and cursor polish settings.
+Ghostty is the standard terminal profile in this repository on Linux, macOS, and WSL. `scripts/setup-ghostty.sh` copies the managed template from `dotfiles/ghostty/ghostty.toml.tmpl` into `~/.config/ghostty/ghostty.toml`, including Nerd Font defaults, Blacklight colors, opacity, and cursor polish settings.
 
 ```toml
 font-family = "JetBrainsMono Nerd Font"

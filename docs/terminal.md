@@ -87,8 +87,9 @@ This repository includes example setups for various tools:
 - `dotfiles/shell` – `.zshrc`, `.bashrc`, and `~/.config/starship.toml`.
 - `dotfiles/nvim` – Neovim package (`~/.config/nvim/...`).
 - `dotfiles/tmux` – `.tmux.conf`.
-- `dotfiles/ghostty/ghostty.toml` – canonical Ghostty configuration managed by `scripts/setup-ghostty.sh`.
+- `dotfiles/ghostty/ghostty.toml.tmpl` – canonical Ghostty configuration template managed by `scripts/setup-ghostty.sh`.
 - `scripts/install_common.sh` – standard bootstrap entrypoint; installs `curl`, `unzip`, `git` everywhere, then on macOS/Linux installs `zsh`, `starship`, `tmux`, `neovim`, `cargo`, and runs `scripts/setup-ghostty.sh` for Ghostty. On Windows it runs PowerShell setup and does not attempt Ghostty install.
+- `scripts/setup-wsl.sh` – WSL bootstrap helper; installs the same base stack and then runs `scripts/setup-ghostty.sh` so WSL follows the same managed Ghostty profile (Blacklight theme + Nerd Font defaults).
 - `hosts/desktop` and `hosts/work_laptop` – host overlays for machine-specific tweaks.
 - `windows-terminal` – minimal starter `settings.json` for Windows Terminal. The
   file is built from `common-profiles.json` using `generate_settings.py`.
@@ -125,8 +126,10 @@ From the repository root run:
 
 Platform behavior is explicit:
 
-- **Linux/macOS**: installs shell/editor/multiplexer stack (`zsh`, `starship`, `tmux`, `neovim`, `cargo`) and then installs/configures **Ghostty** via `scripts/setup-ghostty.sh`.
-- **Windows**: runs the PowerShell bootstrap path and optional Windows Terminal/WSL setup flags; Ghostty is intentionally skipped.
+- **Linux/macOS/WSL**: installs shell/editor/multiplexer stack (`zsh`, `starship`, `tmux`, `neovim`, `cargo`) and then installs/configures **Ghostty** via `scripts/setup-ghostty.sh` for a single canonical terminal path and shared theme behavior.
+- **Windows**: runs the PowerShell bootstrap path and optional Windows Terminal/WSL setup flags; native Ghostty install is intentionally skipped on Windows itself.
+
+Optional alternative: use Windows Terminal as your host terminal app while running Ghostty inside WSL for the managed Linux profile, or keep Windows Terminal-only settings for native PowerShell workflows.
 
 ## Neovim first run and startup profiling
 

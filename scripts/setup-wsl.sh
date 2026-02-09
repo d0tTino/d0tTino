@@ -33,24 +33,11 @@ sudo apt-get install -y \
     curl \
     zsh \
     neovim \
-    tmux
+    tmux \
+    cargo
 
-install_terminal() {
-    local terminal="alacritty"
-
-    if command -v "$terminal" >/dev/null 2>&1; then
-        return
-    fi
-
-    sudo apt-get install -y "$terminal"
-
-    if ! command -v "$terminal" >/dev/null 2>&1; then
-        echo "Error: $terminal installation failed." >&2
-        exit 1
-    fi
-}
-
-install_terminal
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+bash "$script_dir/setup-ghostty.sh"
 
 ensure_shallow_plugin_repo() {
     local repo_url="$1"
