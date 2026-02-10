@@ -153,6 +153,38 @@ validate_number() {
     fi
 }
 
+is_path_like_effects_value() {
+    local raw_value="$1"
+
+    case "$raw_value" in
+        ./*|../*|~/*|/*|*/*|*.glsl)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+validate_effects_value() {
+    local raw_value="$1"
+    local value
+
+    value="$(printf '%s' "$raw_value" | tr '[:upper:]' '[:lower:]')"
+    case "$value" in
+        high|balanced|on|true|yes|1|off|false|no|0|none)
+            return 0
+            ;;
+    esac
+
+    if is_path_like_effects_value "$raw_value"; then
+        return 0
+    fi
+
+    echo "Error: invalid TINO_TERMINAL_EFFECTS '$raw_value'. Use a preset (on/off/balanced/high) or a shader path (e.g. ~/.config/ghostty/shaders/effect.glsl)." >&2
+    exit 1
+}
+
 normalize_effects_to_toml() {
     local raw_value="$1"
     local value
@@ -160,33 +192,32 @@ normalize_effects_to_toml() {
     value="$(printf '%s' "$raw_value" | tr '[:upper:]' '[:lower:]')"
     case "$value" in
         high|balanced|on|true|yes|1)
-            printf '%s' "true"
+            # Preset quality levels rely on Ghostty defaults and do not set custom-shader.
+            printf '%s' ""
             ;;
         off|false|no|0|none)
-            printf '%s' "false"
+            # Off disables extra effects and does not set custom-shader.
+            printf '%s' ""
             ;;
-        *.glsl|*/*)
-            # Treat shader file paths as TOML strings.
+        *)
+            # For valid path-like values, render a TOML string assignment.
             local escaped_value
             escaped_value="${raw_value//\\/\\\\}"
             escaped_value="${escaped_value//\"/\\\"}"
-            printf '"%s"' "$escaped_value"
-            ;;
-        *)
-            echo "Error: unknown TINO_TERMINAL_EFFECTS '$raw_value'. Use one of: on, off, balanced, high, true, false, or a shader path (*.glsl)." >&2
-            exit 1
+            printf 'custom-shader = "%s"' "$escaped_value"
             ;;
     esac
 }
 
 validate_number "$background_opacity" "TINO_TERMINAL_OPACITY" '^[0-9]+([.][0-9]+)?$'
 validate_number "$max_fps" "TINO_TERMINAL_FPS" '^[0-9]+$'
+validate_effects_value "$effects"
 effects_toml="$(normalize_effects_to_toml "$effects")"
 
 template_contents="$(<"$canonical_template")"
 rendered_config="${template_contents//__BACKGROUND_OPACITY__/$background_opacity}"
 rendered_config="${rendered_config//__MAX_FPS__/$max_fps}"
-rendered_config="${rendered_config//__CUSTOM_SHADER__/$effects_toml}"
+rendered_config="${rendered_config//__CUSTOM_SHADER_LINE__/$effects_toml}"
 
 if [[ -f "$config_file" ]] && [[ "$(<"$config_file")" == "$rendered_config" ]]; then
     echo "Configuration already up to date at $config_file"
