@@ -129,7 +129,7 @@ Platform behavior is explicit:
 - **Linux/macOS/WSL**: installs shell/editor/multiplexer stack (`zsh`, `starship`, `tmux`, `neovim`, `cargo`) and then installs/configures **Ghostty** via `scripts/setup-ghostty.sh` for a single canonical terminal path and shared theme behavior.
 - **Windows**: runs the PowerShell bootstrap path and optional Windows Terminal/WSL setup flags; native Ghostty install is intentionally skipped on Windows itself.
 
-For Ghostty, `scripts/setup-ghostty.sh` renders `dotfiles/ghostty/ghostty.toml.tmpl` into `~/.config/ghostty/ghostty.toml`. Template values are driven by terminal defaults from `~/.config/tino/terminal-defaults.sh` and host-specific overrides from `~/.config/tino/host-overrides.sh`.
+For Ghostty, `scripts/setup-ghostty.sh` renders `dotfiles/ghostty/ghostty.toml.tmpl` into `~/.config/ghostty/ghostty.toml`. Template values are driven by terminal defaults from `~/.config/tino/terminal-defaults.sh` and host-specific overrides from `~/.config/tino/host-overrides.sh` using canonical `TINO_TERMINAL_OPACITY`, `TINO_TERMINAL_FPS`, and `TINO_TERMINAL_EFFECTS` variables.
 
 Optional alternative: use Windows Terminal as your host terminal app while running Ghostty inside WSL for the managed Linux profile, or keep Windows Terminal-only settings for native PowerShell workflows.
 

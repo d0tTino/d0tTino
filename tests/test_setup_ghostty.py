@@ -71,7 +71,7 @@ def test_setup_ghostty_installs_and_renders(tmp_path: Path) -> None:
     assert config_file.exists()
     config_contents = config_file.read_text()
     assert "background-opacity = 0.92" in config_contents
-    assert 'custom-shader = "crt"' in config_contents
+    assert "custom-shader = true" in config_contents
 
 
 def test_setup_ghostty_renders_host_overrides(tmp_path: Path) -> None:
@@ -91,9 +91,13 @@ def test_setup_ghostty_renders_host_overrides(tmp_path: Path) -> None:
     tino_dir = config_home / "tino"
     tino_dir.mkdir(parents=True)
     (tino_dir / "terminal-defaults.sh").write_text(
-        "TERMINAL_OPACITY=0.91\nTERMINAL_FPS=120\nTERMINAL_EFFECTS='\"scanlines\"'\n"
+        "TINO_TERMINAL_OPACITY=0.91\n"
+        "TINO_TERMINAL_FPS=120\n"
+            "TINO_TERMINAL_EFFECTS=scanlines.glsl\n"
     )
-    (tino_dir / "host-overrides.sh").write_text("TERMINAL_OPACITY=0.73\nTERMINAL_FPS=144\n")
+    (tino_dir / "host-overrides.sh").write_text(
+        "TINO_TERMINAL_OPACITY=0.73\nTINO_TERMINAL_FPS=144\n"
+    )
 
     env = os.environ.copy()
     env.update(
@@ -117,7 +121,7 @@ def test_setup_ghostty_renders_host_overrides(tmp_path: Path) -> None:
     config_contents = config_file.read_text()
     assert "background-opacity = 0.73" in config_contents
     assert "custom-shader-animation-max-fps = 144" in config_contents
-    assert 'custom-shader = "scanlines"' in config_contents
+    assert 'custom-shader = "scanlines.glsl"' in config_contents
     assert "Configuration rendered" in first.stdout
 
     second = subprocess.run(
@@ -140,7 +144,7 @@ def test_managed_ghostty_template_has_required_keys() -> None:
         "font-size = ",
         "background-opacity = __BACKGROUND_OPACITY__",
         "custom-shader-animation-max-fps = __MAX_FPS__",
-        "custom-shader = __EFFECTS__",
+        "custom-shader = __CUSTOM_SHADER__",
         "cursor-style = ",
         "window-title = ",
     ]
