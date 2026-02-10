@@ -31,6 +31,7 @@ def test_setup_wsl_symlinks(tmp_path):
     create_exe(bin_dir / "sudo", "#!/bin/sh\n\"$@\"\n")
     create_exe(bin_dir / "batcat")
     create_exe(bin_dir / "fdfind")
+    create_exe(bin_dir / "stow")
     create_exe(bin_dir / "getent", "#!/usr/bin/env bash\necho \"$2:x:1000:1000::/home/$2:/bin/bash\"\n")
     chsh_log = fake_root / "chsh_history"
     create_exe(bin_dir / "chsh", f"#!/usr/bin/env bash\necho \"$@\" >> \"{chsh_log}\"\n")
@@ -83,6 +84,7 @@ fi
         "starship",
         "zoxide",
         "zsh",
+        "stow",
     ]
     for pkg in required:
         assert pkg in install_args
@@ -102,6 +104,7 @@ def test_setup_wsl_skips_chsh_when_zsh_is_already_default(tmp_path):
     create_exe(bin_dir / "starship", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "zoxide", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "zsh", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "stow", "#!/bin/sh\nexit 0\n")
     create_exe(
         bin_dir / "getent",
         f"#!/usr/bin/env bash\necho \"$2:x:1000:1000::/home/$2:{bin_dir / 'zsh'}\"\n",
@@ -164,18 +167,23 @@ def test_setup_wsl_root_without_sudo(tmp_path):
     bin_dir.mkdir(parents=True)
 
     create_exe(bin_dir / "apt-get", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "sudo", "#!/bin/sh\n\"$@\"\n")
     create_exe(bin_dir / "curl", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "starship", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "zoxide", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "zsh", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "stow", "#!/bin/sh\nexit 0\n")
+    create_exe(bin_dir / "git", "#!/bin/sh\nexit 0\n")
     create_exe(bin_dir / "id", "#!/bin/sh\necho 0\n")
+    create_exe(bin_dir / "getent", f"#!/bin/sh\necho \"$2:x:1000:1000::/home/$2:{bin_dir / 'zsh'}\"\n")
 
     (bin_dir / "grep").symlink_to("/usr/bin/grep")
     (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
     (bin_dir / "cat").symlink_to("/bin/cat")
     env = os.environ.copy()
     env.update({
-        "PATH": str(bin_dir),
+        "PATH": f"{bin_dir}:/usr/bin:/bin",
+        "HOME": str(fake_root),
     })
 
     subprocess.run(
@@ -292,3 +300,47 @@ def test_setup_wsl_zoxide_install_failure(tmp_path):
 
     assert result.returncode != 0
     assert "zoxide installation failed" in result.stderr
+
+
+def test_setup_wsl_passes_host_to_install_dotfiles(tmp_path):
+    repo = tmp_path / "repo"
+    scripts_dir = repo / "scripts"
+    scripts_dir.mkdir(parents=True)
+
+    (repo / "hosts" / "wsl-host").mkdir(parents=True)
+
+    setup_wsl = (REPO_ROOT / "scripts" / "setup-wsl.sh").read_text(encoding="utf-8")
+    (scripts_dir / "setup-wsl.sh").write_text(setup_wsl, encoding="utf-8")
+    (scripts_dir / "setup-wsl.sh").chmod(0o755)
+
+    dotfiles_log = tmp_path / "dotfiles.log"
+    create_exe(
+        scripts_dir / "install_dotfiles.sh",
+        f"#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >> '{dotfiles_log}'\n",
+    )
+    create_exe(scripts_dir / "setup-ghostty.sh", "#!/usr/bin/env bash\nexit 0\n")
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    create_exe(bin_dir / "apt-get", "#!/usr/bin/env bash\nexit 0\n")
+    create_exe(bin_dir / "sudo", "#!/usr/bin/env bash\n\"$@\"\n")
+    create_exe(bin_dir / "git", "#!/usr/bin/env bash\nexit 0\n")
+    create_exe(bin_dir / "curl", "#!/usr/bin/env bash\nexit 0\n")
+    create_exe(bin_dir / "starship", "#!/usr/bin/env bash\nexit 0\n")
+    create_exe(bin_dir / "zoxide", "#!/usr/bin/env bash\nexit 0\n")
+    create_exe(bin_dir / "zsh", "#!/usr/bin/env bash\nexit 0\n")
+    create_exe(bin_dir / "stow", "#!/usr/bin/env bash\nexit 0\n")
+    create_exe(bin_dir / "hostname", "#!/usr/bin/env bash\necho other-host\n")
+    create_exe(bin_dir / "getent", f"#!/usr/bin/env bash\necho \"$2:x:1000:1000::/home/$2:{bin_dir / 'zsh'}\"\n")
+
+    env = os.environ.copy()
+    env.update({"PATH": f"{bin_dir}:/usr/bin:/bin", "HOME": str(tmp_path / "home")})
+
+    subprocess.run(
+        ["/bin/bash", str(scripts_dir / "setup-wsl.sh"), "--host", "wsl-host"],
+        check=True,
+        env=env,
+        cwd=repo,
+    )
+
+    assert dotfiles_log.read_text().splitlines() == ["--host wsl-host"]

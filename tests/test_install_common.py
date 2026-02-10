@@ -414,3 +414,101 @@ def test_install_common_zsh_plugin_setup_is_idempotent(tmp_path: Path) -> None:
 
     clone_lines = [line for line in git_log.read_text(encoding="utf-8").splitlines() if line.startswith("clone ")]
     assert len(clone_lines) == 2
+
+
+def test_install_common_runs_install_dotfiles_with_detected_host(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / "repo_dotfiles"
+    repo.mkdir()
+
+    scripts_dir = repo / "scripts"
+    helpers_dir = scripts_dir / "helpers"
+    helpers_dir.mkdir(parents=True)
+
+    shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+
+    log = tmp_path / "install.log"
+    for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
+        path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+        path.chmod(0o755)
+
+    install_dotfiles_log = tmp_path / "install_dotfiles.log"
+    (scripts_dir / "install_dotfiles.sh").write_text(
+        f"#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >> '{install_dotfiles_log}'\n",
+        encoding="utf-8",
+    )
+    (scripts_dir / "install_dotfiles.sh").chmod(0o755)
+
+    detected_host = "ci-host"
+    (repo / "hosts" / detected_host).mkdir(parents=True)
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    create_exe(bin_dir / "curl")
+    create_exe(bin_dir / "unzip")
+    create_exe(bin_dir / "zsh")
+    create_exe(bin_dir / "tmux")
+    create_exe(bin_dir / "nvim")
+    create_exe(bin_dir / "cargo")
+    create_exe(bin_dir / "stow")
+    create_exe(bin_dir / "starship", "#!/usr/bin/env bash\nif [[ $1 == init && $2 == zsh ]]; then\n  echo 'STARSHIP_INIT'\nfi\n")
+    create_git_stub(bin_dir / "git", log)
+    create_exe(bin_dir / "hostname", f"#!/usr/bin/env bash\necho '{detected_host}'\n")
+    (bin_dir / "bash").symlink_to("/bin/bash")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+
+    env = os.environ.copy()
+    env.update({"OSTYPE": "linux-gnu", "PATH": f"{bin_dir}:/usr/bin:/bin", "HOME": str(tmp_path / 'home')})
+
+    subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
+
+    install_dotfiles_calls = install_dotfiles_log.read_text(encoding="utf-8").splitlines()
+    assert install_dotfiles_calls == [f"--host {detected_host}"]
+
+
+def test_install_common_passes_explicit_host_to_install_dotfiles(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / "repo_dotfiles_host"
+    repo.mkdir()
+
+    scripts_dir = repo / "scripts"
+    helpers_dir = scripts_dir / "helpers"
+    helpers_dir.mkdir(parents=True)
+
+    shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+
+    for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
+        path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+        path.chmod(0o755)
+
+    install_dotfiles_log = tmp_path / "install_dotfiles_explicit.log"
+    (scripts_dir / "install_dotfiles.sh").write_text(
+        f"#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >> '{install_dotfiles_log}'\n",
+        encoding="utf-8",
+    )
+    (scripts_dir / "install_dotfiles.sh").chmod(0o755)
+
+    (repo / "hosts" / "workstation").mkdir(parents=True)
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    for exe in ["curl", "unzip", "zsh", "tmux", "nvim", "cargo", "stow"]:
+        create_exe(bin_dir / exe)
+    create_exe(bin_dir / "starship", "#!/usr/bin/env bash\nif [[ $1 == init && $2 == zsh ]]; then\n  echo 'STARSHIP_INIT'\nfi\n")
+    create_git_stub(bin_dir / "git", tmp_path / "git.log")
+    create_exe(bin_dir / "hostname", "#!/usr/bin/env bash\necho unexpected-host\n")
+    (bin_dir / "bash").symlink_to("/bin/bash")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+
+    env = os.environ.copy()
+    env.update({"OSTYPE": "linux-gnu", "PATH": f"{bin_dir}:/usr/bin:/bin", "HOME": str(tmp_path / 'home')})
+
+    subprocess.run(
+        ["/bin/bash", "scripts/install_common.sh", "--host", "workstation"],
+        cwd=repo,
+        check=True,
+        env=env,
+    )
+
+    install_dotfiles_calls = install_dotfiles_log.read_text(encoding="utf-8").splitlines()
+    assert install_dotfiles_calls == ["--host workstation"]

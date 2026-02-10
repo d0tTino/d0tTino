@@ -1,6 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+host_override=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --host)
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --host requires a hostname" >&2
+                exit 1
+            fi
+            host_override="$2"
+            shift 2
+            ;;
+        *)
+            echo "Unknown option: $1" >&2
+            exit 1
+            ;;
+    esac
+done
+
 # Ensure sudo is available before attempting any privileged commands
 if ! command -v sudo >/dev/null; then
     if [ "$(id -u)" -eq 0 ]; then
@@ -34,10 +52,15 @@ sudo apt-get install -y \
     zsh \
     neovim \
     tmux \
-    cargo
+    cargo \
+    stow
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-bash "$script_dir/setup-ghostty.sh"
+if [[ -f "$script_dir/setup-ghostty.sh" ]]; then
+    if ! bash "$script_dir/setup-ghostty.sh"; then
+        echo "Warning: Ghostty setup failed; continuing." >&2
+    fi
+fi
 
 ensure_shallow_plugin_repo() {
     local repo_url="$1"
@@ -93,7 +116,7 @@ fi
 # fallback when Cargo is missing.
 if ! command -v zoxide >/dev/null; then
     if command -v cargo >/dev/null; then
-        cargo install --locked zoxide
+        cargo install --locked zoxide || true
     else
         curl -sS https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh \
             | bash -s -- --yes
@@ -117,6 +140,22 @@ fi
 if command -v fdfind >/dev/null && ! command -v fd >/dev/null; then
     sudo ln -sf "$(command -v fdfind)" /usr/local/bin/fd
 fi
+
+dotfiles_args=()
+repo_root="$(cd "$script_dir/.." && pwd)"
+if [[ -n "$host_override" ]]; then
+    if [[ ! -d "$repo_root/hosts/$host_override" ]]; then
+        echo "Error: host overlay '$host_override' does not exist" >&2
+        exit 1
+    fi
+    dotfiles_args+=(--host "$host_override")
+else
+    detected_host="$(hostname 2>/dev/null || true)"
+    if [[ -n "$detected_host" && -d "$repo_root/hosts/$detected_host" ]]; then
+        dotfiles_args+=(--host "$detected_host")
+    fi
+fi
+bash "$script_dir/install_dotfiles.sh" "${dotfiles_args[@]}"
 
 # Set zsh as the default shell only when it is not already the login shell.
 zsh_path="$(command -v zsh)"

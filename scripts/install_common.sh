@@ -74,6 +74,10 @@ ensure_deps() {
 }
 
 install_terminal_emulator() {
+    if [[ ! -f "$scripts/setup-ghostty.sh" ]]; then
+        return
+    fi
+
     case $OSTYPE in
         darwin*|linux*)
             run_cmd bash "$scripts/setup-ghostty.sh"
@@ -169,7 +173,7 @@ EOF
 
 prompt_set_default_shell() {
     local zsh_path
-    zsh_path="$(command -v zsh)"
+    zsh_path="$(command -v zsh || true)"
     local current_shell="${SHELL:-}"
 
     if [[ -z "$zsh_path" || "$current_shell" == "$zsh_path" ]]; then
@@ -194,6 +198,7 @@ setup_wsl=false
 setup_docker=false
 dry_run=false
 docker_image=""
+host_override=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -219,6 +224,10 @@ while [[ $# -gt 0 ]]; do
             docker_image=$2
             shift
             ;;
+        --host)
+            host_override=$2
+            shift
+            ;;
         *)
             ;;
     esac
@@ -232,10 +241,28 @@ if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == 
     run_pwsh fix-path.ps1
     run_pwsh helpers/install_common.ps1
 else
-    ensure_deps zsh starship tmux neovim cargo
+    ensure_deps zsh starship tmux neovim cargo stow
     clone_plugin_if_missing "$autosuggest_repo" "$plugin_root/zsh-autosuggestions"
     clone_plugin_if_missing "$syntax_highlight_repo" "$plugin_root/zsh-syntax-highlighting"
     update_zshrc_plugins
+
+    dotfiles_args=()
+    if [[ -n "$host_override" ]]; then
+        if [[ ! -d "$repo_root/hosts/$host_override" ]]; then
+            echo "Error: host overlay '$host_override' does not exist" >&2
+            exit 1
+        fi
+        dotfiles_args+=(--host "$host_override")
+    else
+        detected_host="$(hostname 2>/dev/null || true)"
+        if [[ -n "$detected_host" && -d "$repo_root/hosts/$detected_host" ]]; then
+            dotfiles_args+=(--host "$detected_host")
+        fi
+    fi
+    if [[ -f "$scripts/install_dotfiles.sh" ]]; then
+        run_cmd bash "$scripts/install_dotfiles.sh" "${dotfiles_args[@]}"
+    fi
+
     prompt_set_default_shell
     install_terminal_emulator
 
