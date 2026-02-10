@@ -64,11 +64,42 @@ ensure_ghostty_installed() {
         fi
     fi
 
+    echo "Native package manager install unavailable or did not provide 'ghostty'; falling back to cargo"
+
     if command -v cargo >/dev/null 2>&1; then
+        echo "Using existing cargo to install Ghostty"
         cargo install --locked ghostty
     else
-        echo "Error: unable to install Ghostty via native package manager and cargo is unavailable" >&2
-        exit 1
+        local normalized_ostype
+        normalized_ostype="$(detect_ostype)"
+
+        if [[ "$normalized_ostype" == darwin* ]] && command -v brew >/dev/null 2>&1; then
+            echo "cargo not found; installing rustup/cargo with Homebrew for Ghostty fallback"
+            brew install rustup-init
+            rustup-init -y
+            export PATH="$HOME/.cargo/bin:$PATH"
+        elif [[ "$normalized_ostype" == linux* ]]; then
+            if command -v apt-get >/dev/null 2>&1; then
+                echo "cargo not found; installing cargo with apt-get for Ghostty fallback"
+                run_with_optional_sudo apt-get update
+                run_with_optional_sudo apt-get install -y cargo
+            elif command -v dnf >/dev/null 2>&1; then
+                echo "cargo not found; installing cargo with dnf for Ghostty fallback"
+                run_with_optional_sudo dnf install -y cargo
+            elif command -v pacman >/dev/null 2>&1; then
+                echo "cargo not found; installing cargo with pacman for Ghostty fallback"
+                run_with_optional_sudo pacman -S --noconfirm cargo
+            fi
+        fi
+
+        if ! command -v cargo >/dev/null 2>&1; then
+            echo "Error: unable to install Ghostty via native package manager and cargo is unavailable." >&2
+            echo "Install Rust/Cargo (https://rustup.rs) and re-run this script to use the cargo fallback." >&2
+            exit 1
+        fi
+
+        echo "Using newly installed cargo to install Ghostty"
+        cargo install --locked ghostty
     fi
 
     if ! command -v ghostty >/dev/null 2>&1; then
