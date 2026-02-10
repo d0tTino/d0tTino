@@ -1,0 +1,25 @@
+name: Neovim Startup Benchmark
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Neovim
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y neovim
+      - name: Run benchmark
+        run: ./scripts/benchmark_nvim_startup.sh
+      - name: Upload startup benchmark artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nvim-startup-benchmark
+          path: .cache/tino/nvim-startup/
+          if-no-files-found: warn

@@ -181,13 +181,41 @@ Minimum CLI toolchain for Neovim integrations: `rg` (ripgrep) and `fd` (or `fdfi
 2. Wait for `lazy.nvim` to clone and install plugins.
 3. Run `:Lazy sync` if you want to force a full sync/update pass.
 
-To inspect startup performance:
+To inspect startup performance with a repeatable workflow:
 
 ```bash
-nvim --startuptime /tmp/nvim-startup.log +qa
+./scripts/benchmark_nvim_startup.sh
 ```
 
-Then open the log and review the slowest entries.
+The script always writes to:
+
+- `.cache/tino/nvim-startup/startup.log`
+- `.cache/tino/nvim-startup/summary.txt`
+
+### Before/after comparison flow
+
+1. Capture a baseline:
+
+   ```bash
+   ./scripts/benchmark_nvim_startup.sh
+   cp .cache/tino/nvim-startup/summary.txt .cache/tino/nvim-startup/summary-before.txt
+   ```
+
+2. Make your Neovim config/plugin changes.
+3. Capture an updated measurement:
+
+   ```bash
+   ./scripts/benchmark_nvim_startup.sh
+   cp .cache/tino/nvim-startup/summary.txt .cache/tino/nvim-startup/summary-after.txt
+   ```
+
+4. Compare results:
+
+   ```bash
+   diff -u .cache/tino/nvim-startup/summary-before.txt .cache/tino/nvim-startup/summary-after.txt
+   ```
+
+Use `TOP_COUNT=<n>` to control how many slow entries are included in the summary (default: `20`).
 
 ## Terminal Tools: fastfetch, btm & Nushell/Starship
 
