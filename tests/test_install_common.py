@@ -514,3 +514,36 @@ def test_install_common_passes_explicit_host_to_install_dotfiles(tmp_path: Path)
 
     install_dotfiles_calls = install_dotfiles_log.read_text(encoding="utf-8").splitlines()
     assert install_dotfiles_calls == ["--host workstation"]
+
+
+def test_install_common_dry_run_lists_required_rg_and_fd_packages(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / "repo_dry_run"
+    repo.mkdir()
+
+    scripts_dir = repo / "scripts"
+    shutil.copytree(repo_root / "scripts", scripts_dir)
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    create_exe(bin_dir / "apt-get")
+    create_exe(bin_dir / "sudo", "#!/usr/bin/env bash\n\"$@\"\n")
+    (bin_dir / "bash").symlink_to("/bin/bash")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+
+    env = os.environ.copy()
+    env.update({"OSTYPE": "linux-gnu", "PATH": str(bin_dir)})
+
+    result = subprocess.run(
+        ["/bin/bash", "scripts/install_common.sh", "--dry-run"],
+        cwd=repo,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "apt-get install -y" in output
+    assert "ripgrep" in output
+    assert "fd-find" in output

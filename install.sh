@@ -62,6 +62,7 @@ fi
 
 if $dry_run; then
     echo "Dry run: ${cmd[*]}"
+    "${cmd[@]}"
 else
     "${cmd[@]}"
     if command -v pre-commit >/dev/null 2>&1; then

@@ -26,42 +26,119 @@ run_cmd() {
     fi
 }
 
+command_available_for_dep() {
+    local dep=$1
+    case "$dep" in
+        neovim)
+            command -v nvim >/dev/null 2>&1
+            ;;
+        fd)
+            command -v fd >/dev/null 2>&1 || command -v fdfind >/dev/null 2>&1
+            ;;
+        *)
+            command -v "$dep" >/dev/null 2>&1
+            ;;
+    esac
+}
+
+detect_linux_pkg_manager() {
+    if command -v apt-get >/dev/null 2>&1; then
+        echo "apt"
+    elif command -v dnf >/dev/null 2>&1; then
+        echo "dnf"
+    elif command -v pacman >/dev/null 2>&1; then
+        echo "pacman"
+    else
+        echo ""
+    fi
+}
+
+map_dep_to_package() {
+    local dep=$1
+    local manager=$2
+
+    case "$dep" in
+        rg)
+            echo "ripgrep"
+            ;;
+        fd)
+            if [[ $manager == "apt" || $manager == "dnf" ]]; then
+                echo "fd-find"
+            else
+                echo "fd"
+            fi
+            ;;
+        *)
+            echo "$dep"
+            ;;
+    esac
+}
+
+build_install_package_list() {
+    local manager=$1
+    shift
+
+    local packages=()
+    local dep pkg seen
+    for dep in "$@"; do
+        pkg="$(map_dep_to_package "$dep" "$manager")"
+        seen=false
+        for existing in "${packages[@]}"; do
+            if [[ $existing == "$pkg" ]]; then
+                seen=true
+                break
+            fi
+        done
+        if ! $seen; then
+            packages+=("$pkg")
+        fi
+    done
+
+    printf '%s\n' "${packages[@]}"
+}
+
 ensure_deps() {
     local missing=()
+    local cmd
     for cmd in "$@"; do
-        if [[ $cmd == "neovim" ]]; then
-            if ! command -v nvim >/dev/null 2>&1; then
-                missing+=("$cmd")
-            fi
-            continue
-        fi
-
-        if ! command -v "$cmd" >/dev/null 2>&1; then
+        if ! command_available_for_dep "$cmd"; then
             missing+=("$cmd")
         fi
     done
 
     if (( ${#missing[@]} > 0 )); then
+        local manager=""
+        local -a install_packages=()
+
         if [[ $OSTYPE == darwin* ]]; then
             if command -v brew >/dev/null 2>&1; then
+                manager="brew"
+                while IFS= read -r pkg; do
+                    [[ -n $pkg ]] && install_packages+=("$pkg")
+                done < <(build_install_package_list "$manager" "${missing[@]}")
                 echo "Installing ${missing[*]} with Homebrew" >&2
-                run_cmd brew install "${missing[@]}"
+                run_cmd brew install "${install_packages[@]}"
             else
                 echo "Missing ${missing[*]}" >&2
                 echo "Install Homebrew from https://brew.sh and run: brew install ${missing[*]}" >&2
                 exit 1
             fi
         elif [[ $OSTYPE == linux* ]]; then
-            if command -v apt-get >/dev/null 2>&1; then
+            manager="$(detect_linux_pkg_manager)"
+            while IFS= read -r pkg; do
+                [[ -n $pkg ]] && install_packages+=("$pkg")
+            done < <(build_install_package_list "$manager" "${missing[@]}")
+
+            if [[ $manager == "apt" ]]; then
                 echo "Installing ${missing[*]} with apt-get" >&2
                 run_cmd sudo apt-get update
-                run_cmd sudo apt-get install -y "${missing[@]}"
-            elif command -v dnf >/dev/null 2>&1; then
+                run_cmd sudo apt-get install -y "${install_packages[@]}"
+            elif [[ $manager == "dnf" ]]; then
                 echo "Installing ${missing[*]} with dnf" >&2
-                run_cmd sudo dnf install -y "${missing[@]}"
-            elif command -v pacman >/dev/null 2>&1; then
+                run_cmd sudo dnf install -y "${install_packages[@]}"
+            elif [[ $manager == "pacman" ]]; then
                 echo "Installing ${missing[*]} with pacman" >&2
-                run_cmd sudo pacman -S --noconfirm "${missing[@]}"
+                run_cmd sudo pacman -S --noconfirm "${install_packages[@]}"
             else
                 echo "Missing ${missing[*]}. Please install them and re-run this script." >&2
                 exit 1
@@ -191,7 +268,7 @@ if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == 
     run_pwsh fix-path.ps1
     run_pwsh helpers/install_common.ps1
 else
-    ensure_deps zsh starship tmux neovim cargo stow
+    ensure_deps zsh starship tmux neovim cargo stow rg fd
     clone_plugin_if_missing "$autosuggest_repo" "$plugin_root/zsh-autosuggestions"
     clone_plugin_if_missing "$syntax_highlight_repo" "$plugin_root/zsh-syntax-highlighting"
 

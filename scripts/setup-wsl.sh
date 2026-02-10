@@ -38,22 +38,25 @@ if ! command -v apt-get >/dev/null; then
 fi
 
 sudo apt-get update
+
+# Keep baseline CLI dependencies aligned with scripts/install_common.sh
 sudo apt-get install -y \
+    curl \
+    unzip \
     git \
+    zsh \
+    starship \
+    tmux \
+    neovim \
+    cargo \
+    stow \
     ripgrep \
     fd-find \
     git-delta \
     bat \
     fzf \
     build-essential \
-    starship \
-    zoxide \
-    curl \
-    zsh \
-    neovim \
-    tmux \
-    cargo \
-    stow
+    zoxide
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [[ -f "$script_dir/setup-ghostty.sh" ]]; then
