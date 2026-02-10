@@ -34,7 +34,8 @@ source_if_exists() {
 }
 
 # Load shared defaults first, then host-specific overrides from
-# ~/.config/tino/host-overrides.sh using TINO_TERMINAL_* variables.
+# ~/.config/tino/host-overrides.sh using canonical
+# TINO_TERMINAL_OPACITY/TINO_TERMINAL_FPS/TINO_TERMINAL_EFFECTS variables.
 source_if_exists "$config_home/tino/terminal-defaults.sh"
 source_if_exists "$config_home/tino/host-overrides.sh"
 

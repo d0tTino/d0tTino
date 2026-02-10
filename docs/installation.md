@@ -353,7 +353,7 @@ On Windows you can call the PowerShell wrapper or use `bootstrap.ps1` with the
 cargo install ghostty
 ```
 
-Ghostty is the standard terminal profile in this repository on Linux, macOS, and WSL. `scripts/setup-ghostty.sh` renders the managed source-of-truth template `dotfiles/ghostty/ghostty.toml.tmpl` into `~/.config/ghostty/ghostty.toml`, including Nerd Font defaults, Blacklight colors, opacity, and cursor polish settings. Template values come from `~/.config/tino/terminal-defaults.sh` and host-specific overrides from `~/.config/tino/host-overrides.sh`.
+Ghostty is the standard terminal profile in this repository on Linux, macOS, and WSL. `scripts/setup-ghostty.sh` renders the managed source-of-truth template `dotfiles/ghostty/ghostty.toml.tmpl` into `~/.config/ghostty/ghostty.toml`, including Nerd Font defaults, Blacklight colors, opacity, and cursor polish settings. Template values are driven by terminal defaults from `~/.config/tino/terminal-defaults.sh` and host-specific overrides from `~/.config/tino/host-overrides.sh` using canonical `TINO_TERMINAL_OPACITY`, `TINO_TERMINAL_FPS`, and `TINO_TERMINAL_EFFECTS` variables.
 
 ```toml
 font-family = "JetBrainsMono Nerd Font"
