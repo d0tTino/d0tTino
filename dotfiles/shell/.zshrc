@@ -1,3 +1,7 @@
+if [[ "${TINO_ZSH_PROFILE:-0}" == "1" ]]; then
+    zmodload zsh/zprof
+fi
+
 autoload -Uz compinit && compinit -d "${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompdump"
 
 ZSH_PLUGIN_DIR="${ZSH_PLUGIN_DIR:-$HOME/.local/share/zsh/plugins}"
@@ -25,4 +29,8 @@ fi
 
 if command -v zoxide >/dev/null; then
     eval "$(zoxide init zsh)"
+fi
+
+if [[ "${TINO_ZSH_PROFILE:-0}" == "1" ]]; then
+    zprof
 fi
