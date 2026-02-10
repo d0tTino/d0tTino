@@ -153,6 +153,24 @@ If you previously used older bootstrap behavior that injected a `d0tTino zsh plu
 
 The migration is intentionally manual and creates a timestamped backup before any changes.
 
+## zsh startup profiling (opt-in)
+
+`dotfiles/shell/.zshrc` supports opt-in profiling via `zprof` so startup overhead stays zero unless explicitly requested.
+
+Run an interactive shell once with profiling enabled:
+
+```bash
+TINO_ZSH_PROFILE=1 zsh -i -c exit
+```
+
+When `TINO_ZSH_PROFILE` is unset, profiling is skipped entirely (no `zmodload zsh/zprof` and no profile report at shell exit).
+
+If the `zprof` report shows regressions, defer expensive startup work so it only runs when needed. Typical fixes include:
+
+- Lazy-loading plugin initialization behind command wrappers.
+- Moving non-essential startup commands into on-demand functions/aliases.
+- Guarding heavyweight blocks with checks for interactive shells and command availability.
+
 
 ## Neovim first run and startup profiling
 
