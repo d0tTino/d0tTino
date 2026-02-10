@@ -268,7 +268,7 @@ if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == 
     run_pwsh fix-path.ps1
     run_pwsh helpers/install_common.ps1
 else
-    ensure_deps zsh starship tmux neovim cargo stow rg fd
+    ensure_deps zsh starship tmux neovim stow rg fd
     clone_plugin_if_missing "$autosuggest_repo" "$plugin_root/zsh-autosuggestions"
     clone_plugin_if_missing "$syntax_highlight_repo" "$plugin_root/zsh-syntax-highlighting"
 
