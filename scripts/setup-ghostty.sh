@@ -115,7 +115,7 @@ ensure_ghostty_installed
 config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
 config_dir="$config_home/ghostty"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-canonical_template="$repo_root/dotfiles/ghostty/ghostty.toml.tmpl"
+canonical_template="$repo_root/dotfiles/terminal/.config/tino/ghostty.toml.tmpl"
 config_file="$config_dir/ghostty.toml"
 mkdir -p "$config_dir"
 
