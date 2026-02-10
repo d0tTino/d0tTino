@@ -1,17 +1,85 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Install Ghostty via cargo if not already installed.
+# Install Ghostty via native package manager first, then cargo fallback.
 # This script also provisions the repository-managed rich profile
 # (font, Blacklight colors, opacity, and UI polish settings).
-if ! command -v cargo >/dev/null 2>&1; then
-    echo "Error: cargo is required to install Ghostty" >&2
-    exit 1
-fi
+detect_ostype() {
+    if [[ -n "${OSTYPE:-}" ]]; then
+        printf '%s' "${OSTYPE,,}"
+    else
+        uname -s | tr '[:upper:]' '[:lower:]'
+    fi
+}
 
-if ! command -v ghostty >/dev/null 2>&1; then
-    cargo install --locked ghostty
-fi
+run_with_optional_sudo() {
+    if [[ ${EUID:-$(id -u)} -ne 0 ]] && command -v sudo >/dev/null 2>&1; then
+        sudo "$@"
+    else
+        "$@"
+    fi
+}
+
+install_ghostty_with_pkg_manager() {
+    local normalized_ostype
+    normalized_ostype="$(detect_ostype)"
+
+    if [[ "$normalized_ostype" == darwin* ]]; then
+        if command -v brew >/dev/null 2>&1; then
+            brew install --cask ghostty
+            return
+        fi
+        return
+    fi
+
+    if [[ "$normalized_ostype" == linux* ]]; then
+        if command -v apt-get >/dev/null 2>&1; then
+            run_with_optional_sudo apt-get update
+            run_with_optional_sudo apt-get install -y ghostty
+            return
+        fi
+
+        if command -v dnf >/dev/null 2>&1; then
+            run_with_optional_sudo dnf install -y ghostty
+            return
+        fi
+
+        if command -v pacman >/dev/null 2>&1; then
+            run_with_optional_sudo pacman -S --noconfirm ghostty
+            return
+        fi
+    fi
+}
+
+ensure_ghostty_installed() {
+    if command -v ghostty >/dev/null 2>&1; then
+        echo "Ghostty already installed; skipping install"
+        return
+    fi
+
+    if install_ghostty_with_pkg_manager; then
+        if command -v ghostty >/dev/null 2>&1; then
+            echo "Installed Ghostty via native package manager"
+            return
+        fi
+    fi
+
+    if command -v cargo >/dev/null 2>&1; then
+        cargo install --locked ghostty
+    else
+        echo "Error: unable to install Ghostty via native package manager and cargo is unavailable" >&2
+        exit 1
+    fi
+
+    if ! command -v ghostty >/dev/null 2>&1; then
+        echo "Error: Ghostty install completed but 'ghostty' binary is still unavailable" >&2
+        exit 1
+    fi
+
+    echo "Installed Ghostty via cargo"
+}
+
+ensure_ghostty_installed
 
 config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
 config_dir="$config_home/ghostty"
