@@ -11,7 +11,7 @@ def create_exe(path: Path, contents: str = "#!/usr/bin/env bash\n") -> None:
     path.chmod(0o755)
 
 
-def test_setup_ghostty_requires_cargo(tmp_path: Path) -> None:
+def test_setup_ghostty_requires_install_path(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()
     scripts_dir = repo / "scripts"
@@ -34,7 +34,44 @@ def test_setup_ghostty_requires_cargo(tmp_path: Path) -> None:
     )
 
     assert result.returncode != 0
-    assert "cargo is required" in result.stderr
+    assert "unable to install Ghostty" in result.stderr
+
+
+def test_setup_ghostty_skips_install_when_preinstalled(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    scripts_dir = repo / "scripts"
+    scripts_dir.mkdir()
+    shutil.copy(REPO_ROOT / "scripts" / "setup-ghostty.sh", scripts_dir / "setup-ghostty.sh")
+    shutil.copytree(REPO_ROOT / "dotfiles", repo / "dotfiles")
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    cargo_log = tmp_path / "cargo.log"
+    create_exe(bin_dir / "cargo", f"#!/usr/bin/env bash\necho \"$@\" > '{cargo_log}'\n")
+    create_exe(bin_dir / "ghostty", "#!/usr/bin/env bash\n")
+
+    env = os.environ.copy()
+    env.update(
+        {
+            "PATH": f"{bin_dir}:{env['PATH']}",
+            "HOME": str(tmp_path),
+            "XDG_CONFIG_HOME": str(tmp_path / "config"),
+            "OSTYPE": "unknown",
+        }
+    )
+
+    result = subprocess.run(
+        ["/bin/bash", "scripts/setup-ghostty.sh"],
+        cwd=repo,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    assert "skipping install" in result.stdout.lower()
+    assert not cargo_log.exists()
 
 
 def test_setup_ghostty_installs_and_renders(tmp_path: Path) -> None:
@@ -48,7 +85,10 @@ def test_setup_ghostty_installs_and_renders(tmp_path: Path) -> None:
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     cargo_log = tmp_path / "cargo.log"
-    create_exe(bin_dir / "cargo", f"#!/usr/bin/env bash\necho \"$@\" > '{cargo_log}'\n")
+    create_exe(
+        bin_dir / "cargo",
+        f"#!/usr/bin/env bash\necho \"$@\" > '{cargo_log}'\ncat > '{bin_dir}/ghostty' <<'EOF'\n#!/usr/bin/env bash\nEOF\nchmod +x '{bin_dir}/ghostty'\n",
+    )
 
     env = os.environ.copy()
     env.update(
@@ -56,6 +96,7 @@ def test_setup_ghostty_installs_and_renders(tmp_path: Path) -> None:
             "PATH": f"{bin_dir}:{env['PATH']}",
             "HOME": str(tmp_path),
             "XDG_CONFIG_HOME": str(tmp_path / "config"),
+            "OSTYPE": "unknown",
         }
     )
 
@@ -72,6 +113,52 @@ def test_setup_ghostty_installs_and_renders(tmp_path: Path) -> None:
     config_contents = config_file.read_text()
     assert "background-opacity = 0.92" in config_contents
     assert "custom-shader = true" in config_contents
+
+
+def test_setup_ghostty_installs_with_package_manager_without_cargo(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    scripts_dir = repo / "scripts"
+    scripts_dir.mkdir()
+    shutil.copy(REPO_ROOT / "scripts" / "setup-ghostty.sh", scripts_dir / "setup-ghostty.sh")
+    shutil.copytree(REPO_ROOT / "dotfiles", repo / "dotfiles")
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    apt_log = tmp_path / "apt.log"
+    create_exe(
+        bin_dir / "apt-get",
+        (
+            "#!/bin/bash\n"
+            f"echo \"$@\" >> '{apt_log}'\n"
+            "if [[ \"$1\" == \"install\" ]]; then\n"
+            "  cat > \"$(dirname \"$0\")/ghostty\" <<'EOF'\n"
+            "#!/bin/bash\n"
+            "EOF\n"
+            "  chmod +x \"$(dirname \"$0\")/ghostty\"\n"
+            "fi\n"
+        ),
+    )
+
+    env = {
+        "PATH": f"{bin_dir}:/usr/bin:/bin",
+        "HOME": str(tmp_path),
+        "XDG_CONFIG_HOME": str(tmp_path / "config"),
+        "OSTYPE": "linux",
+    }
+
+    result = subprocess.run(
+        ["/bin/bash", "scripts/setup-ghostty.sh"],
+        cwd=repo,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    apt_calls = apt_log.read_text().splitlines()
+    assert apt_calls == ["update", "install -y ghostty"]
+    assert "native package manager" in result.stdout
 
 
 def test_setup_ghostty_renders_host_overrides(tmp_path: Path) -> None:

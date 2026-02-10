@@ -184,7 +184,7 @@ Dotfiles are organized into explicit stow-style packages under `dotfiles/` with 
 - `dotfiles/tmux` → `.tmux.conf`
 - `dotfiles/terminal` → shared terminal defaults in `~/.config/tino/terminal-defaults.sh`
 - `dotfiles/ghostty/ghostty.toml` → **canonical** Ghostty config; `scripts/setup-ghostty.sh` deploys it to `~/.config/ghostty/ghostty.toml`
-- `scripts/install_common.sh` → standard bootstrap script; on macOS/Linux it installs dependencies (`zsh`, `starship`, `tmux`, `neovim`, `cargo`) and then runs `scripts/setup-ghostty.sh` to install/configure Ghostty. It installs zsh plugins under `~/.local/share/zsh/plugins` but does not modify user shell rc files (Windows skips Ghostty and keeps Windows Terminal flow).
+- `scripts/install_common.sh` → standard bootstrap script; on macOS/Linux it installs dependencies (`zsh`, `starship`, `tmux`, `neovim`, `cargo`) and then runs `scripts/setup-ghostty.sh` to install/configure Ghostty. Ghostty install precedence is: keep preinstalled binary if present, try native package manager (`brew`/`apt-get`/`dnf`/`pacman`) next, then fall back to `cargo install --locked ghostty`. It installs zsh plugins under `~/.local/share/zsh/plugins` but does not modify user shell rc files (Windows skips Ghostty and keeps Windows Terminal flow).
 - `scripts/install_dotfiles.sh` → deploys dotfiles that control runtime shell behavior (`dotfiles/shell/.zshrc` is the source of truth for plugin sourcing and `starship init`).
 - `scripts/migrate-shell-config.sh` → optional one-time manual migration that removes the legacy d0tTino plugin marker block from `~/.zshrc` after creating a timestamped backup.
 - `hosts/desktop` and `hosts/work_laptop` → machine-specific overrides
