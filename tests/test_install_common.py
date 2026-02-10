@@ -298,7 +298,7 @@ def test_install_common_setup_flags_windows(tmp_path: Path) -> None:
     assert "setup-docker.ps1" in lines
 
 
-def test_install_common_sets_up_zsh_plugins_and_zshrc(tmp_path: Path) -> None:
+def test_install_common_installs_zsh_plugins_without_touching_zshrc(tmp_path: Path) -> None:
     repo_root = Path(__file__).resolve().parents[1]
     repo = tmp_path / "repo_zsh"
     repo.mkdir()
@@ -321,7 +321,8 @@ def test_install_common_sets_up_zsh_plugins_and_zshrc(tmp_path: Path) -> None:
     home_dir = tmp_path / "home"
     home_dir.mkdir()
     zshrc = home_dir / ".zshrc"
-    zshrc.write_text("# existing\n", encoding="utf-8")
+    existing_zshrc = "# existing\n"
+    zshrc.write_text(existing_zshrc, encoding="utf-8")
 
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
@@ -352,9 +353,7 @@ def test_install_common_sets_up_zsh_plugins_and_zshrc(tmp_path: Path) -> None:
     subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
 
     zshrc_content = zshrc.read_text(encoding="utf-8")
-    assert 'source "' + str(home_dir / ".local/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh") + '"' in zshrc_content
-    assert 'source "' + str(home_dir / ".local/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh") + '"' in zshrc_content
-    assert 'eval "$(starship init zsh)"' in zshrc_content
+    assert zshrc_content == existing_zshrc
 
     apt_lines = apt_log.read_text(encoding="utf-8").splitlines()
     assert any("install -y" in line and "zsh" in line for line in apt_lines)
@@ -363,7 +362,7 @@ def test_install_common_sets_up_zsh_plugins_and_zshrc(tmp_path: Path) -> None:
     assert sum(1 for line in git_lines if line.startswith("clone ")) == 2
 
 
-def test_install_common_zsh_plugin_setup_is_idempotent(tmp_path: Path) -> None:
+def test_install_common_does_not_append_plugin_marker_block_to_existing_zshrc(tmp_path: Path) -> None:
     repo_root = Path(__file__).resolve().parents[1]
     repo = tmp_path / "repo_zsh_idempotent"
     repo.mkdir()
@@ -405,12 +404,15 @@ def test_install_common_zsh_plugin_setup_is_idempotent(tmp_path: Path) -> None:
         "SHELL": "/bin/bash",
     })
 
-    subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
+    zshrc = home_dir / ".zshrc"
+    zshrc.write_text("# my custom config\n", encoding="utf-8")
+
     subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
 
-    zshrc_content = (home_dir / ".zshrc").read_text(encoding="utf-8")
-    assert zshrc_content.count("# >>> d0tTino zsh plugins >>>") == 1
-    assert zshrc_content.count('eval "$(starship init zsh)"') == 1
+    zshrc_content = zshrc.read_text(encoding="utf-8")
+    assert zshrc_content == "# my custom config\n"
+    assert "# >>> d0tTino zsh plugins >>>" not in zshrc_content
+    assert 'eval "$(starship init zsh)"' not in zshrc_content
 
     clone_lines = [line for line in git_log.read_text(encoding="utf-8").splitlines() if line.startswith("clone ")]
     assert len(clone_lines) == 2

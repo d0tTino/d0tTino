@@ -88,7 +88,9 @@ This repository includes example setups for various tools:
 - `dotfiles/nvim` – Neovim package (`~/.config/nvim/...`).
 - `dotfiles/tmux` – `.tmux.conf`.
 - `dotfiles/ghostty/ghostty.toml.tmpl` – canonical Ghostty configuration template (source of truth) managed by `scripts/setup-ghostty.sh`.
-- `scripts/install_common.sh` – standard bootstrap entrypoint; installs `curl`, `unzip`, `git` everywhere, then on macOS/Linux installs `zsh`, `starship`, `tmux`, `neovim`, `cargo`, and runs `scripts/setup-ghostty.sh` for Ghostty. On Windows it runs PowerShell setup and does not attempt Ghostty install.
+- `scripts/install_common.sh` – standard bootstrap entrypoint; installs `curl`, `unzip`, `git` everywhere, then on macOS/Linux installs dependencies (`zsh`, `starship`, `tmux`, `neovim`, `cargo`) and runs `scripts/setup-ghostty.sh` for Ghostty. It installs zsh plugins into `~/.local/share/zsh/plugins` but does not edit user rc files. On Windows it runs PowerShell setup and does not attempt Ghostty install.
+- `scripts/install_dotfiles.sh` – deploys dotfiles that control shell runtime behavior; `dotfiles/shell/.zshrc` is the source of truth for plugin sourcing and Starship init.
+- `scripts/migrate-shell-config.sh` – optional one-time manual migration for removing the legacy d0tTino marker block from `~/.zshrc` after writing a backup.
 - `scripts/setup-wsl.sh` – WSL bootstrap helper; installs the same base stack and then runs `scripts/setup-ghostty.sh` so WSL follows the same managed Ghostty profile (Blacklight theme + Nerd Font defaults).
 - `hosts/desktop` and `hosts/work_laptop` – host overlays for machine-specific tweaks.
 - `windows-terminal` – minimal starter `settings.json` for Windows Terminal. The
@@ -126,12 +128,21 @@ From the repository root run:
 
 Platform behavior is explicit:
 
-- **Linux/macOS/WSL**: installs shell/editor/multiplexer stack (`zsh`, `starship`, `tmux`, `neovim`, `cargo`) and then installs/configures **Ghostty** via `scripts/setup-ghostty.sh` for a single canonical terminal path and shared theme behavior.
+- **Linux/macOS/WSL**: installs shell/editor/multiplexer dependencies (`zsh`, `starship`, `tmux`, `neovim`, `cargo`), clones zsh plugins locally, and then installs/configures **Ghostty** via `scripts/setup-ghostty.sh` for a single canonical terminal path and shared theme behavior. Runtime shell setup comes from deployed dotfiles, not bootstrap-time rc edits.
 - **Windows**: runs the PowerShell bootstrap path and optional Windows Terminal/WSL setup flags; native Ghostty install is intentionally skipped on Windows itself.
 
 For Ghostty, `scripts/setup-ghostty.sh` renders `dotfiles/ghostty/ghostty.toml.tmpl` into `~/.config/ghostty/ghostty.toml`. Template values are driven by terminal defaults from `~/.config/tino/terminal-defaults.sh` and host-specific overrides from `~/.config/tino/host-overrides.sh` using canonical `TINO_TERMINAL_OPACITY`, `TINO_TERMINAL_FPS`, and `TINO_TERMINAL_EFFECTS` variables.
 
 Optional alternative: use Windows Terminal as your host terminal app while running Ghostty inside WSL for the managed Linux profile, or keep Windows Terminal-only settings for native PowerShell workflows.
+
+If you previously used older bootstrap behavior that injected a `d0tTino zsh plugins` marker block into `~/.zshrc`, run:
+
+```bash
+./scripts/migrate-shell-config.sh
+```
+
+The migration is intentionally manual and creates a timestamped backup before any changes.
+
 
 ## Neovim first run and startup profiling
 

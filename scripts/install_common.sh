@@ -121,56 +121,6 @@ clone_plugin_if_missing() {
     run_cmd git clone "$repo_url" "$destination"
 }
 
-update_zshrc_plugins() {
-    local zshrc="$HOME/.zshrc"
-    local start="# >>> d0tTino zsh plugins >>>"
-    local end="# <<< d0tTino zsh plugins <<<"
-    local desired
-    desired=$(cat <<EOF
-$start
-source "$plugin_root/zsh-autosuggestions/zsh-autosuggestions.zsh"
-source "$plugin_root/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
-eval "\$(starship init zsh)"
-$end
-EOF
-)
-
-    if [[ -f "$zshrc" ]] && grep -Fq "$start" "$zshrc" && grep -Fq "$end" "$zshrc"; then
-        local tmp
-        tmp=$(mktemp)
-        awk -v start="$start" -v end="$end" -v block="$desired" '
-            $0 == start {
-                print block
-                in_block = 1
-                next
-            }
-            in_block && $0 == end {
-                in_block = 0
-                next
-            }
-            !in_block { print }
-        ' "$zshrc" > "$tmp"
-        if ! cmp -s "$tmp" "$zshrc"; then
-            run_cmd cp "$tmp" "$zshrc"
-        fi
-        rm -f "$tmp"
-        return
-    fi
-
-    if [[ -f "$zshrc" ]] && grep -Fq "$start" "$zshrc"; then
-        return
-    fi
-
-    if [[ ! -f "$zshrc" ]]; then
-        run_cmd touch "$zshrc"
-    fi
-    if [[ -s "$zshrc" ]]; then
-        run_cmd printf "\n%s\n" "$desired" >> "$zshrc"
-    else
-        run_cmd printf "%s\n" "$desired" >> "$zshrc"
-    fi
-}
-
 prompt_set_default_shell() {
     local zsh_path
     zsh_path="$(command -v zsh || true)"
@@ -244,7 +194,6 @@ else
     ensure_deps zsh starship tmux neovim cargo stow
     clone_plugin_if_missing "$autosuggest_repo" "$plugin_root/zsh-autosuggestions"
     clone_plugin_if_missing "$syntax_highlight_repo" "$plugin_root/zsh-syntax-highlighting"
-    update_zshrc_plugins
 
     dotfiles_args=()
     if [[ -n "$host_override" ]]; then
