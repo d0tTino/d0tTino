@@ -112,7 +112,7 @@ def test_setup_ghostty_installs_and_renders(tmp_path: Path) -> None:
     assert config_file.exists()
     config_contents = config_file.read_text()
     assert "background-opacity = 0.92" in config_contents
-    assert "custom-shader = true" in config_contents
+    assert "custom-shader =" not in config_contents
 
 
 def test_setup_ghostty_installs_with_package_manager_without_cargo(tmp_path: Path) -> None:
@@ -223,7 +223,7 @@ def test_setup_ghostty_renders_host_overrides(tmp_path: Path) -> None:
 
 
 def test_managed_ghostty_template_has_required_keys() -> None:
-    template_path = REPO_ROOT / "dotfiles" / "ghostty" / "ghostty.toml.tmpl"
+    template_path = REPO_ROOT / "dotfiles" / "terminal" / ".config" / "tino" / "ghostty.toml.tmpl"
     contents = template_path.read_text()
 
     required = [
@@ -231,7 +231,7 @@ def test_managed_ghostty_template_has_required_keys() -> None:
         "font-size = ",
         "background-opacity = __BACKGROUND_OPACITY__",
         "custom-shader-animation-max-fps = __MAX_FPS__",
-        "custom-shader = __CUSTOM_SHADER__",
+        "__CUSTOM_SHADER_LINE__",
         "cursor-style = ",
         "window-title = ",
     ]
@@ -246,5 +246,4 @@ def test_setup_script_uses_canonical_template_path() -> None:
     script_path = REPO_ROOT / "scripts" / "setup-ghostty.sh"
     script_contents = script_path.read_text()
 
-    assert 'canonical_template="$repo_root/dotfiles/ghostty/ghostty.toml.tmpl"' in script_contents
-    assert "dotfiles/terminal/.config/ghostty/ghostty.toml" not in script_contents
+    assert 'canonical_template="$repo_root/dotfiles/terminal/.config/tino/ghostty.toml.tmpl"' in script_contents
