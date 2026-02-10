@@ -147,6 +147,7 @@ The migration is intentionally manual and creates a timestamped backup before an
 ## Neovim first run and startup profiling
 
 The `dotfiles/nvim` package uses `lazy.nvim` for plugin management and bootstraps itself on first launch.
+Minimum CLI toolchain for Neovim integrations: `rg` (ripgrep) and `fd` (or `fdfind` on Debian/Ubuntu).
 
 1. Start Neovim normally (`nvim`).
 2. Wait for `lazy.nvim` to clone and install plugins.

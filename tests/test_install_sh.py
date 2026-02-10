@@ -233,3 +233,37 @@ def test_install_sh_installs_missing_deps_apt(tmp_path: Path) -> None:
     assert any("unzip" in line for line in lines)
     assert any("git" in line for line in lines)
     assert "install_common" in install_log.read_text().splitlines()
+
+
+def test_install_sh_dry_run_surfaces_required_rg_and_fd_packages(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / "repo_install_dry_run"
+    repo.mkdir()
+
+    shutil.copy(repo_root / "install.sh", repo / "install.sh")
+    shutil.copytree(repo_root / "scripts", repo / "scripts")
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    create_exe(bin_dir / "apt-get")
+    create_exe(bin_dir / "sudo", "#!/usr/bin/env bash\n\"$@\"\n")
+    (bin_dir / "bash").symlink_to("/bin/bash")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+
+    env = os.environ.copy()
+    env.update({"OSTYPE": "linux-gnu", "PATH": str(bin_dir)})
+
+    result = subprocess.run(
+        ["/bin/bash", "install.sh", "--dry-run"],
+        cwd=repo,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "Dry run: bash" in output
+    assert "apt-get install -y" in output
+    assert "ripgrep" in output
+    assert "fd-find" in output
