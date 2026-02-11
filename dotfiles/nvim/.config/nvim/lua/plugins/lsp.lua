@@ -1,18 +1,32 @@
 return {
     {
-        "neovim/nvim-lspconfig",
+        "williamboman/mason.nvim",
+        cmd = { "Mason", "MasonInstall", "MasonUpdate" },
+        opts = {},
+    },
+    {
+        "williamboman/mason-lspconfig.nvim",
         event = { "BufReadPre", "BufNewFile" },
-        ft = { "lua", "python", "javascript", "typescript", "sh" },
-        cmd = { "LspInfo", "LspStart" },
-        config = function()
-            local lspconfig = require("lspconfig")
+        dependencies = {
+            "williamboman/mason.nvim",
+            "neovim/nvim-lspconfig",
+        },
+        opts = {
+            ensure_installed = { "lua_ls", "pyright", "ts_ls", "bashls" },
+            automatic_installation = true,
+        },
+        config = function(_, opts)
+            require("mason").setup()
 
-            local servers = { "lua_ls", "pyright", "ts_ls", "bashls" }
-            for _, server in ipairs(servers) do
-                if lspconfig[server] then
-                    lspconfig[server].setup({})
-                end
-            end
+            local mason_lspconfig = require("mason-lspconfig")
+            mason_lspconfig.setup(opts)
+
+            local lspconfig = require("lspconfig")
+            mason_lspconfig.setup_handlers({
+                function(server_name)
+                    lspconfig[server_name].setup({})
+                end,
+            })
         end,
     },
 }
