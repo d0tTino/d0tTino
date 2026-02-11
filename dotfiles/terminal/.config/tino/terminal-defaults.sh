@@ -1,5 +1,31 @@
-# Shared terminal defaults for all hosts.
+# Canonical terminal defaults shared across all providers.
 # Host overlays can override these values from ~/.config/tino/host-overrides.sh.
+
+export TINO_TERMINAL_FONT_FAMILY="CaskaydiaCove Nerd Font"
+export TINO_TERMINAL_FONT_SIZE="13"
+
 export TINO_TERMINAL_OPACITY="0.92"
 export TINO_TERMINAL_FPS="120"
 export TINO_TERMINAL_EFFECTS="on"
+
+export TINO_TERMINAL_BACKGROUND="#000000"
+export TINO_TERMINAL_FOREGROUND="#f2f2f2"
+export TINO_TERMINAL_CURSOR="#FC17DA"
+export TINO_TERMINAL_SELECTION="#301050"
+
+export TINO_TERMINAL_COLOR_0="#000000"
+export TINO_TERMINAL_COLOR_1="#ff66c4"
+export TINO_TERMINAL_COLOR_2="#b2ff59"
+export TINO_TERMINAL_COLOR_3="#ffff66"
+export TINO_TERMINAL_COLOR_4="#66b2ff"
+export TINO_TERMINAL_COLOR_5="#845CFF"
+export TINO_TERMINAL_COLOR_6="#66fff2"
+export TINO_TERMINAL_COLOR_7="#f2f2f2"
+export TINO_TERMINAL_COLOR_8="#666666"
+export TINO_TERMINAL_COLOR_9="#ff66c4"
+export TINO_TERMINAL_COLOR_10="#b2ff59"
+export TINO_TERMINAL_COLOR_11="#ffff66"
+export TINO_TERMINAL_COLOR_12="#66b2ff"
+export TINO_TERMINAL_COLOR_13="#FC17DA"
+export TINO_TERMINAL_COLOR_14="#66fff2"
+export TINO_TERMINAL_COLOR_15="#ffffff"

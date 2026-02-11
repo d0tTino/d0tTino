@@ -1,21 +1,14 @@
-local wezterm = require("wezterm")
+local generated = os.getenv("XDG_CONFIG_HOME")
+if generated == nil or generated == "" then
+    generated = os.getenv("HOME") .. "/.config"
+end
+
+local profile = generated .. "/wezterm/wezterm.generated.lua"
+local ok, conf = pcall(dofile, profile)
+if ok then
+    return conf
+end
 
 return {
-    font = wezterm.font_with_fallback({
-        "JetBrainsMono Nerd Font",
-        "CaskaydiaCove Nerd Font",
-    }),
     font_size = 13.0,
-    color_scheme = "Tokyo Night",
-    window_background_opacity = 0.90,
-    max_fps = 165,
-    enable_wayland = true,
-    use_fancy_tab_bar = false,
-    hide_tab_bar_if_only_one_tab = true,
-    window_padding = {
-        left = 10,
-        right = 10,
-        top = 8,
-        bottom = 8,
-    },
 }
