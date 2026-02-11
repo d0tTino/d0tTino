@@ -150,22 +150,14 @@ ensure_deps() {
     fi
 }
 
-install_terminal_emulator() {
-    if [[ ! -f "$scripts/setup-ghostty.sh" ]]; then
+install_terminal_provider() {
+    local provider="$1"
+
+    if [[ ! -f "$scripts/setup-terminal-provider.sh" ]]; then
         return
     fi
 
-    case $OSTYPE in
-        darwin*|linux*)
-            run_cmd bash "$scripts/setup-ghostty.sh"
-            ;;
-        msys*|cygwin*|win32*|windows*)
-            echo "Skipping Ghostty install on Windows; use Windows Terminal setup options instead."
-            ;;
-        *)
-            echo "Skipping terminal emulator install for unsupported platform: $OSTYPE"
-            ;;
-    esac
+    run_cmd bash "$scripts/setup-terminal-provider.sh" "$provider"
 }
 
 run_pwsh() {
@@ -220,6 +212,7 @@ prompt_set_default_shell() {
 
 install_winget=false
 install_windows_terminal=false
+terminal_provider=""
 install_wsl=false
 setup_wsl=false
 setup_docker=false
@@ -234,6 +227,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --windows-terminal)
             install_windows_terminal=true
+            ;;
+        --terminal)
+            terminal_provider=$2
+            shift
             ;;
         --install-wsl)
             install_wsl=true
@@ -260,6 +257,16 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
 done
+
+if [[ -n "$terminal_provider" ]]; then
+    case "$terminal_provider" in
+        ghostty|wezterm|kitty|alacritty|windows-terminal) ;;
+        *)
+            echo "Error: unsupported --terminal provider '$terminal_provider'" >&2
+            exit 1
+            ;;
+    esac
+fi
 
 # Ensure core utilities are available
 ensure_deps curl unzip git
@@ -290,7 +297,11 @@ else
     fi
 
     prompt_set_default_shell
-    install_terminal_emulator
+
+    if [[ -z "$terminal_provider" ]]; then
+        terminal_provider="ghostty"
+    fi
+    install_terminal_provider "$terminal_provider"
 
     run_cmd bash "$scripts/setup-hooks.sh"
     run_cmd bash "$scripts/helpers/install_fonts.sh"
@@ -299,6 +310,14 @@ fi
 
 if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == windows* ]]; then
     if $install_winget; then run_pwsh setup-winget.ps1; fi
+    if [[ -z "$terminal_provider" ]]; then
+        terminal_provider="windows-terminal"
+    fi
+
+    if [[ "$terminal_provider" == "windows-terminal" ]]; then
+        install_windows_terminal=true
+    fi
+
     if $install_windows_terminal; then run_pwsh install-windows-terminal.ps1; fi
     if $install_wsl; then run_pwsh install-wsl.ps1; fi
     if $setup_wsl; then run_pwsh setup-wsl.ps1; fi
