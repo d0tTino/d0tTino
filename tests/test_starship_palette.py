@@ -6,8 +6,8 @@ from pathlib import Path
 
 
 EXPECTED_FORMAT = (
-    "[┌─](bold purple)$directory$git_branch$git_state$git_status$status$fill$time\n"
-    "[└─](bold purple)$character\n"
+    "[┌─](bold purple)$directory$git_branch$git_status$python$kubernetes$aws$status$fill$time\n"
+    "[└─](bold purple)$character "
 )
 
 EXPECTED_COLORS = {

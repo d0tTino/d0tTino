@@ -1,7 +1,7 @@
 local M = {}
 
 function M.apply(palette)
-    vim.api.nvim_set_hl(0, "CursorLine", { bg = "#121212" })
+    vim.api.nvim_set_hl(0, "CursorLine", { bg = palette.bg_alt })
     vim.api.nvim_set_hl(0, "CursorLineNr", { fg = palette.yellow, bold = true })
 
     vim.api.nvim_set_hl(0, "DiagnosticError", { fg = palette.pink })
