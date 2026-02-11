@@ -1,6 +1,6 @@
 add_newline = false
-format = "[┌─](bold purple)$directory$git_branch$git_state$git_status$status$fill$time\n[└─](bold purple)$character\n"
 palette = "blacklight"
+format = "[┌─](bold purple)$directory$git_branch$git_status$python$kubernetes$aws$status$fill$time\n[└─](bold purple)$character "
 
 [palettes.blacklight]
 black = "#000000"
@@ -20,38 +20,34 @@ bright_purple = "#FC17DA"
 bright_cyan = "#66fff2"
 bright_white = "#ffffff"
 
-[palettes.dracula]
-black = "#21222C"
-red = "#FF5555"
-green = "#50FA7B"
-yellow = "#F1FA8C"
-blue = "#BD93F9"
-purple = "#FF79C6"
-cyan = "#8BE9FD"
-white = "#F8F8F2"
-bright_black = "#6272A4"
-bright_red = "#FF6E6E"
-bright_green = "#69FF94"
-bright_yellow = "#FFFFA5"
-bright_blue = "#D6ACFF"
-bright_purple = "#FF92DF"
-bright_cyan = "#A4FFFF"
-bright_white = "#FFFFFF"
-
 [directory]
 style = "fg:bright_purple"
+truncation_length = 4
+truncate_to_repo = false
 
 [git_branch]
-disabled = false
+symbol = " "
 style = "fg:purple"
 
 [git_status]
-disabled = false
-stashed = "📦"
 style = "fg:bright_purple"
+format = '([\[$all_status$ahead_behind\]]($style) )'
 
-[git_state]
+[python]
+symbol = " "
+format = '[$symbol($virtualenv )]($style)'
+style = "fg:green"
+
+[kubernetes]
+symbol = "☸ "
+format = '[$symbol$context( \($namespace\))]($style) '
+style = "fg:cyan"
 disabled = false
+
+[aws]
+symbol = "󰸏 "
+format = '[$symbol$profile( \($region\))]($style) '
+style = "fg:yellow"
 
 [time]
 disabled = false
@@ -60,4 +56,17 @@ style = "fg:purple"
 
 [status]
 disabled = false
+format = '[$symbol$status]($style) '
+style = "fg:red"
 
+[nodejs]
+disabled = true
+
+[rust]
+disabled = true
+
+[golang]
+disabled = true
+
+[package]
+disabled = true
