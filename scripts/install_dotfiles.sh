@@ -97,10 +97,9 @@ if [[ -n "$host_name" && ! -d "$hosts_dir/$host_name" ]]; then
 fi
 
 if [[ ! -d "$target" ]]; then
+    mkdir -p "$target"
     if [[ $dry_run -eq 1 ]]; then
-        echo "Target directory $target would be created"
-    else
-        mkdir -p "$target"
+        echo "Created target directory $target for dry-run validation"
     fi
 fi
 

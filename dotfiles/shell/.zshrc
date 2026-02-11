@@ -2,7 +2,11 @@ if [[ "${TINO_ZSH_PROFILE:-0}" == "1" ]]; then
     zmodload zsh/zprof
 fi
 
-autoload -Uz compinit && compinit -d "${XDG_CACHE_HOME:-$HOME/.cache}/zsh/zcompdump"
+ZSH_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/zsh"
+mkdir -p "$ZSH_CACHE_DIR"
+autoload -Uz compinit && compinit -d "$ZSH_CACHE_DIR/zcompdump"
+zstyle ':completion:*' use-cache on
+zstyle ':completion:*' cache-path "$ZSH_CACHE_DIR"
 
 ZSH_PLUGIN_DIR="${ZSH_PLUGIN_DIR:-$HOME/.local/share/zsh/plugins}"
 

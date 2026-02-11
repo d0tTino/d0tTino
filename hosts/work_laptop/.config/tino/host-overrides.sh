@@ -1,4 +1,4 @@
-# Work laptop-specific terminal overrides.
-export TINO_TERMINAL_OPACITY="0.88"
-export TINO_TERMINAL_FPS="60"
+# Laptop profile: keep visuals tasteful while reducing battery impact.
+export TINO_TERMINAL_OPACITY="0.96"
+export TINO_TERMINAL_FPS="90"
 export TINO_TERMINAL_EFFECTS="balanced"
