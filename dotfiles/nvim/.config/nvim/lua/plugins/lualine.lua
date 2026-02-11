@@ -1,3 +1,5 @@
+local palette = require("config.palette")
+
 return {
     {
         "nvim-lualine/lualine.nvim",
@@ -10,26 +12,26 @@ return {
                 globalstatus = true,
                 theme = {
                     normal = {
-                        a = { bg = "#845CFF", fg = "#000000", gui = "bold" },
-                        b = { bg = "#121212", fg = "#f2f2f2" },
-                        c = { bg = "#000000", fg = "#f2f2f2" },
+                        a = { bg = palette.purple, fg = palette.bg, gui = "bold" },
+                        b = { bg = palette.bg_alt, fg = palette.fg },
+                        c = { bg = palette.bg, fg = palette.fg },
                     },
                     insert = {
-                        a = { bg = "#66b2ff", fg = "#000000", gui = "bold" },
+                        a = { bg = palette.blue, fg = palette.bg, gui = "bold" },
                     },
                     visual = {
-                        a = { bg = "#FC17DA", fg = "#000000", gui = "bold" },
+                        a = { bg = palette.magenta, fg = palette.bg, gui = "bold" },
                     },
                     replace = {
-                        a = { bg = "#ff66c4", fg = "#000000", gui = "bold" },
+                        a = { bg = palette.pink, fg = palette.bg, gui = "bold" },
                     },
                     command = {
-                        a = { bg = "#b2ff59", fg = "#000000", gui = "bold" },
+                        a = { bg = palette.green, fg = palette.bg, gui = "bold" },
                     },
                     inactive = {
-                        a = { bg = "#121212", fg = "#666666" },
-                        b = { bg = "#121212", fg = "#666666" },
-                        c = { bg = "#000000", fg = "#666666" },
+                        a = { bg = palette.bg_alt, fg = palette.gray },
+                        b = { bg = palette.bg_alt, fg = palette.gray },
+                        c = { bg = palette.bg, fg = palette.gray },
                     },
                 },
             },
