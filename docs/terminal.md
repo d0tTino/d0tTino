@@ -155,9 +155,32 @@ The migration is intentionally manual and creates a timestamped backup before an
 
 ## zsh startup profiling (opt-in)
 
-`dotfiles/shell/.zshrc` supports opt-in profiling via `zprof` so startup overhead stays zero unless explicitly requested.
+`dotfiles/shell/.zshrc` now runs in explicit startup phases so prompt rendering stays fast:
 
-Run an interactive shell once with profiling enabled:
+1. **Prompt-critical path**: completion bootstrap, plugins, and `starship`.
+2. **Deferred path/env initialization**: language managers, host defaults/overrides, and optional tooling (for example `zoxide`).
+
+Deferred execution is on by default (`TINO_ZSH_DEFER=1`). If `zsh-defer` is installed, it is used automatically; otherwise `.zshrc` falls back to a built-in `precmd` queue. Set `TINO_ZSH_DEFER=0` to force immediate loading.
+
+### Completion cache strategy
+
+Completion initialization uses a fast cache path for normal startups and only refreshes metadata when stale:
+
+- Cached path: `compinit -C -d "$XDG_CACHE_HOME/zsh/zcompdump"`
+- Refresh path: full `compinit` when `zcompdump` is missing or older than `TINO_ZSH_COMPINIT_REFRESH_DAYS` (default: `7`).
+
+### Startup budget goals
+
+Use these as guardrails for interactive startup:
+
+- **Warm startup target**: <= `80ms`
+- **Cold startup target**: <= `150ms`
+
+The values are also exposed in shell config (`TINO_ZSH_STARTUP_BUDGET_WARM_MS` and `TINO_ZSH_STARTUP_BUDGET_COLD_MS`) so teams can tune them locally without editing docs.
+
+### Profiling recipe (`TINO_ZSH_PROFILE=1`)
+
+Run:
 
 ```bash
 TINO_ZSH_PROFILE=1 zsh -i -c exit
@@ -165,12 +188,15 @@ TINO_ZSH_PROFILE=1 zsh -i -c exit
 
 When `TINO_ZSH_PROFILE` is unset, profiling is skipped entirely (no `zmodload zsh/zprof` and no profile report at shell exit).
 
-If the `zprof` report shows regressions, defer expensive startup work so it only runs when needed. Typical fixes include:
+For repeatable timing checks, run both warm and cold-ish cases:
 
-- Lazy-loading plugin initialization behind command wrappers.
-- Moving non-essential startup commands into on-demand functions/aliases.
-- Guarding heavyweight blocks with checks for interactive shells and command availability.
+```bash
+hyperfine --warmup 3 'zsh -i -c exit'
+rm -f ~/.cache/zsh/zcompdump
+hyperfine --warmup 1 'zsh -i -c exit'
+```
 
+If `zprof` or `hyperfine` results exceed budget, move work from phase 1 into deferred blocks or on-demand wrappers.
 
 ## Neovim first run and startup profiling
 
