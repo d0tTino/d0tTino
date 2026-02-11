@@ -190,23 +190,96 @@ clone_plugin_if_missing() {
     run_cmd git clone "$repo_url" "$destination"
 }
 
-prompt_set_default_shell() {
-    local zsh_path
+get_login_shell() {
+    local shell_path=""
+    local user_name="${USER:-$(id -un 2>/dev/null || true)}"
+
+    if [[ -z "$user_name" ]]; then
+        shell_path="${SHELL:-unknown}"
+        echo "$shell_path"
+        return
+    fi
+
+    if [[ $OSTYPE == darwin* ]] && command -v dscl >/dev/null 2>&1; then
+        shell_path="$(dscl . -read "/Users/$user_name" UserShell 2>/dev/null | awk '{print $2}' || true)"
+    elif command -v getent >/dev/null 2>&1; then
+        shell_path="$(getent passwd "$user_name" | cut -d: -f7 || true)"
+    else
+        shell_path="$(awk -F: -v user="$user_name" '$1 == user {print $7}' /etc/passwd 2>/dev/null || true)"
+    fi
+
+    if [[ -z "$shell_path" ]]; then
+        shell_path="${SHELL:-unknown}"
+    fi
+
+    echo "$shell_path"
+}
+
+set_default_shell() {
+    local mode="$1"
+    local zsh_path current_shell final_shell action_message=""
     zsh_path="$(command -v zsh || true)"
-    local current_shell="${SHELL:-}"
+    current_shell="$(get_login_shell)"
 
-    if [[ -z "$zsh_path" || "$current_shell" == "$zsh_path" ]]; then
+    if [[ -z "$zsh_path" ]]; then
+        echo "Default shell unchanged: zsh is not installed or not in PATH"
+        echo "Final login shell: $current_shell"
+        echo "Action: install zsh and rerun with --set-default-shell=force (or prompt interactively)."
         return
     fi
 
-    if [[ ! -t 0 ]]; then
-        echo "Skipping shell change prompt in non-interactive mode"
+    if [[ "$current_shell" == "$zsh_path" ]]; then
+        echo "Default shell already set to zsh ($zsh_path)"
+        echo "Final login shell: $current_shell"
         return
     fi
 
-    read -r -p "Set default shell to $zsh_path using chsh? [y/N] " response
-    if [[ $response =~ ^[Yy]$ ]]; then
-        run_cmd chsh -s "$zsh_path"
+    case "$mode" in
+        force)
+            echo "Forcing default shell change to $zsh_path"
+            if run_cmd chsh -s "$zsh_path"; then
+                action_message=""
+            else
+                echo "Failed to change shell with 'chsh -s $zsh_path'. This may require a password, TTY, or elevated policy permissions." >&2
+                action_message="Run manually: chsh -s $zsh_path"
+            fi
+            ;;
+        prompt)
+            if [[ ! -t 0 ]]; then
+                echo "Skipping shell change prompt in non-interactive mode"
+                action_message="Rerun interactively or use --set-default-shell=force"
+            else
+                read -r -p "Set default shell to $zsh_path using chsh? [y/N] " response
+                if [[ $response =~ ^[Yy]$ ]]; then
+                    if run_cmd chsh -s "$zsh_path"; then
+                        action_message=""
+                    else
+                        echo "Failed to change shell with 'chsh -s $zsh_path'." >&2
+                        action_message="Run manually: chsh -s $zsh_path"
+                    fi
+                else
+                    action_message="Run manually when ready: chsh -s $zsh_path"
+                fi
+            fi
+            ;;
+        skip)
+            echo "Skipping default shell change (--set-default-shell=skip)"
+            action_message="If desired later, run: chsh -s $zsh_path"
+            ;;
+        *)
+            echo "Error: unsupported --set-default-shell mode '$mode' (expected: prompt, force, skip)" >&2
+            exit 1
+            ;;
+    esac
+
+    final_shell="$(get_login_shell)"
+    echo "Final login shell: $final_shell"
+
+    if [[ "$final_shell" != "$zsh_path" ]]; then
+        if [[ -z "$action_message" ]]; then
+            action_message="Run manually: chsh -s $zsh_path"
+        fi
+        echo "Action: default shell was not changed. $action_message"
     fi
 }
 
@@ -219,6 +292,7 @@ setup_docker=false
 dry_run=false
 docker_image=""
 host_override=""
+set_default_shell_mode="prompt"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -251,6 +325,17 @@ while [[ $# -gt 0 ]]; do
         --host)
             host_override=$2
             shift
+            ;;
+        --set-default-shell)
+            if [[ $# -gt 1 && $2 != --* ]]; then
+                set_default_shell_mode=$2
+                shift
+            else
+                set_default_shell_mode="prompt"
+            fi
+            ;;
+        --set-default-shell=*)
+            set_default_shell_mode="${1#*=}"
             ;;
         *)
             ;;
@@ -296,7 +381,7 @@ else
         run_cmd bash "$scripts/install_dotfiles.sh" "${dotfiles_args[@]}"
     fi
 
-    prompt_set_default_shell
+    set_default_shell "$set_default_shell_mode"
 
     if [[ -z "$terminal_provider" ]]; then
         terminal_provider="ghostty"
