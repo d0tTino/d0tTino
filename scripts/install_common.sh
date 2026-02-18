@@ -381,6 +381,10 @@ else
         run_cmd bash "$scripts/install_dotfiles.sh" "${dotfiles_args[@]}"
     fi
 
+    if [[ -f "$scripts/setup-nvim.sh" ]]; then
+        run_cmd bash "$scripts/setup-nvim.sh"
+    fi
+
     set_default_shell "$set_default_shell_mode"
 
     if [[ -z "$terminal_provider" ]]; then

@@ -89,7 +89,7 @@ This repository includes example setups for various tools:
 - `dotfiles/tmux` – `.tmux.conf`.
 - `dotfiles/terminal/.config/tino/terminal-defaults.sh` – stowed into `~/.config/tino/terminal-defaults.sh` as the shared terminal defaults consumed by Ghostty setup.
 - `dotfiles/terminal/.config/tino/ghostty.toml.tmpl` – stowed into `~/.config/tino/ghostty.toml.tmpl`; used as the canonical Ghostty template source by `scripts/setup-ghostty.sh`.
-- `scripts/install_common.sh` – standard bootstrap entrypoint; installs `curl`, `unzip`, `git` everywhere, then on macOS/Linux installs dependencies (`zsh`, `starship`, `tmux`, `neovim`, `cargo`) and runs `scripts/setup-ghostty.sh` for Ghostty. Ghostty install precedence is: keep preinstalled binary if present, try native package manager (`brew`/`apt-get`/`dnf`/`pacman`) next, then fall back to `cargo install --locked ghostty`. It installs zsh plugins into `~/.local/share/zsh/plugins` but does not edit user rc files. On Windows it runs PowerShell setup and does not attempt Ghostty install.
+- `scripts/install_common.sh` – standard bootstrap entrypoint; installs `curl`, `unzip`, `git` everywhere, then on macOS/Linux installs dependencies (`zsh`, `starship`, `tmux`, `neovim`, `cargo`), runs `scripts/setup-nvim.sh` to install `lazy.nvim`, and runs `scripts/setup-ghostty.sh` for Ghostty. Ghostty install precedence is: keep preinstalled binary if present, try native package manager (`brew`/`apt-get`/`dnf`/`pacman`) next, then fall back to `cargo install --locked ghostty`. It installs zsh plugins into `~/.local/share/zsh/plugins` but does not edit user rc files. On Windows it runs PowerShell setup and does not attempt Ghostty install.
 - `scripts/install_dotfiles.sh` – deploys dotfiles that control shell runtime behavior; `dotfiles/shell/.zshrc` is the source of truth for plugin sourcing and Starship init.
 - `scripts/migrate-shell-config.sh` – optional one-time manual migration that copies compatible `~/.bashrc` exports/aliases/functions into live runtime fragments at `~/.config/zsh/{env,aliases,functions}.zsh` (or `$XDG_CONFIG_HOME/zsh/...`) after writing a backup.
 - `scripts/setup-wsl.sh` – WSL bootstrap helper; installs the same base stack and then runs `scripts/setup-ghostty.sh` so WSL follows the same managed Ghostty profile (Blacklight theme + Nerd Font defaults).
@@ -129,7 +129,7 @@ From the repository root run:
 
 Platform behavior is explicit:
 
-- **Linux/macOS/WSL**: installs shell/editor/multiplexer dependencies (`zsh`, `starship`, `tmux`, `neovim`, `cargo`), clones zsh plugins locally, and then installs/configures **Ghostty** via `scripts/setup-ghostty.sh` for a single canonical terminal path and shared theme behavior. Runtime shell setup comes from deployed dotfiles, not bootstrap-time rc edits.
+- **Linux/macOS/WSL**: installs shell/editor/multiplexer dependencies (`zsh`, `starship`, `tmux`, `neovim`, `cargo`), clones zsh plugins locally, preinstalls `lazy.nvim` via `scripts/setup-nvim.sh`, and then installs/configures **Ghostty** via `scripts/setup-ghostty.sh` for a single canonical terminal path and shared theme behavior. Runtime shell setup comes from deployed dotfiles, not bootstrap-time rc edits.
 - **Windows**: runs the PowerShell bootstrap path and optional Windows Terminal/WSL setup flags; native Ghostty install is intentionally skipped on Windows itself.
 
 For Ghostty, `scripts/setup-ghostty.sh` first checks for an existing `ghostty` binary, then attempts native package manager installation on macOS/Linux (`brew`/`apt-get`/`dnf`/`pacman`), and only falls back to Cargo if needed. It renders the stowed template at `~/.config/tino/ghostty.toml.tmpl` (from `dotfiles/terminal/.config/tino/ghostty.toml.tmpl`) into generated runtime config `~/.config/ghostty/ghostty.toml`. Template values are driven by stowed terminal defaults from `~/.config/tino/terminal-defaults.sh` and optional host-specific overrides from `~/.config/tino/host-overrides.sh` using canonical `TINO_TERMINAL_OPACITY`, `TINO_TERMINAL_FPS`, and `TINO_TERMINAL_EFFECTS` variables.
@@ -200,12 +200,12 @@ If `zprof` or `hyperfine` results exceed budget, move work from phase 1 into def
 
 ## Neovim first run and startup profiling
 
-The `dotfiles/nvim` package uses `lazy.nvim` for plugin management and bootstraps itself on first launch.
+The `dotfiles/nvim` package uses `lazy.nvim` for plugin management, but startup is offline-only: Neovim will not clone plugin manager dependencies at launch.
 Minimum CLI toolchain for Neovim integrations: `rg` (ripgrep) and `fd` (or `fdfind` on Debian/Ubuntu).
 
-1. Start Neovim normally (`nvim`).
-2. Wait for `lazy.nvim` to clone and install plugins.
-3. Run `:Lazy sync` if you want to force a full sync/update pass.
+1. During provisioning run `./scripts/setup-nvim.sh` (or `./scripts/install_common.sh`, which now calls it).
+2. Start Neovim normally (`nvim`).
+3. If plugin revisions changed intentionally, refresh and commit `dotfiles/nvim/.config/nvim/lazy-lock.json`.
 
 To inspect startup performance with a repeatable workflow:
 
@@ -242,6 +242,17 @@ The script always writes to:
    ```
 
 Use `TOP_COUNT=<n>` to control how many slow entries are included in the summary (default: `20`).
+
+### Lockfile refresh workflow (intentional plugin upgrades)
+
+When intentionally upgrading Neovim plugins (local or CI/bootstrap images):
+
+```bash
+./scripts/setup-nvim.sh
+nvim --headless "+Lazy! sync" +qa
+```
+
+Then commit the updated lockfile with your plugin config changes so provisioning and CI remain deterministic.
 
 ## Terminal Tools: fastfetch, btm & Nushell/Starship
 

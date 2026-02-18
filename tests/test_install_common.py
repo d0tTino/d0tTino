@@ -33,6 +33,9 @@ def test_install_common_runs_without_ostype(tmp_path: Path) -> None:
     (scripts_dir / "setup-hooks.sh").write_text(
         f"#!/usr/bin/env bash\necho setup_hooks >> '{log}'\n", encoding="utf-8"
     )
+    (scripts_dir / "setup-nvim.sh").write_text(
+        f"#!/usr/bin/env bash\necho setup_nvim >> '{log}'\n", encoding="utf-8"
+    )
     (helpers_dir / "install_fonts.sh").write_text(
         f"#!/usr/bin/env bash\necho install_fonts >> '{log}'\n", encoding="utf-8"
     )
@@ -40,7 +43,12 @@ def test_install_common_runs_without_ostype(tmp_path: Path) -> None:
         f"#!/usr/bin/env bash\necho sync_palettes >> '{log}'\n", encoding="utf-8"
     )
 
-    for f in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
+    for f in [
+        scripts_dir / "setup-hooks.sh",
+        scripts_dir / "setup-nvim.sh",
+        helpers_dir / "install_fonts.sh",
+        helpers_dir / "sync_palettes.sh",
+    ]:
         f.chmod(0o755)
 
     bin_dir = tmp_path / "bin"
@@ -62,6 +70,7 @@ def test_install_common_runs_without_ostype(tmp_path: Path) -> None:
 
     lines = log.read_text().splitlines()
     assert "setup_hooks" in lines
+    assert "setup_nvim" in lines
     assert "install_fonts" in lines
     assert "sync_palettes" in lines
 
