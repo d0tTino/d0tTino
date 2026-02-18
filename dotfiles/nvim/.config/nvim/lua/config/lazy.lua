@@ -1,14 +1,18 @@
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 
 if not vim.loop.fs_stat(lazypath) then
-    vim.fn.system({
-        "git",
-        "clone",
-        "--filter=blob:none",
-        "https://github.com/folke/lazy.nvim.git",
-        "--branch=stable",
-        lazypath,
-    })
+    local message = table.concat({
+        "lazy.nvim is missing and Neovim startup is running in offline-only mode.",
+        "Install it during provisioning and rerun Neovim.",
+        "Expected path: " .. lazypath,
+        "Bootstrap command: ./scripts/setup-nvim.sh",
+    }, "\n")
+
+    vim.schedule(function()
+        vim.api.nvim_echo({ { message, "ErrorMsg" } }, true, {})
+    end)
+
+    return
 end
 
 vim.opt.rtp:prepend(lazypath)
