@@ -11,8 +11,6 @@ def test_migrate_shell_config_creates_fragments_backup_and_report(tmp_path: Path
     repo = tmp_path / "repo"
     (repo / "scripts").mkdir(parents=True)
     shutil.copy(REPO_ROOT / "scripts" / "migrate-shell-config.sh", repo / "scripts" / "migrate-shell-config.sh")
-    target_dir = repo / "dotfiles" / "shell" / ".config" / "zsh"
-    target_dir.mkdir(parents=True)
 
     home = tmp_path / "home"
     home.mkdir()
@@ -45,9 +43,10 @@ bind '"\\e[A":history-search-backward'
         check=True,
     )
 
-    env_fragment = repo / "dotfiles" / "shell" / ".config" / "zsh" / "env.zsh"
-    aliases_fragment = repo / "dotfiles" / "shell" / ".config" / "zsh" / "aliases.zsh"
-    functions_fragment = repo / "dotfiles" / "shell" / ".config" / "zsh" / "functions.zsh"
+    target_dir = home / ".config" / "zsh"
+    env_fragment = target_dir / "env.zsh"
+    aliases_fragment = target_dir / "aliases.zsh"
+    functions_fragment = target_dir / "functions.zsh"
 
     assert "export EDITOR=nvim" in env_fragment.read_text(encoding="utf-8")
     assert 'PATH="$HOME/bin:$PATH"' in env_fragment.read_text(encoding="utf-8")
@@ -63,9 +62,71 @@ bind '"\\e[A":history-search-backward'
     assert len(reports) == 1
 
     report = reports[0].read_text(encoding="utf-8")
+    assert "Live runtime targets:" in report
     assert "bind '" in report
     assert "skipped lines: 1" in report
     assert "Migration report:" in result.stdout
+
+
+def test_migrate_shell_config_refuses_to_overwrite_without_force(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    (repo / "scripts").mkdir(parents=True)
+    shutil.copy(REPO_ROOT / "scripts" / "migrate-shell-config.sh", repo / "scripts" / "migrate-shell-config.sh")
+
+    home = tmp_path / "home"
+    (home / ".config" / "zsh").mkdir(parents=True)
+
+    bashrc = home / ".bashrc"
+    bashrc.write_text("export EDITOR=nvim\n", encoding="utf-8")
+
+    env_fragment = home / ".config" / "zsh" / "env.zsh"
+    env_fragment.write_text("existing\n", encoding="utf-8")
+
+    env = os.environ.copy()
+    env["HOME"] = str(home)
+
+    result = subprocess.run(
+        ["/bin/bash", "scripts/migrate-shell-config.sh"],
+        cwd=repo,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 1
+    assert "without --force" in result.stderr
+    assert env_fragment.read_text(encoding="utf-8") == "existing\n"
+
+
+def test_migrate_shell_config_force_overwrites_existing_fragments(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    (repo / "scripts").mkdir(parents=True)
+    shutil.copy(REPO_ROOT / "scripts" / "migrate-shell-config.sh", repo / "scripts" / "migrate-shell-config.sh")
+
+    home = tmp_path / "home"
+    (home / ".config" / "zsh").mkdir(parents=True)
+
+    bashrc = home / ".bashrc"
+    bashrc.write_text("export EDITOR=nvim\n", encoding="utf-8")
+
+    env_fragment = home / ".config" / "zsh" / "env.zsh"
+    env_fragment.write_text("existing\n", encoding="utf-8")
+
+    env = os.environ.copy()
+    env["HOME"] = str(home)
+
+    result = subprocess.run(
+        ["/bin/bash", "scripts/migrate-shell-config.sh", "--force"],
+        cwd=repo,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    assert "export EDITOR=nvim" in env_fragment.read_text(encoding="utf-8")
+    assert "Migrated env lines to live runtime path" in result.stdout
 
 
 def test_minimal_bashrc_shim_prints_migration_hint_once(tmp_path: Path) -> None:

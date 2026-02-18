@@ -91,7 +91,7 @@ This repository includes example setups for various tools:
 - `dotfiles/terminal/.config/tino/ghostty.toml.tmpl` – stowed into `~/.config/tino/ghostty.toml.tmpl`; used as the canonical Ghostty template source by `scripts/setup-ghostty.sh`.
 - `scripts/install_common.sh` – standard bootstrap entrypoint; installs `curl`, `unzip`, `git` everywhere, then on macOS/Linux installs dependencies (`zsh`, `starship`, `tmux`, `neovim`, `cargo`) and runs `scripts/setup-ghostty.sh` for Ghostty. Ghostty install precedence is: keep preinstalled binary if present, try native package manager (`brew`/`apt-get`/`dnf`/`pacman`) next, then fall back to `cargo install --locked ghostty`. It installs zsh plugins into `~/.local/share/zsh/plugins` but does not edit user rc files. On Windows it runs PowerShell setup and does not attempt Ghostty install.
 - `scripts/install_dotfiles.sh` – deploys dotfiles that control shell runtime behavior; `dotfiles/shell/.zshrc` is the source of truth for plugin sourcing and Starship init.
-- `scripts/migrate-shell-config.sh` – optional one-time manual migration for removing the legacy d0tTino marker block from `~/.zshrc` after writing a backup.
+- `scripts/migrate-shell-config.sh` – optional one-time manual migration that copies compatible `~/.bashrc` exports/aliases/functions into live runtime fragments at `~/.config/zsh/{env,aliases,functions}.zsh` (or `$XDG_CONFIG_HOME/zsh/...`) after writing a backup.
 - `scripts/setup-wsl.sh` – WSL bootstrap helper; installs the same base stack and then runs `scripts/setup-ghostty.sh` so WSL follows the same managed Ghostty profile (Blacklight theme + Nerd Font defaults).
 - `hosts/desktop` and `hosts/work_laptop` – host overlays for machine-specific tweaks.
 - `windows-terminal` – minimal starter `settings.json` for Windows Terminal. The
@@ -148,10 +148,10 @@ Stow vs generated terminal files:
 If you previously used older bootstrap behavior that injected a `d0tTino zsh plugins` marker block into `~/.zshrc`, run:
 
 ```bash
-./scripts/migrate-shell-config.sh
+./scripts/migrate-shell-config.sh [--force]
 ```
 
-The migration is intentionally manual and creates a timestamped backup before any changes.
+The migration is intentionally manual and creates a timestamped backup before any changes. It writes runtime fragments to `~/.config/zsh/{env,aliases,functions}.zsh` (or `$XDG_CONFIG_HOME/zsh/...`) and leaves tracked repository dotfiles untouched.
 
 ## zsh startup profiling (opt-in)
 
