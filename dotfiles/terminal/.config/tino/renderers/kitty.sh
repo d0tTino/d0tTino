@@ -3,11 +3,21 @@ set -euo pipefail
 config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
 config_dir="$config_home/kitty"
 mkdir -p "$config_dir"
+
+kitty_fps="${TINO_TERMINAL_FPS}"
+if [[ "$kitty_fps" -lt 1 ]]; then
+    kitty_fps=1
+fi
+kitty_repaint_delay_ms=$(( (1000 + kitty_fps - 1) / kitty_fps ))
+
 cat > "$config_dir/kitty.conf" <<EOC
 # Managed by ~/.config/tino/terminal-profile.sh (provider: kitty)
 font_family ${TINO_TERMINAL_FONT_FAMILY}
 font_size ${TINO_TERMINAL_FONT_SIZE}
 background_opacity ${TINO_TERMINAL_OPACITY}
+sync_to_monitor yes
+repaint_delay ${kitty_repaint_delay_ms}
+# tino-contract:unsupported TINO_TERMINAL_EFFECTS
 foreground ${TINO_TERMINAL_FOREGROUND}
 background ${TINO_TERMINAL_BACKGROUND}
 cursor ${TINO_TERMINAL_CURSOR}

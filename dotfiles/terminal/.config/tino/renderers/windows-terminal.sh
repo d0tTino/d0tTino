@@ -5,6 +5,14 @@ if [[ -z "$repo_root" ]]; then
     echo "windows-terminal renderer requires repo root path" >&2
     exit 1
 fi
+
+acrylic_enabled="true"
+case "${TINO_TERMINAL_EFFECTS,,}" in
+    off|false|no|0|none)
+        acrylic_enabled="false"
+        ;;
+esac
+
 output="$repo_root/windows-terminal/terminal-profile-overrides.json"
 mkdir -p "$(dirname "$output")"
 cat > "$output" <<EOC
@@ -15,6 +23,7 @@ cat > "$output" <<EOC
         "face": "${TINO_TERMINAL_FONT_FAMILY}",
         "size": ${TINO_TERMINAL_FONT_SIZE}
       },
+      "useAcrylic": ${acrylic_enabled},
       "acrylicOpacity": ${TINO_TERMINAL_OPACITY},
       "colorScheme": "Blacklight"
     }
@@ -43,7 +52,12 @@ cat > "$output" <<EOC
       "cursorColor": "${TINO_TERMINAL_CURSOR}",
       "selectionBackground": "${TINO_TERMINAL_SELECTION}"
     }
-  ]
+  ],
+  "tinoContract": {
+    "unsupported": {
+      "TINO_TERMINAL_FPS": "windows-terminal has no profile-level refresh/fps override; retained as no-op"
+    }
+  }
 }
 EOC
 echo "Rendered Windows Terminal overrides to $output"

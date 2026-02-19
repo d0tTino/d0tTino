@@ -12,6 +12,51 @@ source_if_exists() {
     fi
 }
 
+# Contract fields shared across renderers.
+readonly TINO_TERMINAL_CONTRACT_FIELDS=(
+    TINO_TERMINAL_FPS
+    TINO_TERMINAL_OPACITY
+    TINO_TERMINAL_EFFECTS
+)
+
+terminal_capability_status() {
+    local provider="$1"
+    local field="$2"
+
+    case "$provider:$field" in
+        ghostty:TINO_TERMINAL_FPS|ghostty:TINO_TERMINAL_OPACITY|ghostty:TINO_TERMINAL_EFFECTS)
+            printf 'applied'
+            ;;
+        wezterm:TINO_TERMINAL_FPS|wezterm:TINO_TERMINAL_OPACITY)
+            printf 'applied'
+            ;;
+        wezterm:TINO_TERMINAL_EFFECTS)
+            printf 'unsupported'
+            ;;
+        kitty:TINO_TERMINAL_FPS|kitty:TINO_TERMINAL_OPACITY)
+            printf 'applied'
+            ;;
+        kitty:TINO_TERMINAL_EFFECTS)
+            printf 'unsupported'
+            ;;
+        alacritty:TINO_TERMINAL_OPACITY)
+            printf 'applied'
+            ;;
+        alacritty:TINO_TERMINAL_FPS|alacritty:TINO_TERMINAL_EFFECTS)
+            printf 'unsupported'
+            ;;
+        windows-terminal:TINO_TERMINAL_OPACITY|windows-terminal:TINO_TERMINAL_EFFECTS)
+            printf 'applied'
+            ;;
+        windows-terminal:TINO_TERMINAL_FPS)
+            printf 'unsupported'
+            ;;
+        *)
+            printf 'unknown'
+            ;;
+    esac
+}
+
 load_terminal_profile() {
     source_if_exists "$tino_dir/terminal-defaults.sh"
     source_if_exists "$tino_dir/host-overrides.sh"

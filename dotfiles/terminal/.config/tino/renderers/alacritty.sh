@@ -5,6 +5,8 @@ config_dir="$config_home/alacritty"
 mkdir -p "$config_dir"
 cat > "$config_dir/alacritty.toml" <<EOC
 # Managed by ~/.config/tino/terminal-profile.sh (provider: alacritty)
+# tino-contract:unsupported TINO_TERMINAL_FPS
+# tino-contract:unsupported TINO_TERMINAL_EFFECTS
 [font]
 size = ${TINO_TERMINAL_FONT_SIZE}
 normal = { family = "${TINO_TERMINAL_FONT_FAMILY}", style = "Regular" }

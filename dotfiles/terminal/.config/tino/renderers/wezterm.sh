@@ -7,6 +7,7 @@ mkdir -p "$config_dir"
 
 cat > "$config_dir/wezterm.generated.lua" <<EOC
 -- Managed by ~/.config/tino/terminal-profile.sh (provider: wezterm)
+-- tino-contract:unsupported TINO_TERMINAL_EFFECTS
 local wezterm = require("wezterm")
 
 return {
