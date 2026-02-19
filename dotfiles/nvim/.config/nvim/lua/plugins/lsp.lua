@@ -12,8 +12,7 @@ return {
             "neovim/nvim-lspconfig",
         },
         opts = {
-            ensure_installed = { "lua_ls", "pyright", "ts_ls", "bashls" },
-            automatic_installation = true,
+            automatic_installation = false,
         },
         config = function(_, opts)
             require("mason").setup()
@@ -22,11 +21,33 @@ return {
             mason_lspconfig.setup(opts)
 
             local lspconfig = require("lspconfig")
-            mason_lspconfig.setup_handlers({
-                function(server_name)
-                    lspconfig[server_name].setup({})
-                end,
-            })
+            local required_servers = { "lua_ls", "pyright", "ts_ls", "bashls" }
+            local installed_servers = mason_lspconfig.get_installed_servers()
+            local installed_lookup = {}
+            local missing_servers = {}
+
+            for _, server in ipairs(installed_servers) do
+                installed_lookup[server] = true
+            end
+
+            for _, server in ipairs(required_servers) do
+                if installed_lookup[server] then
+                    lspconfig[server].setup({})
+                else
+                    table.insert(missing_servers, server)
+                end
+            end
+
+            if #missing_servers > 0 then
+                vim.schedule(function()
+                    vim.notify(
+                        "Missing Mason LSP servers: "
+                            .. table.concat(missing_servers, ", ")
+                            .. ". Run ./scripts/setup-nvim.sh to provision them.",
+                        vim.log.levels.WARN
+                    )
+                end)
+            end
         end,
     },
 }
