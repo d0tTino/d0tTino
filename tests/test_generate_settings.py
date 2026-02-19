@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -139,3 +140,65 @@ def test_generate_with_temp_files(tmp_path: Path) -> None:
     assert data["profiles"]["defaults"] == {"b": 2, "a": 1}
     assert data["profiles"]["list"] == [{"guid": "{1}", "name": "base"}, {"name": "extra"}]
 
+
+
+def _run_windows_terminal_renderer(tmp_path: Path, env: dict[str, str]) -> dict[str, object]:
+    repo = tmp_path / "repo"
+    renderer_dir = repo / "dotfiles" / "terminal" / ".config" / "tino" / "renderers"
+    renderer_dir.mkdir(parents=True)
+    script_path = renderer_dir / "windows-terminal.sh"
+    script_src = (REPO_ROOT / "dotfiles" / "terminal" / ".config" / "tino" / "renderers" / "windows-terminal.sh").read_text(encoding="utf-8")
+    script_path.write_text(script_src, encoding="utf-8")
+
+    full_env = {
+        **os.environ,
+        "TINO_TERMINAL_FONT_FAMILY": "CaskaydiaCove Nerd Font",
+        "TINO_TERMINAL_FONT_SIZE": "13",
+        "TINO_TERMINAL_OPACITY": "0.85",
+        "TINO_TERMINAL_EFFECTS": "on",
+        "TINO_TERMINAL_COLOR_0": "#000000",
+        "TINO_TERMINAL_COLOR_1": "#111111",
+        "TINO_TERMINAL_COLOR_2": "#222222",
+        "TINO_TERMINAL_COLOR_3": "#333333",
+        "TINO_TERMINAL_COLOR_4": "#444444",
+        "TINO_TERMINAL_COLOR_5": "#555555",
+        "TINO_TERMINAL_COLOR_6": "#666666",
+        "TINO_TERMINAL_COLOR_7": "#777777",
+        "TINO_TERMINAL_COLOR_8": "#888888",
+        "TINO_TERMINAL_COLOR_9": "#999999",
+        "TINO_TERMINAL_COLOR_10": "#aaaaaa",
+        "TINO_TERMINAL_COLOR_11": "#bbbbbb",
+        "TINO_TERMINAL_COLOR_12": "#cccccc",
+        "TINO_TERMINAL_COLOR_13": "#dddddd",
+        "TINO_TERMINAL_COLOR_14": "#eeeeee",
+        "TINO_TERMINAL_COLOR_15": "#ffffff",
+        "TINO_TERMINAL_BACKGROUND": "#000000",
+        "TINO_TERMINAL_FOREGROUND": "#f2f2f2",
+        "TINO_TERMINAL_CURSOR": "#fc17da",
+        "TINO_TERMINAL_SELECTION": "#301050",
+        **env,
+    }
+
+    subprocess.run(["bash", str(script_path), str(repo)], check=True, cwd=tmp_path, env=full_env)
+    output = repo / "windows-terminal" / "terminal-profile-overrides.json"
+    return json.loads(output.read_text(encoding="utf-8"))
+
+
+def test_renderer_sets_use_acrylic_for_translucent_opacity(tmp_path: Path) -> None:
+    rendered = _run_windows_terminal_renderer(tmp_path, {"TINO_TERMINAL_OPACITY": "0.75"})
+    defaults = rendered["profiles"]["defaults"]
+    assert defaults["useAcrylic"] is True
+    assert defaults["acrylicOpacity"] == 0.75
+
+
+def test_renderer_falls_back_when_acrylic_unsupported(tmp_path: Path) -> None:
+    rendered = _run_windows_terminal_renderer(
+        tmp_path,
+        {
+            "TINO_TERMINAL_OPACITY": "0.75",
+            "TINO_WINDOWS_TERMINAL_ACRYLIC_SUPPORTED": "false",
+        },
+    )
+    defaults = rendered["profiles"]["defaults"]
+    assert defaults["useAcrylic"] is False
+    assert defaults["acrylicOpacity"] == 1.0
