@@ -6,12 +6,33 @@ if [[ -z "$repo_root" ]]; then
     exit 1
 fi
 
-acrylic_enabled="true"
-case "${TINO_TERMINAL_EFFECTS,,}" in
-    off|false|no|0|none)
-        acrylic_enabled="false"
+acrylic_enabled="false"
+resolved_opacity="1.0"
+opacity="${TINO_TERMINAL_OPACITY}"
+
+opacity_is_translucent="false"
+if awk -v value="$opacity" 'BEGIN { exit !(value < 1.0) }'; then
+    opacity_is_translucent="true"
+fi
+
+acrylic_supported="true"
+case "${TINO_WINDOWS_TERMINAL_ACRYLIC_SUPPORTED:-true}" in
+    false|False|FALSE|no|No|NO|0)
+        acrylic_supported="false"
         ;;
 esac
+
+effects_enabled="true"
+case "${TINO_TERMINAL_EFFECTS,,}" in
+    off|false|no|0|none)
+        effects_enabled="false"
+        ;;
+esac
+
+if [[ "$opacity_is_translucent" == "true" && "$effects_enabled" == "true" && "$acrylic_supported" == "true" ]]; then
+    acrylic_enabled="true"
+    resolved_opacity="$opacity"
+fi
 
 output="$repo_root/windows-terminal/terminal-profile-overrides.json"
 mkdir -p "$(dirname "$output")"
@@ -24,7 +45,7 @@ cat > "$output" <<EOC
         "size": ${TINO_TERMINAL_FONT_SIZE}
       },
       "useAcrylic": ${acrylic_enabled},
-      "acrylicOpacity": ${TINO_TERMINAL_OPACITY},
+      "acrylicOpacity": ${resolved_opacity},
       "colorScheme": "Blacklight"
     }
   },
@@ -55,7 +76,8 @@ cat > "$output" <<EOC
   ],
   "tinoContract": {
     "unsupported": {
-      "TINO_TERMINAL_FPS": "windows-terminal has no profile-level refresh/fps override; retained as no-op"
+      "TINO_TERMINAL_FPS": "windows-terminal has no profile-level refresh/fps override; retained as no-op",
+      "TINO_WINDOWS_TERMINAL_ACRYLIC_SUPPORTED": "set false to force deterministic fallback (opaque background, useAcrylic=false) on unsupported environments"
     }
   }
 }
