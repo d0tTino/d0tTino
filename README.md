@@ -186,10 +186,10 @@ Dotfiles are organized into explicit stow-style packages under `dotfiles/` with 
 - `dotfiles/terminal/.config/wezterm/wezterm.lua` → optional GPU-accelerated WezTerm profile aligned with shell/tmux colors
 - `dotfiles/terminal/.config/tino/ghostty.toml.tmpl` → authored Ghostty template (renderer input)
 - `dotfiles/terminal/.config/tino/renderers/*.sh` → provider renderers that generate concrete config files from the terminal profile contract
-- `scripts/install_common.sh` → standard bootstrap script; on macOS/Linux it installs dependencies (`zsh`, `starship`, `tmux`, `neovim`, `cargo`), runs `scripts/setup-nvim.sh` to provision Neovim plugin + Mason LSP assets (headless), and then runs `scripts/setup-ghostty.sh` to install Ghostty and trigger profile rendering. Ghostty install precedence is: keep preinstalled binary if present, try native package manager (`brew`/`apt-get`/`dnf`/`pacman`) next, then fall back to `cargo install --locked ghostty`. It installs zsh plugins under `~/.local/share/zsh/plugins` but does not modify user shell rc files (Windows skips Ghostty and keeps Windows Terminal flow).
+- `scripts/install_common.sh` → standard bootstrap script; on macOS/Linux it installs dependencies (`zsh`, `starship`, `tmux`, `neovim`, `cargo`), runs `scripts/setup-nvim.sh` to provision Neovim plugin + Mason LSP assets (headless), runs `scripts/setup-ghostty.sh` to install Ghostty and trigger profile rendering, and then calls `scripts/install_dotfiles.sh` so managed rc files/symlinks are deployed to the target user home. Ghostty install precedence is: keep preinstalled binary if present, try native package manager (`brew`/`apt-get`/`dnf`/`pacman`) next, then fall back to `cargo install --locked ghostty`. It installs zsh plugins under `~/.local/share/zsh/plugins` and does not directly edit ad-hoc rc content (Windows skips Ghostty and keeps Windows Terminal flow).
 - `scripts/setup-terminal-provider.sh <provider>` → entry point for provider-specific setup/rendering (`ghostty|wezterm|kitty|alacritty|windows-terminal`) via `~/.config/tino/terminal-profile.sh`
-- `scripts/install_dotfiles.sh` → deploys dotfiles that control runtime shell behavior (`dotfiles/shell/.zshrc` is the source of truth for plugin sourcing and `starship init`).
-- `scripts/migrate-shell-config.sh` → optional one-time manual migration that copies compatible `~/.bashrc` exports/aliases/functions into live runtime fragments at `~/.config/zsh/{env,aliases,functions}.zsh` (or `$XDG_CONFIG_HOME/zsh/...`) after creating a timestamped backup; it does not edit tracked repository dotfiles.
+- `scripts/install_dotfiles.sh` → deploys managed dotfiles into the user target (for example `$HOME`) by writing tracked rc files/symlinks; `dotfiles/shell/.zshrc` is the source of truth for plugin sourcing and `starship init`.
+- `scripts/migrate-shell-config.sh` → optional one-time manual migration that imports compatible legacy `~/.bashrc` exports/aliases/functions into runtime fragments at `~/.config/zsh/{env,aliases,functions}.zsh` (or `$XDG_CONFIG_HOME/zsh/...`) after creating a timestamped backup; it does not edit tracked repository dotfiles and is not required for bootstrap.
 - `hosts/desktop` and `hosts/work_laptop` → machine-specific overrides
   - `hosts/desktop/.config/tino/host-overrides.sh` favors richer visuals/high refresh
   - `hosts/work_laptop/.config/tino/host-overrides.sh` keeps effects balanced for battery life
@@ -211,6 +211,14 @@ Expected behavior:
 - Host overlay packages only contain diffs in `~/.config/tino/host-overrides.sh`.
 - On shell startup, `.zshrc` loads defaults first and then host overrides, so host values win when both define the same variable.
 - `scripts/install_dotfiles.sh --host <name>` follows the same order: core packages, then host overlay (`<name>` is `desktop` or `work_laptop` in this repo).
+
+### What changes in `$HOME`
+
+| Flow | Purpose | Writes/symlinks in user target (`$HOME`/XDG paths) |
+| --- | --- | --- |
+| `./scripts/install_common.sh` | Bootstrap dependencies + deploy managed dotfiles | Installs tools/assets (e.g. zsh plugins, Neovim/Ghostty assets) and invokes `scripts/install_dotfiles.sh` to create/update managed rc file symlinks. |
+| `./scripts/install_dotfiles.sh [--host ...]` | Dotfile deployment only | Creates/updates tracked rc/config symlinks from `dotfiles/` (and optional `hosts/`) into the user target. |
+| `./scripts/migrate-shell-config.sh [--force]` | Optional legacy import | Writes `~/.config/zsh/{env,aliases,functions}.zsh` fragments from legacy bash content + backup; does not manage tracked dotfile symlinks. |
 
 ### Terminal profile value flow
 
