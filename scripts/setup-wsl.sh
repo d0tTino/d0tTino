@@ -158,7 +158,7 @@ else
         dotfiles_args+=(--host "$detected_host")
     fi
 fi
-bash "$script_dir/install_dotfiles.sh" "${dotfiles_args[@]}"
+bash "$script_dir/install_dotfiles.sh" --conflict=abort "${dotfiles_args[@]}"
 
 # Set zsh as the default shell only when it is not already the login shell.
 zsh_path="$(command -v zsh)"

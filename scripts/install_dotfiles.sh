@@ -9,7 +9,7 @@ fi
 
 usage() {
     cat <<USAGE
-Usage: $(basename "$0") [--dry-run] [--target DIR] [--packages LIST] [--host NAME]
+Usage: $(basename "$0") [--dry-run] [--target DIR] [--packages LIST] [--host NAME] [--conflict MODE]
 
 Link dotfile packages into the target directory using GNU Stow.
 
@@ -17,6 +17,7 @@ Link dotfile packages into the target directory using GNU Stow.
   -t, --target DIR   Target directory (defaults to $HOME)
   -p, --packages     Comma-separated package list (defaults to: shell,nvim,tmux,terminal)
       --host NAME    Apply host overlay from hosts/NAME after core packages
+      --conflict     Conflict handling mode: abort (default), backup, overwrite
   -h, --help         Show this help message
 USAGE
 }
@@ -25,7 +26,13 @@ dry_run=0
 target="$HOME"
 packages_csv=""
 host_name=""
+conflict_mode="abort"
 core_packages=(shell nvim tmux terminal)
+
+is_tty=false
+if [[ -t 0 && -t 1 ]]; then
+    is_tty=true
+fi
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -61,6 +68,18 @@ while [[ $# -gt 0 ]]; do
             host_name="$2"
             shift 2
             ;;
+        --conflict)
+            if [[ -z "${2:-}" ]]; then
+                echo "Error: --conflict requires a mode (abort|backup|overwrite)" >&2
+                exit 1
+            fi
+            conflict_mode="$2"
+            shift 2
+            ;;
+        --conflict=*)
+            conflict_mode="${1#*=}"
+            shift
+            ;;
         *)
             echo "Unknown option: $1" >&2
             usage
@@ -68,6 +87,14 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+case "$conflict_mode" in
+    abort|backup|overwrite) ;;
+    *)
+        echo "Error: unsupported --conflict mode '$conflict_mode' (expected abort, backup, or overwrite)" >&2
+        exit 1
+        ;;
+esac
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 dotfiles_dir="$repo_root/dotfiles"
@@ -108,22 +135,53 @@ link_package() {
     local pkg="$2"
     echo "Processing $pkg" >&2
     local output
+    local conflicts=()
     output=$(stow -d "$base_dir" -t "$target" -nv "$pkg" 2>&1 || true)
     if echo "$output" | grep -q "existing target"; then
         echo "$output"
         if [[ $dry_run -eq 1 ]]; then
             return
         fi
-        read -r -p "Overwrite these files for $pkg? [y/N] " resp
-        if [[ ! $resp =~ ^[Yy]$ ]]; then
-            echo "Skipping $pkg" >&2
-            return
+        while IFS= read -r line; do
+            [[ -z "$line" ]] && continue
+            conflicts+=("$line")
+        done < <(
+            echo "$output" | sed -n -E 's/.*existing target[^:]*: (.*)$/\1/p'
+        )
+
+        if [[ ${#conflicts[@]} -eq 0 ]]; then
+            echo "Error: stow reported conflicts for $pkg but no paths were parsed." >&2
+            return 1
         fi
-        files=$(echo "$output" | grep "existing target" | awk -F: '{print $2}' | xargs || true)
-        for f in $files; do
-            rm -rf "$target/$f"
-        done
+
+        case "$conflict_mode" in
+            abort)
+                echo "Aborting due to existing targets in package '$pkg'. Re-run with --conflict=backup or --conflict=overwrite." >&2
+                return 1
+                ;;
+            backup)
+                local timestamp backup_root rel_path backup_path
+                timestamp="$(date +%Y%m%d%H%M%S)"
+                backup_root="$target/.dotfiles-backups/$timestamp/$pkg"
+                echo "Backing up conflicting targets to $backup_root" >&2
+                for rel_path in "${conflicts[@]}"; do
+                    backup_path="$backup_root/$rel_path"
+                    mkdir -p "$(dirname "$backup_path")"
+                    mv "$target/$rel_path" "$backup_path"
+                done
+                ;;
+            overwrite)
+                local rel_path
+                if ! $is_tty; then
+                    echo "Running non-interactively with explicit --conflict=overwrite; removing conflicting targets." >&2
+                fi
+                for rel_path in "${conflicts[@]}"; do
+                    rm -rf "$target/$rel_path"
+                done
+                ;;
+        esac
     fi
+
     if [[ $dry_run -eq 1 ]]; then
         stow -d "$base_dir" -t "$target" -nv "$pkg"
     else

@@ -412,7 +412,7 @@ else
         fi
     fi
     if [[ -f "$scripts/install_dotfiles.sh" ]]; then
-        run_cmd bash "$scripts/install_dotfiles.sh" "${dotfiles_args[@]}"
+        run_cmd bash "$scripts/install_dotfiles.sh" --conflict=abort "${dotfiles_args[@]}"
     fi
 
     if [[ -f "$scripts/setup-nvim.sh" ]]; then
