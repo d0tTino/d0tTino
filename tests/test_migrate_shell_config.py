@@ -153,4 +153,27 @@ def test_minimal_bashrc_shim_prints_migration_hint_once(tmp_path: Path) -> None:
     )
 
     assert "Hint: migrate your legacy ~/.bashrc settings" in first.stderr
+    assert "scripts/migrate-shell-config.sh" in first.stderr
     assert "Hint: migrate your legacy ~/.bashrc settings" not in second.stderr
+
+
+def test_minimal_bashrc_shim_uses_env_fallback_for_symlinked_rcfile(tmp_path: Path) -> None:
+    bashrc_symlink = tmp_path / ".bashrc"
+    bashrc_symlink.symlink_to(REPO_ROOT / "dotfiles" / "shell" / ".bashrc")
+
+    home = tmp_path / "home"
+    home.mkdir()
+    env = os.environ.copy()
+    env["HOME"] = str(home)
+    env["D0TTINO_REPO_ROOT"] = "/tmp/custom-d0ttino"
+
+    result = subprocess.run(
+        ["/bin/bash", "--rcfile", str(bashrc_symlink), "-i", "-c", "exit"],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    assert "Hint: migrate your legacy ~/.bashrc settings" in result.stderr
+    assert "/tmp/custom-d0ttino/scripts/migrate-shell-config.sh" in result.stderr
