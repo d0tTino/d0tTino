@@ -8,7 +8,11 @@ esac
 
 migration_script="$HOME/.local/share/d0ttino/scripts/migrate-shell-config.sh"
 if [[ ! -x "${migration_script}" ]]; then
-    migration_script="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/scripts/migrate-shell-config.sh"
+    if [[ -n "${D0TTINO_REPO_ROOT:-}" ]]; then
+        migration_script="${D0TTINO_REPO_ROOT}/scripts/migrate-shell-config.sh"
+    else
+        migration_script="scripts/migrate-shell-config.sh"
+    fi
 fi
 
 migration_hint_stamp="${XDG_CACHE_HOME:-$HOME/.cache}/d0ttino/bash-migration-hint-shown"
