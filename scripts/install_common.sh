@@ -190,6 +190,39 @@ clone_plugin_if_missing() {
     run_cmd git clone "$repo_url" "$destination"
 }
 
+resolve_host_overlay() {
+    local hosts_root="$1"
+    local raw_host="$2"
+
+    if [[ -z "$raw_host" ]]; then
+        return
+    fi
+
+    local normalized_lower="${raw_host,,}"
+    local normalized_slug
+    normalized_slug="$(printf '%s' "$normalized_lower" | sed -E 's/[^a-z0-9]+/_/g; s/^_+|_+$//g')"
+    local short_host="${normalized_lower%%.*}"
+    local short_slug
+    short_slug="$(printf '%s' "$short_host" | sed -E 's/[^a-z0-9]+/_/g; s/^_+|_+$//g')"
+
+    local -a candidates=(
+        "$raw_host"
+        "$normalized_lower"
+        "$normalized_slug"
+        "$short_host"
+        "$short_slug"
+    )
+
+    local candidate
+    for candidate in "${candidates[@]}"; do
+        [[ -z "$candidate" ]] && continue
+        if [[ -d "$hosts_root/$candidate" ]]; then
+            echo "$candidate"
+            return
+        fi
+    done
+}
+
 get_login_shell() {
     local shell_path=""
     local user_name="${USER:-$(id -un 2>/dev/null || true)}"
@@ -373,8 +406,9 @@ else
         dotfiles_args+=(--host "$host_override")
     else
         detected_host="$(hostname 2>/dev/null || true)"
-        if [[ -n "$detected_host" && -d "$repo_root/hosts/$detected_host" ]]; then
-            dotfiles_args+=(--host "$detected_host")
+        resolved_host="$(resolve_host_overlay "$repo_root/hosts" "$detected_host")"
+        if [[ -n "$resolved_host" ]]; then
+            dotfiles_args+=(--host "$resolved_host")
         fi
     fi
     if [[ -f "$scripts/install_dotfiles.sh" ]]; then

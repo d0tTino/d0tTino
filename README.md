@@ -210,7 +210,7 @@ Expected behavior:
 - `dotfiles/terminal` provides shared defaults in `~/.config/tino/terminal-defaults.sh`.
 - Host overlay packages only contain diffs in `~/.config/tino/host-overrides.sh`.
 - On shell startup, `.zshrc` loads defaults first and then host overrides, so host values win when both define the same variable.
-- `scripts/install_dotfiles.sh --host <name>` follows the same order: core packages, then host overlay.
+- `scripts/install_dotfiles.sh --host <name>` follows the same order: core packages, then host overlay (`<name>` is `desktop` or `work_laptop` in this repo).
 
 ### Terminal profile value flow
 

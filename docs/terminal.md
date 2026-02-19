@@ -382,10 +382,12 @@ traditional command palette is available with **Ctrl+Shift+P**.
 
    Stow cleanly manages symlinks, letting you enable or disable packages with `stow -D <name>`.
 
-3. **Host-specific overrides** live under `hosts/<hostname>` and can be applied with:
+3. **Host-specific overrides** live under `hosts/<name> (currently desktop or work_laptop)` and can be applied with:
 
    ```bash
-   stow --target="$HOME" hosts/$(hostname)
+   stow --target="$HOME" hosts/desktop
+   # or
+   stow --target="$HOME" hosts/work_laptop
    ```
 
    This keeps machine-specific settings separate while sharing a common core.
