@@ -94,12 +94,16 @@ tino_defer_eval() {
 ZSH_PLUGIN_DIR="${ZSH_PLUGIN_DIR:-$HOME/.local/share/zsh/plugins}"
 source_if_readable "$ZSH_CONFIG_DIR/aliases.zsh"
 source_if_readable "$ZSH_CONFIG_DIR/functions.zsh"
-source_if_readable "$ZSH_PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
-source_if_readable "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
 if command -v starship >/dev/null; then
     eval "$(starship init zsh)"
 fi
+
+source_if_readable "$ZSH_PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
+
+# Keep syntax-highlighting as the final Phase-1 interactive enhancement so
+# it can wrap widgets defined by prompt/plugins and reduce ordering surprises.
+source_if_readable "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
 # Phase 2: deferred non-critical path/env initialization.
 if [[ "${TINO_ZSH_DEFER:-1}" == "1" ]]; then
