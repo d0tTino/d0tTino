@@ -208,12 +208,14 @@ If `zprof` or `hyperfine` results exceed budget, move work from phase 1 into def
 
 ## Neovim first run and startup profiling
 
-The `dotfiles/nvim` package uses `lazy.nvim` for plugin management, but startup is offline-only: Neovim will not clone plugin manager dependencies at launch.
+The `dotfiles/nvim` package uses `lazy.nvim` for plugin management. Default startup is deterministic and offline-friendly: if `lazy.nvim` is missing, plugin setup is skipped with a clear warning.
 Minimum CLI toolchain for Neovim integrations: `rg` (ripgrep) and `fd` (or `fdfind` on Debian/Ubuntu).
 
-1. During provisioning run `./scripts/setup-nvim.sh` (or `./scripts/install_common.sh`, which now calls it). This performs a headless `Lazy! sync` plus explicit `MasonInstall` for required LSP servers.
+1. During provisioning run `./scripts/setup-nvim.sh` (or `./scripts/install_common.sh`, which now calls it). This performs a headless `Lazy! sync` plus explicit `MasonInstall` for required LSP servers, and verifies Neovim is at least `0.8` before provisioning.
 2. Start Neovim normally (`nvim`) with no first-run network dependency for plugin/LSP assets.
 3. If plugin revisions changed intentionally, refresh and commit `dotfiles/nvim/.config/nvim/lazy-lock.json`.
+4. Runtime auto-bootstrap is opt-in: set `TINO_NVIM_AUTO_BOOTSTRAP=1` to allow Neovim to clone `folke/lazy.nvim` when missing.
+5. Force strict offline behavior with `TINO_NVIM_OFFLINE=1`; Neovim warns and skips plugin setup to avoid partial initialization.
 
 To inspect startup performance with a repeatable workflow:
 
