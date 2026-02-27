@@ -15,7 +15,3 @@ map("n", "<leader>fh", "<cmd>Telescope help_tags<cr>", opts)
 
 map("n", "[d", vim.diagnostic.goto_prev, opts)
 map("n", "]d", vim.diagnostic.goto_next, opts)
-map("n", "<leader>e", vim.diagnostic.open_float, opts)
-map("n", "<leader>ca", vim.lsp.buf.code_action, opts)
-map("n", "gd", vim.lsp.buf.definition, opts)
-map("n", "gr", vim.lsp.buf.references, opts)
