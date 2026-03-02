@@ -427,6 +427,83 @@ def test_install_common_does_not_append_plugin_marker_block_to_existing_zshrc(tm
     assert len(clone_lines) == 2
 
 
+
+
+def test_install_common_installs_tpm_during_provisioning(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / "repo_tmux_tpm"
+    repo.mkdir()
+
+    scripts_dir = repo / "scripts"
+    helpers_dir = scripts_dir / "helpers"
+    helpers_dir.mkdir(parents=True)
+
+    shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+
+    for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
+        path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+        path.chmod(0o755)
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    git_log = tmp_path / "git.log"
+
+    for exe in ["curl", "unzip", "zsh", "tmux", "nvim", "cargo", "stow", "rg", "fd"]:
+        create_exe(bin_dir / exe)
+    create_exe(bin_dir / "starship", "#!/usr/bin/env bash\nif [[ $1 == init && $2 == zsh ]]; then\n  echo 'STARSHIP_INIT'\nfi\n")
+    create_git_stub(bin_dir / "git", git_log)
+    (bin_dir / "bash").symlink_to("/bin/bash")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+
+    home_dir = tmp_path / "home"
+    home_dir.mkdir()
+
+    env = os.environ.copy()
+    env.update({"OSTYPE": "linux-gnu", "PATH": f"{bin_dir}:/usr/bin:/bin", "HOME": str(home_dir), "SHELL": "/bin/bash"})
+
+    subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
+
+    clone_lines = [line for line in git_log.read_text(encoding="utf-8").splitlines() if line.startswith("clone ")]
+    assert any("tmux-plugins/tpm" in line and str(home_dir / ".tmux/plugins/tpm") in line for line in clone_lines)
+
+
+def test_install_common_skips_tpm_clone_when_repo_exists(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / "repo_tmux_tpm_idempotent"
+    repo.mkdir()
+
+    scripts_dir = repo / "scripts"
+    helpers_dir = scripts_dir / "helpers"
+    helpers_dir.mkdir(parents=True)
+
+    shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+
+    for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
+        path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+        path.chmod(0o755)
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    git_log = tmp_path / "git.log"
+
+    for exe in ["curl", "unzip", "zsh", "tmux", "nvim", "cargo", "stow", "rg", "fd"]:
+        create_exe(bin_dir / exe)
+    create_exe(bin_dir / "starship", "#!/usr/bin/env bash\nif [[ $1 == init && $2 == zsh ]]; then\n  echo 'STARSHIP_INIT'\nfi\n")
+    create_git_stub(bin_dir / "git", git_log)
+    (bin_dir / "bash").symlink_to("/bin/bash")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+
+    home_dir = tmp_path / "home"
+    (home_dir / ".tmux/plugins/tpm/.git").mkdir(parents=True)
+
+    env = os.environ.copy()
+    env.update({"OSTYPE": "linux-gnu", "PATH": f"{bin_dir}:/usr/bin:/bin", "HOME": str(home_dir), "SHELL": "/bin/bash"})
+
+    subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
+
+    clone_lines = [line for line in git_log.read_text(encoding="utf-8").splitlines() if line.startswith("clone ")]
+    assert not any("tmux-plugins/tpm" in line for line in clone_lines)
+
 def test_install_common_runs_install_dotfiles_with_detected_host(tmp_path: Path) -> None:
     repo_root = Path(__file__).resolve().parents[1]
     repo = tmp_path / "repo_dotfiles"

@@ -129,14 +129,14 @@ From the repository root run:
 
 Platform behavior is explicit:
 
-- **Linux/macOS/WSL**: installs shell/editor/multiplexer dependencies (`zsh`, `starship`, `tmux`, `neovim`, `cargo`), clones zsh plugins locally, provisions Neovim plugin + Mason LSP assets via `scripts/setup-nvim.sh`, installs/configures **Ghostty** via `scripts/setup-ghostty.sh` for a single canonical terminal path and shared theme behavior, and deploys managed rc/config symlinks by invoking `scripts/install_dotfiles.sh`. Runtime shell setup comes from deployed dotfiles, not bootstrap-time ad-hoc rc edits.
+- **Linux/macOS/WSL**: installs shell/editor/multiplexer dependencies (`zsh`, `starship`, `tmux`, `neovim`, `cargo`), clones zsh plugins and TPM locally, provisions Neovim plugin + Mason LSP assets via `scripts/setup-nvim.sh`, installs/configures **Ghostty** via `scripts/setup-ghostty.sh` for a single canonical terminal path and shared theme behavior, and deploys managed rc/config symlinks by invoking `scripts/install_dotfiles.sh`. Runtime shell setup comes from deployed dotfiles, not bootstrap-time ad-hoc rc edits.
 - **Windows**: runs the PowerShell bootstrap path and optional Windows Terminal/WSL setup flags; native Ghostty install is intentionally skipped on Windows itself.
 
 ### What changes in `$HOME`
 
 | Flow | Purpose | Writes/symlinks in user target (`$HOME`/XDG paths) |
 | --- | --- | --- |
-| `./scripts/install_common.sh` | Bootstrap dependencies + deploy managed dotfiles | Installs tools/assets (e.g. zsh plugins, Neovim/Ghostty assets) and invokes `scripts/install_dotfiles.sh` to create/update managed rc file symlinks. |
+| `./scripts/install_common.sh` | Bootstrap dependencies + deploy managed dotfiles | Installs tools/assets (e.g. zsh plugins, TPM, Neovim/Ghostty assets) and invokes `scripts/install_dotfiles.sh` to create/update managed rc file symlinks. |
 | `./scripts/install_dotfiles.sh [--host ...]` | Dotfile deployment only | Creates/updates tracked rc/config symlinks from `dotfiles/` (and optional `hosts/`) into the user target. |
 | `./scripts/migrate-shell-config.sh [--force]` | Optional legacy import | Writes `~/.config/zsh/{env,aliases,functions}.zsh` fragments from legacy bash content + backup; does not manage tracked dotfile symlinks. |
 
@@ -274,7 +274,7 @@ The repository includes a baseline tmux configuration at [`dotfiles/tmux/.tmux.c
 - A status line styled to match the Blacklight palette.
 - Ergonomic pane/window navigation and a `prefix + r` config reload binding.
 
-TPM is bootstrapped automatically (cloned on first startup if missing) with:
+TPM is installed during provisioning (`./scripts/install_common.sh`) so tmux startup stays offline/non-networked. The config only declares plugins and runs TPM with:
 
 - `tmux-plugins/tpm`
 - `tmux-plugins/tmux-resurrect`

@@ -52,3 +52,12 @@ def test_readme_layout_paths_exist():
 
     for layout_path in readme_layout_paths:
         assert layout_path.exists(), f"README layout path missing: {layout_path}"
+
+
+def test_tmux_conf_uses_preinstalled_tpm_only() -> None:
+    tmux_conf = (REPO_ROOT / "dotfiles" / "tmux" / ".tmux.conf").read_text(encoding="utf-8")
+
+    assert "set -g @plugin 'tmux-plugins/tpm'" in tmux_conf
+    assert "run '~/.tmux/plugins/tpm/tpm'" in tmux_conf
+    assert "git clone https://github.com/tmux-plugins/tpm" not in tmux_conf
+    assert "if-shell \"test ! -d ~/.tmux/plugins/tpm\"" not in tmux_conf
