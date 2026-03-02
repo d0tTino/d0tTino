@@ -29,10 +29,6 @@ install_with_pkg_manager() {
 
 ensure_provider_installed() {
     case "$provider" in
-        ghostty)
-            bash "$repo_root/scripts/setup-ghostty.sh"
-            return
-            ;;
         wezterm)
             if ! command -v wezterm >/dev/null 2>&1; then
                 if ! install_with_pkg_manager wezterm; then
