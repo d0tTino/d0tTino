@@ -129,7 +129,7 @@ def test_migrate_shell_config_force_overwrites_existing_fragments(tmp_path: Path
     assert "Migrated env lines to live runtime path" in result.stdout
 
 
-def test_minimal_bashrc_shim_prints_migration_hint_once(tmp_path: Path) -> None:
+def test_minimal_bashrc_shim_prints_bootstrap_hint_once_when_migration_helper_missing(tmp_path: Path) -> None:
     bashrc = REPO_ROOT / "dotfiles" / "shell" / ".bashrc"
 
     home = tmp_path / "home"
@@ -152,12 +152,18 @@ def test_minimal_bashrc_shim_prints_migration_hint_once(tmp_path: Path) -> None:
         check=True,
     )
 
-    assert "Hint: migrate your legacy ~/.bashrc settings" in first.stderr
-    assert "scripts/migrate-shell-config.sh" in first.stderr
-    assert "Hint: migrate your legacy ~/.bashrc settings" not in second.stderr
+    assert "Hint: migration helper is not installed" in first.stderr
+    assert "./scripts/install_common.sh" in first.stderr
+    assert "Hint: migration helper is not installed" not in second.stderr
 
 
 def test_minimal_bashrc_shim_uses_env_fallback_for_symlinked_rcfile(tmp_path: Path) -> None:
+    custom_repo_root = tmp_path / "custom-d0ttino"
+    migration_script = custom_repo_root / "scripts" / "migrate-shell-config.sh"
+    migration_script.parent.mkdir(parents=True)
+    migration_script.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+    migration_script.chmod(0o755)
+
     bashrc_symlink = tmp_path / ".bashrc"
     bashrc_symlink.symlink_to(REPO_ROOT / "dotfiles" / "shell" / ".bashrc")
 
@@ -165,7 +171,7 @@ def test_minimal_bashrc_shim_uses_env_fallback_for_symlinked_rcfile(tmp_path: Pa
     home.mkdir()
     env = os.environ.copy()
     env["HOME"] = str(home)
-    env["D0TTINO_REPO_ROOT"] = "/tmp/custom-d0ttino"
+    env["D0TTINO_REPO_ROOT"] = str(custom_repo_root)
 
     result = subprocess.run(
         ["/bin/bash", "--rcfile", str(bashrc_symlink), "-i", "-c", "exit"],
@@ -176,4 +182,4 @@ def test_minimal_bashrc_shim_uses_env_fallback_for_symlinked_rcfile(tmp_path: Pa
     )
 
     assert "Hint: migrate your legacy ~/.bashrc settings" in result.stderr
-    assert "/tmp/custom-d0ttino/scripts/migrate-shell-config.sh" in result.stderr
+    assert str(migration_script) in result.stderr
