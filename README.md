@@ -233,8 +233,18 @@ Terminal profile values flow through one path:
 
 Standard bootstrap command (repo root):
 
-Neovim plugin revisions are pinned in `dotfiles/nvim/.config/nvim/lazy-lock.json`; provisioning is handled by `./scripts/setup-nvim.sh` (headless `Lazy! sync` + explicit Mason LSP installs, requires Neovim >= 0.8) so first interactive startup is deterministic. Runtime self-healing is opt-in with `TINO_NVIM_AUTO_BOOTSTRAP=1` (default is disabled/offline-friendly), and `TINO_NVIM_OFFLINE=1` forces warning-only startup behavior.
+Neovim plugin revisions are pinned in `dotfiles/nvim/.config/nvim/lazy-lock.json`; provisioning is handled by `./scripts/setup-nvim.sh` (headless `Lazy! sync` + explicit Mason LSP installs, requires Neovim >= 0.8) so first interactive startup is deterministic. Runtime self-healing is opt-in with `TINO_NVIM_AUTO_BOOTSTRAP=1` (default is disabled/offline-friendly), and `TINO_NVIM_OFFLINE=1` forces warning-only startup behavior. Startup benchmarking is available via `scripts/benchmark_nvim_startup.sh`; `scripts/setup-nvim.sh` runs it only when `TINO_NVIM_BENCHMARK_STARTUP=1` (desktop profile enables this by default during `install_common.sh`, constrained environments can opt out with `TINO_NVIM_BENCHMARK_STARTUP=0`). You can enforce a regression threshold with `TINO_NVIM_MAX_STARTUP_MS`.
 
+Reproducible benchmark command (repo root):
+
+```bash
+TINO_NVIM_BENCHMARK_STARTUP=1 TINO_NVIM_MAX_STARTUP_MS=250 ./scripts/setup-nvim.sh
+```
+
+Expected artifacts are written under `.cache/tino/nvim-startup/`:
+
+- `.cache/tino/nvim-startup/startup.log`
+- `.cache/tino/nvim-startup/summary.txt`
 
 ```bash
 ./scripts/install_common.sh

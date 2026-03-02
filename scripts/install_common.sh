@@ -419,7 +419,12 @@ else
     fi
 
     if [[ -f "$scripts/setup-nvim.sh" ]]; then
-        run_cmd bash "$scripts/setup-nvim.sh"
+        benchmark_env=()
+        setup_nvim_host="${host_override:-${resolved_host:-}}"
+        if [[ -z "${TINO_NVIM_BENCHMARK_STARTUP:-}" && "$setup_nvim_host" == "desktop" ]]; then
+            benchmark_env+=(TINO_NVIM_BENCHMARK_STARTUP=1)
+        fi
+        run_cmd env "${benchmark_env[@]}" bash "$scripts/setup-nvim.sh"
     fi
 
     set_default_shell "$set_default_shell_mode"
