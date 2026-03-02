@@ -91,9 +91,14 @@ tino_defer_eval() {
 }
 
 # Phase 1: prompt-critical startup path.
+# Prompt-critical files must load before `starship init` so first-render prompt
+# modules see host/terminal/env overrides. Keep heavy tooling in Phase 2.
 ZSH_PLUGIN_DIR="${ZSH_PLUGIN_DIR:-$HOME/.local/share/zsh/plugins}"
 source_if_readable "$ZSH_CONFIG_DIR/aliases.zsh"
 source_if_readable "$ZSH_CONFIG_DIR/functions.zsh"
+source_if_readable "$ZSH_CONFIG_DIR/env.zsh"
+source_if_readable "$HOME/.config/tino/terminal-defaults.sh"
+source_if_readable "$HOME/.config/tino/host-overrides.sh"
 
 if command -v starship >/dev/null; then
     eval "$(starship init zsh)"
@@ -105,20 +110,12 @@ source_if_readable "$ZSH_PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
 # it can wrap widgets defined by prompt/plugins and reduce ordering surprises.
 source_if_readable "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
-# Phase 2: deferred non-critical path/env initialization.
+# Phase 2: deferred non-critical/non-prompt startup path.
 if [[ "${TINO_ZSH_DEFER:-1}" == "1" ]]; then
-    tino_defer_eval 'source_if_readable "$ZSH_CONFIG_DIR/env.zsh"'
-    tino_defer_eval 'source_if_readable "$HOME/.config/tino/terminal-defaults.sh"'
-    tino_defer_eval 'source_if_readable "$HOME/.config/tino/host-overrides.sh"'
-
     if command -v zoxide >/dev/null; then
         tino_defer_eval 'eval "$(zoxide init zsh)"'
     fi
 else
-    source_if_readable "$ZSH_CONFIG_DIR/env.zsh"
-    source_if_readable "$HOME/.config/tino/terminal-defaults.sh"
-    source_if_readable "$HOME/.config/tino/host-overrides.sh"
-
     if command -v zoxide >/dev/null; then
         eval "$(zoxide init zsh)"
     fi
