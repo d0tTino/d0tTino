@@ -57,7 +57,7 @@ return {
                 end,
             })
 
-            local required_servers = { "lua_ls", "pyright", "ts_ls", "bashls" }
+            local required_servers = require("config.lsp_servers").servers
             local installed_servers = mason_lspconfig.get_installed_servers()
             local installed_lookup = {}
             local missing_servers = {}
@@ -79,7 +79,7 @@ return {
                     vim.notify(
                         "Missing Mason LSP servers: "
                             .. table.concat(missing_servers, ", ")
-                            .. ". Run ./scripts/setup-nvim.sh to provision them.",
+                            .. ". Run ./scripts/setup-nvim.sh (canonical provisioning flow) to provision them.",
                         vim.log.levels.WARN
                     )
                 end)

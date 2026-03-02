@@ -6,6 +6,11 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
+def read_canonical_lsp_servers() -> list[str]:
+    lsp_servers_file = REPO_ROOT / "dotfiles" / "nvim" / ".config" / "nvim" / "lsp_servers.txt"
+    return [line.strip() for line in lsp_servers_file.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
 def create_exe(path: Path, contents: str = "#!/usr/bin/env bash\n") -> None:
     path.write_text(contents, encoding="utf-8")
     path.chmod(0o755)
@@ -50,7 +55,8 @@ def test_setup_nvim_clones_lazy_when_missing(tmp_path: Path) -> None:
     assert "clone --filter=blob:none --branch=stable" in git_log.read_text(encoding="utf-8")
     log_text = nvim_log.read_text(encoding="utf-8")
     assert "+Lazy! sync" in log_text
-    assert "+MasonInstall lua_ls pyright ts_ls bashls" in log_text
+    expected_servers = " ".join(read_canonical_lsp_servers())
+    assert f"+MasonInstall {expected_servers}" in log_text
 
 
 def test_setup_nvim_skips_when_already_installed(tmp_path: Path) -> None:
@@ -98,3 +104,23 @@ def test_lazy_config_supports_auto_bootstrap_and_offline_modes() -> None:
     assert "TINO_NVIM_AUTO_BOOTSTRAP" in lazy_config
     assert "TINO_NVIM_OFFLINE" in lazy_config
     assert "git" in lazy_config
+
+
+
+def test_lsp_runtime_and_setup_use_same_canonical_server_inventory() -> None:
+    canonical_servers = read_canonical_lsp_servers()
+
+    lsp_config = (
+        REPO_ROOT / "dotfiles" / "nvim" / ".config" / "nvim" / "lua" / "plugins" / "lsp.lua"
+    ).read_text(encoding="utf-8")
+    lsp_servers_module = (
+        REPO_ROOT / "dotfiles" / "nvim" / ".config" / "nvim" / "lua" / "config" / "lsp_servers.lua"
+    ).read_text(encoding="utf-8")
+    setup_script = (REPO_ROOT / "scripts" / "setup-nvim.sh").read_text(encoding="utf-8")
+
+    assert canonical_servers
+    assert 'require("config.lsp_servers").servers' in lsp_config
+    assert "lsp_servers.txt" in lsp_servers_module
+    assert "lsp_servers_file" in setup_script
+    assert "canonical provisioning flow" in lsp_config
+
