@@ -3,7 +3,9 @@ set -euo pipefail
 
 lazy_path="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/lazy/lazy.nvim"
 lazy_repo="https://github.com/folke/lazy.nvim.git"
-required_lsp_servers=(lua_ls pyright ts_ls bashls)
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "$script_dir/.." && pwd)"
+lsp_servers_file="$repo_root/dotfiles/nvim/.config/nvim/lsp_servers.txt"
 minimum_nvim_version="0.8"
 
 version_gte() {
@@ -11,6 +13,17 @@ version_gte() {
     local minimum="$2"
     [[ "$(printf '%s\n%s\n' "$minimum" "$current" | sort -V | head -n1)" == "$minimum" ]]
 }
+
+if [[ ! -f "$lsp_servers_file" ]]; then
+    echo "Error: expected canonical LSP server inventory at $lsp_servers_file" >&2
+    exit 1
+fi
+
+mapfile -t required_lsp_servers < <(sed -e 's/#.*$//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' "$lsp_servers_file" | awk 'NF')
+if [[ ${#required_lsp_servers[@]} -eq 0 ]]; then
+    echo "Error: no LSP servers were defined in $lsp_servers_file" >&2
+    exit 1
+fi
 
 if ! command -v nvim >/dev/null 2>&1; then
     echo "Error: nvim is required for Neovim provisioning." >&2
