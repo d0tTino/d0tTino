@@ -3,6 +3,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 canonical_template="$repo_root/dotfiles/terminal/.config/tino/ghostty.toml.tmpl"
+terminal_provider_setup="$repo_root/scripts/setup-terminal-provider.sh"
 
 detect_ostype() {
     if [[ -n "${OSTYPE:-}" ]]; then
@@ -83,66 +84,21 @@ sync_template() {
     fi
 }
 
-render_ghostty_config() {
-    local template_file="$1"
-    local target_file="$2"
-    local rendered custom_shader_line escaped_effects
-
-    custom_shader_line=""
-    case "${TINO_TERMINAL_EFFECTS,,}" in
-        off|false|no|0|none|on|true|yes|1|balanced|high)
-            ;;
-        *)
-            escaped_effects="${TINO_TERMINAL_EFFECTS//\"/\\\"}"
-            custom_shader_line="custom-shader = \"${escaped_effects}\""
-            ;;
-    esac
-
-    rendered="$(<"$template_file")"
-    rendered="${rendered//__FONT_FAMILY__/$TINO_TERMINAL_FONT_FAMILY}"
-    rendered="${rendered//__FONT_SIZE__/$TINO_TERMINAL_FONT_SIZE}"
-    rendered="${rendered//__BACKGROUND__/$TINO_TERMINAL_BACKGROUND}"
-    rendered="${rendered//__BACKGROUND_OPACITY__/$TINO_TERMINAL_OPACITY}"
-    rendered="${rendered//__MAX_FPS__/$TINO_TERMINAL_FPS}"
-    rendered="${rendered//__CUSTOM_SHADER_LINE__/$custom_shader_line}"
-    rendered="${rendered//__CURSOR__/$TINO_TERMINAL_CURSOR}"
-
-    for i in $(seq 0 15); do
-        key="TINO_TERMINAL_COLOR_${i}"
-        placeholder="__COLOR_${i}__"
-        rendered="${rendered//${placeholder}/${!key}}"
-    done
-
-    mkdir -p "$(dirname "$target_file")"
-    if [[ -f "$target_file" ]] && [[ "$(<"$target_file")" == "$rendered" ]]; then
-        echo "Configuration already up to date at $target_file"
-        return
-    fi
-
-    printf '%s\n' "$rendered" > "$target_file"
-    echo "Configuration rendered at $target_file"
-}
-
 ensure_ghostty_installed
 
 config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
-profile_script="$repo_root/dotfiles/terminal/.config/tino/terminal-profile.sh"
 if [[ ! -f "$canonical_template" ]]; then
     echo "Error: missing canonical Ghostty template at $canonical_template" >&2
     exit 1
 fi
-if [[ ! -f "$profile_script" ]]; then
-    echo "Error: missing terminal profile contract at $profile_script" >&2
+if [[ ! -x "$terminal_provider_setup" ]]; then
+    echo "Error: missing terminal provider setup at $terminal_provider_setup" >&2
     exit 1
 fi
 
 template_file="$config_home/tino/ghostty.toml.tmpl"
 sync_template "$template_file"
 
-# shellcheck disable=SC1090
-source "$profile_script"
-load_terminal_profile
-
-render_ghostty_config "$template_file" "$config_home/ghostty/ghostty.toml"
+bash "$terminal_provider_setup" ghostty
 
 echo "Ghostty installed and configured."

@@ -43,6 +43,8 @@ def test_setup_ghostty_skips_install_when_preinstalled(tmp_path: Path) -> None:
     scripts_dir = repo / "scripts"
     scripts_dir.mkdir()
     shutil.copy(REPO_ROOT / "scripts" / "setup-ghostty.sh", scripts_dir / "setup-ghostty.sh")
+    (scripts_dir / "setup-terminal-provider.sh").write_text("#!/usr/bin/env bash\nexit 0\n")
+    (scripts_dir / "setup-terminal-provider.sh").chmod(0o755)
     shutil.copytree(REPO_ROOT / "dotfiles", repo / "dotfiles")
 
     bin_dir = tmp_path / "bin"
@@ -80,6 +82,12 @@ def test_setup_ghostty_installs_and_renders(tmp_path: Path) -> None:
     scripts_dir = repo / "scripts"
     scripts_dir.mkdir()
     shutil.copy(REPO_ROOT / "scripts" / "setup-ghostty.sh", scripts_dir / "setup-ghostty.sh")
+    provider_log = tmp_path / "provider.log"
+    (scripts_dir / "setup-terminal-provider.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        f"echo \"$@\" > '{provider_log}'\n"
+    )
+    (scripts_dir / "setup-terminal-provider.sh").chmod(0o755)
     shutil.copytree(REPO_ROOT / "dotfiles", repo / "dotfiles")
 
     bin_dir = tmp_path / "bin"
@@ -108,11 +116,7 @@ def test_setup_ghostty_installs_and_renders(tmp_path: Path) -> None:
     )
 
     assert cargo_log.read_text().strip() == "install --locked ghostty"
-    config_file = Path(env["XDG_CONFIG_HOME"]) / "ghostty/ghostty.toml"
-    assert config_file.exists()
-    config_contents = config_file.read_text()
-    assert "background-opacity = 0.92" in config_contents
-    assert "custom-shader =" not in config_contents
+    assert provider_log.read_text().strip() == "ghostty"
 
 
 def test_setup_ghostty_installs_with_package_manager_without_cargo(tmp_path: Path) -> None:
@@ -121,6 +125,8 @@ def test_setup_ghostty_installs_with_package_manager_without_cargo(tmp_path: Pat
     scripts_dir = repo / "scripts"
     scripts_dir.mkdir()
     shutil.copy(REPO_ROOT / "scripts" / "setup-ghostty.sh", scripts_dir / "setup-ghostty.sh")
+    (scripts_dir / "setup-terminal-provider.sh").write_text("#!/usr/bin/env bash\nexit 0\n")
+    (scripts_dir / "setup-terminal-provider.sh").chmod(0o755)
     shutil.copytree(REPO_ROOT / "dotfiles", repo / "dotfiles")
 
     bin_dir = tmp_path / "bin"
@@ -161,12 +167,18 @@ def test_setup_ghostty_installs_with_package_manager_without_cargo(tmp_path: Pat
     assert "native package manager" in result.stdout
 
 
-def test_setup_ghostty_renders_host_overrides(tmp_path: Path) -> None:
+def test_setup_ghostty_delegates_rendering_to_terminal_provider(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()
     scripts_dir = repo / "scripts"
     scripts_dir.mkdir()
     shutil.copy(REPO_ROOT / "scripts" / "setup-ghostty.sh", scripts_dir / "setup-ghostty.sh")
+    provider_log = tmp_path / "provider.log"
+    (scripts_dir / "setup-terminal-provider.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        f"echo \"$@\" >> '{provider_log}'\n"
+    )
+    (scripts_dir / "setup-terminal-provider.sh").chmod(0o755)
     shutil.copytree(REPO_ROOT / "dotfiles", repo / "dotfiles")
 
     bin_dir = tmp_path / "bin"
@@ -204,12 +216,7 @@ def test_setup_ghostty_renders_host_overrides(tmp_path: Path) -> None:
         text=True,
     )
 
-    config_file = config_home / "ghostty" / "ghostty.toml"
-    config_contents = config_file.read_text()
-    assert "background-opacity = 0.73" in config_contents
-    assert "custom-shader-animation-max-fps = 144" in config_contents
-    assert 'custom-shader = "scanlines.glsl"' in config_contents
-    assert "Configuration rendered" in first.stdout
+    assert provider_log.read_text().splitlines() == ["ghostty"]
 
     second = subprocess.run(
         ["/bin/bash", "scripts/setup-ghostty.sh"],
@@ -219,7 +226,7 @@ def test_setup_ghostty_renders_host_overrides(tmp_path: Path) -> None:
         capture_output=True,
         text=True,
     )
-    assert "Configuration already up to date" in second.stdout
+    assert provider_log.read_text().splitlines() == ["ghostty", "ghostty"]
 
 
 def test_managed_ghostty_template_has_required_keys() -> None:
@@ -247,3 +254,11 @@ def test_setup_script_uses_canonical_template_path() -> None:
     script_contents = script_path.read_text()
 
     assert 'canonical_template="$repo_root/dotfiles/terminal/.config/tino/ghostty.toml.tmpl"' in script_contents
+
+
+def test_setup_script_does_not_embed_ghostty_renderer() -> None:
+    script_path = REPO_ROOT / "scripts" / "setup-ghostty.sh"
+    script_contents = script_path.read_text()
+
+    assert "render_ghostty_config" not in script_contents
+    assert "__CUSTOM_SHADER_LINE__" not in script_contents
