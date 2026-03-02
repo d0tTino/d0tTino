@@ -7,6 +7,10 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
+def _line_index(lines: list[str], needle: str) -> int:
+    return next(index for index, line in enumerate(lines) if needle in line)
+
+
 def test_migrate_shell_config_creates_fragments_backup_and_report(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     (repo / "scripts").mkdir(parents=True)
@@ -183,3 +187,35 @@ def test_minimal_bashrc_shim_uses_env_fallback_for_symlinked_rcfile(tmp_path: Pa
 
     assert "Hint: migrate your legacy ~/.bashrc settings" in result.stderr
     assert str(migration_script) in result.stderr
+
+
+def test_zshrc_loads_prompt_critical_env_before_starship_init() -> None:
+    zshrc = REPO_ROOT / "dotfiles" / "shell" / ".zshrc"
+    lines = zshrc.read_text(encoding="utf-8").splitlines()
+
+    env_index = _line_index(lines, 'source_if_readable "$ZSH_CONFIG_DIR/env.zsh"')
+    terminal_profile_index = _line_index(lines, 'source_if_readable "$HOME/.config/tino/terminal-defaults.sh"')
+    host_profile_index = _line_index(lines, 'source_if_readable "$HOME/.config/tino/host-overrides.sh"')
+    starship_init_index = _line_index(lines, 'eval "$(starship init zsh)"')
+
+    assert env_index < starship_init_index
+    assert terminal_profile_index < starship_init_index
+    assert host_profile_index < starship_init_index
+
+
+def test_zshrc_preserves_interactive_plugin_order_and_defers_zoxide() -> None:
+    zshrc = REPO_ROOT / "dotfiles" / "shell" / ".zshrc"
+    lines = zshrc.read_text(encoding="utf-8").splitlines()
+
+    autosuggestions_index = _line_index(
+        lines,
+        'source_if_readable "$ZSH_PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"',
+    )
+    syntax_highlighting_index = _line_index(
+        lines,
+        'source_if_readable "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"',
+    )
+    zoxide_defer_index = _line_index(lines, "tino_defer_eval 'eval \"$(zoxide init zsh)\"'")
+
+    assert autosuggestions_index < syntax_highlighting_index
+    assert syntax_highlighting_index < zoxide_defer_index
