@@ -173,6 +173,8 @@ run_pwsh() {
 plugin_root="$HOME/.local/share/zsh/plugins"
 autosuggest_repo="https://github.com/zsh-users/zsh-autosuggestions"
 syntax_highlight_repo="https://github.com/zsh-users/zsh-syntax-highlighting"
+tmux_plugin_root="$HOME/.tmux/plugins"
+tpm_repo="https://github.com/tmux-plugins/tpm"
 
 clone_plugin_if_missing() {
     local repo_url=$1
@@ -396,6 +398,7 @@ else
     ensure_deps zsh starship tmux neovim stow rg fd
     clone_plugin_if_missing "$autosuggest_repo" "$plugin_root/zsh-autosuggestions"
     clone_plugin_if_missing "$syntax_highlight_repo" "$plugin_root/zsh-syntax-highlighting"
+    clone_plugin_if_missing "$tpm_repo" "$tmux_plugin_root/tpm"
 
     dotfiles_args=()
     if [[ -n "$host_override" ]]; then
