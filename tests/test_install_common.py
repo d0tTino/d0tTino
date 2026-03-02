@@ -676,3 +676,100 @@ def test_install_common_dry_run_lists_required_rg_and_fd_packages(tmp_path: Path
     assert "apt-get install -y" in output
     assert "ripgrep" in output
     assert "fd-find" in output
+
+
+def test_install_common_enables_nvim_benchmark_by_default_for_desktop_host(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / "repo_dotfiles_desktop_benchmark"
+    repo.mkdir()
+
+    scripts_dir = repo / "scripts"
+    helpers_dir = scripts_dir / "helpers"
+    helpers_dir.mkdir(parents=True)
+
+    shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+
+    for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
+        path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+        path.chmod(0o755)
+
+    (scripts_dir / "install_dotfiles.sh").write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+    (scripts_dir / "install_dotfiles.sh").chmod(0o755)
+
+    setup_nvim_log = tmp_path / "setup_nvim_desktop.log"
+    (scripts_dir / "setup-nvim.sh").write_text(
+        f"#!/usr/bin/env bash\nprintf '%s\\n' \"${{TINO_NVIM_BENCHMARK_STARTUP:-unset}}\" >> '{setup_nvim_log}'\n",
+        encoding="utf-8",
+    )
+    (scripts_dir / "setup-nvim.sh").chmod(0o755)
+
+    (repo / "hosts" / "desktop").mkdir(parents=True)
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    for exe in ["curl", "unzip", "zsh", "tmux", "nvim", "cargo", "stow"]:
+        create_exe(bin_dir / exe)
+    create_exe(bin_dir / "starship", "#!/usr/bin/env bash\nif [[ $1 == init && $2 == zsh ]]; then\n  echo 'STARSHIP_INIT'\nfi\n")
+    create_git_stub(bin_dir / "git", tmp_path / "git_desktop.log")
+    create_exe(bin_dir / "hostname", "#!/usr/bin/env bash\necho desktop\n")
+    (bin_dir / "bash").symlink_to("/bin/bash")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+
+    env = os.environ.copy()
+    env.update({"OSTYPE": "linux-gnu", "PATH": f"{bin_dir}:/usr/bin:/bin", "HOME": str(tmp_path / 'home')})
+
+    subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
+
+    assert setup_nvim_log.read_text(encoding="utf-8").splitlines() == ["1"]
+
+
+def test_install_common_respects_explicit_nvim_benchmark_disable(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / "repo_dotfiles_desktop_disable_benchmark"
+    repo.mkdir()
+
+    scripts_dir = repo / "scripts"
+    helpers_dir = scripts_dir / "helpers"
+    helpers_dir.mkdir(parents=True)
+
+    shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+
+    for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
+        path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+        path.chmod(0o755)
+
+    (scripts_dir / "install_dotfiles.sh").write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+    (scripts_dir / "install_dotfiles.sh").chmod(0o755)
+
+    setup_nvim_log = tmp_path / "setup_nvim_disable.log"
+    (scripts_dir / "setup-nvim.sh").write_text(
+        f"#!/usr/bin/env bash\nprintf '%s\\n' \"${{TINO_NVIM_BENCHMARK_STARTUP:-unset}}\" >> '{setup_nvim_log}'\n",
+        encoding="utf-8",
+    )
+    (scripts_dir / "setup-nvim.sh").chmod(0o755)
+
+    (repo / "hosts" / "desktop").mkdir(parents=True)
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    for exe in ["curl", "unzip", "zsh", "tmux", "nvim", "cargo", "stow"]:
+        create_exe(bin_dir / exe)
+    create_exe(bin_dir / "starship", "#!/usr/bin/env bash\nif [[ $1 == init && $2 == zsh ]]; then\n  echo 'STARSHIP_INIT'\nfi\n")
+    create_git_stub(bin_dir / "git", tmp_path / "git_disable.log")
+    create_exe(bin_dir / "hostname", "#!/usr/bin/env bash\necho desktop\n")
+    (bin_dir / "bash").symlink_to("/bin/bash")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+
+    env = os.environ.copy()
+    env.update(
+        {
+            "OSTYPE": "linux-gnu",
+            "PATH": f"{bin_dir}:/usr/bin:/bin",
+            "HOME": str(tmp_path / 'home'),
+            "TINO_NVIM_BENCHMARK_STARTUP": "0",
+        }
+    )
+
+    subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
+
+    assert setup_nvim_log.read_text(encoding="utf-8").splitlines() == ["0"]

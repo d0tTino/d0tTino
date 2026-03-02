@@ -74,7 +74,29 @@ def test_benchmark_nvim_startup_fails_on_threshold_regression(tmp_path: Path) ->
 
     env = os.environ.copy()
     env["PATH"] = f"{fake_bin}:{env['PATH']}"
-    env["MAX_STARTUP_MS"] = "5"
+    env["TINO_NVIM_MAX_STARTUP_MS"] = "5"
+
+    result = subprocess.run(["bash", str(script)], cwd=tmp_path, env=env, text=True, capture_output=True)
+
+    assert result.returncode == 1
+    assert "Startup regression detected" in result.stderr
+
+
+def test_benchmark_nvim_startup_supports_legacy_threshold_env(tmp_path: Path) -> None:
+    script = REPO_ROOT / "scripts" / "benchmark_nvim_startup.sh"
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    _write_fake_nvim(
+        fake_bin,
+        [
+            "001.000: plugin/bootstrap",
+            "003.250: plugin/lsp",
+        ],
+    )
+
+    env = os.environ.copy()
+    env["PATH"] = f"{fake_bin}:{env['PATH']}"
+    env["MAX_STARTUP_MS"] = "2"
 
     result = subprocess.run(["bash", str(script)], cwd=tmp_path, env=env, text=True, capture_output=True)
 

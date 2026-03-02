@@ -5,7 +5,7 @@ OUTPUT_DIR=".cache/tino/nvim-startup"
 LOG_FILE="${OUTPUT_DIR}/startup.log"
 SUMMARY_FILE="${OUTPUT_DIR}/summary.txt"
 TOP_COUNT="${TOP_COUNT:-20}"
-MAX_STARTUP_MS="${MAX_STARTUP_MS:-}"
+MAX_STARTUP_MS="${TINO_NVIM_MAX_STARTUP_MS:-${MAX_STARTUP_MS:-}}"
 
 mkdir -p "${OUTPUT_DIR}"
 

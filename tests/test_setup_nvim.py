@@ -16,7 +16,7 @@ def create_exe(path: Path, contents: str = "#!/usr/bin/env bash\n") -> None:
     path.chmod(0o755)
 
 
-def create_fake_nvim(path: Path, *, version: str = "0.9.1", log_path: Path | None = None) -> None:
+def create_fake_nvim(path: Path, *, version: str = "0.9.1", log_path: Path | None = None, startup_ms: str = "3.500") -> None:
     log_snippet = f"echo \"$@\" >> '{log_path}'\n" if log_path else ""
     create_exe(
         path,
@@ -25,6 +25,19 @@ def create_fake_nvim(path: Path, *, version: str = "0.9.1", log_path: Path | Non
         "if [[ ${1:-} == --version ]]; then\n"
         f"  echo 'NVIM v{version}'\n"
         "  exit 0\n"
+        "fi\n"
+        "if [[ ${1:-} == --headless ]]; then\n"
+        "  startup_log=''\n"
+        "  args=(\"$@\")\n"
+        "  for ((i=0; i<${#args[@]}; i++)); do\n"
+        "    if [[ ${args[$i]} == --startuptime ]]; then\n"
+        "      startup_log=${args[$((i+1))]}\n"
+        "      break\n"
+        "    fi\n"
+        "  done\n"
+        "  if [[ -n $startup_log ]]; then\n"
+        f"    cat > \"$startup_log\" <<'LOG'\n{startup_ms}: fake/startup\nLOG\n"
+        "  fi\n"
         "fi\n"
         + log_snippet
         + "exit 0\n",
@@ -94,6 +107,65 @@ def test_setup_nvim_exits_on_unsupported_neovim_version(tmp_path: Path) -> None:
 
     assert result.returncode == 1
     assert "Neovim 0.8+ is required" in result.stderr
+
+
+def test_setup_nvim_runs_startup_benchmark_when_enabled(tmp_path: Path) -> None:
+    script_path = REPO_ROOT / "scripts" / "setup-nvim.sh"
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    create_exe(
+        bin_dir / "git",
+        "#!/usr/bin/env bash\nif [[ $1 == clone ]]; then\n  /bin/mkdir -p \"$5/.git\"\nfi\n",
+    )
+
+    nvim_log = tmp_path / "nvim.log"
+    create_fake_nvim(bin_dir / "nvim", log_path=nvim_log, startup_ms="2.250")
+
+    env = os.environ.copy()
+    env.update(
+        {
+            "PATH": f"{bin_dir}:/usr/bin:/bin",
+            "HOME": str(tmp_path),
+            "TINO_NVIM_BENCHMARK_STARTUP": "1",
+            "TOP_COUNT": "1",
+        }
+    )
+
+    subprocess.run(["/bin/bash", str(script_path)], check=True, env=env, cwd=tmp_path)
+
+    summary_path = tmp_path / ".cache" / "tino" / "nvim-startup" / "summary.txt"
+    assert summary_path.exists()
+    summary_text = summary_path.read_text(encoding="utf-8")
+    assert "Max startup entry (ms): 2.250" in summary_text
+
+
+def test_setup_nvim_benchmark_threshold_failure_bubbles_up(tmp_path: Path) -> None:
+    script_path = REPO_ROOT / "scripts" / "setup-nvim.sh"
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    create_exe(
+        bin_dir / "git",
+        "#!/usr/bin/env bash\nif [[ $1 == clone ]]; then\n  /bin/mkdir -p \"$5/.git\"\nfi\n",
+    )
+
+    create_fake_nvim(bin_dir / "nvim", startup_ms="8.750")
+
+    env = os.environ.copy()
+    env.update(
+        {
+            "PATH": f"{bin_dir}:/usr/bin:/bin",
+            "HOME": str(tmp_path),
+            "TINO_NVIM_BENCHMARK_STARTUP": "1",
+            "TINO_NVIM_MAX_STARTUP_MS": "5",
+        }
+    )
+
+    result = subprocess.run(["/bin/bash", str(script_path)], env=env, text=True, capture_output=True, cwd=tmp_path)
+
+    assert result.returncode == 1
+    assert "Startup regression detected" in result.stderr
 
 
 def test_lazy_config_supports_auto_bootstrap_and_offline_modes() -> None:

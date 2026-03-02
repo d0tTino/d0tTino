@@ -7,6 +7,9 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/.." && pwd)"
 lsp_servers_file="$repo_root/dotfiles/nvim/.config/nvim/lsp_servers.txt"
 minimum_nvim_version="0.8"
+benchmark_script="$repo_root/scripts/benchmark_nvim_startup.sh"
+benchmark_startup="${TINO_NVIM_BENCHMARK_STARTUP:-0}"
+benchmark_threshold="${TINO_NVIM_MAX_STARTUP_MS:-}"
 
 version_gte() {
     local current="$1"
@@ -59,5 +62,18 @@ nvim --headless "+Lazy! sync" +qa
 
 echo "Installing Mason LSP servers (headless): ${required_lsp_servers[*]}"
 nvim --headless "+MasonInstall ${required_lsp_servers[*]}" +qa
+
+if [[ "$benchmark_startup" == "1" ]]; then
+    if [[ -f "$benchmark_script" ]]; then
+        echo "Running startup benchmark (TINO_NVIM_BENCHMARK_STARTUP=1)..."
+        if [[ -n "$benchmark_threshold" ]]; then
+            TINO_NVIM_MAX_STARTUP_MS="$benchmark_threshold" bash "$benchmark_script"
+        else
+            bash "$benchmark_script"
+        fi
+    else
+        echo "Warning: benchmark script not found at $benchmark_script" >&2
+    fi
+fi
 
 echo "Neovim provisioning complete."
