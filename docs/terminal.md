@@ -94,9 +94,7 @@ This repository includes example setups for various tools:
 - `scripts/migrate-shell-config.sh` – optional one-time manual migration that imports compatible legacy `~/.bashrc` exports/aliases/functions into runtime fragments at `~/.config/zsh/{env,aliases,functions}.zsh` (or `$XDG_CONFIG_HOME/zsh/...`) after writing a backup; it is not required for bootstrap-time dotfile deployment.
 - `scripts/setup-wsl.sh` – WSL bootstrap helper; installs the same base stack and then runs `scripts/setup-terminal-provider.sh ghostty` so WSL follows the same managed Ghostty profile (Blacklight theme + Nerd Font defaults).
 - `hosts/desktop` and `hosts/work_laptop` – host overlays for machine-specific tweaks.
-- `windows-terminal` – minimal starter `settings.json` for Windows Terminal. The
-  file is built from `common-profiles.json` using `generate_settings.py`.
-- `tablet-config/windows-terminal` – full example configuration for a tablet.
+- `windows-terminal` – canonical base + generated Windows Terminal configuration (built from `common-profiles.json` using `generate_settings.py`).
 - `vscode` – basic VS Code user settings.
 
 ### Linking on macOS/Linux

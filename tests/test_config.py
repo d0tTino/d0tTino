@@ -32,7 +32,7 @@ def test_windows_terminal_settings():
     defaults = data['profiles'].get('defaults', {})
     assert defaults.get('useAcrylic') is True, 'acrylic not enabled'
     assert 'acrylicOpacity' in defaults, 'acrylic opacity missing'
-    assert defaults.get('acrylicOpacity') == 0.85
+    assert defaults.get('acrylicOpacity') == 0.92
     expected_scheme = 'Blacklight'
     assert defaults.get('colorScheme') == expected_scheme, 'default color scheme missing'
 
@@ -81,11 +81,9 @@ def test_windows_terminal_btm_binding():
 
 
 
-def test_tablet_windows_terminal():
-    data = load_json(Path('tablet-config/windows-terminal') / 'settings.json')
-    assert '$schema' in data
-    assert 'profiles' in data
-    assert 'actions' in data
+def test_no_duplicate_tablet_windows_terminal_json():
+    assert not (Path('tablet-config/windows-terminal') / 'settings.base.json').exists()
+    assert not (Path('tablet-config/windows-terminal') / 'settings.json').exists()
 
 
 def test_load_json5(tmp_path):

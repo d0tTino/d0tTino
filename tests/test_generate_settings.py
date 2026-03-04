@@ -44,6 +44,27 @@ def test_generated_settings_up_to_date(tmp_path):
     )
 
 
+
+
+def test_windows_terminal_generated_output_drift_check(tmp_path: Path) -> None:
+    script = REPO_ROOT / "windows-terminal" / "generate_settings.py"
+    generated = tmp_path / "settings.generated.json"
+    subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            str(REPO_ROOT / "windows-terminal" / "settings.base.json"),
+            str(generated),
+        ],
+        check=True,
+        cwd=tmp_path,
+    )
+
+    committed = REPO_ROOT / "windows-terminal" / "settings.json"
+    assert generated.read_text(encoding="utf-8") == committed.read_text(encoding="utf-8"), (
+        "Canonical windows-terminal/settings.json drifted from generated output; "
+        "run windows-terminal/generate_settings.py."
+    )
 def test_generate_settings_invalid_json(tmp_path: Path) -> None:
     script = REPO_ROOT / "windows-terminal" / "generate_settings.py"
     bad_base = tmp_path / "bad.json"
