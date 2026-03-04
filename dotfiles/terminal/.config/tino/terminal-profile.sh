@@ -19,6 +19,35 @@ readonly TINO_TERMINAL_CONTRACT_FIELDS=(
     TINO_TERMINAL_EFFECTS
 )
 
+readonly TINO_TERMINAL_PROVIDER_DEFAULT_ORDER=(
+    ghostty
+    wezterm
+    kitty
+    alacritty
+)
+
+terminal_provider_preferences() {
+    local raw_preferences="${TINO_TERMINAL_PROVIDER_PREFERENCES:-}"
+    local -a normalized=()
+    local -a combined=()
+    local candidate=""
+
+    if [[ -n "$raw_preferences" ]]; then
+        raw_preferences="${raw_preferences//,/ }"
+        for candidate in $raw_preferences; do
+            case "$candidate" in
+                ghostty|wezterm|kitty|alacritty)
+                    normalized+=("$candidate")
+                    ;;
+            esac
+        done
+    fi
+
+    combined=("${normalized[@]}" "${TINO_TERMINAL_PROVIDER_DEFAULT_ORDER[@]}")
+
+    awk '!seen[$0]++' < <(printf '%s\n' "${combined[@]}")
+}
+
 terminal_capability_status() {
     local provider="$1"
     local field="$2"
@@ -137,6 +166,11 @@ render_provider() {
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    if [[ ${1:-} == "--provider-preferences" ]]; then
+        terminal_provider_preferences
+        exit 0
+    fi
+
     if [[ $# -lt 1 ]]; then
         echo "Usage: $(basename "$0") <provider> [repo-root]" >&2
         exit 1
