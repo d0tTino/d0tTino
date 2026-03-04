@@ -61,6 +61,12 @@ return {
             local installed_servers = mason_lspconfig.get_installed_servers()
             local installed_lookup = {}
             local missing_servers = {}
+            local capabilities = vim.lsp.protocol.make_client_capabilities()
+
+            local cmp_nvim_lsp_ok, cmp_nvim_lsp = pcall(require, "cmp_nvim_lsp")
+            if cmp_nvim_lsp_ok then
+                capabilities = cmp_nvim_lsp.default_capabilities(capabilities)
+            end
 
             for _, server in ipairs(installed_servers) do
                 installed_lookup[server] = true
@@ -68,7 +74,9 @@ return {
 
             for _, server in ipairs(required_servers) do
                 if installed_lookup[server] then
-                    lspconfig[server].setup({})
+                    lspconfig[server].setup({
+                        capabilities = capabilities,
+                    })
                 else
                     table.insert(missing_servers, server)
                 end
