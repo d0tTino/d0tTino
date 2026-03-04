@@ -1,8 +1,6 @@
-This folder contains a minimal starter `settings.json` for Windows Terminal.
-Common profile defaults now live in `common-profiles.json` and are merged into
-the final configuration using `generate_settings.py`. If you want a complete
-example configuration, see
-[`../tablet-config/windows-terminal/settings.json`](../tablet-config/windows-terminal/settings.json).
+This folder contains the canonical Windows Terminal configuration.
+Common profile defaults live in `common-profiles.json` and are merged into the
+committed `settings.json` using `generate_settings.py`.
 
 To install these settings automatically, run
 `scripts/install-windows-terminal.ps1` from the repository root. The script
