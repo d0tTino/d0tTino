@@ -61,3 +61,30 @@ def test_tmux_conf_uses_preinstalled_tpm_only() -> None:
     assert "run '~/.tmux/plugins/tpm/tpm'" in tmux_conf
     assert "git clone https://github.com/tmux-plugins/tpm" not in tmux_conf
     assert "if-shell \"test ! -d ~/.tmux/plugins/tpm\"" not in tmux_conf
+
+
+def test_tmux_status_interval_is_not_too_frequent() -> None:
+    tmux_conf = (REPO_ROOT / "dotfiles" / "tmux" / ".tmux.conf").read_text(encoding="utf-8")
+
+    interval_line = next(line for line in tmux_conf.splitlines() if line.startswith("set -g status-interval "))
+    interval_value = int(interval_line.rsplit(" ", 1)[-1])
+    assert interval_value >= 5
+
+
+def test_tmux_palette_status_right_has_context_tokens() -> None:
+    tmux_palette = (REPO_ROOT / "dotfiles" / "tmux" / ".tmux.palette.conf").read_text(encoding="utf-8")
+
+    assert "status-right" in tmux_palette
+    assert "TINO_HOST_PROFILE" in tmux_palette
+    assert "#H" in tmux_palette
+    assert "#(~/.tmux_status_metrics.sh)" in tmux_palette
+    assert "󰇄" in tmux_palette
+    assert "󰻠" not in tmux_palette
+
+
+def test_tmux_status_metrics_helper_uses_cache() -> None:
+    helper = (REPO_ROOT / "dotfiles" / "tmux" / ".tmux_status_metrics.sh").read_text(encoding="utf-8")
+
+    assert "cache_ttl=10" in helper
+    assert "tmux-status-metrics" in helper
+    assert "/proc/loadavg" in helper
