@@ -236,7 +236,14 @@ Terminal profile values flow through one path:
 
 Standard bootstrap command (repo root):
 
-Neovim plugin revisions are pinned in `dotfiles/nvim/.config/nvim/lazy-lock.json`; provisioning is handled by `./scripts/setup-nvim.sh` (headless `Lazy! sync` + explicit Mason LSP installs, requires Neovim >= 0.8) so first interactive startup is deterministic. Runtime self-healing is opt-in with `TINO_NVIM_AUTO_BOOTSTRAP=1` (default is disabled/offline-friendly), and `TINO_NVIM_OFFLINE=1` forces warning-only startup behavior. Startup benchmarking is available via `scripts/benchmark_nvim_startup.sh`; `scripts/setup-nvim.sh` runs it only when `TINO_NVIM_BENCHMARK_STARTUP=1` (desktop profile enables this by default during `install_common.sh`, constrained environments can opt out with `TINO_NVIM_BENCHMARK_STARTUP=0`). You can enforce a regression threshold with `TINO_NVIM_MAX_STARTUP_MS`.
+Neovim plugin revisions are pinned in `dotfiles/nvim/.config/nvim/lazy-lock.json`; provisioning is handled by `./scripts/setup-nvim.sh` (headless `Lazy! sync` + explicit Mason LSP installs, requires Neovim >= 0.8) so first interactive startup is deterministic. Intentional plugin upgrades should use `./scripts/setup-nvim.sh --refresh-lockfile` (runs `Lazy! update` + `Lazy! lock`) and then validate coverage with `python scripts/check-nvim-lockfile.py`. Runtime self-healing is opt-in with `TINO_NVIM_AUTO_BOOTSTRAP=1` (default is disabled/offline-friendly), and `TINO_NVIM_OFFLINE=1` forces warning-only startup behavior. Startup benchmarking is available via `scripts/benchmark_nvim_startup.sh`; `scripts/setup-nvim.sh` runs it only when `TINO_NVIM_BENCHMARK_STARTUP=1` (desktop profile enables this by default during `install_common.sh`, constrained environments can opt out with `TINO_NVIM_BENCHMARK_STARTUP=0`). You can enforce a regression threshold with `TINO_NVIM_MAX_STARTUP_MS`.
+
+
+Lock refresh command (repo root):
+
+```bash
+./scripts/setup-nvim.sh --refresh-lockfile && python scripts/check-nvim-lockfile.py
+```
 
 Reproducible benchmark command (repo root):
 
