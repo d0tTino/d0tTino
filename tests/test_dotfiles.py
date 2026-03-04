@@ -45,7 +45,7 @@ def test_readme_layout_paths_exist():
         REPO_ROOT / "dotfiles" / "nvim",
         REPO_ROOT / "dotfiles" / "tmux",
         REPO_ROOT / "dotfiles" / "terminal",
-        REPO_ROOT / "dotfiles" / "ghostty" / "ghostty.toml.tmpl",
+        REPO_ROOT / "dotfiles" / "terminal" / ".config" / "tino" / "ghostty.toml.tmpl",
         REPO_ROOT / "hosts" / "desktop",
         REPO_ROOT / "hosts" / "work_laptop",
     )
