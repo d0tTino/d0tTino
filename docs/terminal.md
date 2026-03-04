@@ -88,11 +88,11 @@ This repository includes example setups for various tools:
 - `dotfiles/nvim` – Neovim package (`~/.config/nvim/...`).
 - `dotfiles/tmux` – `.tmux.conf`.
 - `dotfiles/terminal/.config/tino/terminal-defaults.sh` – stowed into `~/.config/tino/terminal-defaults.sh` as the shared terminal defaults consumed by Ghostty setup.
-- `dotfiles/terminal/.config/tino/ghostty.toml.tmpl` – stowed into `~/.config/tino/ghostty.toml.tmpl`; used as the canonical Ghostty template source by `scripts/setup-ghostty.sh`.
-- `scripts/install_common.sh` – standard bootstrap entrypoint; installs `curl`, `unzip`, `git` everywhere, then on macOS/Linux installs dependencies (`zsh`, `starship`, `tmux`, `neovim`, `cargo`), runs `scripts/setup-nvim.sh` to provision Neovim plugin + Mason LSP assets (headless), runs `scripts/setup-ghostty.sh` for Ghostty, and then calls `scripts/install_dotfiles.sh` to deploy managed rc files/symlinks into the user target. Ghostty install precedence is: keep preinstalled binary if present, try native package manager (`brew`/`apt-get`/`dnf`/`pacman`) next, then fall back to `cargo install --locked ghostty`. It installs zsh plugins into `~/.local/share/zsh/plugins` and does not directly edit ad-hoc rc content. On Windows it runs PowerShell setup and does not attempt Ghostty install.
+- `dotfiles/terminal/.config/tino/ghostty.toml.tmpl` – stowed into `~/.config/tino/ghostty.toml.tmpl`; used as the canonical Ghostty template source by `scripts/setup-terminal-provider.sh ghostty`.
+- `scripts/install_common.sh` – standard bootstrap entrypoint; installs `curl`, `unzip`, `git` everywhere, then on macOS/Linux installs dependencies (`zsh`, `starship`, `tmux`, `neovim`, `cargo`), runs `scripts/setup-nvim.sh` to provision Neovim plugin + Mason LSP assets (headless), runs `scripts/setup-terminal-provider.sh "$terminal_provider"` for the selected provider, and then calls `scripts/install_dotfiles.sh` to deploy managed rc files/symlinks into the user target. For Ghostty, install precedence is: keep preinstalled binary if present, try native package manager (`brew`/`apt-get`/`dnf`/`pacman`) next, then fall back to `cargo install --locked ghostty`. It installs zsh plugins into `~/.local/share/zsh/plugins` and does not directly edit ad-hoc rc content. On Windows it runs PowerShell setup and keeps the Windows Terminal flow.
 - `scripts/install_dotfiles.sh` – deploys managed dotfiles into the user target (for example `$HOME`) by creating/updating tracked rc/config symlinks; `dotfiles/shell/.zshrc` is the source of truth for plugin sourcing and Starship init.
 - `scripts/migrate-shell-config.sh` – optional one-time manual migration that imports compatible legacy `~/.bashrc` exports/aliases/functions into runtime fragments at `~/.config/zsh/{env,aliases,functions}.zsh` (or `$XDG_CONFIG_HOME/zsh/...`) after writing a backup; it is not required for bootstrap-time dotfile deployment.
-- `scripts/setup-wsl.sh` – WSL bootstrap helper; installs the same base stack and then runs `scripts/setup-ghostty.sh` so WSL follows the same managed Ghostty profile (Blacklight theme + Nerd Font defaults).
+- `scripts/setup-wsl.sh` – WSL bootstrap helper; installs the same base stack and then runs `scripts/setup-terminal-provider.sh ghostty` so WSL follows the same managed Ghostty profile (Blacklight theme + Nerd Font defaults).
 - `hosts/desktop` and `hosts/work_laptop` – host overlays for machine-specific tweaks.
 - `windows-terminal` – minimal starter `settings.json` for Windows Terminal. The
   file is built from `common-profiles.json` using `generate_settings.py`.
@@ -129,7 +129,7 @@ From the repository root run:
 
 Platform behavior is explicit:
 
-- **Linux/macOS/WSL**: installs shell/editor/multiplexer dependencies (`zsh`, `starship`, `tmux`, `neovim`, `cargo`), clones zsh plugins and TPM locally, provisions Neovim plugin + Mason LSP assets via `scripts/setup-nvim.sh`, installs/configures **Ghostty** via `scripts/setup-ghostty.sh` for a single canonical terminal path and shared theme behavior, and deploys managed rc/config symlinks by invoking `scripts/install_dotfiles.sh`. Runtime shell setup comes from deployed dotfiles, not bootstrap-time ad-hoc rc edits.
+- **Linux/macOS/WSL**: installs shell/editor/multiplexer dependencies (`zsh`, `starship`, `tmux`, `neovim`, `cargo`), clones zsh plugins and TPM locally, provisions Neovim plugin + Mason LSP assets via `scripts/setup-nvim.sh`, installs/configures the selected terminal provider via `scripts/setup-terminal-provider.sh <provider>` for a single canonical terminal setup path and shared theme behavior, and deploys managed rc/config symlinks by invoking `scripts/install_dotfiles.sh`. Runtime shell setup comes from deployed dotfiles, not bootstrap-time ad-hoc rc edits.
 - **Windows**: runs the PowerShell bootstrap path and optional Windows Terminal/WSL setup flags; native Ghostty install is intentionally skipped on Windows itself.
 
 ### What changes in `$HOME`
@@ -140,7 +140,7 @@ Platform behavior is explicit:
 | `./scripts/install_dotfiles.sh [--host ...]` | Dotfile deployment only | Creates/updates tracked rc/config symlinks from `dotfiles/` (and optional `hosts/`) into the user target. |
 | `./scripts/migrate-shell-config.sh [--force]` | Optional legacy import | Writes `~/.config/zsh/{env,aliases,functions}.zsh` fragments from legacy bash content + backup; does not manage tracked dotfile symlinks. |
 
-For Ghostty, `scripts/setup-ghostty.sh` first checks for an existing `ghostty` binary, then attempts native package manager installation on macOS/Linux (`brew`/`apt-get`/`dnf`/`pacman`), and only falls back to Cargo if needed. It renders the stowed template at `~/.config/tino/ghostty.toml.tmpl` (from `dotfiles/terminal/.config/tino/ghostty.toml.tmpl`) into generated runtime config `~/.config/ghostty/ghostty.toml`. Template values are driven by stowed terminal defaults from `~/.config/tino/terminal-defaults.sh` and optional host-specific overrides from `~/.config/tino/host-overrides.sh` using canonical `TINO_TERMINAL_OPACITY`, `TINO_TERMINAL_FPS`, and `TINO_TERMINAL_EFFECTS` variables.
+For Ghostty, `scripts/setup-terminal-provider.sh ghostty` first checks for an existing `ghostty` binary, then attempts native package manager installation on macOS/Linux (`brew`/`apt-get`/`dnf`/`pacman`), and only falls back to Cargo if needed. It renders the stowed template at `~/.config/tino/ghostty.toml.tmpl` (from `dotfiles/terminal/.config/tino/ghostty.toml.tmpl`) into generated runtime config `~/.config/ghostty/ghostty.toml`. Template values are driven by stowed terminal defaults from `~/.config/tino/terminal-defaults.sh` and optional host-specific overrides from `~/.config/tino/host-overrides.sh` using canonical `TINO_TERMINAL_OPACITY`, `TINO_TERMINAL_FPS`, and `TINO_TERMINAL_EFFECTS` variables.
 
 Optional alternative: use Windows Terminal as your host terminal app while running Ghostty inside WSL for the managed Linux profile, or keep Windows Terminal-only settings for native PowerShell workflows.
 
@@ -150,7 +150,7 @@ Stow vs generated terminal files:
 - Symlinked by `scripts/install_dotfiles.sh` package `terminal`:
   - `dotfiles/terminal/.config/tino/terminal-defaults.sh` -> `~/.config/tino/terminal-defaults.sh`
   - `dotfiles/terminal/.config/tino/ghostty.toml.tmpl` -> `~/.config/tino/ghostty.toml.tmpl`
-- Generated by `scripts/setup-ghostty.sh`:
+- Generated by `scripts/setup-terminal-provider.sh ghostty`:
   - `~/.config/ghostty/ghostty.toml`
 
 If you previously used older bootstrap behavior that injected a `d0tTino zsh plugins` marker block into `~/.zshrc`, run:

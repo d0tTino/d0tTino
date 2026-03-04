@@ -48,16 +48,39 @@ def test_setup_terminal_provider_fails_when_provider_not_installed(tmp_path: Pat
     assert "Terminal provider configured" not in output
 
 
-def test_setup_terminal_provider_ghostty_renders_via_profile_script(tmp_path: Path) -> None:
+def test_setup_terminal_provider_applies_same_strictness_for_ghostty(tmp_path: Path) -> None:
     repo_root = Path(__file__).resolve().parents[1]
     repo = tmp_path / "repo"
     scripts_dir = repo / "scripts"
     scripts_dir.mkdir(parents=True)
     shutil.copy(repo_root / "scripts" / "setup-terminal-provider.sh", scripts_dir / "setup-terminal-provider.sh")
 
-    setup_ghostty = scripts_dir / "setup-ghostty.sh"
-    setup_ghostty.write_text("#!/usr/bin/env bash\nexit 42\n", encoding="utf-8")
-    setup_ghostty.chmod(0o755)
+    xdg_config_home = _create_terminal_profile(tmp_path)
+    bin_dir = _create_minimal_bin(tmp_path)
+
+    env = os.environ.copy()
+    env.update({"XDG_CONFIG_HOME": str(xdg_config_home), "PATH": str(bin_dir)})
+
+    result = subprocess.run(
+        ["/bin/bash", "scripts/setup-terminal-provider.sh", "ghostty"],
+        cwd=repo,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+
+    output = f"{result.stdout}\n{result.stderr}"
+    assert result.returncode != 0
+    assert "Error: ghostty is still unavailable after installation attempt." in output
+    assert "Terminal provider configured" not in output
+
+
+def test_setup_terminal_provider_ghostty_renders_via_profile_script_in_non_strict_mode(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / "repo"
+    scripts_dir = repo / "scripts"
+    scripts_dir.mkdir(parents=True)
+    shutil.copy(repo_root / "scripts" / "setup-terminal-provider.sh", scripts_dir / "setup-terminal-provider.sh")
 
     render_log = tmp_path / "render.log"
     xdg_config_home = _create_terminal_profile(
@@ -68,7 +91,7 @@ def test_setup_terminal_provider_ghostty_renders_via_profile_script(tmp_path: Pa
     bin_dir = _create_minimal_bin(tmp_path)
 
     env = os.environ.copy()
-    env.update({"XDG_CONFIG_HOME": str(xdg_config_home), "PATH": str(bin_dir)})
+    env.update({"XDG_CONFIG_HOME": str(xdg_config_home), "PATH": str(bin_dir), "TINO_TERMINAL_STRICT": "0"})
 
     result = subprocess.run(
         ["/bin/bash", "scripts/setup-terminal-provider.sh", "ghostty"],

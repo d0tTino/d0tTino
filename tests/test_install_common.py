@@ -368,7 +368,7 @@ def test_install_common_installs_zsh_plugins_without_touching_zshrc(tmp_path: Pa
     assert any("install -y" in line and "zsh" in line for line in apt_lines)
 
     git_lines = git_log.read_text(encoding="utf-8").splitlines()
-    assert sum(1 for line in git_lines if line.startswith("clone ")) == 2
+    assert sum(1 for line in git_lines if line.startswith("clone ")) == 3
 
 
 def test_install_common_does_not_append_plugin_marker_block_to_existing_zshrc(tmp_path: Path) -> None:
@@ -424,7 +424,7 @@ def test_install_common_does_not_append_plugin_marker_block_to_existing_zshrc(tm
     assert 'eval "$(starship init zsh)"' not in zshrc_content
 
     clone_lines = [line for line in git_log.read_text(encoding="utf-8").splitlines() if line.startswith("clone ")]
-    assert len(clone_lines) == 2
+    assert len(clone_lines) == 3
 
 
 
@@ -551,7 +551,7 @@ def test_install_common_runs_install_dotfiles_with_detected_host(tmp_path: Path)
     subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
 
     install_dotfiles_calls = install_dotfiles_log.read_text(encoding="utf-8").splitlines()
-    assert install_dotfiles_calls == [f"--host {detected_host}"]
+    assert install_dotfiles_calls == [f"--conflict=abort --host {detected_host}"]
 
 
 def test_install_common_passes_explicit_host_to_install_dotfiles(tmp_path: Path) -> None:
@@ -599,7 +599,7 @@ def test_install_common_passes_explicit_host_to_install_dotfiles(tmp_path: Path)
     )
 
     install_dotfiles_calls = install_dotfiles_log.read_text(encoding="utf-8").splitlines()
-    assert install_dotfiles_calls == ["--host work_laptop"]
+    assert install_dotfiles_calls == ["--conflict=abort --host work_laptop"]
 
 
 def test_install_common_normalizes_detected_hostname_for_host_overlay(tmp_path: Path) -> None:
@@ -642,7 +642,7 @@ def test_install_common_normalizes_detected_hostname_for_host_overlay(tmp_path: 
     subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
 
     install_dotfiles_calls = install_dotfiles_log.read_text(encoding="utf-8").splitlines()
-    assert install_dotfiles_calls == ["--host work_laptop"]
+    assert install_dotfiles_calls == ["--conflict=abort --host work_laptop"]
 
 
 def test_install_common_selects_terminal_provider_from_defaults(tmp_path: Path) -> None:
@@ -918,3 +918,50 @@ def test_install_common_respects_explicit_nvim_benchmark_disable(tmp_path: Path)
     subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
 
     assert setup_nvim_log.read_text(encoding="utf-8").splitlines() == ["0"]
+
+
+def test_install_common_uses_terminal_provider_entrypoint_for_ghostty(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / "repo_terminal_entrypoint"
+    repo.mkdir()
+
+    scripts_dir = repo / "scripts"
+    helpers_dir = scripts_dir / "helpers"
+    helpers_dir.mkdir(parents=True)
+
+    shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+
+    for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
+        path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+        path.chmod(0o755)
+
+    (scripts_dir / "install_dotfiles.sh").write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+    (scripts_dir / "install_dotfiles.sh").chmod(0o755)
+
+    terminal_log = tmp_path / "terminal_provider_calls.log"
+    (scripts_dir / "setup-terminal-provider.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        f"printf '%s\\n' \"$1\" >> '{terminal_log}'\n",
+        encoding="utf-8",
+    )
+    (scripts_dir / "setup-terminal-provider.sh").chmod(0o755)
+
+    (scripts_dir / "setup-ghostty.sh").write_text("#!/usr/bin/env bash\nexit 97\n", encoding="utf-8")
+    (scripts_dir / "setup-ghostty.sh").chmod(0o755)
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    for exe in ["curl", "unzip", "zsh", "tmux", "nvim", "cargo", "stow", "rg", "fd"]:
+        create_exe(bin_dir / exe)
+    create_exe(bin_dir / "starship", "#!/usr/bin/env bash\nif [[ $1 == init && $2 == zsh ]]; then\n  echo 'STARSHIP_INIT'\nfi\n")
+    create_git_stub(bin_dir / "git", tmp_path / "git_terminal_entrypoint.log")
+    create_exe(bin_dir / "hostname", "#!/usr/bin/env bash\necho desktop\n")
+    (bin_dir / "bash").symlink_to("/bin/bash")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+
+    env = os.environ.copy()
+    env.update({"OSTYPE": "linux-gnu", "PATH": f"{bin_dir}:/usr/bin:/bin", "HOME": str(tmp_path / 'home')})
+
+    subprocess.run(["/bin/bash", "scripts/install_common.sh", "--terminal", "ghostty"], cwd=repo, check=True, env=env)
+
+    assert terminal_log.read_text(encoding="utf-8").splitlines() == ["ghostty"]
