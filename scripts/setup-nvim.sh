@@ -10,6 +10,20 @@ minimum_nvim_version="0.8"
 benchmark_script="$repo_root/scripts/benchmark_nvim_startup.sh"
 benchmark_startup="${TINO_NVIM_BENCHMARK_STARTUP:-0}"
 benchmark_threshold="${TINO_NVIM_MAX_STARTUP_MS:-}"
+refresh_lockfile=0
+
+for arg in "$@"; do
+    case "$arg" in
+        --refresh-lockfile)
+            refresh_lockfile=1
+            ;;
+        *)
+            echo "Error: unknown argument: $arg" >&2
+            echo "Usage: ./scripts/setup-nvim.sh [--refresh-lockfile]" >&2
+            exit 1
+            ;;
+    esac
+done
 
 version_gte() {
     local current="$1"
@@ -57,8 +71,13 @@ else
     echo "Installed lazy.nvim to $lazy_path"
 fi
 
-echo "Syncing Neovim plugins (headless)..."
-nvim --headless "+Lazy! sync" +qa
+if [[ "$refresh_lockfile" == "1" ]]; then
+    echo "Refreshing Neovim lockfile (intentional plugin upgrade path)..."
+    nvim --headless "+Lazy! update" "+Lazy! lock" +qa
+else
+    echo "Syncing Neovim plugins (headless)..."
+    nvim --headless "+Lazy! sync" +qa
+fi
 
 echo "Installing Mason LSP servers (headless): ${required_lsp_servers[*]}"
 nvim --headless "+MasonInstall ${required_lsp_servers[*]}" +qa

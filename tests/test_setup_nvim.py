@@ -196,3 +196,25 @@ def test_lsp_runtime_and_setup_use_same_canonical_server_inventory() -> None:
     assert "lsp_servers_file" in setup_script
     assert "canonical provisioning flow" in lsp_config
 
+def test_setup_nvim_refresh_lockfile_path_runs_update_and_lock(tmp_path: Path) -> None:
+    script_path = REPO_ROOT / "scripts" / "setup-nvim.sh"
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    create_exe(
+        bin_dir / "git",
+        "#!/usr/bin/env bash\nif [[ $1 == clone ]]; then\n  /bin/mkdir -p \"$5/.git\"\nfi\n",
+    )
+
+    nvim_log = tmp_path / "nvim.log"
+    create_fake_nvim(bin_dir / "nvim", log_path=nvim_log)
+
+    env = os.environ.copy()
+    env.update({"PATH": f"{bin_dir}:/usr/bin:/bin", "HOME": str(tmp_path)})
+
+    subprocess.run(["/bin/bash", str(script_path), "--refresh-lockfile"], check=True, env=env)
+
+    log_text = nvim_log.read_text(encoding="utf-8")
+    assert "+Lazy! update" in log_text
+    assert "+Lazy! lock" in log_text
+    assert "+Lazy! sync" not in log_text

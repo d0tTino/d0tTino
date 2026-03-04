@@ -65,6 +65,8 @@ jobs:
         run: pytest tests/test_generate_sources_md.py -q
       - name: Verify plugin registry
         run: python scripts/update_registry.py --check
+      - name: Verify Neovim lockfile coverage
+        run: python scripts/check-nvim-lockfile.py
 
   extras-tests:
     needs: changes
@@ -90,6 +92,8 @@ jobs:
         run: pytest -n auto
       - name: Verify plugin registry
         run: python scripts/update_registry.py --check
+      - name: Verify Neovim lockfile coverage
+        run: python scripts/check-nvim-lockfile.py
   install-dry-run:
     needs: changes
     if: needs.changes.outputs.code_changed == 'true'
