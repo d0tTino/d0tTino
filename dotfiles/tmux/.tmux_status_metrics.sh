@@ -7,9 +7,26 @@ cache_ttl=10
 
 mkdir -p "$cache_dir"
 
+file_mtime() {
+  local file="$1"
+  local mtime
+
+  if mtime="$(stat -c %Y "$file" 2>/dev/null)"; then
+    printf '%s\n' "$mtime"
+    return 0
+  fi
+
+  if mtime="$(stat -f %m "$file" 2>/dev/null)"; then
+    printf '%s\n' "$mtime"
+    return 0
+  fi
+
+  printf '0\n'
+}
+
 now="$(date +%s)"
 if [[ -f "$cache_file" ]]; then
-  modified="$(stat -c %Y "$cache_file" 2>/dev/null || echo 0)"
+  modified="$(file_mtime "$cache_file")"
   if (( now - modified < cache_ttl )); then
     cat "$cache_file"
     exit 0
