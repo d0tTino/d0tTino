@@ -160,6 +160,49 @@ install_terminal_provider() {
     run_cmd bash "$scripts/setup-terminal-provider.sh" "$provider"
 }
 
+terminal_provider_supported() {
+    local provider="$1"
+    case "$provider" in
+        ghostty|wezterm|kitty|alacritty|windows-terminal)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+resolve_terminal_provider_from_config() {
+    local provider=""
+    local defaults_path="$repo_root/dotfiles/terminal/.config/tino/terminal-defaults.sh"
+    local host_name="$1"
+    local host_override_path=""
+
+    if [[ -f "$defaults_path" ]]; then
+        # shellcheck disable=SC1090
+        source "$defaults_path"
+    fi
+
+    if [[ -n "$host_name" ]]; then
+        host_override_path="$repo_root/hosts/$host_name/.config/tino/host-overrides.sh"
+        if [[ -f "$host_override_path" ]]; then
+            # shellcheck disable=SC1090
+            source "$host_override_path"
+        fi
+    fi
+
+    provider="${TINO_TERMINAL_PROVIDER:-}"
+    if [[ -z "$provider" ]]; then
+        if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == windows* ]]; then
+            provider="windows-terminal"
+        else
+            provider="ghostty"
+        fi
+    fi
+
+    echo "$provider"
+}
+
 run_pwsh() {
     local script=$1
     shift
@@ -378,14 +421,26 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-if [[ -n "$terminal_provider" ]]; then
-    case "$terminal_provider" in
-        ghostty|wezterm|kitty|alacritty|windows-terminal) ;;
-        *)
-            echo "Error: unsupported --terminal provider '$terminal_provider'" >&2
-            exit 1
-            ;;
-    esac
+if [[ -n "$terminal_provider" ]] && ! terminal_provider_supported "$terminal_provider"; then
+    echo "Error: unsupported --terminal provider '$terminal_provider'" >&2
+    exit 1
+fi
+
+resolved_host=""
+if [[ -n "$host_override" ]]; then
+    resolved_host="$host_override"
+else
+    detected_host="$(hostname 2>/dev/null || true)"
+    resolved_host="$(resolve_host_overlay "$repo_root/hosts" "$detected_host")"
+fi
+
+if [[ -z "$terminal_provider" ]]; then
+    terminal_provider="$(resolve_terminal_provider_from_config "$resolved_host")"
+fi
+
+if ! terminal_provider_supported "$terminal_provider"; then
+    echo "Error: unsupported terminal provider '$terminal_provider' (supported: ghostty|wezterm|kitty|alacritty|windows-terminal)" >&2
+    exit 1
 fi
 
 # Ensure core utilities are available
@@ -407,12 +462,8 @@ else
             exit 1
         fi
         dotfiles_args+=(--host "$host_override")
-    else
-        detected_host="$(hostname 2>/dev/null || true)"
-        resolved_host="$(resolve_host_overlay "$repo_root/hosts" "$detected_host")"
-        if [[ -n "$resolved_host" ]]; then
-            dotfiles_args+=(--host "$resolved_host")
-        fi
+    elif [[ -n "$resolved_host" ]]; then
+        dotfiles_args+=(--host "$resolved_host")
     fi
     if [[ -f "$scripts/install_dotfiles.sh" ]]; then
         run_cmd bash "$scripts/install_dotfiles.sh" --conflict=abort "${dotfiles_args[@]}"
@@ -429,9 +480,6 @@ else
 
     set_default_shell "$set_default_shell_mode"
 
-    if [[ -z "$terminal_provider" ]]; then
-        terminal_provider="ghostty"
-    fi
     install_terminal_provider "$terminal_provider"
 
     run_cmd bash "$scripts/setup-hooks.sh"
@@ -441,10 +489,6 @@ fi
 
 if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == windows* ]]; then
     if $install_winget; then run_pwsh setup-winget.ps1; fi
-    if [[ -z "$terminal_provider" ]]; then
-        terminal_provider="windows-terminal"
-    fi
-
     if [[ "$terminal_provider" == "windows-terminal" ]]; then
         install_windows_terminal=true
     fi

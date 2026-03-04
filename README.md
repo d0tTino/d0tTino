@@ -193,6 +193,7 @@ Dotfiles are organized into explicit stow-style packages under `dotfiles/` with 
 - `hosts/desktop` and `hosts/work_laptop` → machine-specific overrides
   - `hosts/desktop/.config/tino/host-overrides.sh` favors richer visuals/high refresh
   - `hosts/work_laptop/.config/tino/host-overrides.sh` keeps effects balanced for battery life
+  - host overlays can also set `TINO_TERMINAL_PROVIDER` (for example, desktop `ghostty` vs. work laptop `wezterm`) and `scripts/install_common.sh` will use that provider when `--terminal` is not provided.
 
 Example:
 
@@ -210,6 +211,7 @@ Expected behavior:
 - `dotfiles/terminal` provides shared defaults in `~/.config/tino/terminal-defaults.sh`.
 - Host overlay packages only contain diffs in `~/.config/tino/host-overrides.sh`.
 - On shell startup, `.zshrc` loads defaults first and then host overrides, so host values win when both define the same variable.
+- `TINO_TERMINAL_PROVIDER` follows the same precedence: base default in `terminal-defaults.sh`, optional per-machine override in `host-overrides.sh`, CLI override via `./scripts/install_common.sh --terminal <provider>`.
 - `scripts/install_dotfiles.sh --host <name>` follows the same order: core packages, then host overlay (`<name>` is `desktop` or `work_laptop` in this repo).
 
 ### What changes in `$HOME`
@@ -226,8 +228,9 @@ Terminal profile values flow through one path:
 
 1. `~/.config/tino/terminal-defaults.sh` provides shared defaults.
 2. `~/.config/tino/host-overrides.sh` applies host-specific overrides.
-3. `~/.config/tino/terminal-profile.sh` loads both files and runs a renderer from `~/.config/tino/renderers/*.sh`.
-4. The renderer writes provider output files (for Ghostty: `~/.config/ghostty/ghostty.toml`).
+3. `TINO_TERMINAL_PROVIDER` is selected from defaults/overrides unless `--terminal` is passed to `scripts/install_common.sh`.
+4. `~/.config/tino/terminal-profile.sh` loads both files and runs a renderer from `~/.config/tino/renderers/*.sh`.
+5. The renderer writes provider output files (for Ghostty: `~/.config/ghostty/ghostty.toml`).
 
 `~/.config/ghostty/ghostty.toml` is generated output and should not be treated as an authored source file.
 
