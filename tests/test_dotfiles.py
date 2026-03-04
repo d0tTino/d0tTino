@@ -88,3 +88,5 @@ def test_tmux_status_metrics_helper_uses_cache() -> None:
     assert "cache_ttl=10" in helper
     assert "tmux-status-metrics" in helper
     assert "/proc/loadavg" in helper
+    assert "stat -c %Y" in helper
+    assert "stat -f %m" in helper
