@@ -645,6 +645,151 @@ def test_install_common_normalizes_detected_hostname_for_host_overlay(tmp_path: 
     assert install_dotfiles_calls == ["--host work_laptop"]
 
 
+def test_install_common_selects_terminal_provider_from_defaults(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / "repo_terminal_defaults"
+    repo.mkdir()
+
+    scripts_dir = repo / "scripts"
+    helpers_dir = scripts_dir / "helpers"
+    tino_defaults_dir = repo / "dotfiles" / "terminal" / ".config" / "tino"
+    helpers_dir.mkdir(parents=True)
+    tino_defaults_dir.mkdir(parents=True)
+
+    shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+
+    for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
+        path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+        path.chmod(0o755)
+
+    (scripts_dir / "install_dotfiles.sh").write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+    (scripts_dir / "install_dotfiles.sh").chmod(0o755)
+
+    terminal_log = tmp_path / "terminal_provider.log"
+    (scripts_dir / "setup-terminal-provider.sh").write_text(
+        f"#!/usr/bin/env bash\nprintf '%s\\n' \"$1\" >> '{terminal_log}'\n",
+        encoding="utf-8",
+    )
+    (scripts_dir / "setup-terminal-provider.sh").chmod(0o755)
+
+    (tino_defaults_dir / "terminal-defaults.sh").write_text('export TINO_TERMINAL_PROVIDER="kitty"\n', encoding="utf-8")
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    for exe in ["curl", "unzip", "zsh", "tmux", "nvim", "cargo", "stow"]:
+        create_exe(bin_dir / exe)
+    create_exe(bin_dir / "starship", "#!/usr/bin/env bash\nif [[ $1 == init && $2 == zsh ]]; then\n  echo 'STARSHIP_INIT'\nfi\n")
+    create_git_stub(bin_dir / "git", tmp_path / "git_terminal_defaults.log")
+    create_exe(bin_dir / "hostname", "#!/usr/bin/env bash\necho desktop\n")
+    (bin_dir / "bash").symlink_to("/bin/bash")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+
+    env = os.environ.copy()
+    env.update({"OSTYPE": "linux-gnu", "PATH": f"{bin_dir}:/usr/bin:/bin", "HOME": str(tmp_path / 'home')})
+
+    subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
+
+    assert terminal_log.read_text(encoding="utf-8").splitlines() == ["kitty"]
+
+
+def test_install_common_selects_terminal_provider_from_host_override(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / "repo_terminal_host"
+    repo.mkdir()
+
+    scripts_dir = repo / "scripts"
+    helpers_dir = scripts_dir / "helpers"
+    tino_defaults_dir = repo / "dotfiles" / "terminal" / ".config" / "tino"
+    host_tino_dir = repo / "hosts" / "work_laptop" / ".config" / "tino"
+    helpers_dir.mkdir(parents=True)
+    tino_defaults_dir.mkdir(parents=True)
+    host_tino_dir.mkdir(parents=True)
+
+    shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+
+    for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
+        path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+        path.chmod(0o755)
+
+    (scripts_dir / "install_dotfiles.sh").write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+    (scripts_dir / "install_dotfiles.sh").chmod(0o755)
+
+    terminal_log = tmp_path / "terminal_provider_host.log"
+    (scripts_dir / "setup-terminal-provider.sh").write_text(
+        f"#!/usr/bin/env bash\nprintf '%s\\n' \"$1\" >> '{terminal_log}'\n",
+        encoding="utf-8",
+    )
+    (scripts_dir / "setup-terminal-provider.sh").chmod(0o755)
+
+    (tino_defaults_dir / "terminal-defaults.sh").write_text('export TINO_TERMINAL_PROVIDER="ghostty"\n', encoding="utf-8")
+    (host_tino_dir / "host-overrides.sh").write_text('export TINO_TERMINAL_PROVIDER="wezterm"\n', encoding="utf-8")
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    for exe in ["curl", "unzip", "zsh", "tmux", "nvim", "cargo", "stow"]:
+        create_exe(bin_dir / exe)
+    create_exe(bin_dir / "starship", "#!/usr/bin/env bash\nif [[ $1 == init && $2 == zsh ]]; then\n  echo 'STARSHIP_INIT'\nfi\n")
+    create_git_stub(bin_dir / "git", tmp_path / "git_terminal_host.log")
+    create_exe(bin_dir / "hostname", "#!/usr/bin/env bash\necho WORK-LAPTOP.corp.local\n")
+    (bin_dir / "bash").symlink_to("/bin/bash")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+
+    env = os.environ.copy()
+    env.update({"OSTYPE": "linux-gnu", "PATH": f"{bin_dir}:/usr/bin:/bin", "HOME": str(tmp_path / 'home')})
+
+    subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
+
+    assert terminal_log.read_text(encoding="utf-8").splitlines() == ["wezterm"]
+
+
+def test_install_common_rejects_unsupported_terminal_provider_from_config(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / "repo_terminal_invalid"
+    repo.mkdir()
+
+    scripts_dir = repo / "scripts"
+    helpers_dir = scripts_dir / "helpers"
+    tino_defaults_dir = repo / "dotfiles" / "terminal" / ".config" / "tino"
+    helpers_dir.mkdir(parents=True)
+    tino_defaults_dir.mkdir(parents=True)
+
+    shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+
+    (scripts_dir / "setup-hooks.sh").write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+    (scripts_dir / "setup-hooks.sh").chmod(0o755)
+    (helpers_dir / "install_fonts.sh").write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+    (helpers_dir / "install_fonts.sh").chmod(0o755)
+    (helpers_dir / "sync_palettes.sh").write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+    (helpers_dir / "sync_palettes.sh").chmod(0o755)
+
+    (tino_defaults_dir / "terminal-defaults.sh").write_text('export TINO_TERMINAL_PROVIDER="bad-term"\n', encoding="utf-8")
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    for exe in ["curl", "unzip", "zsh", "tmux", "nvim", "cargo", "stow"]:
+        create_exe(bin_dir / exe)
+    create_exe(bin_dir / "starship", "#!/usr/bin/env bash\nif [[ $1 == init && $2 == zsh ]]; then\n  echo 'STARSHIP_INIT'\nfi\n")
+    create_git_stub(bin_dir / "git", tmp_path / "git_terminal_invalid.log")
+    create_exe(bin_dir / "hostname", "#!/usr/bin/env bash\necho desktop\n")
+    (bin_dir / "bash").symlink_to("/bin/bash")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+
+    env = os.environ.copy()
+    env.update({"OSTYPE": "linux-gnu", "PATH": f"{bin_dir}:/usr/bin:/bin", "HOME": str(tmp_path / 'home')})
+
+    result = subprocess.run(
+        ["/bin/bash", "scripts/install_common.sh"],
+        cwd=repo,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+
+    output = f"{result.stdout}\n{result.stderr}"
+    assert result.returncode != 0
+    assert "Error: unsupported terminal provider 'bad-term'" in output
+
+
 def test_install_common_dry_run_lists_required_rg_and_fd_packages(tmp_path: Path) -> None:
     repo_root = Path(__file__).resolve().parents[1]
     repo = tmp_path / "repo_dry_run"
