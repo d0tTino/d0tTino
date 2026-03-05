@@ -26,6 +26,14 @@ readonly TINO_TERMINAL_PROVIDER_DEFAULT_ORDER=(
     alacritty
 )
 
+readonly TINO_TERMINAL_CONTRACT_PROVIDERS=(
+    ghostty
+    wezterm
+    kitty
+    alacritty
+    windows-terminal
+)
+
 terminal_provider_preferences() {
     local raw_preferences="${TINO_TERMINAL_PROVIDER_PREFERENCES:-}"
     local -a normalized=()
