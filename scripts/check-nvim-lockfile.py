@@ -9,7 +9,7 @@ import re
 import sys
 from pathlib import Path
 
-PLUGIN_RE = re.compile(r'"([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)"\s*,')
+PLUGIN_RE = re.compile(r"['\"]([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)['\"]\s*[,}]")
 
 
 def repo_root() -> Path:
@@ -19,7 +19,7 @@ def repo_root() -> Path:
 def declared_plugins(plugins_dir: Path) -> dict[str, set[str]]:
     declared: dict[str, set[str]] = {}
 
-    for plugin_file in sorted(plugins_dir.glob("*.lua")):
+    for plugin_file in sorted(plugins_dir.rglob("*.lua")):
         content = plugin_file.read_text(encoding="utf-8")
         for owner_repo in sorted(set(PLUGIN_RE.findall(content))):
             short_name = owner_repo.rsplit("/", 1)[-1]

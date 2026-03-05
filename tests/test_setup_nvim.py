@@ -209,6 +209,12 @@ def test_setup_nvim_refresh_lockfile_path_runs_update_and_lock(tmp_path: Path) -
     nvim_log = tmp_path / "nvim.log"
     create_fake_nvim(bin_dir / "nvim", log_path=nvim_log)
 
+    python_log = tmp_path / "python.log"
+    create_exe(
+        bin_dir / "python",
+        f"#!/usr/bin/env bash\necho \"$@\" >> '{python_log}'\nexec /usr/bin/python3 \"$@\"\n",
+    )
+
     env = os.environ.copy()
     env.update({"PATH": f"{bin_dir}:/usr/bin:/bin", "HOME": str(tmp_path)})
 
@@ -218,3 +224,6 @@ def test_setup_nvim_refresh_lockfile_path_runs_update_and_lock(tmp_path: Path) -
     assert "+Lazy! update" in log_text
     assert "+Lazy! lock" in log_text
     assert "+Lazy! sync" not in log_text
+
+    python_calls = python_log.read_text(encoding="utf-8")
+    assert "scripts/check-nvim-lockfile.py" in python_calls
