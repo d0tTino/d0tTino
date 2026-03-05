@@ -1,526 +1,119 @@
-## About Me
+# Terminal Operations Reference
 
-I’m a one-person powerhouse in AI and simulation engineering—think of me as a code-fueled brain factory where creativity and rigor collide. I obsess over multi-agent systems, emergent behaviors, and getting the absolute most out of every CPU cycle. Outside the matrix, I’m equally fascinated by aerospace, hard sci-fi futurism (Isaac Arthur is my spirit animal), and a dash of digital art for good measure.
+> **Doc scope:** This document is an operational reference for terminal setup and troubleshooting. It is **not** a project bio.
 
-Whether it’s spinning up a new LLM pipeline at dawn or fine-tuning memory graphs past midnight, my toolbox is always humming.
+## Terminal modernization goals
 
----
+The terminal stack is being standardized so shell startup, editor ergonomics, and terminal rendering behavior are predictable across hosts.
 
-## Core Interests & Skills
+Primary goals:
 
-### 🔬 Artificial Intelligence & Simulation
+- Keep one canonical setup path for shell + tmux + Neovim + terminal provider.
+- Separate shared defaults from machine-specific host overrides.
+- Validate renderer/provider behavior through a capability contract.
+- Catch common regressions early (slow startup, unsupported renderer keys, missing plugins/assets).
 
-* **Multi-Agent Ecosystems**: Designing digital societies where autonomous agents evolve, collaborate, and surprise you with unexpected cultural quirks.
-* **Cognitive Architectures**: Building layers of memory, sentiment, and intent so agents actually remember, care, and make decisions that feel alive.
-* **Resource-Efficient LLMs**: Mastery of quantization (QLoRA, bitsandbytes), adaptive code generation, and local LLM orchestration with Ollama.
-* **Event-Driven Dataflows**: Architecting pipelines with NATS/JetStream and DSPy to turbocharge prompting, summarization, and retrieval.
-* **Knowledge Graphs & RAG**: Seamless integration of ChromaDB, Memgraph (and friends) for semantic search, RAG, and emergent memory pruning.
+## Architecture
 
-### 🛠 Software Engineering
+The terminal experience is composed of four layers:
 
-* **Language of Choice**: Python 3.10+ (typed to the hilt with Pydantic, MyPy, Ruff).
-* **DevOps Savvy**: CI/CD via GitHub Actions, Docker orchestration, and automated testing (pytest, pytest-asyncio).
-* **Modular Design**: Clean separation of concerns—from core simulation loops to API layers and optional frontends.
+1. **Shell (`zsh`)**
+   - Interactive runtime entrypoint from managed dotfiles.
+   - Loads shared defaults and optional host overrides.
 
----
+2. **Multiplexer (`tmux`)**
+   - Stable session management and keybinding layer.
+   - TPM-managed plugin/bootstrap expectations are provisioned during install.
 
-## Spotlight: Public Projects
+3. **Editor (`nvim`)**
+   - Headless provisioning for plugin + Mason/LSP assets.
+   - Setup is handled by a dedicated script so installs remain reproducible.
 
-### 🚀 Culture: An AI Genesis Engine
+4. **Terminal provider (Ghostty/WezTerm/Kitty/Alacritty/Windows Terminal)**
+   - Provider-specific setup/rendering is routed through one script.
+   - Shared profile defaults are interpreted through renderer capability contracts.
 
-*A platform to witness digital societies take shape under your very eyes.*
+## Host overrides model (`hosts/desktop`, `hosts/work_laptop`)
 
-* **Dynamic Agents**: Mood-driven personalities that shift roles—Innovator, Analyst, Diplomat—on the fly.
-* **Hierarchical Memory**: Short-term L1 and long-term L2 summaries, memory-utility scoring, and vector search via ChromaDB + Sentence Transformers.
-* **Intent-Based RAG**: DSPy-powered pipelines for context enrichment, decision-making, and emergent communication protocols.
-* **Resource Economy**: Influence Points (IP) & Data Units (DU) fuel every action, ensuring scarcity and tradeoffs.
-* **Current Status**: Actively evolving—every commit pushes the boundaries of what “digital culture” can mean.
+Configuration precedence is:
 
-### 🧬 GeneCoder: DNA Data Storage Playground
+1. Base defaults: `dotfiles/terminal/.config/tino/terminal-defaults.sh`
+2. Optional host overlay: `hosts/<host>/.config/tino/host-overrides.sh`
+3. Explicit CLI provider flag (if passed during install)
 
-*A toolkit that turns bits into base-pairs and back again, with error-correction flair.*
+Use overlays to keep per-machine deltas small:
 
-* **CLI & Algorithms**: Robust encoding/decoding workflows, FEC support, and batch processing via Click.
-* **Research-Grade FEC**: Experiment with Reed–Solomon, LDPC, and custom parity schemes.
-* **Future GUI**: Dreaming of an animated double-helix interface that visualizes your bytes spinning into DNA.
-* **Current Status**: Stable CLI, with unit tests covering core algorithms and an active roadmap for GUI prototyping.
+- `hosts/desktop`: higher visual fidelity/high-refresh-friendly defaults.
+- `hosts/work_laptop`: balanced settings for battery and thermals.
 
-### 🧠 UME: Universal Memory Engine
+This model ensures you can keep a single operational workflow while still tuning ergonomics per device.
 
-*Your go-to long-term memory bus for any AI ecosystem.*
+## Canonical commands
 
-* **Event-Sourced Core**: Append-only logs feeding Redis or Neo4j backends, with OpenAPI-driven FastAPI endpoints.
-* **Privacy & Opt-In**: Built-in consent flows, data retention policies, and granular access controls.
-* **Dashboard in the Works**: Plans for a sleek React/Tailwind UI to visualize memory graphs, query stats, and system health.
-* **Current Status**: Production-ready API, with load benchmarks and growing test coverage.
-
----
-
-## Backstage Pass: Private & Shelved Experiments
-
-*(Because no résumé is complete without a few mysterious footnotes.)*
-
-* **Autonomous NEET Bux Agents**: Early-stage experiments in AI microtask pipelines.
-* **SocialInsightAI & Prism**: Discord-based sentiment maps that once tracked server dynamics—now on ice.
-* **Browser-Based Puppetry**: A Node/React orchestration platform for headless Chromium fleets.
-
----
-
-## Development Philosophy
-
-1. **Push the Limits**
-
-   * I thrive on “What if?”—what if agents could hallucinate art, or self-organize economies under scarcity?
-2. **Open-Source Heart**
-
-   * I build in the open, remixing the best of the community and giving back when I can.
-3. **Complexity by Emergence**
-
-   * Simple rules + iterative feedback = mind-blowing behaviors. That’s where the magic lives.
-
----
-
-## Dotfiles & Configuration
-
-This repository includes example setups for various tools:
-
-- `dotfiles/shell` – `.zshrc`, `.bashrc`, and `~/.config/starship.toml`.
-- `dotfiles/nvim` – Neovim package (`~/.config/nvim/...`).
-- `dotfiles/tmux` – `.tmux.conf`.
-- `dotfiles/terminal/.config/tino/terminal-defaults.sh` – stowed into `~/.config/tino/terminal-defaults.sh` as the shared terminal defaults consumed by Ghostty setup.
-- `dotfiles/terminal/.config/tino/ghostty.toml.tmpl` – stowed into `~/.config/tino/ghostty.toml.tmpl`; used as the canonical Ghostty template source by `scripts/setup-terminal-provider.sh ghostty`.
-- `scripts/install_common.sh` – standard bootstrap entrypoint; installs `curl`, `unzip`, `git` everywhere, then on macOS/Linux installs dependencies (`zsh`, `starship`, `tmux`, `neovim`, `cargo`), runs `scripts/setup-nvim.sh` to provision Neovim plugin + Mason LSP assets (headless), runs `scripts/setup-terminal-provider.sh "$terminal_provider"` for the selected provider, and then calls `scripts/install_dotfiles.sh` to deploy managed rc files/symlinks into the user target. For Ghostty, install precedence is: keep preinstalled binary if present, try native package manager (`brew`/`apt-get`/`dnf`/`pacman`) next, then fall back to `cargo install --locked ghostty`. It installs zsh plugins into `~/.local/share/zsh/plugins` and does not directly edit ad-hoc rc content. On Windows it runs PowerShell setup and keeps the Windows Terminal flow.
-- `scripts/install_dotfiles.sh` – deploys managed dotfiles into the user target (for example `$HOME`) by creating/updating tracked rc/config symlinks; `dotfiles/shell/.zshrc` is the source of truth for plugin sourcing and Starship init.
-- `scripts/migrate-shell-config.sh` – optional one-time manual migration that imports compatible legacy `~/.bashrc` exports/aliases/functions into runtime fragments at `~/.config/zsh/{env,aliases,functions}.zsh` (or `$XDG_CONFIG_HOME/zsh/...`) after writing a backup; it is not required for bootstrap-time dotfile deployment.
-- `scripts/setup-wsl.sh` – WSL bootstrap helper; installs the same base stack and then runs `scripts/setup-terminal-provider.sh ghostty` so WSL follows the same managed Ghostty profile (Blacklight theme + Nerd Font defaults).
-- `hosts/desktop` and `hosts/work_laptop` – host overlays for machine-specific tweaks.
-- `windows-terminal` – canonical base + generated Windows Terminal configuration (built from `common-profiles.json` using `generate_settings.py`).
-- `vscode` – basic VS Code user settings.
-
-### Linking on macOS/Linux
+From repository root:
 
 ```bash
-# inside your home directory
-ln -s /path/to/repo/dotfiles/shell/.bashrc ~/.bashrc
-ln -s /path/to/repo/vscode/settings.json ~/.config/Code/User/settings.json
-ln -s /path/to/repo/dotfiles/shell/.config/starship.toml ~/.config/starship.toml
-```
-
-### Linking on Windows (PowerShell)
-
-```powershell
-New-Item -ItemType SymbolicLink -Path $Env:USERPROFILE\\.config\\starship.toml \
-  -Target C:\\path\\to\\repo\\dotfiles\\shell\\.config\\starship.toml
-New-Item -ItemType SymbolicLink -Path $Env:USERPROFILE\\AppData\\Local\\Packages\\Microsoft.WindowsTerminal_8wekyb3d8bbwe\\LocalState\\settings.json \
-  -Target C:\\path\\to\\repo\\windows-terminal\\settings.json
-```
-
-These examples assume the repository is cloned in a convenient location. Adjust the paths to match your setup.
-
-## Standard bootstrap command
-
-From the repository root run:
-
-```bash
+# 1) Common bootstrap entrypoint
 ./scripts/install_common.sh
+
+# 2) Terminal provider setup (explicit provider)
+./scripts/setup-terminal-provider.sh ghostty
+
+# 3) Neovim provisioning (plugins + Mason/LSP assets)
+./scripts/setup-nvim.sh
 ```
 
-Platform behavior is explicit:
+Recommended flow:
 
-- **Linux/macOS/WSL**: installs shell/editor/multiplexer dependencies (`zsh`, `starship`, `tmux`, `neovim`, `cargo`), clones zsh plugins and TPM locally, provisions Neovim plugin + Mason LSP assets via `scripts/setup-nvim.sh`, installs/configures the selected terminal provider via `scripts/setup-terminal-provider.sh <provider>` for a single canonical terminal setup path and shared theme behavior, and deploys managed rc/config symlinks by invoking `scripts/install_dotfiles.sh`. Runtime shell setup comes from deployed dotfiles, not bootstrap-time ad-hoc rc edits.
-- **Windows**: runs the PowerShell bootstrap path and optional Windows Terminal/WSL setup flags; native Ghostty install is intentionally skipped on Windows itself.
+1. Run `install_common.sh` for baseline dependencies and managed dotfiles.
+2. Run `setup-terminal-provider.sh <provider>` if you need to switch or re-render provider configs.
+3. Run `setup-nvim.sh` after Neovim/plugin ecosystem changes.
 
-### What changes in `$HOME`
+## Validation checklist
 
-| Flow | Purpose | Writes/symlinks in user target (`$HOME`/XDG paths) |
-| --- | --- | --- |
-| `./scripts/install_common.sh` | Bootstrap dependencies + deploy managed dotfiles | Installs tools/assets (e.g. zsh plugins, TPM, Neovim/Ghostty assets) and invokes `scripts/install_dotfiles.sh` to create/update managed rc file symlinks. |
-| `./scripts/install_dotfiles.sh [--host ...]` | Dotfile deployment only | Creates/updates tracked rc/config symlinks from `dotfiles/` (and optional `hosts/`) into the user target. |
-| `./scripts/migrate-shell-config.sh [--force]` | Optional legacy import | Writes `~/.config/zsh/{env,aliases,functions}.zsh` fragments from legacy bash content + backup; does not manage tracked dotfile symlinks. |
+Use this checklist after install/update and before considering terminal setup complete.
 
-For Ghostty, `scripts/setup-terminal-provider.sh ghostty` first checks for an existing `ghostty` binary, then attempts native package manager installation on macOS/Linux (`brew`/`apt-get`/`dnf`/`pacman`), and only falls back to Cargo if needed. It renders the stowed template at `~/.config/tino/ghostty.toml.tmpl` (from `dotfiles/terminal/.config/tino/ghostty.toml.tmpl`) into generated runtime config `~/.config/ghostty/ghostty.toml`. Template values are driven by stowed terminal defaults from `~/.config/tino/terminal-defaults.sh` and optional host-specific overrides from `~/.config/tino/host-overrides.sh` using canonical `TINO_TERMINAL_OPACITY`, `TINO_TERMINAL_FPS`, and `TINO_TERMINAL_EFFECTS` variables.
+### 1) Startup timing
 
-Optional alternative: use Windows Terminal as your host terminal app while running Ghostty inside WSL for the managed Linux profile, or keep Windows Terminal-only settings for native PowerShell workflows.
+- Run warm-start timing checks for interactive shell startup.
+- Verify startup remains within your local warm/cold budget targets.
+- Re-check after plugin or shell init changes.
 
-### Provider capability contract matrix
+### 2) Renderer contract checks
 
-Capability semantics are a first-class API exposed by `terminal_capability_status` in `dotfiles/terminal/.config/tino/terminal-profile.sh` and validated via `dotfiles/terminal/.config/tino/validate-renderer-contract.sh`.
-
-Regenerate both machine-readable and docs-friendly reports from the same capability table:
+Validate capability behavior (for example, FPS/opacity/effects support) with:
 
 ```bash
 dotfiles/terminal/.config/tino/validate-renderer-contract.sh --report-format json --report-file .cache/tino/terminal-capability-report.json
 dotfiles/terminal/.config/tino/validate-renderer-contract.sh --report-format markdown --report-file docs/generated/terminal-capability-matrix.md
 ```
 
-| Provider | FPS | Opacity | Effects |
-| --- | --- | --- | --- |
-| ghostty | ✅ applied | ✅ applied | ✅ applied |
-| wezterm | ✅ applied | ✅ applied | ❌ unsupported |
-| kitty | ✅ applied | ✅ applied | ❌ unsupported |
-| alacritty | ❌ unsupported | ✅ applied | ❌ unsupported |
-| windows-terminal | ❌ unsupported | ✅ applied | ✅ applied |
+Ensure the selected provider reports expected support and that unsupported features degrade gracefully.
 
+### 3) Missing plugin detection
 
-Stow vs generated terminal files:
+- Confirm shell plugin directories exist (or were cloned by bootstrap).
+- Confirm tmux plugin manager assets are present.
+- Confirm Neovim headless setup completed without missing provider/plugin errors.
 
-- Symlinked by `scripts/install_dotfiles.sh` package `terminal`:
-  - `dotfiles/terminal/.config/tino/terminal-defaults.sh` -> `~/.config/tino/terminal-defaults.sh`
-  - `dotfiles/terminal/.config/tino/ghostty.toml.tmpl` -> `~/.config/tino/ghostty.toml.tmpl`
-- Generated by `scripts/setup-terminal-provider.sh ghostty`:
-  - `~/.config/ghostty/ghostty.toml`
+If any plugin class is missing, re-run the canonical setup scripts above in order.
 
-If you previously used older bootstrap behavior that injected a `d0tTino zsh plugins` marker block into `~/.zshrc`, run:
+## Troubleshooting
 
-```bash
-./scripts/migrate-shell-config.sh [--force]
-```
+### Terminal settings not applying
 
-The migration is intentionally manual and creates a timestamped backup before any changes. It writes runtime fragments to `~/.config/zsh/{env,aliases,functions}.zsh` (or `$XDG_CONFIG_HOME/zsh/...`) and leaves tracked repository dotfiles untouched.
+- Re-run `./scripts/setup-terminal-provider.sh <provider>`.
+- Check whether host overrides are unintentionally overriding a base default.
+- Validate provider capabilities to confirm the setting is actually supported.
 
-## zsh startup profiling (opt-in)
+### Slow startup after updates
 
-`dotfiles/shell/.zshrc` now runs in explicit startup phases so prompt rendering stays fast:
+- Re-profile interactive shell startup.
+- Check for newly added plugin init on the prompt-critical path.
+- Ensure deferred/non-critical init remains deferred.
 
-1. **Prompt-critical path**: completion bootstrap, plugins, and `starship`.
-2. **Deferred path/env initialization**: language managers, host defaults/overrides, and optional tooling (for example `zoxide`).
+### Neovim plugins/LSP tooling missing
 
-Deferred execution is on by default (`TINO_ZSH_DEFER=1`). If `zsh-defer` is installed, it is used automatically; otherwise `.zshrc` falls back to a built-in `precmd` queue. Set `TINO_ZSH_DEFER=0` to force immediate loading.
-
-### Completion cache strategy
-
-Completion initialization uses a fast cache path for normal startups and only refreshes metadata when stale:
-
-- Cached path: `compinit -C -d "$XDG_CACHE_HOME/zsh/zcompdump"`
-- Refresh path: full `compinit` when `zcompdump` is missing or older than `TINO_ZSH_COMPINIT_REFRESH_DAYS` (default: `7`).
-
-### Startup budget goals
-
-Use these as guardrails for interactive startup:
-
-- **Warm startup target**: <= `80ms`
-- **Cold startup target**: <= `150ms`
-
-The values are also exposed in shell config (`TINO_ZSH_STARTUP_BUDGET_WARM_MS` and `TINO_ZSH_STARTUP_BUDGET_COLD_MS`) so teams can tune them locally without editing docs.
-
-### Profiling recipe (`TINO_ZSH_PROFILE=1`)
-
-Run:
-
-```bash
-TINO_ZSH_PROFILE=1 zsh -i -c exit
-```
-
-When `TINO_ZSH_PROFILE` is unset, profiling is skipped entirely (no `zmodload zsh/zprof` and no profile report at shell exit).
-
-For repeatable timing checks, run both warm and cold-ish cases:
-
-```bash
-hyperfine --warmup 3 'zsh -i -c exit'
-rm -f ~/.cache/zsh/zcompdump
-hyperfine --warmup 1 'zsh -i -c exit'
-```
-
-If `zprof` or `hyperfine` results exceed budget, move work from phase 1 into deferred blocks or on-demand wrappers.
-
-## Neovim first run and startup profiling
-
-The `dotfiles/nvim` package uses `lazy.nvim` for plugin management. Default startup is deterministic and offline-friendly: if `lazy.nvim` is missing, plugin setup is skipped with a clear warning.
-Minimum CLI toolchain for Neovim integrations: `rg` (ripgrep) and `fd` (or `fdfind` on Debian/Ubuntu).
-
-1. During provisioning run `./scripts/setup-nvim.sh` (or `./scripts/install_common.sh`, which now calls it). This performs a headless `Lazy! sync` plus explicit `MasonInstall` for required LSP servers, and verifies Neovim is at least `0.8` before provisioning.
-2. Start Neovim normally (`nvim`) with no first-run network dependency for plugin/LSP assets.
-3. If plugin revisions changed intentionally, refresh and commit `dotfiles/nvim/.config/nvim/lazy-lock.json`.
-4. Runtime auto-bootstrap is opt-in: set `TINO_NVIM_AUTO_BOOTSTRAP=1` to allow Neovim to clone `folke/lazy.nvim` when missing.
-5. Force strict offline behavior with `TINO_NVIM_OFFLINE=1`; Neovim warns and skips plugin setup to avoid partial initialization.
-
-To inspect startup performance with a repeatable workflow:
-
-```bash
-./scripts/benchmark_nvim_startup.sh
-```
-
-The script always writes to:
-
-- `.cache/tino/nvim-startup/startup.log`
-- `.cache/tino/nvim-startup/summary.txt`
-
-### Before/after comparison flow
-
-1. Capture a baseline:
-
-   ```bash
-   ./scripts/benchmark_nvim_startup.sh
-   cp .cache/tino/nvim-startup/summary.txt .cache/tino/nvim-startup/summary-before.txt
-   ```
-
-2. Make your Neovim config/plugin changes.
-3. Capture an updated measurement:
-
-   ```bash
-   ./scripts/benchmark_nvim_startup.sh
-   cp .cache/tino/nvim-startup/summary.txt .cache/tino/nvim-startup/summary-after.txt
-   ```
-
-4. Compare results:
-
-   ```bash
-   diff -u .cache/tino/nvim-startup/summary-before.txt .cache/tino/nvim-startup/summary-after.txt
-   ```
-
-Use `TOP_COUNT=<n>` to control how many slow entries are included in the summary (default: `20`).
-
-### Lockfile refresh workflow (intentional plugin upgrades)
-
-When intentionally upgrading Neovim plugins (local or CI/bootstrap images):
-
-```bash
-./scripts/setup-nvim.sh
-```
-
-`setup-nvim.sh` already performs headless plugin sync and explicit Mason LSP provisioning. Then commit the updated lockfile with your plugin config changes so provisioning and CI remain deterministic.
-
-## Terminal Tools: fastfetch, btm & Nushell/Starship
-
-## tmux baseline config and TPM plugins
-
-The repository includes a baseline tmux configuration at [`dotfiles/tmux/.tmux.conf`](../dotfiles/tmux/.tmux.conf) with:
-
-- Mouse mode enabled and larger scrollback history.
-- Truecolor-capable terminal settings (`tmux-256color` + RGB terminal features).
-- A status line styled to match the Blacklight palette.
-- Ergonomic pane/window navigation and a `prefix + r` config reload binding.
-
-TPM is installed during provisioning (`./scripts/install_common.sh`) so tmux startup stays offline/non-networked. The config only declares plugins and runs TPM with:
-
-- `tmux-plugins/tpm`
-- `tmux-plugins/tmux-resurrect`
-- `tmux-plugins/tmux-continuum`
-
-Useful TPM shortcuts after launching tmux:
-
-- `prefix + I` – install plugins.
-- `prefix + U` – update plugins.
-- `prefix + Alt + u` – remove plugins not currently listed.
-
-### fastfetch
-Display system information each time a shell starts.
-
-Install on Debian/Ubuntu:
-```bash
-sudo apt install fastfetch
-```
-macOS via Homebrew:
-```bash
-brew install fastfetch
-```
-Add `fastfetch` to your shell's startup file or `~/.config/nushell/config.nu` if you use Nushell.
-
-Example configuration:
-```bash
-# ~/.config/fastfetch/config.conf
-ascii_logo = "ubuntu"
-show_battery = true
-```
-
-### btm (bottom)
-A terminal-based resource monitor.
-
-Install with Cargo:
-```bash
-cargo install bottom --locked
-```
-Configuration file `~/.config/bottom/bottom.toml`:
-```toml
-update_rate = 1000
-mem_as_value = true
-```
-
-### Nushell & Starship
-Install Nushell and the Starship prompt for structured commands and a colorful prompt.
-
-```bash
-cargo install nu        # or brew install nushell
-curl -sS https://starship.rs/install.sh | sh -s -- -y
-```
-Add to `~/.config/nushell/config.nu`:
-```nu
-$env.STARSHIP_CONFIG = '~/.config/starship.toml'
-mkdir ~/.cache/starship
-starship init nu | save --force ~/.cache/starship/init.nu
-source ~/.cache/starship/init.nu
-```
-Customize the prompt by editing [`dotfiles/shell/.config/starship.toml`](../dotfiles/shell/.config/starship.toml) in this repository.
-
-## Blacklight Palette & Shortcuts
-
-The repository ships a unified **Blacklight** color scheme used by Windows Terminal and the Starship prompt. Run [`install-windows-terminal.ps1`](../scripts/install-windows-terminal.ps1) to copy `windows-terminal/settings.json` into the Windows Terminal *LocalState* folder. Then place [`dotfiles/shell/.config/starship.toml`](../dotfiles/shell/.config/starship.toml) in `~/.config/starship.toml` (or `%USERPROFILE%\.config\starship.toml` on Windows) so both tools share the same colors.
-
-After applying the palette, Windows Terminal defines these shortcuts:
-
-- `Alt+V` – split the current pane vertically.
-- `Alt+H` – split the current pane horizontally.
-- `Alt+M` – open a metrics pane running [`btm`](https://github.com/ClementTsang/bottom).
-
-Use [`setup-screenshot-env.sh`](../scripts/setup-screenshot-env.sh) (or its PowerShell equivalent) to install the helper tools automatically.
-
-
-## LLM Assets
-
-The `llm` directory collects prompts and other files related to language models.
-Place custom prompts under `llm/prompts/` and organize subfolders as needed.
-
-## Textual UI Prototype
-
-A lightweight interface using [Textual](https://textual.textualize.io/) lives
-under `ui/textual_app.py`. Launch it with:
-
-```bash
-python -m ui.textual_app
-```
-
-Use **Send** to route prompts via `ai_router.send_prompt` and **Apply** to call
-`thm.apply_palette`. Palette names are loaded from the `palettes/` directory and
-responses or status messages show directly in the terminal window.
-Press **Ctrl+P** to search available scripts and n8n flows via the LLM; a list of
-matches appears and the chosen entry runs after confirming the plan. The
-traditional command palette is available with **Ctrl+Shift+P**.
----
-
-## Cloning & Managing Dotfiles
-
-1. **Clone as a bare repository** so your `$HOME` stays clean:
-
-   ```bash
-   git clone --bare https://github.com/d0tTino/d0tTino.git "$HOME/.dots"
-   alias dot='git --git-dir=$HOME/.dots/ --work-tree=$HOME'
-   ```
-
-2. **Symlink configs using GNU Stow**:
-
-   ```bash
-   cd ~/d0tTino
-   stow dotfiles/shell
-   stow dotfiles/nvim
-   stow dotfiles/tmux
-   ./scripts/install_common.sh
-   ```
-
-   Stow cleanly manages symlinks, letting you enable or disable packages with `stow -D <name>`.
-
-3. **Host-specific overrides** live under `hosts/<name> (currently desktop or work_laptop)` and can be applied with:
-
-   ```bash
-   stow --target="$HOME" hosts/desktop
-   # or
-   stow --target="$HOME" hosts/work_laptop
-   ```
-
-   This keeps machine-specific settings separate while sharing a common core.
-
----
-
-## Replicating the Screenshot Environment
-
-The screenshots in this repository showcase a terminal running
-[fastfetch](https://github.com/fastfetch-cli/fastfetch),
-[bottom](https://github.com/ClementTsang/bottom) (the `btm` command),
-[Nushell](https://www.nushell.sh/), and the [Zed editor](https://zed.dev/).
-To set up a similar environment:
-
-### Install the tools
-
-Run the helper script from the repository root. On Windows use the PowerShell
-version, while Linux and macOS users can run the shell script. The script
-detects Debian/Ubuntu, Arch and macOS automatically:
-
-```powershell
-./scripts/setup-screenshot-env.ps1
-```
-
-```bash
-./scripts/setup-screenshot-env.sh
-```
-
-#### Step-by-step
-
-1. **Install Fastfetch and Bottom** using the script above. It also installs
-   Nushell and the Zed editor.
-2. **Link the Starship configuration** so the prompt uses this repository's
-   theme:
-   ```bash
-   ln -sf $(pwd)/dotfiles/shell/.config/starship.toml ~/.config/starship.toml
-   ```
-   ```powershell
-   New-Item -ItemType SymbolicLink -Path $Env:USERPROFILE\.config\starship.toml `
-     -Target (Join-Path $PWD 'dotfiles/shell/.config/starship.toml')
-   ```
-
-### Example profile entries
-
-Add the following to your PowerShell profile
-`$PROFILE` so the tools launch automatically in a new session:
-
-```powershell
-fastfetch
-btm
-```
-
-For Nushell, place similar commands in `~/.config/nushell/env.nu`:
-
-```nu
-fastfetch
-btm
-```
-
-### Apply the theme
-
-Copy the sample configs from this repository to match the palette shown in the
-screenshot:
-
-```bash
-mkdir -p ~/.config/fastfetch ~/.config/bottom
-cp dotfiles/fastfetch/config.conf ~/.config/fastfetch/
-cp dotfiles/btm/config.toml ~/.config/bottom/bottom.toml
-ln -sf $(pwd)/dotfiles/shell/.config/starship.toml ~/.config/starship.toml
-```
-
-Zed's preferences include several built-in color themes. Select the dark theme
-that most closely matches the screenshot from **Settings → Appearance**.
-
-### Color scheme installation & Starship setup
-
-1. **Install the Windows Terminal settings** to apply the `One Half Dark` and
-   `Campbell` palettes:
-   ```powershell
-   ./scripts/install-windows-terminal.ps1
-   ```
-   The script copies the preconfigured `settings.json` containing both palettes
-   into the Windows Terminal LocalState folder.
-2. **Link the Starship configuration** so the prompt matches the screenshot:
-   ```bash
-   ln -sf $(pwd)/dotfiles/shell/.config/starship.toml ~/.config/starship.toml
-   ```
-   Make sure `~/.config/nushell/config.nu` sets `\$env.STARSHIP_CONFIG` to this
-   path so Starship loads the file automatically.
-
-### Metrics pane binding
-
-Add the following key binding to your Windows Terminal `settings.json` to toggle
-a vertical metrics pane running `btm` with `Alt+M`:
-
-```json
-{
-  "command": { "action": "splitPane", "split": "vertical", "commandline": "btm" },
-  "keys": "alt+m"
-}
-```
-
-Now pressing `Alt+M` opens bottom in a split so you can monitor system metrics
-beside your shell.
-
----
-
-## License
-
-This project is licensed under the [Apache License 2.0](LICENSE).
+- Re-run `./scripts/setup-nvim.sh`.
+- Verify network/package manager access used by plugin managers/Mason.
+- Re-open Neovim and check health diagnostics.

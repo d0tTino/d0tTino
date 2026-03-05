@@ -3,6 +3,10 @@
 
 I build local‑first automation, agentic systems and tooling that’s easy to run on your own hardware. My work spans persistent memory engines, emergent AI sandboxes and practical task orchestration.
 
+## About
+
+I’m a one-person AI and simulation engineer focused on multi-agent behavior, memory-rich systems, and efficient local-first tooling. I enjoy designing event-driven pipelines, experimenting with emergent digital societies, and building practical developer workflows that stay reproducible across machines.
+
 ### What I’m building now
 
 - **Shared memory bus** – an event‑sourced knowledge graph so agents share durable, queryable context without depending on the cloud.
