@@ -8,6 +8,7 @@ repo_root="$(cd "$script_dir/.." && pwd)"
 lsp_servers_file="$repo_root/dotfiles/nvim/.config/nvim/lsp_servers.txt"
 minimum_nvim_version="0.8"
 benchmark_script="$repo_root/scripts/benchmark_nvim_startup.sh"
+lockfile_check_script="$repo_root/scripts/check-nvim-lockfile.py"
 benchmark_startup="${TINO_NVIM_BENCHMARK_STARTUP:-0}"
 benchmark_threshold="${TINO_NVIM_MAX_STARTUP_MS:-}"
 refresh_lockfile=0
@@ -74,6 +75,12 @@ fi
 if [[ "$refresh_lockfile" == "1" ]]; then
     echo "Refreshing Neovim lockfile (intentional plugin upgrade path)..."
     nvim --headless "+Lazy! update" "+Lazy! lock" +qa
+    if [[ -f "$lockfile_check_script" ]]; then
+        python "$lockfile_check_script"
+    else
+        echo "Warning: lockfile coverage checker not found at $lockfile_check_script" >&2
+    fi
+    echo "Lockfile refresh complete. Commit dotfiles/nvim/.config/nvim/lazy-lock.json for deterministic installs."
 else
     echo "Syncing Neovim plugins (headless)..."
     nvim --headless "+Lazy! sync" +qa
