@@ -1,4 +1,10 @@
-from starship_expectations import REQUIRED_MODULE_KEYS, STARSHIP_PROMPT_FORMAT, load_starship
+from starship_expectations import (
+    REQUIRED_MODULE_KEYS,
+    REQUIRED_MODULE_VALUES,
+    STARSHIP_PROMPT_FORMAT,
+    load_starship,
+)
+
 
 def test_starship_time_and_git_status_sections():
     data = load_starship()
@@ -6,9 +12,10 @@ def test_starship_time_and_git_status_sections():
         assert section in data, f'[{section}] section missing'
         for key in keys:
             assert key in data[section], f'{section}.{key} missing'
+            assert data[section].get(key) == REQUIRED_MODULE_VALUES[section][key], (
+                f'{section}.{key} mismatch'
+            )
 
-    assert data['git_status'].get('stashed') == "📦", 'stashed icon mismatch'
-    assert data['status'].get('disabled') is False, '[status] should be enabled'
 
 def test_starship_multiline_format():
     data = load_starship()

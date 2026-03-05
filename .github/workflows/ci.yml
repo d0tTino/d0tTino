@@ -65,6 +65,8 @@ jobs:
         run: pytest tests/test_generate_sources_md.py -q
       - name: Verify plugin registry
         run: python scripts/update_registry.py --check
+      - name: Verify palette artifacts (including Starship)
+        run: python scripts/helpers/generate_palette_artifacts.py --check
       - name: Verify Neovim lockfile coverage
         run: python scripts/check-nvim-lockfile.py
 
@@ -92,6 +94,8 @@ jobs:
         run: pytest -n auto
       - name: Verify plugin registry
         run: python scripts/update_registry.py --check
+      - name: Verify palette artifacts (including Starship)
+        run: python scripts/helpers/generate_palette_artifacts.py --check
       - name: Verify Neovim lockfile coverage
         run: python scripts/check-nvim-lockfile.py
   install-dry-run:

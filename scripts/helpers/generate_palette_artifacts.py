@@ -11,7 +11,11 @@ from pathlib import Path
 if __package__ in {None, ""}:
     sys.path.append(str(Path(__file__).resolve().parents[2]))
 
-from scripts.helpers.starship_spec import STARSHIP_MODULES, STARSHIP_PROMPT_FORMAT
+from scripts.helpers.starship_spec import (
+    REQUIRED_MODULE_KEYS,
+    STARSHIP_MODULES,
+    STARSHIP_PROMPT_FORMAT,
+)
 
 ANSI_ORDER = [
     "black",
@@ -61,7 +65,21 @@ def render_palette_toml(name: str, ansi: dict[str, str]) -> str:
     return "\n".join(lines) + "\n"
 
 
+
+
+def _validate_required_starship_modules() -> None:
+    module_map = {section: values for section, values in STARSHIP_MODULES}
+    for section, keys in REQUIRED_MODULE_KEYS.items():
+        if section not in module_map:
+            raise SystemExit(f"Missing required Starship section: {section}")
+        missing = [key for key in keys if key not in module_map[section]]
+        if missing:
+            raise SystemExit(
+                f"Missing required Starship keys in [{section}]: {', '.join(missing)}"
+            )
+
 def render_starship(config: dict[str, object]) -> str:
+    _validate_required_starship_modules()
     default_name = config["default_palette"]
     fmt = STARSHIP_PROMPT_FORMAT
     chunks = [

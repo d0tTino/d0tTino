@@ -7,6 +7,18 @@ STARSHIP_PROMPT_FORMAT = (
     "[└─](bold purple)$character\n"
 )
 
+REQUIRED_PROMPT_MODULES: tuple[str, ...] = (
+    "directory",
+    "git_branch",
+    "git_state",
+    "git_status",
+    "python",
+    "kubernetes",
+    "aws",
+    "status",
+    "time",
+)
+
 STARSHIP_MODULES: list[tuple[str, dict[str, object]]] = [
     (
         "directory",
@@ -79,19 +91,14 @@ STARSHIP_MODULES: list[tuple[str, dict[str, object]]] = [
     ("package", {"disabled": True}),
 ]
 
+MODULE_SETTINGS = {section: values for section, values in STARSHIP_MODULES}
+
 REQUIRED_MODULE_KEYS: dict[str, tuple[str, ...]] = {
-    section: tuple(values.keys())
-    for section, values in STARSHIP_MODULES
-    if section
-    in {
-        "directory",
-        "git_branch",
-        "git_state",
-        "git_status",
-        "python",
-        "kubernetes",
-        "aws",
-        "status",
-        "time",
-    }
+    section: tuple(MODULE_SETTINGS[section].keys())
+    for section in REQUIRED_PROMPT_MODULES
+}
+
+REQUIRED_MODULE_VALUES: dict[str, dict[str, object]] = {
+    section: dict(MODULE_SETTINGS[section])
+    for section in REQUIRED_PROMPT_MODULES
 }
