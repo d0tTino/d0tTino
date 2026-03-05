@@ -103,6 +103,66 @@ def test_migrate_shell_config_refuses_to_overwrite_without_force(tmp_path: Path)
     assert env_fragment.read_text(encoding="utf-8") == "existing\n"
 
 
+def test_migrate_shell_config_classifies_lines_into_runtime_fragments(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    (repo / "scripts").mkdir(parents=True)
+    shutil.copy(REPO_ROOT / "scripts" / "migrate-shell-config.sh", repo / "scripts" / "migrate-shell-config.sh")
+
+    home = tmp_path / "home"
+    home.mkdir()
+
+    bashrc = home / ".bashrc"
+    bashrc.write_text(
+        """
+export EDITOR=nvim
+FOO=bar
+alias ll='ls -la'
+function greet() {
+  echo hello
+}
+bind '"\\e[A":history-search-backward'
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    env = os.environ.copy()
+    env["HOME"] = str(home)
+
+    subprocess.run(
+        ["/bin/bash", "scripts/migrate-shell-config.sh"],
+        cwd=repo,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    target_dir = home / ".config" / "zsh"
+    env_lines = (target_dir / "env.zsh").read_text(encoding="utf-8")
+    alias_lines = (target_dir / "aliases.zsh").read_text(encoding="utf-8")
+    function_lines = (target_dir / "functions.zsh").read_text(encoding="utf-8")
+
+    assert "export EDITOR=nvim" in env_lines
+    assert "FOO=bar" in env_lines
+    assert "alias ll='ls -la'" not in env_lines
+
+    assert "alias ll='ls -la'" in alias_lines
+    assert "export EDITOR=nvim" not in alias_lines
+
+    assert "function greet() {" in function_lines
+    assert "echo hello" in function_lines
+    assert "alias ll='ls -la'" not in function_lines
+
+    reports = list((home / ".config" / "tino").glob("shell-migration-report.*.txt"))
+    assert len(reports) == 1
+    report = reports[0].read_text(encoding="utf-8")
+    assert "env lines: 2" in report
+    assert "alias lines: 1" in report
+    assert "function blocks: 1" in report
+    assert "skipped lines: 1" in report
+
+
 def test_migrate_shell_config_force_overwrites_existing_fragments(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     (repo / "scripts").mkdir(parents=True)
@@ -187,6 +247,74 @@ def test_minimal_bashrc_shim_uses_env_fallback_for_symlinked_rcfile(tmp_path: Pa
 
     assert "Hint: migrate your legacy ~/.bashrc settings" in result.stderr
     assert str(migration_script) in result.stderr
+
+
+def test_minimal_bashrc_shim_stamp_prevents_repeated_hint_with_migration_script(tmp_path: Path) -> None:
+    bashrc = REPO_ROOT / "dotfiles" / "shell" / ".bashrc"
+
+    home = tmp_path / "home"
+    migration_script = home / ".local" / "share" / "d0ttino" / "scripts" / "migrate-shell-config.sh"
+    migration_script.parent.mkdir(parents=True)
+    migration_script.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+    migration_script.chmod(0o755)
+
+    env = os.environ.copy()
+    env["HOME"] = str(home)
+
+    first = subprocess.run(
+        ["/bin/bash", "--rcfile", str(bashrc), "-i", "-c", "exit"],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    second = subprocess.run(
+        ["/bin/bash", "--rcfile", str(bashrc), "-i", "-c", "exit"],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    stamp = home / ".cache" / "d0ttino" / "bash-migration-hint-shown"
+    assert stamp.exists()
+    assert "Hint: migrate your legacy ~/.bashrc settings" in first.stderr
+    assert str(migration_script) in first.stderr
+    assert "Hint: migrate your legacy ~/.bashrc settings" not in second.stderr
+
+
+def test_zshrc_integration_loads_migrated_runtime_fragments(tmp_path: Path) -> None:
+    zsh = shutil.which("zsh")
+    if zsh is None:
+        return
+
+    xdg_config_home = tmp_path / "xdg-config"
+    zsh_config_dir = xdg_config_home / "zsh"
+    zsh_config_dir.mkdir(parents=True)
+    (zsh_config_dir / "env.zsh").write_text("export TINO_MIGRATED_ENV=loaded\n", encoding="utf-8")
+    (zsh_config_dir / "aliases.zsh").write_text("alias tino_migrated_alias='echo alias-loaded'\n", encoding="utf-8")
+    (zsh_config_dir / "functions.zsh").write_text("tino_migrated_fn(){ echo function-loaded; }\n", encoding="utf-8")
+
+    env = os.environ.copy()
+    env["XDG_CONFIG_HOME"] = str(xdg_config_home)
+
+    command = (
+        f"source {REPO_ROOT / 'dotfiles' / 'shell' / '.zshrc'}; "
+        "echo ${TINO_MIGRATED_ENV}; "
+        "alias tino_migrated_alias; "
+        "typeset -f tino_migrated_fn"
+    )
+    result = subprocess.run(
+        [zsh, "-c", command],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    assert "loaded" in result.stdout
+    assert "alias tino_migrated_alias='echo alias-loaded'" in result.stdout
+    assert "tino_migrated_fn ()" in result.stdout
 
 
 def test_zshrc_loads_prompt_critical_env_before_starship_init() -> None:
