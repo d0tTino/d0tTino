@@ -843,12 +843,17 @@ def test_install_common_enables_nvim_benchmark_by_default_for_desktop_host(tmp_p
 
     setup_nvim_log = tmp_path / "setup_nvim_desktop.log"
     (scripts_dir / "setup-nvim.sh").write_text(
-        f"#!/usr/bin/env bash\nprintf '%s\\n' \"${{TINO_NVIM_BENCHMARK_STARTUP:-unset}}\" >> '{setup_nvim_log}'\n",
+        f"#!/usr/bin/env bash\nprintf '%s,%s\\n' \"${{TINO_NVIM_BENCHMARK_STARTUP:-unset}}\" \"${{TINO_NVIM_MAX_STARTUP_MS:-unset}}\" >> '{setup_nvim_log}'\n",
         encoding="utf-8",
     )
     (scripts_dir / "setup-nvim.sh").chmod(0o755)
 
     (repo / "hosts" / "desktop").mkdir(parents=True)
+    (repo / "hosts" / "desktop" / ".config" / "tino").mkdir(parents=True)
+    (repo / "hosts" / "desktop" / ".config" / "tino" / "host-overrides.sh").write_text(
+        "export TINO_NVIM_PROFILE_DEFAULT_MAX_STARTUP_MS=\"100\"\n",
+        encoding="utf-8",
+    )
 
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
@@ -865,7 +870,7 @@ def test_install_common_enables_nvim_benchmark_by_default_for_desktop_host(tmp_p
 
     subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
 
-    assert setup_nvim_log.read_text(encoding="utf-8").splitlines() == ["1"]
+    assert setup_nvim_log.read_text(encoding="utf-8").splitlines() == ["1,100"]
 
 
 def test_install_common_respects_explicit_nvim_benchmark_disable(tmp_path: Path) -> None:
