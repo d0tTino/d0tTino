@@ -142,6 +142,25 @@ For Ghostty, `scripts/setup-terminal-provider.sh ghostty` first checks for an ex
 
 Optional alternative: use Windows Terminal as your host terminal app while running Ghostty inside WSL for the managed Linux profile, or keep Windows Terminal-only settings for native PowerShell workflows.
 
+### Provider capability contract matrix
+
+Capability semantics are a first-class API exposed by `terminal_capability_status` in `dotfiles/terminal/.config/tino/terminal-profile.sh` and validated via `dotfiles/terminal/.config/tino/validate-renderer-contract.sh`.
+
+Regenerate both machine-readable and docs-friendly reports from the same capability table:
+
+```bash
+dotfiles/terminal/.config/tino/validate-renderer-contract.sh --report-format json --report-file .cache/tino/terminal-capability-report.json
+dotfiles/terminal/.config/tino/validate-renderer-contract.sh --report-format markdown --report-file docs/generated/terminal-capability-matrix.md
+```
+
+| Provider | FPS | Opacity | Effects |
+| --- | --- | --- | --- |
+| ghostty | ✅ applied | ✅ applied | ✅ applied |
+| wezterm | ✅ applied | ✅ applied | ❌ unsupported |
+| kitty | ✅ applied | ✅ applied | ❌ unsupported |
+| alacritty | ❌ unsupported | ✅ applied | ❌ unsupported |
+| windows-terminal | ❌ unsupported | ✅ applied | ✅ applied |
+
 
 Stow vs generated terminal files:
 
