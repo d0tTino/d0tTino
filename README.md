@@ -236,7 +236,17 @@ Terminal profile values flow through one path:
 
 Standard bootstrap command (repo root):
 
-Neovim plugin revisions are pinned in `dotfiles/nvim/.config/nvim/lazy-lock.json`; provisioning is handled by `./scripts/setup-nvim.sh` (headless `Lazy! sync` + explicit Mason LSP installs, requires Neovim >= 0.8) so first interactive startup is deterministic. Intentional plugin upgrades should use `./scripts/setup-nvim.sh --refresh-lockfile` (runs `Lazy! update` + `Lazy! lock`, then lock coverage validation) and can be re-checked manually with `python scripts/check-nvim-lockfile.py`. Runtime self-healing is opt-in with `TINO_NVIM_AUTO_BOOTSTRAP=1` (default is disabled/offline-friendly), and `TINO_NVIM_OFFLINE=1` forces warning-only startup behavior. Startup benchmarking is available via `scripts/benchmark_nvim_startup.sh`; `scripts/setup-nvim.sh` runs it only when `TINO_NVIM_BENCHMARK_STARTUP=1` (desktop profile enables this by default during `install_common.sh`, constrained environments can opt out with `TINO_NVIM_BENCHMARK_STARTUP=0`). You can enforce a regression threshold with `TINO_NVIM_MAX_STARTUP_MS`.
+Neovim plugin revisions are pinned in `dotfiles/nvim/.config/nvim/lazy-lock.json`; provisioning is handled by `./scripts/setup-nvim.sh` (headless `Lazy! sync` + explicit Mason LSP installs, requires Neovim >= 0.8) so first interactive startup is deterministic. Intentional plugin upgrades should use `./scripts/setup-nvim.sh --refresh-lockfile` (runs `Lazy! update` + `Lazy! lock`, then lock coverage validation) and can be re-checked manually with `python scripts/check-nvim-lockfile.py`. Runtime self-healing is opt-in with `TINO_NVIM_AUTO_BOOTSTRAP=1` (default is disabled/offline-friendly), and `TINO_NVIM_OFFLINE=1` forces warning-only startup behavior. Startup benchmarking is available via `scripts/benchmark_nvim_startup.sh`; `scripts/setup-nvim.sh` runs it only when `TINO_NVIM_BENCHMARK_STARTUP=1` and now auto-passes `TINO_NVIM_MAX_STARTUP_MS` from either explicit env override or host profile defaults (`TINO_NVIM_PROFILE_DEFAULT_MAX_STARTUP_MS`). Current SLO defaults are desktop=100ms and work_laptop=140ms.
+
+
+### Neovim startup SLO remediation workflow
+
+When a startup benchmark exceeds its threshold (`Startup regression detected`):
+
+1. Reproduce locally with `TINO_NVIM_BENCHMARK_STARTUP=1 ./scripts/setup-nvim.sh` and inspect `.cache/tino/nvim-startup/summary.txt` for top offenders.
+2. If regression is expected (intentional plugin/runtime upgrade), update host policy (`hosts/*/.config/tino/host-overrides.sh`) by adjusting `TINO_NVIM_PROFILE_DEFAULT_MAX_STARTUP_MS` and document the rationale in the PR.
+3. If regression is unexpected, revert/optimize the offending plugin change, then rerun `./scripts/setup-nvim.sh` until the benchmark falls back under policy.
+4. Keep `TINO_NVIM_MAX_STARTUP_MS` for temporary strict overrides in CI or local diagnosis; host defaults remain the baseline guardrail.
 
 
 Lock refresh command (repo root):

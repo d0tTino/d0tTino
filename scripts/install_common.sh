@@ -203,6 +203,29 @@ resolve_terminal_provider_from_config() {
     echo "$provider"
 }
 
+resolve_nvim_benchmark_threshold_from_config() {
+    local host_name="$1"
+    local host_override_path=""
+
+    if [[ -n "$host_name" ]]; then
+        host_override_path="$repo_root/hosts/$host_name/.config/tino/host-overrides.sh"
+        if [[ -f "$host_override_path" ]]; then
+            local host_threshold=""
+            local profile_default_threshold=""
+            host_threshold="$({ source "$host_override_path"; printf '%s' "${TINO_NVIM_MAX_STARTUP_MS:-}"; })"
+            profile_default_threshold="$({ source "$host_override_path"; printf '%s' "${TINO_NVIM_PROFILE_DEFAULT_MAX_STARTUP_MS:-}"; })"
+            if [[ -n "$host_threshold" ]]; then
+                echo "$host_threshold"
+                return
+            fi
+            if [[ -n "$profile_default_threshold" ]]; then
+                echo "$profile_default_threshold"
+                return
+            fi
+        fi
+    fi
+}
+
 run_pwsh() {
     local script=$1
     shift
@@ -474,6 +497,12 @@ else
         setup_nvim_host="${host_override:-${resolved_host:-}}"
         if [[ -z "${TINO_NVIM_BENCHMARK_STARTUP:-}" && "$setup_nvim_host" == "desktop" ]]; then
             benchmark_env+=(TINO_NVIM_BENCHMARK_STARTUP=1)
+        fi
+        if [[ -z "${TINO_NVIM_MAX_STARTUP_MS:-}" ]]; then
+            resolved_nvim_threshold="$(resolve_nvim_benchmark_threshold_from_config "$setup_nvim_host")"
+            if [[ -n "$resolved_nvim_threshold" ]]; then
+                benchmark_env+=(TINO_NVIM_MAX_STARTUP_MS="$resolved_nvim_threshold")
+            fi
         fi
         run_cmd env "${benchmark_env[@]}" bash "$scripts/setup-nvim.sh"
     fi

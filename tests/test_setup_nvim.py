@@ -168,6 +168,34 @@ def test_setup_nvim_benchmark_threshold_failure_bubbles_up(tmp_path: Path) -> No
     assert "Startup regression detected" in result.stderr
 
 
+def test_setup_nvim_uses_profile_default_threshold_when_enabled(tmp_path: Path) -> None:
+    script_path = REPO_ROOT / "scripts" / "setup-nvim.sh"
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    create_exe(
+        bin_dir / "git",
+        "#!/usr/bin/env bash\nif [[ $1 == clone ]]; then\n  /bin/mkdir -p \"$5/.git\"\nfi\n",
+    )
+
+    create_fake_nvim(bin_dir / "nvim", startup_ms="8.750")
+
+    env = os.environ.copy()
+    env.update(
+        {
+            "PATH": f"{bin_dir}:/usr/bin:/bin",
+            "HOME": str(tmp_path),
+            "TINO_NVIM_BENCHMARK_STARTUP": "1",
+            "TINO_NVIM_PROFILE_DEFAULT_MAX_STARTUP_MS": "5",
+        }
+    )
+
+    result = subprocess.run(["/bin/bash", str(script_path)], env=env, text=True, capture_output=True, cwd=tmp_path)
+
+    assert result.returncode == 1
+    assert "Startup regression detected" in result.stderr
+
+
 def test_lazy_config_supports_auto_bootstrap_and_offline_modes() -> None:
     lazy_config = (REPO_ROOT / "dotfiles" / "nvim" / ".config" / "nvim" / "lua" / "config" / "lazy.lua").read_text(
         encoding="utf-8"

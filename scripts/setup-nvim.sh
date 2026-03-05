@@ -11,6 +11,7 @@ benchmark_script="$repo_root/scripts/benchmark_nvim_startup.sh"
 lockfile_check_script="$repo_root/scripts/check-nvim-lockfile.py"
 benchmark_startup="${TINO_NVIM_BENCHMARK_STARTUP:-0}"
 benchmark_threshold="${TINO_NVIM_MAX_STARTUP_MS:-}"
+benchmark_profile_default_threshold="${TINO_NVIM_PROFILE_DEFAULT_MAX_STARTUP_MS:-}"
 refresh_lockfile=0
 
 for arg in "$@"; do
@@ -91,9 +92,14 @@ nvim --headless "+MasonInstall ${required_lsp_servers[*]}" +qa
 
 if [[ "$benchmark_startup" == "1" ]]; then
     if [[ -f "$benchmark_script" ]]; then
+        effective_benchmark_threshold="$benchmark_threshold"
+        if [[ -z "$effective_benchmark_threshold" && -n "$benchmark_profile_default_threshold" ]]; then
+            effective_benchmark_threshold="$benchmark_profile_default_threshold"
+        fi
+
         echo "Running startup benchmark (TINO_NVIM_BENCHMARK_STARTUP=1)..."
-        if [[ -n "$benchmark_threshold" ]]; then
-            TINO_NVIM_MAX_STARTUP_MS="$benchmark_threshold" bash "$benchmark_script"
+        if [[ -n "$effective_benchmark_threshold" ]]; then
+            TINO_NVIM_MAX_STARTUP_MS="$effective_benchmark_threshold" bash "$benchmark_script"
         else
             bash "$benchmark_script"
         fi
