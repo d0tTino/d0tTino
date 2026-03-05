@@ -186,7 +186,8 @@ Dotfiles are organized into explicit stow-style packages under `dotfiles/` with 
 - `dotfiles/terminal/.config/wezterm/wezterm.lua` → optional GPU-accelerated WezTerm profile aligned with shell/tmux colors
 - `dotfiles/terminal/.config/tino/ghostty.toml.tmpl` → authored Ghostty template (renderer input)
 - `dotfiles/terminal/.config/tino/renderers/*.sh` → provider renderers that generate concrete config files from the terminal profile contract
-- `scripts/install_common.sh` → standard bootstrap script; on macOS/Linux it installs dependencies (`zsh`, `starship`, `tmux`, `neovim`, `cargo`), runs `scripts/setup-nvim.sh` to provision Neovim plugin + Mason LSP assets (headless), runs `scripts/setup-terminal-provider.sh "$terminal_provider"` to install/configure the selected terminal provider and trigger profile rendering, and then calls `scripts/install_dotfiles.sh` so managed rc files/symlinks are deployed to the target user home. For Ghostty, install precedence remains: keep preinstalled binary if present, try native package manager (`brew`/`apt-get`/`dnf`/`pacman`) next, then fall back to `cargo install --locked ghostty`. It installs zsh plugins under `~/.local/share/zsh/plugins` and does not directly edit ad-hoc rc content (Windows skips Ghostty and keeps Windows Terminal flow).
+- `scripts/bootstrap-dev-env.sh` → primary declarative bootstrap workflow with auditable stages. It orchestrates dependency install planning, `scripts/install_dotfiles.sh`, `scripts/setup-nvim.sh`, `scripts/setup-terminal-provider.sh`, and renderer contract validation. It emits both JSON and human-readable reports (host overlay, provider chosen, versions, skipped steps) and supports `--plan` to print exact actions without mutating state.
+- `scripts/install_common.sh` → legacy/compatibility bootstrap script; still available for broader OS-specific automation and optional Windows provisioning flags.
 - `scripts/setup-terminal-provider.sh <provider>` → entry point for provider-specific setup/rendering (`ghostty|wezterm|kitty|alacritty|windows-terminal`) via `~/.config/tino/terminal-profile.sh`
 - `scripts/install_dotfiles.sh` → deploys managed dotfiles into the user target (for example `$HOME`) by writing tracked rc files/symlinks; `dotfiles/shell/.zshrc` is the source of truth for plugin sourcing and `starship init`.
 - `scripts/migrate-shell-config.sh` → optional one-time manual migration that imports compatible legacy `~/.bashrc` exports/aliases/functions into runtime fragments at `~/.config/zsh/{env,aliases,functions}.zsh` (or `$XDG_CONFIG_HOME/zsh/...`) after creating a timestamped backup; it does not edit tracked repository dotfiles and is not required for bootstrap.
@@ -267,7 +268,13 @@ Expected artifacts are written under `.cache/tino/nvim-startup/`:
 - `.cache/tino/nvim-startup/summary.txt`
 
 ```bash
-./scripts/install_common.sh
+./scripts/bootstrap-dev-env.sh
+```
+
+Preview-only plan mode:
+
+```bash
+./scripts/bootstrap-dev-env.sh --plan
 ```
 
 ## Changelog (auto‑updated)
