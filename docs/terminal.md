@@ -93,10 +93,11 @@ Ensure the selected provider reports expected support and that unsupported featu
 ### 3) Missing plugin detection
 
 - Confirm shell plugin directories exist (or were cloned by bootstrap).
-- Confirm tmux plugin manager assets are present.
+- Confirm tmux plugin manager assets are present (`~/.tmux/plugins/tpm/tpm`).
 - Confirm Neovim headless setup completed without missing provider/plugin errors.
 
 If any plugin class is missing, re-run the canonical setup scripts above in order.
+For TPM specifically, `./scripts/install_common.sh` is the canonical recovery path.
 
 ## Troubleshooting
 
