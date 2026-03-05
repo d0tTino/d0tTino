@@ -9,7 +9,11 @@ except ModuleNotFoundError:  # Python < 3.11
     import tomli as tomllib
 
 from scripts.helpers.generate_palette_artifacts import ANSI_ORDER
-from scripts.helpers.starship_spec import REQUIRED_MODULE_KEYS, STARSHIP_PROMPT_FORMAT
+from scripts.helpers.starship_spec import (
+    REQUIRED_MODULE_KEYS,
+    REQUIRED_MODULE_VALUES,
+    STARSHIP_PROMPT_FORMAT,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 STARSHIP_PATH = REPO_ROOT / "dotfiles" / "shell" / ".config" / "starship.toml"
@@ -32,6 +36,7 @@ def expected_default_palette() -> tuple[str, dict[str, str]]:
 
 __all__ = [
     "REQUIRED_MODULE_KEYS",
+    "REQUIRED_MODULE_VALUES",
     "STARSHIP_PROMPT_FORMAT",
     "expected_default_palette",
     "load_starship",
