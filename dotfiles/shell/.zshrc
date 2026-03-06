@@ -10,6 +10,38 @@ source_if_readable() {
     fi
 }
 
+tino_warn_missing_zsh_plugin_once() {
+    local plugin_name="$1"
+    local plugin_entrypoint="$2"
+    local plugin_repo_url="$3"
+
+    if [[ -r "$plugin_entrypoint" ]]; then
+        return
+    fi
+
+    local warn_stamp="${XDG_CACHE_HOME:-$HOME/.cache}/d0ttino/zsh-${plugin_name}-missing-hint-shown"
+    if [[ -f "$warn_stamp" ]]; then
+        return
+    fi
+
+    mkdir -p "$(dirname "$warn_stamp")"
+
+    local install_common_script=""
+    if [[ -n "${D0TTINO_REPO_ROOT:-}" && -f "${D0TTINO_REPO_ROOT}/scripts/install_common.sh" ]]; then
+        install_common_script="${D0TTINO_REPO_ROOT}/scripts/install_common.sh"
+    elif [[ -f "$HOME/.local/share/d0ttino/scripts/install_common.sh" ]]; then
+        install_common_script="$HOME/.local/share/d0ttino/scripts/install_common.sh"
+    fi
+
+    if [[ -n "$install_common_script" ]]; then
+        printf 'Warning: zsh plugin "%s" is missing (%s). Run: %s\n' "$plugin_name" "$plugin_entrypoint" "$install_common_script" >&2
+    else
+        printf 'Warning: zsh plugin "%s" is missing (%s). Run: git clone --depth 1 %s %s\n' "$plugin_name" "$plugin_entrypoint" "$plugin_repo_url" "$ZSH_PLUGIN_DIR/$plugin_name" >&2
+    fi
+
+    : > "$warn_stamp"
+}
+
 TINO_ZSH_STARTUP_BUDGET_WARM_MS="${TINO_ZSH_STARTUP_BUDGET_WARM_MS:-80}"
 TINO_ZSH_STARTUP_BUDGET_COLD_MS="${TINO_ZSH_STARTUP_BUDGET_COLD_MS:-150}"
 
@@ -104,10 +136,18 @@ if command -v starship >/dev/null; then
     eval "$(starship init zsh)"
 fi
 
+tino_warn_missing_zsh_plugin_once \
+    "zsh-autosuggestions" \
+    "$ZSH_PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh" \
+    "https://github.com/zsh-users/zsh-autosuggestions"
 source_if_readable "$ZSH_PLUGIN_DIR/zsh-autosuggestions/zsh-autosuggestions.zsh"
 
 # Keep syntax-highlighting as the final Phase-1 interactive enhancement so
 # it can wrap widgets defined by prompt/plugins and reduce ordering surprises.
+tino_warn_missing_zsh_plugin_once \
+    "zsh-syntax-highlighting" \
+    "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" \
+    "https://github.com/zsh-users/zsh-syntax-highlighting"
 source_if_readable "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
 # Phase 2: deferred non-critical/non-prompt startup path.
