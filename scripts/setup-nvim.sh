@@ -14,6 +14,65 @@ benchmark_threshold="${TINO_NVIM_MAX_STARTUP_MS:-}"
 benchmark_profile_default_threshold="${TINO_NVIM_PROFILE_DEFAULT_MAX_STARTUP_MS:-}"
 refresh_lockfile=0
 
+lazy_lock_and_plugins_in_sync() {
+    local sync_check
+    sync_check="$(nvim --headless +'lua <<"EOF"\
+local ok_config, config = pcall(require, "lazy.core.config")\
+local ok_lock, lock = pcall(require, "lazy.core.lock")\
+if not (ok_config and ok_lock) then\
+  vim.cmd("cquit 1")\
+end\
+\
+local locked = lock.load()\
+if type(locked) ~= "table" then\
+  vim.cmd("cquit 1")\
+end\
+\
+for name, plugin in pairs(config.plugins) do\
+  if plugin._ and plugin._.installed and not locked[name] then\
+    vim.cmd("cquit 1")\
+  end\
+end\
+\
+for name, pin in pairs(locked) do\
+  local plugin = config.plugins[name]\
+  if not plugin or vim.fn.isdirectory(plugin.dir) == 0 then\
+    vim.cmd("cquit 1")\
+  end\
+\
+  local head = vim.fn.system({ "git", "-C", plugin.dir, "rev-parse", "HEAD" })\
+  if vim.v.shell_error ~= 0 then\
+    vim.cmd("cquit 1")\
+  end\
+\
+  head = (head:gsub("%s+", ""))\
+  if pin.commit ~= head then\
+    vim.cmd("cquit 1")\
+  end\
+end\
+\
+print("in-sync")\
+vim.cmd("qa!")\
+EOF' +qa 2>/dev/null || true)"
+
+    [[ "$sync_check" == *"in-sync"* ]]
+}
+
+get_installed_mason_servers() {
+    nvim --headless +'lua <<"EOF"\
+local ok_registry, registry = pcall(require, "mason-registry")\
+if not ok_registry then\
+  vim.cmd("cquit 1")\
+end\
+\
+for _, package in ipairs(registry.get_installed_packages()) do\
+  print(package.name)\
+end\
+\
+vim.cmd("qa!")\
+EOF' +qa
+}
+
 for arg in "$@"; do
     case "$arg" in
         --refresh-lockfile)
@@ -83,12 +142,38 @@ if [[ "$refresh_lockfile" == "1" ]]; then
     fi
     echo "Lockfile refresh complete. Commit dotfiles/nvim/.config/nvim/lazy-lock.json for deterministic installs."
 else
-    echo "Syncing Neovim plugins (headless)..."
-    nvim --headless "+Lazy! sync" +qa
+    if lazy_lock_and_plugins_in_sync; then
+        echo "Neovim plugins already match lazy-lock.json; skipping plugin sync."
+    else
+        echo "Plugin state differs from lazy-lock.json; restoring pinned plugin state (headless)..."
+        nvim --headless "+Lazy! restore" +qa
+    fi
 fi
 
-echo "Installing Mason LSP servers (headless): ${required_lsp_servers[*]}"
-nvim --headless "+MasonInstall ${required_lsp_servers[*]}" +qa
+declare -a installed_mason_servers=()
+if mapfile -t installed_mason_servers < <(get_installed_mason_servers); then
+    declare -A installed_mason_set=()
+    for server in "${installed_mason_servers[@]}"; do
+        installed_mason_set["$server"]=1
+    done
+
+    missing_lsp_servers=()
+    for server in "${required_lsp_servers[@]}"; do
+        if [[ -z "${installed_mason_set[$server]+x}" ]]; then
+            missing_lsp_servers+=("$server")
+        fi
+    done
+else
+    echo "Warning: could not query installed Mason packages; installing the canonical server set." >&2
+    missing_lsp_servers=("${required_lsp_servers[@]}")
+fi
+
+if [[ ${#missing_lsp_servers[@]} -eq 0 ]]; then
+    echo "All Mason LSP servers from lsp_servers.txt are already installed; skipping MasonInstall."
+else
+    echo "Installing missing Mason LSP servers (headless): ${missing_lsp_servers[*]}"
+    nvim --headless "+MasonInstall ${missing_lsp_servers[*]}" +qa
+fi
 
 if [[ "$benchmark_startup" == "1" ]]; then
     if [[ -f "$benchmark_script" ]]; then
