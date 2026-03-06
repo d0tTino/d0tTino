@@ -4,6 +4,7 @@ set -euo pipefail
 provider="${1:-}"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 strict_mode="${TINO_TERMINAL_STRICT:-1}"
+persist_fallback_mode="${TINO_TERMINAL_PERSIST_FALLBACK:-0}"
 selected_provider="$provider"
 readonly TERMINAL_CAPABILITY_PROBE_ORDER=(ghostty wezterm kitty alacritty)
 
@@ -173,6 +174,59 @@ resolve_provider_via_capability_probe() {
     return 1
 }
 
+upsert_host_override_provider() {
+    local override_path="$1"
+    local persisted_provider="$2"
+
+    mkdir -p "$(dirname "$override_path")"
+
+    if [[ ! -f "$override_path" ]]; then
+        printf '# Host-specific overrides for tino.\n' >"$override_path"
+    fi
+
+    if rg -q '^export TINO_TERMINAL_PROVIDER=' "$override_path"; then
+        python - "$override_path" "$persisted_provider" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+provider = sys.argv[2]
+lines = path.read_text(encoding="utf-8").splitlines()
+updated = []
+for line in lines:
+    if line.startswith("export TINO_TERMINAL_PROVIDER="):
+        updated.append(f'export TINO_TERMINAL_PROVIDER="{provider}"')
+    else:
+        updated.append(line)
+path.write_text("\n".join(updated) + "\n", encoding="utf-8")
+PY
+        return
+    fi
+
+    if [[ -s "$override_path" ]]; then
+        printf '\n' >>"$override_path"
+    fi
+    printf 'export TINO_TERMINAL_PROVIDER="%s"\n' "$persisted_provider" >>"$override_path"
+}
+
+handle_persisted_fallback_provider() {
+    local requested_provider="$1"
+    local fallback_provider="$2"
+    local host_override_path="$XDG_CONFIG_TINO_DIR/host-overrides.sh"
+
+    if [[ "$persist_fallback_mode" == "1" ]]; then
+        upsert_host_override_provider "$host_override_path" "$fallback_provider"
+        echo "Persisted fallback provider in $host_override_path: $requested_provider -> $fallback_provider" >&2
+        return
+    fi
+
+    if [[ "$persist_fallback_mode" == "print" ]]; then
+        echo "Fallback provider detected ($requested_provider -> $fallback_provider). Persist with:" >&2
+        echo "  export TINO_TERMINAL_PROVIDER=\"$fallback_provider\"" >&2
+        echo "Then add/update that line in $host_override_path for deterministic future sessions." >&2
+    fi
+}
+
 ensure_provider_installed() {
     if [[ "$provider" == "windows-terminal" ]]; then
         return
@@ -189,6 +243,7 @@ ensure_provider_installed() {
         selected_provider="$fallback_provider"
         if [[ "$selected_provider" != "$provider" ]]; then
             echo "Warning: preferred provider '$provider' is unavailable; using '$selected_provider' based on capability probe." >&2
+            handle_persisted_fallback_provider "$provider" "$selected_provider"
         fi
         return
     fi
@@ -213,6 +268,7 @@ validate_windows_terminal_inputs() {
 }
 
 profile_script="${XDG_CONFIG_HOME:-$HOME/.config}/tino/terminal-profile.sh"
+XDG_CONFIG_TINO_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tino"
 if [[ ! -x "$profile_script" ]]; then
     echo "Error: missing terminal profile contract at $profile_script" >&2
     exit 1
