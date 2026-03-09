@@ -193,6 +193,7 @@ Dotfiles are organized into explicit stow-style packages under `dotfiles/` with 
 - `scripts/bootstrap-dev-env.sh` → primary declarative bootstrap workflow with auditable stages. It orchestrates dependency install planning, `scripts/install_dotfiles.sh`, `scripts/setup-nvim.sh`, `scripts/setup-terminal-provider.sh`, and renderer contract validation. It emits both JSON and human-readable reports (host overlay, provider chosen, versions, skipped steps) and supports `--plan` to print exact actions without mutating state.
 - `scripts/install_common.sh` → legacy/compatibility bootstrap script; still available for broader OS-specific automation and optional Windows provisioning flags, and remains the canonical TPM installer/recovery path (`~/.tmux/plugins/tpm/tpm`).
 - `scripts/setup-terminal-provider.sh <provider>` → entry point for provider-specific setup/rendering (`ghostty|wezterm|kitty|alacritty|windows-terminal`) via `~/.config/tino/terminal-profile.sh`
+- `scripts/qa_terminal_modernization.sh` → canonical terminal modernization acceptance gate after config changes (zsh/tmux/starship/nvim/renderer contract checks) with human-readable output + CI JSON report (`.cache/tino/qa-terminal-modernization/report.json`).
 - `scripts/install_dotfiles.sh` → deploys managed dotfiles into the user target (for example `$HOME`) by writing tracked rc files/symlinks; `dotfiles/shell/.zshrc` is the source of truth for plugin sourcing and `starship init`.
 - `scripts/migrate-shell-config.sh` → optional one-time manual migration that imports compatible legacy `~/.bashrc` exports/aliases/functions into runtime fragments at `~/.config/zsh/{env,aliases,functions}.zsh` (or `$XDG_CONFIG_HOME/zsh/...`) after creating a timestamped backup; it does not edit tracked repository dotfiles and is not required for bootstrap.
 - `hosts/desktop` and `hosts/work_laptop` → machine-specific overrides
@@ -280,6 +281,13 @@ Preview-only plan mode:
 ```bash
 ./scripts/bootstrap-dev-env.sh --plan
 ```
+
+Terminal modernization acceptance gate (run after shell/tmux/nvim/terminal profile changes):
+
+```bash
+./scripts/qa_terminal_modernization.sh
+```
+
 
 ## Changelog (auto‑updated)
 
