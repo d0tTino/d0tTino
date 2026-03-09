@@ -73,6 +73,14 @@ Recommended flow:
 
 Use this checklist after install/update and before considering terminal setup complete.
 
+For any shell/tmux/nvim/terminal-profile config change, run the canonical acceptance gate:
+
+```bash
+./scripts/qa_terminal_modernization.sh
+```
+
+The gate emits a human-readable summary to stdout and a machine-readable JSON report at `.cache/tino/qa-terminal-modernization/report.json` for CI ingestion.
+
 ### 1) Startup timing
 
 - Run warm-start timing checks for interactive shell startup.
