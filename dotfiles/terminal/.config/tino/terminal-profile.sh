@@ -26,6 +26,42 @@ readonly TINO_TERMINAL_PROVIDER_DEFAULT_ORDER=(
     alacritty
 )
 
+terminal_is_windows_host() {
+    case "${OSTYPE:-}" in
+        msys*|cygwin*|win32*)
+            return 0
+            ;;
+    esac
+
+    if [[ "${OS:-}" == "Windows_NT" ]]; then
+        return 0
+    fi
+
+    return 1
+}
+
+terminal_canonical_provider() {
+    local override_provider="${TINO_TERMINAL_CANONICAL_PROVIDER:-}"
+
+    case "$override_provider" in
+        ghostty|wezterm|kitty|alacritty|windows-terminal)
+            printf '%s\n' "$override_provider"
+            return 0
+            ;;
+        "")
+            ;;
+        *)
+            ;;
+    esac
+
+    if terminal_is_windows_host; then
+        printf 'windows-terminal\n'
+        return 0
+    fi
+
+    printf 'ghostty\n'
+}
+
 readonly TINO_TERMINAL_CONTRACT_PROVIDERS=(
     ghostty
     wezterm
@@ -51,7 +87,7 @@ terminal_provider_preferences() {
         done
     fi
 
-    combined=("${normalized[@]}" "${TINO_TERMINAL_PROVIDER_DEFAULT_ORDER[@]}")
+    combined=("$(terminal_canonical_provider)" "${normalized[@]}" "${TINO_TERMINAL_PROVIDER_DEFAULT_ORDER[@]}")
 
     awk '!seen[$0]++' < <(printf '%s\n' "${combined[@]}")
 }
@@ -176,6 +212,11 @@ render_provider() {
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ ${1:-} == "--provider-preferences" ]]; then
         terminal_provider_preferences
+        exit 0
+    fi
+
+    if [[ ${1:-} == "--canonical-provider" ]]; then
+        terminal_canonical_provider
         exit 0
     fi
 

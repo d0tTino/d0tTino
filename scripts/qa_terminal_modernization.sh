@@ -136,6 +136,8 @@ zshrc_path="$repo_root/dotfiles/shell/.zshrc"
 starship_config_path="$repo_root/dotfiles/shell/.config/starship.toml"
 tmux_config_path="$repo_root/dotfiles/tmux/.tmux.conf"
 renderer_contract_script="$repo_root/dotfiles/terminal/.config/tino/validate-renderer-contract.sh"
+terminal_profile_script="$repo_root/dotfiles/terminal/.config/tino/terminal-profile.sh"
+terminal_defaults_path="$repo_root/dotfiles/terminal/.config/tino/terminal-defaults.sh"
 lockfile_check_script="$repo_root/scripts/check-nvim-lockfile.py"
 benchmark_script="$repo_root/scripts/benchmark_nvim_startup.sh"
 
@@ -239,6 +241,45 @@ if command -v tmux >/dev/null 2>&1; then
     fi
 else
     record_check "tmux_runtime_sanity" "tmux can start with managed config" "warn" "tmux binary not found on PATH; skipped runtime sanity"
+fi
+
+
+active_host_profile="${TINO_HOST_PROFILE:-}"
+if [[ -z "$active_host_profile" ]]; then
+    detected_host_for_profile="$(hostname 2>/dev/null || true)"
+    active_host_profile="$(resolve_host_overlay "$repo_root/hosts" "$detected_host_for_profile")"
+fi
+
+active_provider_default=""
+if [[ -f "$terminal_defaults_path" ]]; then
+    active_provider_default="$(
+        unset TINO_TERMINAL_PROVIDER
+        source "$terminal_defaults_path"
+        if [[ -n "$active_host_profile" ]]; then
+            host_override_path="$repo_root/hosts/$active_host_profile/.config/tino/host-overrides.sh"
+            if [[ -f "$host_override_path" ]]; then
+                source "$host_override_path"
+            fi
+        fi
+        printf '%s' "${TINO_TERMINAL_PROVIDER:-}"
+    )"
+fi
+
+canonical_provider=""
+if [[ -x "$terminal_profile_script" ]]; then
+    canonical_provider="$(bash "$terminal_profile_script" --canonical-provider 2>/dev/null || true)"
+fi
+
+if [[ -z "$canonical_provider" ]]; then
+    canonical_provider="ghostty"
+fi
+
+if [[ -z "$active_provider_default" ]]; then
+    record_check "terminal_provider_default_policy" "active host default provider matches canonical provider policy" "warn" "unable to resolve active provider default from terminal defaults/host overrides"
+elif [[ "$active_provider_default" == "$canonical_provider" ]]; then
+    record_check "terminal_provider_default_policy" "active host default provider matches canonical provider policy" "pass" "active_default=$active_provider_default canonical=$canonical_provider host_profile=${active_host_profile:-none}"
+else
+    record_check "terminal_provider_default_policy" "active host default provider matches canonical provider policy" "warn" "active_default=$active_provider_default canonical=$canonical_provider host_profile=${active_host_profile:-none}; non-canonical defaults should be treated as compatibility fallback"
 fi
 
 if [[ -x "$renderer_contract_script" ]]; then
