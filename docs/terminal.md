@@ -20,6 +20,14 @@ The terminal experience is composed of four layers:
 1. **Shell (`zsh`)**
    - Interactive runtime entrypoint from managed dotfiles.
    - Loads shared defaults and optional host overrides.
+   - Prompt initialization is Starship-only via `starship init ...`.
+
+### Prompt configuration source of truth
+
+- `dotfiles/shell/.config/starship.toml` is the single prompt configuration source for all supported shells.
+- `dotfiles/shell/.zshrc` owns the zsh prompt bootstrap (`eval "$(starship init zsh)"`).
+- `powershell/user_profile.ps1` owns the PowerShell prompt bootstrap (`starship init powershell`) and points `STARSHIP_CONFIG` at the tracked Starship config.
+- Keep prompt behavior Starship-only across managed shell profiles.
 
 2. **Multiplexer (`tmux`)**
    - Stable session management and keybinding layer.
