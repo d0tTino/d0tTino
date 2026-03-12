@@ -126,6 +126,39 @@ Ensure the selected provider reports expected support and that unsupported featu
 If any plugin class is missing, re-run the canonical setup scripts above in order.
 For TPM specifically, `./scripts/install_common.sh` is the canonical recovery path.
 
+
+## Starship prompt modules and cloud-context toggles
+
+`dotfiles/shell/.config/starship.toml` keeps only these always-on core modules in the prompt format:
+
+- `directory`
+- `git_branch`
+- `git_status`
+- `status`
+- `time`
+
+Cloud modules are context-gated so they do not appear in unrelated shells:
+
+- `kubernetes` appears when kube context environment is present (`KUBECONFIG`) or when explicitly enabled via `STARSHIP_ENABLE_K8S`.
+- `aws` appears when AWS context environment is present (`AWS_PROFILE` or `AWS_VAULT`) or when explicitly enabled via `STARSHIP_ENABLE_AWS`.
+
+### Recommended profile defaults
+
+Use host overlays to set stable defaults based on machine role:
+
+- **desktop profile (`hosts/desktop`)**
+  - Keep cloud toggles opt-in by default to reduce prompt noise in general development shells.
+  - Enable per-session when needed:
+    - `export STARSHIP_ENABLE_K8S=1`
+    - `export STARSHIP_ENABLE_AWS=1`
+- **work laptop profile (`hosts/work_laptop`)**
+  - Keep cloud toggles opt-in unless your daily workflow is cloud-heavy.
+  - If cloud tooling is routine, set one or both toggles in host overrides so context is visible automatically:
+    - `export STARSHIP_ENABLE_K8S=1`
+    - `export STARSHIP_ENABLE_AWS=1`
+
+Tip: prefer setting these in host-specific override files instead of global shell defaults so behavior stays intentional per machine.
+
 ## Troubleshooting
 
 ### Terminal settings not applying
