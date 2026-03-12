@@ -41,6 +41,20 @@ The terminal experience is composed of four layers:
    - Provider-specific setup/rendering is routed through one script.
    - Shared profile defaults are interpreted through renderer capability contracts.
 
+### Canonical provider policy
+
+Provider defaults are policy-driven and deterministic:
+
+- **Linux/macOS desktop hosts:** canonical provider is **Ghostty**.
+- **Windows hosts:** canonical provider is **Windows Terminal**.
+- **WezTerm, Kitty, and Alacritty** are supported as **fallback/compatibility targets** when the canonical provider is unavailable or when explicitly requested.
+
+Implementation details:
+
+- `dotfiles/terminal/.config/tino/terminal-profile.sh --canonical-provider` resolves the host canonical provider.
+- `scripts/setup-terminal-provider.sh` logs provider resolution decisions and uses explicit fallback logs when it must deviate from the requested/canonical provider.
+- `scripts/qa_terminal_modernization.sh` warns when active host defaults (`TINO_TERMINAL_PROVIDER` from defaults + host override) do not match canonical provider policy.
+
 ## Host overrides model (`hosts/desktop`, `hosts/work_laptop`)
 
 Configuration precedence is:

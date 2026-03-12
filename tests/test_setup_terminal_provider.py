@@ -201,7 +201,7 @@ def test_setup_terminal_provider_falls_back_to_first_available_provider(tmp_path
     )
 
     output = f"{result.stdout}\n{result.stderr}"
-    assert "using 'kitty' based on capability probe" in output
+    assert "using fallback 'kitty'" in output
     assert render_log.read_text().strip() == "kitty " + str(repo)
     assert "Terminal provider configured: kitty" in result.stdout
 
@@ -350,3 +350,43 @@ def test_setup_terminal_provider_prints_persist_instructions_when_requested(tmp_
     output = f"{result.stdout}\n{result.stderr}"
     assert "Fallback provider detected (ghostty -> kitty). Persist with:" in output
     assert 'export TINO_TERMINAL_PROVIDER="kitty"' in output
+
+
+def test_setup_terminal_provider_logs_compatibility_target_request(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / "repo"
+    scripts_dir = repo / "scripts"
+    scripts_dir.mkdir(parents=True)
+    shutil.copy(repo_root / "scripts" / "setup-terminal-provider.sh", scripts_dir / "setup-terminal-provider.sh")
+
+    render_log = tmp_path / "render.log"
+    xdg_config_home = _create_terminal_profile(
+        tmp_path,
+        "#!/usr/bin/env bash\n"
+        "if [[ ${1:-} == '--canonical-provider' ]]; then\n"
+        "  echo ghostty\n"
+        "  exit 0\n"
+        "fi\n"
+        f"echo \"$@\" > '{render_log}'\n",
+    )
+    bin_dir = _create_minimal_bin(tmp_path)
+    wezterm = bin_dir / "wezterm"
+    wezterm.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+    wezterm.chmod(0o755)
+
+    env = os.environ.copy()
+    env.update({"XDG_CONFIG_HOME": str(xdg_config_home), "PATH": str(bin_dir)})
+
+    result = subprocess.run(
+        ["/bin/bash", "scripts/setup-terminal-provider.sh", "wezterm"],
+        cwd=repo,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    output = f"{result.stdout}\n{result.stderr}"
+    assert "compatibility target requested" in output
+    assert render_log.read_text().strip() == "wezterm " + str(repo)
+    assert "Terminal provider configured: wezterm" in result.stdout

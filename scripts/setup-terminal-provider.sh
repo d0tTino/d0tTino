@@ -6,7 +6,39 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 strict_mode="${TINO_TERMINAL_STRICT:-1}"
 persist_fallback_mode="${TINO_TERMINAL_PERSIST_FALLBACK:-0}"
 selected_provider="$provider"
-readonly TERMINAL_CAPABILITY_PROBE_ORDER=(ghostty wezterm kitty alacritty)
+readonly TERMINAL_CAPABILITY_PROBE_ORDER=(ghostty wezterm kitty alacritty windows-terminal)
+
+canonical_provider=""
+
+log_provider_resolution() {
+    local message="$1"
+    echo "Provider resolution: $message" >&2
+}
+
+resolve_canonical_provider() {
+    if [[ -x "$profile_script" ]]; then
+        local resolved
+        resolved="$("$profile_script" --canonical-provider 2>/dev/null || true)"
+        if [[ -n "$resolved" ]]; then
+            printf '%s' "$resolved"
+            return 0
+        fi
+    fi
+
+    case "${OSTYPE:-}" in
+        msys*|cygwin*|win32*)
+            printf 'windows-terminal'
+            return 0
+            ;;
+    esac
+    if [[ "${OS:-}" == "Windows_NT" ]]; then
+        printf 'windows-terminal'
+        return 0
+    fi
+
+    printf 'ghostty'
+}
+
 
 if [[ -z "$provider" ]]; then
     echo "Usage: $(basename "$0") <ghostty|wezterm|kitty|alacritty|windows-terminal>" >&2
@@ -80,6 +112,14 @@ provider_install_url() {
 provider_is_available() {
     local provider_name="$1"
     local binary
+
+    if [[ "$provider_name" == "windows-terminal" ]]; then
+        case "${OSTYPE:-}" in
+            msys*|cygwin*|win32*) return 0 ;;
+        esac
+        [[ "${OS:-}" == "Windows_NT" ]] && return 0
+        return 1
+    fi
 
     binary="$(provider_binary "$provider_name")" || return 1
     command -v "$binary" >/dev/null 2>&1
@@ -161,14 +201,16 @@ resolve_provider_via_capability_probe() {
     fi
 
     if [[ ${#candidates[@]} -eq 0 ]]; then
-        candidates=("${TERMINAL_CAPABILITY_PROBE_ORDER[@]}")
+        candidates=("$canonical_provider" "${TERMINAL_CAPABILITY_PROBE_ORDER[@]}")
     fi
 
     for candidate in "${candidates[@]}"; do
         if provider_is_available "$candidate"; then
+            log_provider_resolution "probe selected '$candidate' (canonical='$canonical_provider', requested='$provider')"
             echo "$candidate"
             return 0
         fi
+        log_provider_resolution "probe skipped unavailable candidate '$candidate'"
     done
 
     return 1
@@ -228,13 +270,25 @@ handle_persisted_fallback_provider() {
 }
 
 ensure_provider_installed() {
+    canonical_provider="$(resolve_canonical_provider)"
+    log_provider_resolution "host canonical provider is '$canonical_provider'"
+
     if [[ "$provider" == "windows-terminal" ]]; then
+        selected_provider="$provider"
+        log_provider_resolution "explicit provider '$provider' requested; skipping install checks"
         return
+    fi
+
+    if [[ "$provider" != "$canonical_provider" ]]; then
+        log_provider_resolution "requested '$provider' differs from canonical '$canonical_provider' (compatibility target requested)"
+    else
+        log_provider_resolution "requested provider matches canonical policy"
     fi
 
     attempt_provider_install "$provider"
     if provider_is_available "$provider"; then
         selected_provider="$provider"
+        log_provider_resolution "selected '$selected_provider' after availability check"
         return
     fi
 
@@ -242,7 +296,7 @@ ensure_provider_installed() {
     if fallback_provider="$(resolve_provider_via_capability_probe)"; then
         selected_provider="$fallback_provider"
         if [[ "$selected_provider" != "$provider" ]]; then
-            echo "Warning: preferred provider '$provider' is unavailable; using '$selected_provider' based on capability probe." >&2
+            echo "Warning: requested provider '$provider' is unavailable; using fallback '$selected_provider'." >&2
             handle_persisted_fallback_provider "$provider" "$selected_provider"
         fi
         return
