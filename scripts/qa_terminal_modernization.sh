@@ -71,6 +71,9 @@ resolve_benchmark_threshold() {
 }
 
 benchmark_threshold="${TINO_QA_NVIM_MAX_STARTUP_MS:-${TINO_NVIM_MAX_STARTUP_MS:-$(resolve_benchmark_threshold)}}"
+zsh_startup_budget_warm_ms="${TINO_QA_ZSH_STARTUP_BUDGET_WARM_MS:-${TINO_ZSH_STARTUP_BUDGET_WARM_MS:-80}}"
+zsh_startup_budget_cold_ms="${TINO_QA_ZSH_STARTUP_BUDGET_COLD_MS:-${TINO_ZSH_STARTUP_BUDGET_COLD_MS:-150}}"
+zsh_startup_use_zprof="${TINO_QA_ZSH_STARTUP_USE_ZPROF:-0}"
 
 mkdir -p "$report_dir"
 
@@ -110,6 +113,25 @@ run_check_command() {
     return 1
 }
 
+measure_zsh_startup_ms() {
+    local zsh_path="$1"
+    local profile_flag="$2"
+
+    local elapsed
+    elapsed="$(TIMEFORMAT='%3R'; { time env \
+        ZDOTDIR="$repo_root/dotfiles/shell" \
+        HOME="$HOME" \
+        TINO_ZSH_PROFILE="$profile_flag" \
+        TINO_ZSH_DEFER="1" \
+        "$zsh_path" -i -c 'exit' >/dev/null 2>/dev/null; } 2>&1)"
+
+    python3 -c 'import sys
+raw=sys.argv[1].strip()
+if not raw:
+    raise SystemExit(1)
+print(f"{float(raw) * 1000:.2f}")' "$elapsed"
+}
+
 zshrc_path="$repo_root/dotfiles/shell/.zshrc"
 starship_config_path="$repo_root/dotfiles/shell/.config/starship.toml"
 tmux_config_path="$repo_root/dotfiles/tmux/.tmux.conf"
@@ -141,6 +163,35 @@ if [[ -r "$zsh_plugin_root/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" 
     record_check "zsh_plugin_path_syntax_highlighting" "zsh-syntax-highlighting plugin file is readable" "pass" "$zsh_plugin_root/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 else
     record_check "zsh_plugin_path_syntax_highlighting" "zsh-syntax-highlighting plugin file is readable" "warn" "missing runtime plugin path: $zsh_plugin_root/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+fi
+
+if command -v zsh >/dev/null 2>&1; then
+    zsh_path="$(command -v zsh)"
+    profile_flag="0"
+    method_label="timing"
+    if [[ "$zsh_startup_use_zprof" == "1" ]]; then
+        profile_flag="1"
+        method_label="timing+zprof"
+    fi
+
+    cold_ms="$(measure_zsh_startup_ms "$zsh_path" "$profile_flag" 2>/dev/null || true)"
+    warm_ms="$(measure_zsh_startup_ms "$zsh_path" "$profile_flag" 2>/dev/null || true)"
+
+    if [[ -z "$cold_ms" || -z "$warm_ms" ]]; then
+        record_check "zsh_startup_threshold" "zsh startup benchmark is within warm/cold thresholds" "fail" "unable to measure zsh startup time (method=${method_label})"
+    elif python3 -c 'import sys
+warm=float(sys.argv[1]); warm_budget=float(sys.argv[2]); cold=float(sys.argv[3]); cold_budget=float(sys.argv[4])
+raise SystemExit(0 if warm <= warm_budget and cold <= cold_budget else 1)' "$warm_ms" "$zsh_startup_budget_warm_ms" "$cold_ms" "$zsh_startup_budget_cold_ms"; then
+        record_check "zsh_startup_threshold" "zsh startup benchmark is within warm/cold thresholds" "pass" "method=${method_label} warm=${warm_ms}ms<=${zsh_startup_budget_warm_ms}ms cold=${cold_ms}ms<=${zsh_startup_budget_cold_ms}ms"
+    elif python3 -c 'import sys
+warm=float(sys.argv[1]); warm_budget=float(sys.argv[2]); cold=float(sys.argv[3]); cold_budget=float(sys.argv[4])
+raise SystemExit(0 if warm <= warm_budget or cold <= cold_budget else 1)' "$warm_ms" "$zsh_startup_budget_warm_ms" "$cold_ms" "$zsh_startup_budget_cold_ms"; then
+        record_check "zsh_startup_threshold" "zsh startup benchmark is within warm/cold thresholds" "warn" "method=${method_label} warm=${warm_ms}ms (budget=${zsh_startup_budget_warm_ms}ms), cold=${cold_ms}ms (budget=${zsh_startup_budget_cold_ms}ms)"
+    else
+        record_check "zsh_startup_threshold" "zsh startup benchmark is within warm/cold thresholds" "fail" "method=${method_label} warm=${warm_ms}ms>${zsh_startup_budget_warm_ms}ms cold=${cold_ms}ms>${zsh_startup_budget_cold_ms}ms"
+    fi
+else
+    record_check "zsh_startup_threshold" "zsh startup benchmark is within warm/cold thresholds" "warn" "zsh binary not found on PATH; skipped startup benchmark"
 fi
 
 run_check_command "starship_toml_parse" "starship TOML parses cleanly" \
@@ -245,6 +296,8 @@ fi
     printf '  "overall_status": "%s",\n' "$(json_escape "$overall_status")"
     printf '  "counts": {"pass": %d, "warn": %d, "fail": %d},\n' "$pass_count" "$warn_count" "$fail_count"
     printf '  "benchmark_threshold_ms": %s,\n' "$(json_escape "$benchmark_threshold")"
+    printf '  "zsh_startup_budget_warm_ms": %s,\n' "$(json_escape "$zsh_startup_budget_warm_ms")"
+    printf '  "zsh_startup_budget_cold_ms": %s,\n' "$(json_escape "$zsh_startup_budget_cold_ms")"
     printf '  "checks": [\n'
 
     for i in "${!CHECK_IDS[@]}"; do
