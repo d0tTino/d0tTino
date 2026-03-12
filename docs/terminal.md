@@ -89,6 +89,17 @@ For any shell/tmux/nvim/terminal-profile config change, run the canonical accept
 
 The gate emits a human-readable summary to stdout and a machine-readable JSON report at `.cache/tino/qa-terminal-modernization/report.json` for CI ingestion.
 
+Neovim startup threshold resolution in `qa_terminal_modernization.sh` is deterministic:
+
+1. `TINO_QA_NVIM_MAX_STARTUP_MS` (QA-only hard override)
+2. `TINO_NVIM_MAX_STARTUP_MS` (global benchmark override)
+3. Host profile default from `hosts/<profile>/.config/tino/host-overrides.sh`
+   - desktop profile default: `100ms`
+   - work_laptop profile default: `140ms`
+4. Fallback baseline when no host profile is detected: `100ms`
+
+Use `TINO_NVIM_MAX_STARTUP_MS` to temporarily tighten or relax the startup SLO without editing host profiles.
+
 ### 1) Startup timing
 
 - Run warm-start timing checks for interactive shell startup.

@@ -5,7 +5,72 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 report_dir="${TINO_QA_REPORT_DIR:-$repo_root/.cache/tino/qa-terminal-modernization}"
 json_report="${TINO_QA_JSON_REPORT:-$report_dir/report.json}"
 renderer_json_report="${TINO_QA_RENDERER_JSON_REPORT:-$report_dir/renderer-contract.json}"
-benchmark_threshold="${TINO_QA_NVIM_MAX_STARTUP_MS:-${TINO_NVIM_MAX_STARTUP_MS:-250}}"
+
+resolve_host_overlay() {
+    local hosts_root="$1"
+    local raw_host="$2"
+
+    if [[ -z "$raw_host" ]]; then
+        return
+    fi
+
+    local normalized_lower="${raw_host,,}"
+    local normalized_slug
+    normalized_slug="$(printf '%s' "$normalized_lower" | sed -E 's/[^a-z0-9]+/_/g; s/^_+|_+$//g')"
+    local short_host="${normalized_lower%%.*}"
+    local short_slug
+    short_slug="$(printf '%s' "$short_host" | sed -E 's/[^a-z0-9]+/_/g; s/^_+|_+$//g')"
+
+    local -a candidates=(
+        "$raw_host"
+        "$normalized_lower"
+        "$normalized_slug"
+        "$short_host"
+        "$short_slug"
+    )
+
+    local candidate
+    for candidate in "${candidates[@]}"; do
+        [[ -z "$candidate" ]] && continue
+        if [[ -d "$hosts_root/$candidate" ]]; then
+            printf '%s\n' "$candidate"
+            return
+        fi
+    done
+}
+
+resolve_benchmark_threshold() {
+    local default_threshold="100"
+    local selected_host="${TINO_HOST_PROFILE:-}"
+
+    if [[ -z "$selected_host" ]]; then
+        local detected_host
+        detected_host="$(hostname 2>/dev/null || true)"
+        selected_host="$(resolve_host_overlay "$repo_root/hosts" "$detected_host")"
+    fi
+
+    if [[ -n "$selected_host" ]]; then
+        local host_override_path="$repo_root/hosts/$selected_host/.config/tino/host-overrides.sh"
+        if [[ -f "$host_override_path" ]]; then
+            local host_threshold=""
+            local profile_default_threshold=""
+            host_threshold="$({ source "$host_override_path"; printf '%s' "${TINO_NVIM_MAX_STARTUP_MS:-}"; })"
+            profile_default_threshold="$({ source "$host_override_path"; printf '%s' "${TINO_NVIM_PROFILE_DEFAULT_MAX_STARTUP_MS:-}"; })"
+            if [[ -n "$host_threshold" ]]; then
+                printf '%s\n' "$host_threshold"
+                return
+            fi
+            if [[ -n "$profile_default_threshold" ]]; then
+                printf '%s\n' "$profile_default_threshold"
+                return
+            fi
+        fi
+    fi
+
+    printf '%s\n' "$default_threshold"
+}
+
+benchmark_threshold="${TINO_QA_NVIM_MAX_STARTUP_MS:-${TINO_NVIM_MAX_STARTUP_MS:-$(resolve_benchmark_threshold)}}"
 
 mkdir -p "$report_dir"
 
