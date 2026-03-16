@@ -348,7 +348,7 @@ set_default_shell() {
         prompt)
             if [[ ! -t 0 ]]; then
                 echo "Skipping shell change prompt in non-interactive mode"
-                action_message="Rerun interactively or use --set-default-shell=force"
+                action_message="deferred action required: run 'chsh -s $zsh_path'"
             else
                 read -r -p "Set default shell to $zsh_path using chsh? [y/N] " response
                 if [[ $response =~ ^[Yy]$ ]]; then
