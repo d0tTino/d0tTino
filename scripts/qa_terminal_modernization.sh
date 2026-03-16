@@ -113,6 +113,42 @@ run_check_command() {
     return 1
 }
 
+capture_terminal_runtime_diagnostic() {
+    local check_id="$1"
+    local description="$2"
+    local binary_name="$3"
+    local version_subcommand="$4"
+    local hint_subcommand="$5"
+    local hint_label="$6"
+
+    if ! command -v "$binary_name" >/dev/null 2>&1; then
+        record_check "$check_id" "$description" "warn" "$binary_name not found on PATH; runtime diagnostics skipped"
+        return
+    fi
+
+    local version_output=""
+    if ! version_output="$(bash -lc "$version_subcommand" 2>&1)"; then
+        record_check "$check_id" "$description" "warn" "$binary_name found but failed to collect version diagnostics: ${version_output:-command failed}"
+        return
+    fi
+
+    local details="version: ${version_output:-unknown}"
+    if [[ -n "$hint_subcommand" ]]; then
+        local hint_output=""
+        if hint_output="$(bash -lc "$hint_subcommand" 2>&1)"; then
+            details+=" | ${hint_label}: ${hint_output:-none}"
+            record_check "$check_id" "$description" "pass" "$details"
+            return
+        fi
+
+        details+=" | ${hint_label}: unavailable (${hint_output:-command failed})"
+        record_check "$check_id" "$description" "warn" "$details"
+        return
+    fi
+
+    record_check "$check_id" "$description" "pass" "$details"
+}
+
 measure_zsh_startup_ms() {
     local zsh_path="$1"
     local profile_flag="$2"
@@ -288,6 +324,38 @@ if [[ -x "$renderer_contract_script" ]]; then
 else
     record_check "renderer_contract" "terminal renderer contract validation passes" "fail" "renderer contract script missing or not executable: $renderer_contract_script"
 fi
+
+capture_terminal_runtime_diagnostic \
+    "diagnostics_wezterm_runtime" \
+    "WezTerm runtime diagnostics (version + renderer hint)" \
+    "wezterm" \
+    "wezterm --version" \
+    "wezterm --help | sed -n '1,120p' | rg -m1 'webgpu|opengl|software' || true" \
+    "renderer_hint"
+
+capture_terminal_runtime_diagnostic \
+    "diagnostics_ghostty_runtime" \
+    "Ghostty runtime diagnostics (version + renderer hint)" \
+    "ghostty" \
+    "ghostty +version" \
+    "ghostty +help | sed -n '1,200p' | rg -m1 'renderer|opengl|metal|vulkan' || true" \
+    "renderer_hint"
+
+capture_terminal_runtime_diagnostic \
+    "diagnostics_kitty_runtime" \
+    "Kitty runtime diagnostics (version + renderer hint)" \
+    "kitty" \
+    "kitty --version" \
+    "kitty --debug-config 2>/dev/null | rg -m1 'renderer|opengl|vulkan|metal' || true" \
+    "renderer_hint"
+
+capture_terminal_runtime_diagnostic \
+    "diagnostics_alacritty_runtime" \
+    "Alacritty runtime diagnostics (version + renderer hint)" \
+    "alacritty" \
+    "alacritty --version" \
+    "alacritty --print-events --config-file /dev/null 2>&1 | rg -m1 'Renderer|GL|Vulkan' || true" \
+    "renderer_hint"
 
 pass_count=0
 warn_count=0
