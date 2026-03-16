@@ -7,17 +7,20 @@ scripts_dir="$repo_root/scripts"
 plan_mode=0
 host_overlay=""
 provider_override=""
+set_default_shell_mode="prompt"
 report_dir="${TINO_BOOTSTRAP_REPORT_DIR:-$repo_root/.cache/tino/bootstrap-dev-env}"
 
 usage() {
     cat <<USAGE
-Usage: $(basename "$0") [--plan] [--host NAME] [--provider NAME] [--report-dir DIR]
+Usage: $(basename "$0") [--plan] [--host NAME] [--provider NAME] [--set-default-shell MODE] [--report-dir DIR]
 
 Declarative bootstrap for development environments with auditable stages.
 
   --plan            Print exact actions without mutating state
   --host NAME       Explicit host overlay passed to install_dotfiles.sh
   --provider NAME   Terminal provider override (ghostty|wezterm|kitty|alacritty|windows-terminal)
+  --set-default-shell MODE
+                    Default-shell policy forwarded to install_common.sh (prompt|force|skip; default: prompt)
   --report-dir DIR  Output directory for reports (default: $report_dir)
   -h, --help        Show this help message
 USAGE
@@ -37,6 +40,14 @@ while [[ $# -gt 0 ]]; do
             provider_override="${2:-}"
             shift 2
             ;;
+        --set-default-shell)
+            set_default_shell_mode="${2:-}"
+            shift 2
+            ;;
+        --set-default-shell=*)
+            set_default_shell_mode="${1#*=}"
+            shift
+            ;;
         --report-dir)
             report_dir="${2:-}"
             shift 2
@@ -52,6 +63,19 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+if [[ -z "$set_default_shell_mode" ]]; then
+    echo "Error: --set-default-shell requires one of: prompt, force, skip" >&2
+    exit 1
+fi
+
+case "$set_default_shell_mode" in
+    prompt|force|skip) ;;
+    *)
+        echo "Error: unsupported --set-default-shell mode '$set_default_shell_mode' (expected: prompt, force, skip)" >&2
+        exit 1
+        ;;
+esac
 
 terminal_provider_supported() {
     case "$1" in
@@ -169,8 +193,17 @@ renderer_report="$report_dir/renderer-contract.json"
 planned_actions=()
 skipped_steps=()
 
+dependency_install_mode="planned"
+dependency_install_dry_run=1
+
 # Stages
-run_stage "dependency-install" "bash '$scripts_dir/install_common.sh' --dry-run --set-default-shell=skip --terminal '$provider_chosen'"
+dependency_install_cmd="bash '$scripts_dir/install_common.sh' --dry-run --set-default-shell=skip --terminal '$provider_chosen'"
+if [[ $plan_mode -eq 0 ]]; then
+    dependency_install_cmd="bash '$scripts_dir/install_common.sh' --set-default-shell='$set_default_shell_mode' --terminal '$provider_chosen'"
+    dependency_install_mode="applied"
+    dependency_install_dry_run=0
+fi
+run_stage "dependency-install" "$dependency_install_cmd"
 
 dotfiles_cmd="bash '$scripts_dir/install_dotfiles.sh' --conflict=abort"
 if [[ -n "$host_overlay" ]]; then
@@ -197,6 +230,8 @@ provider_version="$(version_of "$provider_binary")"
     printf 'Host overlay: %s\n' "${host_overlay:-none}"
     printf 'Provider chosen: %s\n' "$provider_chosen"
     printf 'Provider version: %s\n' "$provider_version"
+    printf 'Dependency install mode: %s\n' "$dependency_install_mode"
+    printf 'Dependency install dry-run: %s\n' "$( [[ $dependency_install_dry_run -eq 1 ]] && echo 'yes' || echo 'no' )"
     printf '\nPlanned actions:\n'
     for action in "${planned_actions[@]}"; do
         printf '  - %s\n' "$action"
@@ -219,6 +254,8 @@ provider_version="$(version_of "$provider_binary")"
     printf '  "host_overlay": "%s",\n' "$(json_escape "${host_overlay:-none}")"
     printf '  "provider_chosen": "%s",\n' "$(json_escape "$provider_chosen")"
     printf '  "provider_version": "%s",\n' "$(json_escape "$provider_version")"
+    printf '  "dependency_install_mode": "%s",\n' "$(json_escape "$dependency_install_mode")"
+    printf '  "dependency_install_dry_run": %s,\n' "$( [[ $dependency_install_dry_run -eq 1 ]] && echo 'true' || echo 'false' )"
     printf '  "planned_actions": [\n'
     for i in "${!planned_actions[@]}"; do
         comma=","

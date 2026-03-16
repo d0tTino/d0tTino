@@ -245,6 +245,20 @@ fi
 run_check_command "nvim_lockfile" "Neovim lazy-lock.json covers declared plugins" \
     python3 "$lockfile_check_script" || true
 
+required_apply_binaries=(zsh starship tmux nvim stow rg fd)
+missing_apply_binaries=()
+for binary in "${required_apply_binaries[@]}"; do
+    if ! command -v "$binary" >/dev/null 2>&1; then
+        missing_apply_binaries+=("$binary")
+    fi
+done
+
+if (( ${#missing_apply_binaries[@]} == 0 )); then
+    record_check "bootstrap_apply_binaries" "bootstrap apply-mode dependencies are present on PATH" "pass" "found: ${required_apply_binaries[*]}"
+else
+    record_check "bootstrap_apply_binaries" "bootstrap apply-mode dependencies are present on PATH" "fail" "missing: ${missing_apply_binaries[*]} (run ./scripts/bootstrap-dev-env.sh in apply mode)"
+fi
+
 if command -v nvim >/dev/null 2>&1; then
     run_check_command "nvim_startup_threshold" "Neovim startup benchmark is within threshold (${benchmark_threshold} ms)" \
         env TINO_NVIM_MAX_STARTUP_MS="$benchmark_threshold" bash "$benchmark_script" || true
