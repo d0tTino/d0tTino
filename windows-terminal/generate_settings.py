@@ -5,6 +5,8 @@ import sys
 from pathlib import Path
 import argparse
 
+SUPPORTED_RENDERING_GRAPHICS_APIS = {"automatic", "direct2d", "direct3d11"}
+
 
 def load_json(path: Path) -> dict[str, object]:
     try:
@@ -39,7 +41,30 @@ def merge_profiles(common: dict[str, object], override: dict[str, object]) -> di
     return result
 
 
+
+
+def should_merge_graphics_api(data: dict[str, object]) -> bool:
+    schema_value = data.get("$schema")
+    if isinstance(schema_value, str) and "terminal-profiles-schema" in schema_value:
+        return True
+    return "rendering.graphicsAPI" in data
+
+
+def merge_top_level_overrides(data: dict[str, object], overrides: dict[str, object]) -> dict[str, object]:
+    graphics_api = overrides.get("rendering.graphicsAPI")
+    if isinstance(graphics_api, str) and graphics_api in SUPPORTED_RENDERING_GRAPHICS_APIS:
+        if should_merge_graphics_api(data):
+            data["rendering.graphicsAPI"] = graphics_api
+        else:
+            print(
+                "Skipping rendering.graphicsAPI override because base settings schema does not match terminal-profiles-schema",
+                file=sys.stderr,
+            )
+    return data
+
 def merge_terminal_overrides(data: dict[str, object], overrides: dict[str, object]) -> dict[str, object]:
+    data = merge_top_level_overrides(data, overrides)
+
     profiles_override = overrides.get("profiles", {})
     profiles = data.get("profiles", {})
     defaults_override = profiles_override.get("defaults", {})

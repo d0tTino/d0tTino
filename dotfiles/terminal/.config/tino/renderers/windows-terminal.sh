@@ -38,6 +38,7 @@ output="$repo_root/windows-terminal/terminal-profile-overrides.json"
 mkdir -p "$(dirname "$output")"
 cat > "$output" <<EOC
 {
+  "rendering.graphicsAPI": "automatic",
   "profiles": {
     "defaults": {
       "font": {
@@ -77,7 +78,8 @@ cat > "$output" <<EOC
   "tinoContract": {
     "unsupported": {
       "TINO_TERMINAL_FPS": "windows-terminal has no profile-level refresh/fps override; retained as no-op",
-      "TINO_WINDOWS_TERMINAL_ACRYLIC_SUPPORTED": "set false to force deterministic fallback (opaque background, useAcrylic=false) on unsupported environments"
+      "TINO_WINDOWS_TERMINAL_ACRYLIC_SUPPORTED": "set false to force deterministic fallback (opaque background, useAcrylic=false) on unsupported environments",
+      "rendering.graphicsAPI": "older schema/runtime combinations may ignore this setting; generator falls back to base settings without it when schema is unrecognized"
     }
   }
 }
