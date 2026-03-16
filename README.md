@@ -190,7 +190,7 @@ Dotfiles are organized into explicit stow-style packages under `dotfiles/` with 
 - `dotfiles/terminal/.config/wezterm/wezterm.lua` → optional GPU-accelerated WezTerm profile aligned with shell/tmux colors
 - `dotfiles/terminal/.config/tino/ghostty.toml.tmpl` → authored Ghostty template (renderer input)
 - `dotfiles/terminal/.config/tino/renderers/*.sh` → provider renderers that generate concrete config files from the terminal profile contract
-- `scripts/bootstrap-dev-env.sh` → primary declarative bootstrap workflow with auditable stages. It orchestrates dependency install/apply (`scripts/install_common.sh`), `scripts/install_dotfiles.sh`, `scripts/setup-nvim.sh`, `scripts/setup-terminal-provider.sh`, and renderer contract validation. It emits both JSON and human-readable reports (host overlay, provider chosen, versions, skipped steps, dependency install mode/dry-run). `--plan` is the only dry-run path; default apply mode performs real dependency installation.
+- `scripts/bootstrap-dev-env.sh` → primary declarative bootstrap workflow with auditable stages. It orchestrates dependency install/apply (`scripts/install_common.sh`), `scripts/install_dotfiles.sh`, `scripts/setup-nvim.sh`, `scripts/setup-terminal-provider.sh`, and renderer contract validation. It emits both JSON and human-readable reports (host overlay, provider chosen, versions, skipped steps, dependency install mode/dry-run, default shell policy, and login shell post-check `login_shell_matches_zsh`). `--plan` is the only dry-run path; default apply mode performs real dependency installation.
 - `scripts/install_common.sh` → legacy/compatibility bootstrap script; still available for broader OS-specific automation and optional Windows provisioning flags, and remains the canonical TPM installer/recovery path (`~/.tmux/plugins/tpm/tpm`).
 - `scripts/setup-terminal-provider.sh <provider>` → entry point for provider-specific setup/rendering (`ghostty|wezterm|kitty|alacritty|windows-terminal`) via `~/.config/tino/terminal-profile.sh`
 - `scripts/qa_terminal_modernization.sh` → canonical terminal modernization acceptance gate after config changes (zsh/tmux/starship/nvim/renderer contract checks) with human-readable output + CI JSON report (`.cache/tino/qa-terminal-modernization/report.json`).
@@ -276,7 +276,15 @@ Expected artifacts are written under `.cache/tino/nvim-startup/`:
 ./scripts/bootstrap-dev-env.sh
 ```
 
-Apply mode is mutating by design: it runs `scripts/install_common.sh` without `--dry-run` during the `dependency-install` stage. Default-shell behavior can be controlled deterministically with `--set-default-shell <prompt|force|skip>` (default `prompt`).
+Apply mode is mutating by design: it runs `scripts/install_common.sh` without `--dry-run` during the `dependency-install` stage. `--set-default-shell <prompt|force|skip>` is explicit policy: by default bootstrap chooses `prompt` for interactive local sessions and `skip` for CI/non-interactive contexts.
+
+Canonical recommendation by environment type:
+
+- Interactive local developer machine: `--set-default-shell=prompt` (or omit the flag and accept default policy selection).
+- CI runners: `--set-default-shell=skip`.
+- Unattended workstation provisioning: `--set-default-shell=force`.
+
+Bootstrap summaries now include a dedicated post-check: `login_shell_matches_zsh: true|false`.
 
 Preview-only plan mode:
 

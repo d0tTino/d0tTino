@@ -7,7 +7,7 @@ scripts_dir="$repo_root/scripts"
 plan_mode=0
 host_overlay=""
 provider_override=""
-set_default_shell_mode="prompt"
+set_default_shell_mode=""
 report_dir="${TINO_BOOTSTRAP_REPORT_DIR:-$repo_root/.cache/tino/bootstrap-dev-env}"
 
 usage() {
@@ -20,7 +20,7 @@ Declarative bootstrap for development environments with auditable stages.
   --host NAME       Explicit host overlay passed to install_dotfiles.sh
   --provider NAME   Terminal provider override (ghostty|wezterm|kitty|alacritty|windows-terminal)
   --set-default-shell MODE
-                    Default-shell policy forwarded to install_common.sh (prompt|force|skip; default: prompt)
+                    Default-shell policy forwarded to install_common.sh (prompt|force|skip; default: prompt for interactive local use, skip for CI/non-interactive)
   --report-dir DIR  Output directory for reports (default: $report_dir)
   -h, --help        Show this help message
 USAGE
@@ -65,8 +65,13 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$set_default_shell_mode" ]]; then
-    echo "Error: --set-default-shell requires one of: prompt, force, skip" >&2
-    exit 1
+    if [[ -n "${CI:-}" ]]; then
+        set_default_shell_mode="skip"
+    elif [[ -t 0 ]]; then
+        set_default_shell_mode="prompt"
+    else
+        set_default_shell_mode="skip"
+    fi
 fi
 
 case "$set_default_shell_mode" in
@@ -145,6 +150,37 @@ resolve_provider() {
     fi
 
     printf '%s' "$provider"
+}
+
+get_login_shell() {
+    local shell_path=""
+    local user_name="${USER:-$(id -un 2>/dev/null || true)}"
+
+    if [[ -z "$user_name" ]]; then
+        shell_path="${SHELL:-unknown}"
+        printf '%s' "$shell_path"
+        return
+    fi
+
+    if [[ ${OSTYPE:-} == darwin* ]] && command -v dscl >/dev/null 2>&1; then
+        shell_path="$(dscl . -read "/Users/$user_name" UserShell 2>/dev/null | awk '{print $2}' || true)"
+    elif command -v getent >/dev/null 2>&1; then
+        shell_path="$(getent passwd "$user_name" | cut -d: -f7 || true)"
+    else
+        shell_path="$(awk -F: -v user="$user_name" '$1 == user {print $7}' /etc/passwd 2>/dev/null || true)"
+    fi
+
+    if [[ -z "$shell_path" ]]; then
+        shell_path="${SHELL:-unknown}"
+    fi
+
+    printf '%s' "$shell_path"
+}
+
+login_shell_matches_zsh() {
+    local zsh_path=""
+    zsh_path="$(command -v zsh || true)"
+    [[ -n "$zsh_path" && "$(get_login_shell)" == "$zsh_path" ]]
 }
 
 version_of() {
@@ -232,6 +268,8 @@ provider_version="$(version_of "$provider_binary")"
     printf 'Provider version: %s\n' "$provider_version"
     printf 'Dependency install mode: %s\n' "$dependency_install_mode"
     printf 'Dependency install dry-run: %s\n' "$( [[ $dependency_install_dry_run -eq 1 ]] && echo 'yes' || echo 'no' )"
+    printf 'Default shell policy: %s\n' "$set_default_shell_mode"
+    printf 'login_shell_matches_zsh: %s\n' "$( [[ $plan_mode -eq 1 ]] && echo 'false' || (login_shell_matches_zsh && echo 'true' || echo 'false') )"
     printf '\nPlanned actions:\n'
     for action in "${planned_actions[@]}"; do
         printf '  - %s\n' "$action"
@@ -256,6 +294,8 @@ provider_version="$(version_of "$provider_binary")"
     printf '  "provider_version": "%s",\n' "$(json_escape "$provider_version")"
     printf '  "dependency_install_mode": "%s",\n' "$(json_escape "$dependency_install_mode")"
     printf '  "dependency_install_dry_run": %s,\n' "$( [[ $dependency_install_dry_run -eq 1 ]] && echo 'true' || echo 'false' )"
+    printf '  "default_shell_policy": "%s",\n' "$(json_escape "$set_default_shell_mode")"
+    printf '  "login_shell_matches_zsh": %s,\n' "$( [[ $plan_mode -eq 1 ]] && echo 'false' || (login_shell_matches_zsh && echo 'true' || echo 'false') )"
     printf '  "planned_actions": [\n'
     for i in "${!planned_actions[@]}"; do
         comma=","

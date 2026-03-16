@@ -223,6 +223,16 @@ sudo bash scripts/setup-wsl.sh
    ```
 4. Launch a new shell to pick up the configuration.
 
+### Default shell policy recommendations
+
+Use `scripts/bootstrap-dev-env.sh` when you want auditable staging and an explicit shell-selection policy:
+
+- **Interactive local development** (recommended): `./scripts/bootstrap-dev-env.sh --set-default-shell=prompt`
+- **CI / non-interactive automation** (recommended): `./scripts/bootstrap-dev-env.sh --set-default-shell=skip`
+- **Unattended workstation provisioning** (optional): `./scripts/bootstrap-dev-env.sh --set-default-shell=force`
+
+If you omit `--set-default-shell`, bootstrap defaults to `prompt` in interactive sessions and `skip` in CI/non-interactive contexts. In non-interactive `prompt` paths, the installer emits a deferred action message with the exact manual command (`chsh -s <zsh-path>`). Bootstrap reports include `login_shell_matches_zsh: true|false` as a dedicated post-check.
+
 ### Troubleshooting package managers
 
 The installer looks for Homebrew on macOS and uses `apt-get`, `dnf` or
