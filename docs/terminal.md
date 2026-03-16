@@ -188,8 +188,12 @@ For TPM specifically, `./scripts/install_common.sh` is the canonical recovery pa
 
 Cloud modules are context-gated so they do not appear in unrelated shells:
 
-- `kubernetes` appears when kube context environment is present (`KUBECONFIG`) or when explicitly enabled via `STARSHIP_ENABLE_K8S`.
-- `aws` appears when AWS context environment is present (`AWS_PROFILE` or `AWS_VAULT`) or when explicitly enabled via `STARSHIP_ENABLE_AWS`.
+- `.zshrc` normalizes cloud toggles before `starship init` and exports internal helper vars consumed by Starship:
+  - `TINO_STARSHIP_SHOW_K8S` for the `kubernetes` module
+  - `TINO_STARSHIP_SHOW_AWS` for the `aws` module
+- `STARSHIP_ENABLE_K8S` and `STARSHIP_ENABLE_AWS` only enable when set to one of: `1`, `true`, `yes`, `on` (case-insensitive).
+- Explicit disable values are `0`, `false`, `no`, `off` (case-insensitive); these force-hide the module by unsetting helper vars even if cloud env vars are present.
+- If no explicit disable is set, existing context still auto-detects (`KUBECONFIG` for Kubernetes; `AWS_PROFILE`/`AWS_VAULT` for AWS).
 
 ### Recommended profile defaults
 
@@ -206,7 +210,7 @@ Use host overlays to set stable defaults based on machine role:
     - `export STARSHIP_ENABLE_K8S=1`
     - `export STARSHIP_ENABLE_AWS=1`
 
-Tip: prefer setting these in host-specific override files instead of global shell defaults so behavior stays intentional per machine.
+Tip: prefer setting these in host-specific override files instead of global shell defaults so behavior stays intentional per machine. Toggle values are normalized; prefer `1`/`0` for clarity, and `true|yes|on` / `false|no|off` are also supported.
 
 ## Troubleshooting
 
