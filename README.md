@@ -240,6 +240,18 @@ Terminal profile values flow through one path:
 
 `~/.config/ghostty/ghostty.toml` is generated output and should not be treated as an authored source file.
 
+
+#### Starship cloud toggle normalization
+
+Cloud prompt visibility is decided in `dotfiles/shell/.zshrc` before `starship init` runs.
+
+- External toggles: `STARSHIP_ENABLE_K8S`, `STARSHIP_ENABLE_AWS`
+- True values (enable): `1`, `true`, `yes`, `on`
+- False values (force-disable): `0`, `false`, `no`, `off`
+- Internal helper env vars passed to Starship detection: `TINO_STARSHIP_SHOW_K8S`, `TINO_STARSHIP_SHOW_AWS`
+
+Host overlays in `hosts/*/.config/tino/host-overrides.sh` can opt in cleanly by exporting `STARSHIP_ENABLE_K8S=1` and/or `STARSHIP_ENABLE_AWS=1`.
+
 Standard bootstrap command (repo root):
 
 Neovim plugin revisions are pinned in `dotfiles/nvim/.config/nvim/lazy-lock.json`; provisioning is handled by `./scripts/setup-nvim.sh` (headless `Lazy! sync` + explicit Mason LSP installs, requires Neovim >= 0.8) so first interactive startup is deterministic. Intentional plugin upgrades should use `./scripts/setup-nvim.sh --refresh-lockfile` (runs `Lazy! update` + `Lazy! lock`, then lock coverage validation) and can be re-checked manually with `python scripts/check-nvim-lockfile.py`. Runtime self-healing is opt-in with `TINO_NVIM_AUTO_BOOTSTRAP=1` (default is disabled/offline-friendly), and `TINO_NVIM_OFFLINE=1` forces warning-only startup behavior. Startup benchmarking is available via `scripts/benchmark_nvim_startup.sh`; `scripts/setup-nvim.sh` runs it only when `TINO_NVIM_BENCHMARK_STARTUP=1` and now auto-passes `TINO_NVIM_MAX_STARTUP_MS` from either explicit env override or host profile defaults (`TINO_NVIM_PROFILE_DEFAULT_MAX_STARTUP_MS`). Current SLO defaults are desktop=100ms and work_laptop=140ms.

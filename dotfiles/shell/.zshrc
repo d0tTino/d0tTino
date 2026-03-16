@@ -10,6 +10,38 @@ source_if_readable() {
     fi
 }
 
+tino_env_is_truthy() {
+    local value="${1:-}"
+    value="${value:l}"
+    [[ "$value" == "1" || "$value" == "true" || "$value" == "yes" || "$value" == "on" ]]
+}
+
+tino_env_is_falsey() {
+    local value="${1:-}"
+    value="${value:l}"
+    [[ "$value" == "0" || "$value" == "false" || "$value" == "no" || "$value" == "off" ]]
+}
+
+tino_apply_cloud_prompt_gate() {
+    local k8s_toggle="${STARSHIP_ENABLE_K8S:-}"
+    local aws_toggle="${STARSHIP_ENABLE_AWS:-}"
+
+    unset TINO_STARSHIP_SHOW_K8S
+    unset TINO_STARSHIP_SHOW_AWS
+
+    if tino_env_is_truthy "$k8s_toggle"; then
+        export TINO_STARSHIP_SHOW_K8S=1
+    elif ! tino_env_is_falsey "$k8s_toggle" && [[ -n "${KUBECONFIG:-}" ]]; then
+        export TINO_STARSHIP_SHOW_K8S=1
+    fi
+
+    if tino_env_is_truthy "$aws_toggle"; then
+        export TINO_STARSHIP_SHOW_AWS=1
+    elif ! tino_env_is_falsey "$aws_toggle" && [[ -n "${AWS_PROFILE:-}${AWS_VAULT:-}" ]]; then
+        export TINO_STARSHIP_SHOW_AWS=1
+    fi
+}
+
 tino_warn_missing_zsh_plugin_once() {
     local plugin_name="$1"
     local plugin_entrypoint="$2"
@@ -131,6 +163,7 @@ source_if_readable "$ZSH_CONFIG_DIR/functions.zsh"
 source_if_readable "$ZSH_CONFIG_DIR/env.zsh"
 source_if_readable "$HOME/.config/tino/terminal-defaults.sh"
 source_if_readable "$HOME/.config/tino/host-overrides.sh"
+tino_apply_cloud_prompt_gate
 
 if command -v starship >/dev/null; then
     eval "$(starship init zsh)"
