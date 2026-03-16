@@ -52,3 +52,15 @@ def test_validate_renderer_contract_emits_markdown_report(tmp_path: Path) -> Non
     report = report_file.read_text(encoding="utf-8")
     assert "| Provider | FPS | Opacity | Effects |" in report
     assert "| windows-terminal | ❌ unsupported | ✅ applied | ✅ applied |" in report
+
+
+def test_wezterm_fallback_matches_baseline_contract() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    fallback = (repo_root / "dotfiles/terminal/.config/wezterm/wezterm.lua").read_text(encoding="utf-8")
+
+    assert "-- Authoritative terminal profile rendered by terminal-profile.sh." in fallback
+    assert "-- Safe baseline fallback when wezterm.generated.lua is unavailable." in fallback
+    assert "font_with_fallback" in fallback
+    assert "window_background_opacity" in fallback
+    assert "window_padding" in fallback
+    assert "colors = {" in fallback
