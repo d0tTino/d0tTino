@@ -32,3 +32,20 @@ supports profile-level acrylic settings (Windows 10 1903+ / Windows 11 with
 modern Windows Terminal releases). On older or restricted environments, use the
 fallback toggle above to avoid inconsistent rendering behavior.
 
+
+## Rendering engine preference and schema fallback
+
+The generated settings prefer the Windows Terminal automatic rendering engine
+via `"rendering.graphicsAPI": "automatic"` in both `settings.base.json` and
+`terminal-profile-overrides.json`.
+
+When `generate_settings.py` merges overrides:
+
+- If the base file uses the Windows Terminal profiles schema (or already
+  contains `rendering.graphicsAPI`), the override is applied.
+- If the base file appears to target a different/older schema, the merge script
+  skips this key and prints a warning to stderr rather than emitting a possibly
+  invalid setting.
+
+This keeps generated output compatible across schema and version mismatches
+while still preferring the automatic renderer when supported.
