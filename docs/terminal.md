@@ -131,7 +131,42 @@ dotfiles/terminal/.config/tino/validate-renderer-contract.sh --report-format mar
 
 Ensure the selected provider reports expected support and that unsupported features degrade gracefully.
 
-### 3) Missing plugin detection
+### 3) Optional runtime diagnostics (portable/warn-only)
+
+`./scripts/qa_terminal_modernization.sh` also attempts provider runtime diagnostics when binaries are present.
+
+Behavior:
+
+- If a provider binary exists and diagnostics commands succeed, the check is `pass` and includes version + renderer hint output.
+- If a provider binary is missing or hint collection fails, the check is recorded as `warn` (never `fail`) to keep CI portable across heterogeneous runners.
+
+Provider command examples (run manually when debugging):
+
+```bash
+# WezTerm
+wezterm --version
+wezterm --help | sed -n '1,120p' | rg -m1 'webgpu|opengl|software'
+
+# Ghostty
+ghostty +version
+ghostty +help | sed -n '1,200p' | rg -m1 'renderer|opengl|metal|vulkan'
+
+# Kitty
+kitty --version
+kitty --debug-config 2>/dev/null | rg -m1 'renderer|opengl|vulkan|metal'
+
+# Alacritty
+alacritty --version
+alacritty --print-events --config-file /dev/null 2>&1 | rg -m1 'Renderer|GL|Vulkan'
+```
+
+Expected QA summary patterns:
+
+- `✅ [diagnostics_<provider>_runtime] ...` with details like `version: <value> | renderer_hint: <value>`.
+- `⚠️ [diagnostics_<provider>_runtime] ...` with details like `<binary> not found on PATH; runtime diagnostics skipped`.
+- `⚠️ [diagnostics_<provider>_runtime] ...` with details like `renderer_hint: unavailable (...)` when version works but hint probing does not.
+
+### 4) Missing plugin detection
 
 - Confirm shell plugin directories exist (or were cloned by bootstrap).
 - Confirm tmux plugin manager assets are present (`~/.tmux/plugins/tpm/tpm`).
