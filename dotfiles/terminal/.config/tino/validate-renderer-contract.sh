@@ -140,6 +140,27 @@ symbol_for_status() {
     esac
 }
 
+
+check_wezterm_fallback_schema() {
+    local fallback_file="$repo_root/dotfiles/terminal/.config/wezterm/wezterm.lua"
+
+    rg -q '^-- Safe baseline fallback when wezterm.generated.lua is unavailable\.$' "$fallback_file"
+    rg -q '^    font = wezterm\.font_with_fallback\(\{$' "$fallback_file"
+    rg -q '^    window_background_opacity = ' "$fallback_file"
+    rg -q '^    use_fancy_tab_bar = false,$' "$fallback_file"
+    rg -q '^    hide_tab_bar_if_only_one_tab = true,$' "$fallback_file"
+    rg -q '^    window_padding = \{ left = [0-9]+, right = [0-9]+, top = [0-9]+, bottom = [0-9]+ \},$' "$fallback_file"
+    rg -q '^    colors = \{$' "$fallback_file"
+    rg -q '^        foreground = "#' "$fallback_file"
+    rg -q '^        background = "#' "$fallback_file"
+    rg -q '^        cursor_bg = "#' "$fallback_file"
+    rg -q '^        cursor_fg = "#' "$fallback_file"
+    rg -q '^        selection_bg = "#' "$fallback_file"
+    rg -q '^        ansi = \{ .+ \},$' "$fallback_file"
+    rg -q '^        brights = \{ .+ \},$' "$fallback_file"
+}
+
+
 build_report() {
     local format="$1"
     local output
@@ -198,6 +219,8 @@ build_report() {
 
     printf '%b\n' "$output"
 }
+
+check_wezterm_fallback_schema
 
 for provider in "${providers[@]}"; do
     for field in "${TINO_TERMINAL_CONTRACT_FIELDS[@]}"; do
