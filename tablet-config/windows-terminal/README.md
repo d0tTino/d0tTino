@@ -1,7 +1,17 @@
-# Windows Terminal tablet config
+# Windows Terminal tablet snapshot / host override notes
 
-Windows Terminal settings now have a single canonical source in
-`windows-terminal/`.
+`windows-terminal/` is the only canonical source for Windows Terminal
+configuration.
 
-Use `windows-terminal/settings.base.json` + `windows-terminal/generate_settings.py`
-to regenerate `windows-terminal/settings.json`.
+This `tablet-config/windows-terminal/` directory is **not** a second authority;
+it is reserved for tablet-specific notes, snapshots, or host override examples.
+
+Canonical generation path:
+
+- Base: `windows-terminal/settings.base.json`
+- Generator: `windows-terminal/generate_settings.py`
+- Generated output: `windows-terminal/settings.json`
+
+If you need tablet-specific behavior, keep it as an explicit host override layer
+that is applied after canonical generation, rather than duplicating canonical
+JSON files here.

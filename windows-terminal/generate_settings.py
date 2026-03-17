@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Generate Windows Terminal settings from a base file and common profiles."""
+"""Generate canonical Windows Terminal settings from layered repository inputs.
+
+Canonical paths:
+- base: windows-terminal/settings.base.json
+- common profiles: windows-terminal/common-profiles.json
+- terminal overrides: windows-terminal/terminal-profile-overrides.json
+- generated output: windows-terminal/settings.json
+"""
 import json
 import sys
 from pathlib import Path
@@ -99,14 +106,22 @@ def generate(base: Path, common: Path, output: Path, terminal_overrides: Path | 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("base", type=Path, help="Path to base settings JSON")
-    parser.add_argument("output", type=Path, help="Where to write merged settings")
+    parser.add_argument(
+        "base",
+        type=Path,
+        help="Path to canonical base settings JSON (typically windows-terminal/settings.base.json)",
+    )
+    parser.add_argument(
+        "output",
+        type=Path,
+        help="Where to write merged settings (typically windows-terminal/settings.json)",
+    )
     parser.add_argument("--common", type=Path, default=Path(__file__).parent / "common-profiles.json")
     parser.add_argument(
         "--terminal-overrides",
         type=Path,
         default=Path(__file__).parent / "terminal-profile-overrides.json",
-        help="Optional generated profile overrides from canonical terminal settings",
+        help="Optional host/device override layer (defaults to windows-terminal/terminal-profile-overrides.json)",
     )
     args = parser.parse_args()
     generate(args.base, args.common, args.output, args.terminal_overrides)
