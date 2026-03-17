@@ -1,4 +1,5 @@
-# Copy canonical generated Windows Terminal settings into the LocalState folder.
+# Copy canonical generated Windows Terminal settings from
+# windows-terminal/settings.json into the LocalState folder.
 $wtDir = Join-Path $Env:LOCALAPPDATA 'Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState'
 if (-not (Test-Path $wtDir)) {
     New-Item -ItemType Directory -Path $wtDir -Force | Out-Null

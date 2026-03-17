@@ -1,11 +1,31 @@
-This folder contains the canonical Windows Terminal configuration.
+This folder is the **canonical source of truth** for Windows Terminal
+configuration in this repository.
+
 Common profile defaults live in `common-profiles.json` and are merged into the
 committed `settings.json` using `generate_settings.py`.
 
-To install these settings automatically, run
+To install these canonical settings automatically, run
 `scripts/install-windows-terminal.ps1` from the repository root. The script
 creates `%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState`
-if needed and copies `settings.json` there.
+if needed and copies `windows-terminal/settings.json` there.
+
+## Configuration layout and precedence
+
+| Layer | Path | Role | Precedence |
+|---|---|---|---|
+| Base config (canonical) | `windows-terminal/settings.base.json` | Maintained source for base Windows Terminal settings. | 1 (lowest) |
+| Common profile defaults (canonical) | `windows-terminal/common-profiles.json` | Shared profile defaults/list merged into base profiles. | 2 |
+| Host/device overrides | `windows-terminal/terminal-profile-overrides.json` | Generated or host-aware overrides (for defaults and schemes). | 3 |
+| Generated output (canonical build artifact) | `windows-terminal/settings.json` | Committed merged output produced by `windows-terminal/generate_settings.py`; copied to LocalState by installer. | 4 (highest, final materialized config) |
+| Legacy tablet snapshot/override example | `tablet-config/windows-terminal/` | Non-canonical snapshot/override docs for tablet-specific workflows. | Informational only; does not override canonical flow unless explicitly consumed by a host script. |
+
+Generate canonical output from the repository root:
+
+```bash
+python windows-terminal/generate_settings.py \
+  windows-terminal/settings.base.json \
+  windows-terminal/settings.json
+```
 
 The settings define `Alt+V` to split the active pane vertically and `Alt+H` to
 split it horizontally. Press `Alt+M` to launch
