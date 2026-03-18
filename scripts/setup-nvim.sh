@@ -6,7 +6,7 @@ lazy_repo="https://github.com/folke/lazy.nvim.git"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 repo_root="$(cd "$script_dir/.." && pwd)"
 lsp_servers_file="$repo_root/dotfiles/nvim/.config/nvim/lsp_servers.txt"
-minimum_nvim_version="0.8"
+minimum_nvim_version="0.10"
 benchmark_script="$repo_root/scripts/benchmark_nvim_startup.sh"
 lockfile_check_script="$repo_root/scripts/check-nvim-lockfile.py"
 benchmark_startup="${TINO_NVIM_BENCHMARK_STARTUP:-0}"
@@ -120,6 +120,8 @@ if ! version_gte "$nvim_version" "$minimum_nvim_version"; then
     echo "Error: Neovim $minimum_nvim_version+ is required for setup-nvim.sh (found $nvim_version)." >&2
     exit 1
 fi
+
+echo "Neovim compatibility policy: baseline is $minimum_nvim_version+ so provisioning matches the repo's modern Lua/LSP plugin architecture."
 
 if [[ -d "$lazy_path/.git" ]]; then
     echo "lazy.nvim already installed at $lazy_path"

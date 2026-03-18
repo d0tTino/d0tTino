@@ -90,6 +90,7 @@ Recommended flow:
 1. Run `install_common.sh` for baseline dependencies and managed dotfiles.
 2. Run `setup-terminal-provider.sh <provider>` if you need to switch or re-render provider configs.
 3. Run `setup-nvim.sh` after Neovim/plugin ecosystem changes.
+4. Keep Neovim at >= 0.10; this baseline matches the repo's modern Lua/LSP plugin architecture and keeps provisioning/QA behavior consistent.
 
 ## Validation checklist
 
