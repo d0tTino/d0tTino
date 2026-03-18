@@ -175,6 +175,14 @@ tmux_config_path="$repo_root/dotfiles/tmux/.tmux.conf"
 renderer_contract_script="$repo_root/dotfiles/terminal/.config/tino/validate-renderer-contract.sh"
 terminal_profile_script="$repo_root/dotfiles/terminal/.config/tino/terminal-profile.sh"
 terminal_defaults_path="$repo_root/dotfiles/terminal/.config/tino/terminal-defaults.sh"
+powershell_profile_path="$repo_root/powershell/user_profile.ps1"
+windows_terminal_settings_path="$repo_root/windows-terminal/settings.json"
+windows_terminal_base_path="$repo_root/windows-terminal/settings.base.json"
+windows_terminal_common_profiles_path="$repo_root/windows-terminal/common-profiles.json"
+windows_terminal_overrides_path="$repo_root/windows-terminal/terminal-profile-overrides.json"
+windows_terminal_generator_path="$repo_root/windows-terminal/generate_settings.py"
+tmux_palette_path="$repo_root/dotfiles/tmux/.tmux.palette.conf"
+nvim_palette_path="$repo_root/dotfiles/nvim/.config/nvim/lua/config/palette.lua"
 lockfile_check_script="$repo_root/scripts/check-nvim-lockfile.py"
 benchmark_script="$repo_root/scripts/benchmark_nvim_startup.sh"
 
@@ -348,6 +356,140 @@ elif [[ "$active_provider_default" == "$canonical_provider" ]]; then
 else
     record_check "terminal_provider_default_policy" "active host default provider matches canonical provider policy" "warn" "active_default=$active_provider_default canonical=$canonical_provider host_profile=${active_host_profile:-none}; non-canonical defaults should be treated as compatibility fallback"
 fi
+
+if [[ -f "$powershell_profile_path" ]]; then
+    record_check "powershell_profile_presence" "powershell/user_profile.ps1 exists" "pass" "$powershell_profile_path"
+else
+    record_check "powershell_profile_presence" "powershell/user_profile.ps1 exists" "fail" "missing: $powershell_profile_path"
+fi
+
+run_check_command "powershell_starship_contract" "PowerShell profile initializes Starship from tracked config without legacy prompt frameworks" \
+    python3 - "$powershell_profile_path" "$repo_root" <<'PY'
+from pathlib import Path
+import sys
+
+profile_path = Path(sys.argv[1])
+text = profile_path.read_text(encoding="utf-8")
+normalized = text.lower()
+legacy_frameworks = ["oh-my-posh", "posh-git", "poshgit"]
+found_legacy = [name for name in legacy_frameworks if name in normalized]
+if found_legacy:
+    raise SystemExit(f"legacy prompt frameworks referenced: {', '.join(found_legacy)}")
+if "starship init powershell" not in normalized:
+    raise SystemExit("starship init powershell not found")
+if "$Env:STARSHIP_CONFIG" not in text:
+    raise SystemExit("STARSHIP_CONFIG environment assignment missing")
+expected_fragment = "Join-Path (Split-Path $PSScriptRoot -Parent) 'starship.toml'"
+if expected_fragment not in text:
+    raise SystemExit("STARSHIP_CONFIG is not wired to the tracked powershell/starship.toml config")
+print("tracked Starship config + no legacy frameworks")
+PY
+
+if [[ -f "$windows_terminal_settings_path" ]]; then
+    record_check "windows_terminal_settings_presence" "windows-terminal/settings.json exists" "pass" "$windows_terminal_settings_path"
+else
+    record_check "windows_terminal_settings_presence" "windows-terminal/settings.json exists" "fail" "missing: $windows_terminal_settings_path"
+fi
+
+run_check_command "windows_terminal_generated_output" "Windows Terminal settings.json matches generate_settings.py output from tracked inputs" \
+    python3 - "$windows_terminal_generator_path" "$windows_terminal_base_path" "$windows_terminal_common_profiles_path" "$windows_terminal_overrides_path" "$windows_terminal_settings_path" <<'PY'
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+
+generator, base, common, overrides, committed = map(Path, sys.argv[1:])
+with tempfile.TemporaryDirectory() as tmpdir:
+    output = Path(tmpdir) / "settings.json"
+    subprocess.run([
+        sys.executable,
+        str(generator),
+        str(base),
+        str(output),
+        "--common",
+        str(common),
+        "--terminal-overrides",
+        str(overrides),
+    ], check=True)
+    generated = output.read_text(encoding="utf-8")
+expected = committed.read_text(encoding="utf-8")
+if generated != expected:
+    raise SystemExit("windows-terminal/settings.json drifted; run windows-terminal/generate_settings.py")
+print("windows-terminal/settings.json is current")
+PY
+
+run_check_command "terminal_palette_alignment" "Shared palette values stay aligned across terminal defaults, tmux, Starship, and Neovim" \
+    python3 - "$terminal_defaults_path" "$starship_config_path" "$tmux_palette_path" "$nvim_palette_path" <<'PY'
+from pathlib import Path
+import re
+import sys
+import tomllib
+
+terminal_defaults, starship_path, tmux_path, nvim_path = map(Path, sys.argv[1:])
+expected = {}
+for line in terminal_defaults.read_text(encoding="utf-8").splitlines():
+    match = re.match(r'export (TINO_TERMINAL_(?:BACKGROUND|FOREGROUND|CURSOR|SELECTION|COLOR_\d+))="([^"]+)"', line)
+    if match:
+        expected[match.group(1)] = match.group(2)
+starship = tomllib.loads(starship_path.read_text(encoding="utf-8"))
+palette_name = starship["palette"]
+palette = starship["palettes"][palette_name]
+starship_mapping = {
+    "TINO_TERMINAL_COLOR_0": palette["black"],
+    "TINO_TERMINAL_COLOR_1": palette["red"],
+    "TINO_TERMINAL_COLOR_2": palette["green"],
+    "TINO_TERMINAL_COLOR_3": palette["yellow"],
+    "TINO_TERMINAL_COLOR_4": palette["blue"],
+    "TINO_TERMINAL_COLOR_5": palette["purple"],
+    "TINO_TERMINAL_COLOR_6": palette["cyan"],
+    "TINO_TERMINAL_COLOR_7": palette["white"],
+    "TINO_TERMINAL_COLOR_8": palette["bright_black"],
+    "TINO_TERMINAL_COLOR_9": palette["bright_red"],
+    "TINO_TERMINAL_COLOR_10": palette["bright_green"],
+    "TINO_TERMINAL_COLOR_11": palette["bright_yellow"],
+    "TINO_TERMINAL_COLOR_12": palette["bright_blue"],
+    "TINO_TERMINAL_COLOR_13": palette["bright_purple"],
+    "TINO_TERMINAL_COLOR_14": palette["bright_cyan"],
+    "TINO_TERMINAL_COLOR_15": palette["bright_white"],
+}
+for key, value in starship_mapping.items():
+    if expected.get(key) != value:
+        raise SystemExit(f"starship mismatch for {key}: {value} != {expected.get(key)}")
+
+tmux_text = tmux_path.read_text(encoding="utf-8")
+tmux_expectations = {
+    'status-style': [expected['TINO_TERMINAL_BACKGROUND'], expected['TINO_TERMINAL_FOREGROUND']],
+    'status-left': [expected['TINO_TERMINAL_COLOR_0'], expected['TINO_TERMINAL_COLOR_5']],
+    'status-right': [expected['TINO_TERMINAL_COLOR_6'], expected['TINO_TERMINAL_COLOR_3'], expected['TINO_TERMINAL_COLOR_2']],
+    'pane-border-style': [expected['TINO_TERMINAL_COLOR_8']],
+    'pane-active-border-style': [expected['TINO_TERMINAL_COLOR_4']],
+    'message-style': [expected['TINO_TERMINAL_COLOR_5'], expected['TINO_TERMINAL_COLOR_0']],
+}
+for label, colors in tmux_expectations.items():
+    for color in colors:
+        if color not in tmux_text:
+            raise SystemExit(f"tmux palette mismatch for {label}: missing {color}")
+
+nvim_text = nvim_path.read_text(encoding='utf-8')
+nvim_expectations = {
+    'bg': expected['TINO_TERMINAL_BACKGROUND'],
+    'fg': expected['TINO_TERMINAL_FOREGROUND'],
+    'gray': expected['TINO_TERMINAL_COLOR_8'],
+    'pink': expected['TINO_TERMINAL_COLOR_1'],
+    'green': expected['TINO_TERMINAL_COLOR_2'],
+    'yellow': expected['TINO_TERMINAL_COLOR_3'],
+    'blue': expected['TINO_TERMINAL_COLOR_4'],
+    'purple': expected['TINO_TERMINAL_COLOR_5'],
+    'cyan': expected['TINO_TERMINAL_COLOR_6'],
+    'magenta': expected['TINO_TERMINAL_COLOR_13'],
+    'white': expected['TINO_TERMINAL_COLOR_15'],
+}
+for key, value in nvim_expectations.items():
+    pattern = rf'{key}\s*=\s*"{re.escape(value)}"'
+    if not re.search(pattern, nvim_text):
+        raise SystemExit(f"nvim palette mismatch for {key}: expected {value}")
+print("terminal palette artifacts aligned")
+PY
 
 if [[ -x "$renderer_contract_script" ]]; then
     run_check_command "renderer_contract" "terminal renderer contract validation passes" \

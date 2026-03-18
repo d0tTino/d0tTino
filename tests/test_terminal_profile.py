@@ -40,3 +40,8 @@ def test_terminal_profile_preferences_prioritize_canonical_provider(tmp_path: Pa
     providers = [line.strip() for line in result.stdout.splitlines() if line.strip()]
     assert providers[0] == "ghostty"
     assert providers[:4] == ["ghostty", "kitty", "wezterm", "alacritty"]
+
+
+def test_windows_terminal_settings_json_is_present() -> None:
+    settings_path = Path(__file__).resolve().parents[1] / "windows-terminal" / "settings.json"
+    assert settings_path.is_file(), "windows-terminal/settings.json should exist"

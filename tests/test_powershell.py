@@ -54,3 +54,15 @@ def test_profile_handles_missing_tools_gracefully():
 def test_user_profile_does_not_import_posh_git():
     text = USER_PROFILE_PATH.read_text().lower()
     assert "posh-git" not in text
+
+
+def test_starship_config_points_to_tracked_repo_file():
+    text = USER_PROFILE_PATH.read_text(encoding="utf-8")
+    expected = "Join-Path (Split-Path $PSScriptRoot -Parent) 'starship.toml'"
+    assert expected in text
+
+
+def test_user_profile_does_not_reference_legacy_prompt_frameworks():
+    text = USER_PROFILE_PATH.read_text(encoding="utf-8").lower()
+    for legacy_name in ("oh-my-posh", "posh-git", "poshgit"):
+        assert legacy_name not in text
