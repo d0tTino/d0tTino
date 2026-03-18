@@ -1,0 +1,113 @@
+name: QA Terminal Modernization
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - 'dotfiles/shell/**'
+      - 'dotfiles/tmux/**'
+      - 'dotfiles/terminal/**'
+      - 'dotfiles/nvim/**'
+      - 'hosts/**'
+      - 'scripts/qa_terminal_modernization.sh'
+      - 'scripts/benchmark_nvim_startup.sh'
+      - 'scripts/check-nvim-lockfile.py'
+      - '.github/workflows/qa-terminal-modernization.yml'
+      - 'README.md'
+  pull_request:
+    paths:
+      - 'dotfiles/shell/**'
+      - 'dotfiles/tmux/**'
+      - 'dotfiles/terminal/**'
+      - 'dotfiles/nvim/**'
+      - 'hosts/**'
+      - 'scripts/qa_terminal_modernization.sh'
+      - 'scripts/benchmark_nvim_startup.sh'
+      - 'scripts/check-nvim-lockfile.py'
+      - '.github/workflows/qa-terminal-modernization.yml'
+      - 'README.md'
+
+jobs:
+  qa-terminal-modernization:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      QA_REPORT: .cache/tino/qa-terminal-modernization/report.json
+      QA_RENDERER_REPORT: .cache/tino/qa-terminal-modernization/renderer-contract.json
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install QA dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zsh tmux neovim ripgrep fd-find stow curl
+          curl -fsSL https://starship.rs/install.sh | sh -s -- --yes --bin-dir "$HOME/.local/bin"
+          printf '%s\n' "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Run terminal modernization QA script
+        id: qa
+        continue-on-error: true
+        run: ./scripts/qa_terminal_modernization.sh
+
+      - name: Upload QA reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-terminal-modernization-report
+          path: |
+            .cache/tino/qa-terminal-modernization/report.json
+            .cache/tino/qa-terminal-modernization/renderer-contract.json
+          if-no-files-found: error
+
+      - name: Enforce QA gate policy
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report_path = Path('.cache/tino/qa-terminal-modernization/report.json')
+          if not report_path.exists():
+              raise SystemExit(f'Missing QA report: {report_path}')
+
+          report = json.loads(report_path.read_text(encoding='utf-8'))
+          checks = {check['id']: check for check in report.get('checks', [])}
+
+          allowed_warning_prefixes = ('diagnostics_',)
+          disallowed_failures = []
+          disallowed_warnings = []
+          allowed_warnings = []
+
+          for check in checks.values():
+              status = check.get('status')
+              check_id = check.get('id', '<unknown>')
+              details = check.get('details', '')
+              is_allowed_warning = status == 'warn' and check_id.startswith(allowed_warning_prefixes)
+
+              if is_allowed_warning:
+                  allowed_warnings.append(f"{check_id}: {details}")
+                  continue
+
+              if status == 'fail':
+                  disallowed_failures.append(f"{check_id}: {details}")
+              elif status == 'warn':
+                  disallowed_warnings.append(f"{check_id}: {details}")
+
+          print('Allowed warnings (provider/runtime diagnostics only):')
+          if allowed_warnings:
+              for item in allowed_warnings:
+                  print(f'  - {item}')
+          else:
+              print('  - none')
+
+          if disallowed_failures or disallowed_warnings:
+              print('\nDisallowed QA results detected:')
+              for item in disallowed_failures:
+                  print(f'  - FAIL {item}')
+              for item in disallowed_warnings:
+                  print(f'  - WARN {item}')
+              raise SystemExit(1)
+
+          print('\nQA gate policy passed.')
+          PY

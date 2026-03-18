@@ -312,6 +312,8 @@ Terminal modernization acceptance gate (run after shell/tmux/nvim/terminal profi
 ./scripts/qa_terminal_modernization.sh
 ```
 
+GitHub Actions enforces the same gate via the `QA Terminal Modernization` workflow. Protect `main` by requiring the `qa-terminal-modernization` status check, and download the `qa-terminal-modernization-report` artifact when you need the published `.cache/tino/qa-terminal-modernization/report.json` and renderer contract JSON outputs from CI. The workflow's policy is explicit: provider/runtime binary absence is allowed to surface as warnings for the `diagnostics_*` checks, while contract and regression checks (for example renderer validation, Neovim/zsh/tmux regressions, and required tool presence) must stay green.
+
 
 ## Changelog (auto‑updated)
 
