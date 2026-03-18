@@ -22,6 +22,7 @@ def test_generated_settings_up_to_date(tmp_path):
     script = REPO_ROOT / 'windows-terminal' / 'generate_settings.py'
     base = REPO_ROOT / 'windows-terminal' / 'settings.base.json'
     common = REPO_ROOT / 'windows-terminal' / 'common-profiles.json'
+    overrides = REPO_ROOT / 'windows-terminal' / 'terminal-profile-overrides.json'
     output = tmp_path / 'settings.json'
     subprocess.run(
         [
@@ -31,6 +32,8 @@ def test_generated_settings_up_to_date(tmp_path):
             str(output),
             '--common',
             str(common),
+            '--terminal-overrides',
+            str(overrides),
         ],
         check=True,
         cwd=tmp_path,
@@ -55,6 +58,8 @@ def test_windows_terminal_generated_output_drift_check(tmp_path: Path) -> None:
             str(script),
             str(REPO_ROOT / "windows-terminal" / "settings.base.json"),
             str(generated),
+            '--terminal-overrides',
+            str(REPO_ROOT / "windows-terminal" / "terminal-profile-overrides.json"),
         ],
         check=True,
         cwd=tmp_path,
