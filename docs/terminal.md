@@ -27,7 +27,9 @@ The terminal experience is composed of four layers:
 - `dotfiles/shell/.config/starship.toml` is the single prompt configuration source for all supported shells.
 - `dotfiles/shell/.zshrc` owns the zsh prompt bootstrap (`eval "$(starship init zsh)"`).
 - `powershell/user_profile.ps1` owns the PowerShell prompt bootstrap (`starship init powershell`) and points `STARSHIP_CONFIG` at the tracked Starship config.
-- Keep prompt behavior Starship-only across managed shell profiles.
+- Keep prompt behavior Starship-only across managed shell profiles; do not add shell-specific prompt decorators like `posh-git`.
+- Git branch/status context in PowerShell should come from the shared Starship `git_branch` and `git_status` modules, not a separate PowerShell-only layer.
+- Optional helpers such as `PSReadLine` and `zoxide` are fine when they improve editing or navigation without duplicating prompt/status output.
 
 2. **Multiplexer (`tmux`)**
    - Stable session management and keybinding layer.

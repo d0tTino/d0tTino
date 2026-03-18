@@ -11,7 +11,6 @@ def test_user_profile_not_empty():
 def test_user_profile_contains_required_commands():
     lines = USER_PROFILE_PATH.read_text().splitlines()
     assert any("starship" in line.lower() for line in lines), "starship invocation missing"
-    assert any("posh-git" in line.lower() for line in lines), "posh-git invocation missing"
     assert any("zoxide" in line.lower() for line in lines), "zoxide invocation missing"
 
 
@@ -40,16 +39,18 @@ def test_zoxide_after_fzf_block():
 
 
 def test_profile_handles_missing_tools_gracefully():
-    """Starship, posh-git and zoxide should be optional."""
+    """Starship and zoxide should be optional."""
     lines = [line.lower() for line in USER_PROFILE_PATH.read_text().splitlines()]
 
     starship_line = next((line for line in lines if "get-command starship" in line), "")
     assert "if (get-command starship" in starship_line
     assert "-erroraction silentlycontinue" in starship_line
 
-    posh_git_line = next((line for line in lines if "import-module posh-git" in line), "")
-    assert "-erroraction silentlycontinue" in posh_git_line
-
     zoxide_line = next((line for line in lines if "get-command zoxide" in line), "")
     assert "if (get-command zoxide" in zoxide_line
     assert "-erroraction silentlycontinue" in zoxide_line
+
+
+def test_user_profile_does_not_import_posh_git():
+    text = USER_PROFILE_PATH.read_text().lower()
+    assert "posh-git" not in text

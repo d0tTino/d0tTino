@@ -16,6 +16,10 @@ colors. Palettes are defined under `palettes/` – besides the default
 `blacklight` scheme, example palettes such as `dracula` and
 `solarized-dark` are provided.
 
+On Windows, this means the managed PowerShell experience stays aligned with the
+shared Starship theme; prompt Git context and status indicators come from
+Starship modules rather than separate PowerShell-only prompt decorators.
+
 Set the `THM_REPO_ROOT` environment variable if you want to apply a palette to
 a different repository location. Install the CLI with `pip install -e .[cli]`
 so the `thm` command works properly.
