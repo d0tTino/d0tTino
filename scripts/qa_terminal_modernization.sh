@@ -74,6 +74,7 @@ benchmark_threshold="${TINO_QA_NVIM_MAX_STARTUP_MS:-${TINO_NVIM_MAX_STARTUP_MS:-
 zsh_startup_budget_warm_ms="${TINO_QA_ZSH_STARTUP_BUDGET_WARM_MS:-${TINO_ZSH_STARTUP_BUDGET_WARM_MS:-80}}"
 zsh_startup_budget_cold_ms="${TINO_QA_ZSH_STARTUP_BUDGET_COLD_MS:-${TINO_ZSH_STARTUP_BUDGET_COLD_MS:-150}}"
 zsh_startup_use_zprof="${TINO_QA_ZSH_STARTUP_USE_ZPROF:-0}"
+minimum_nvim_version="0.10"
 
 mkdir -p "$report_dir"
 
@@ -244,6 +245,22 @@ fi
 
 run_check_command "nvim_lockfile" "Neovim lazy-lock.json covers declared plugins" \
     python3 "$lockfile_check_script" || true
+
+if command -v nvim >/dev/null 2>&1; then
+    nvim_version_line="$(nvim --version | head -n1)"
+    if [[ "$nvim_version_line" =~ v([0-9]+\.[0-9]+(\.[0-9]+)?) ]]; then
+        nvim_version="${BASH_REMATCH[1]}"
+        if [[ "$(printf '%s\n%s\n' "$minimum_nvim_version" "$nvim_version" | sort -V | head -n1)" == "$minimum_nvim_version" ]]; then
+            record_check "nvim_version_policy" "Neovim version meets minimum supported baseline (${minimum_nvim_version}+)" "pass" "found Neovim $nvim_version"
+        else
+            record_check "nvim_version_policy" "Neovim version meets minimum supported baseline (${minimum_nvim_version}+)" "fail" "found Neovim $nvim_version; requires ${minimum_nvim_version}+ for modern Lua/LSP architecture"
+        fi
+    else
+        record_check "nvim_version_policy" "Neovim version meets minimum supported baseline (${minimum_nvim_version}+)" "fail" "unable to parse Neovim version from: $nvim_version_line"
+    fi
+else
+    record_check "nvim_version_policy" "Neovim version meets minimum supported baseline (${minimum_nvim_version}+)" "warn" "nvim binary not found on PATH; skipped version gate"
+fi
 
 required_apply_binaries=(zsh starship tmux nvim stow rg fd)
 missing_apply_binaries=()
