@@ -111,11 +111,11 @@ Neovim startup threshold resolution in `qa_terminal_modernization.sh` is determi
 1. `TINO_QA_NVIM_MAX_STARTUP_MS` (QA-only hard override)
 2. `TINO_NVIM_MAX_STARTUP_MS` (global benchmark override)
 3. Host profile default from `hosts/<profile>/.config/tino/host-overrides.sh`
-   - desktop profile default: `100ms`
+   - desktop profile default: `80ms`
    - work_laptop profile default: `140ms`
 4. Fallback baseline when no host profile is detected: `100ms`
 
-Use `TINO_NVIM_MAX_STARTUP_MS` to temporarily tighten or relax the startup SLO without editing host profiles.
+Use `TINO_NVIM_MAX_STARTUP_MS` to temporarily tighten or relax the startup SLO without editing host profiles. The desktop profile keeps the tighter 80ms budget because it is the highest-refresh interactive host profile and should surface startup regressions earliest.
 
 ### 1) Startup timing
 
