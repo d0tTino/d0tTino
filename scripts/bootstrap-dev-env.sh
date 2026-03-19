@@ -3,6 +3,8 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 scripts_dir="$repo_root/scripts"
+# shellcheck source=scripts/lib/install-context.sh
+source "$scripts_dir/lib/install-context.sh"
 
 plan_mode=0
 host_overlay=""
@@ -82,76 +84,6 @@ case "$set_default_shell_mode" in
         ;;
 esac
 
-terminal_provider_supported() {
-    case "$1" in
-        ghostty|wezterm|kitty|alacritty|windows-terminal)
-            return 0
-            ;;
-        *)
-            return 1
-            ;;
-    esac
-}
-
-resolve_host_overlay() {
-    local raw_host="$1"
-    local hosts_root="$repo_root/hosts"
-
-    [[ -z "$raw_host" ]] && return 0
-
-    local normalized_lower="${raw_host,,}"
-    local normalized_slug
-    normalized_slug="$(printf '%s' "$normalized_lower" | sed -E 's/[^a-z0-9]+/_/g; s/^_+|_+$//g')"
-    local short_host="${normalized_lower%%.*}"
-    local short_slug
-    short_slug="$(printf '%s' "$short_host" | sed -E 's/[^a-z0-9]+/_/g; s/^_+|_+$//g')"
-
-    local -a candidates=("$raw_host" "$normalized_lower" "$normalized_slug" "$short_host" "$short_slug")
-    local candidate
-    for candidate in "${candidates[@]}"; do
-        [[ -z "$candidate" ]] && continue
-        if [[ -d "$hosts_root/$candidate" ]]; then
-            printf '%s' "$candidate"
-            return 0
-        fi
-    done
-}
-
-resolve_provider() {
-    local resolved_host="$1"
-    local provider=""
-    local defaults_path="$repo_root/dotfiles/terminal/.config/tino/terminal-defaults.sh"
-    local host_override_path=""
-
-    if [[ -f "$defaults_path" ]]; then
-        # shellcheck disable=SC1090
-        source "$defaults_path"
-    fi
-
-    if [[ -n "$resolved_host" ]]; then
-        host_override_path="$repo_root/hosts/$resolved_host/.config/tino/host-overrides.sh"
-        if [[ -f "$host_override_path" ]]; then
-            # shellcheck disable=SC1090
-            source "$host_override_path"
-        fi
-    fi
-
-    provider="${provider_override:-${TINO_TERMINAL_PROVIDER:-}}"
-    if [[ -z "$provider" ]]; then
-        case "${OSTYPE:-}" in
-            msys*|cygwin*|win32*|windows*) provider="windows-terminal" ;;
-            *) provider="ghostty" ;;
-        esac
-    fi
-
-    if ! terminal_provider_supported "$provider"; then
-        echo "Error: unsupported provider '$provider'" >&2
-        exit 1
-    fi
-
-    printf '%s' "$provider"
-}
-
 get_login_shell() {
     local shell_path=""
     local user_name="${USER:-$(id -un 2>/dev/null || true)}"
@@ -219,7 +151,7 @@ if [[ -z "$host_overlay" ]]; then
     host_overlay="$(resolve_host_overlay "$detected_host")"
 fi
 
-provider_chosen="$(resolve_provider "$host_overlay")"
+provider_chosen="$(resolve_terminal_provider "$host_overlay" "$provider_override")"
 
 mkdir -p "$report_dir"
 json_report="$report_dir/bootstrap-summary.json"

@@ -43,7 +43,7 @@ From the repository root:
 
 This is the primary workflow. It runs the dependency/bootstrap stages in order:
 
-1. `scripts/install_common.sh`
+1. `scripts/install_common.sh` (internal dependency/setup stage)
 2. `scripts/install_dotfiles.sh --host desktop`
 3. `scripts/setup-nvim.sh`
 4. `scripts/setup-terminal-provider.sh <resolved-provider>`
