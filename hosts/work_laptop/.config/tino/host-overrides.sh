@@ -1,5 +1,6 @@
 # Laptop profile: keep visuals tasteful while reducing battery impact.
-export TINO_TERMINAL_PROVIDER="wezterm"
+# Keep Ghostty as the canonical/default provider; prefer WezTerm first when fallback is needed.
+export TINO_TERMINAL_PROVIDER_PREFERENCES="wezterm kitty alacritty"
 export TINO_TERMINAL_OPACITY="0.96"
 export TINO_TERMINAL_FPS="90"
 export TINO_TERMINAL_EFFECTS="balanced"
