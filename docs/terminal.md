@@ -47,15 +47,16 @@ The terminal experience is composed of four layers:
 
 Provider defaults are policy-driven and deterministic:
 
-- **Linux/macOS desktop hosts:** canonical provider is **Ghostty**.
+- **Non-Windows hosts:** canonical provider is **Ghostty**.
 - **Windows hosts:** canonical provider is **Windows Terminal**.
-- **WezTerm, Kitty, and Alacritty** are supported as **fallback/compatibility targets** when the canonical provider is unavailable or when explicitly requested.
+- **Host-approved** defaults are resolved by `terminal-profile.sh`; today that is the same as the canonical provider on every tracked host profile, including `hosts/work_laptop`.
+- **WezTerm, Kitty, and Alacritty** are supported as **fallback/compatibility targets** when the canonical provider is unavailable or when explicitly requested. On `hosts/work_laptop`, WezTerm is the preferred compatibility fallback order, not a first-class default.
 
 Implementation details:
 
-- `dotfiles/terminal/.config/tino/terminal-profile.sh --canonical-provider` resolves the host canonical provider.
+- `dotfiles/terminal/.config/tino/terminal-profile.sh --canonical-provider` resolves the canonical provider, `--host-approved-providers` lists policy-approved defaults, and `--policy-state <provider>` classifies a provider as `canonical`, `host-approved`, or `fallback`.
 - `scripts/setup-terminal-provider.sh` logs provider resolution decisions and uses explicit fallback logs when it must deviate from the requested/canonical provider.
-- `scripts/qa_terminal_modernization.sh` warns when active host defaults (`TINO_TERMINAL_PROVIDER` from defaults + host override) do not match canonical provider policy.
+- `scripts/qa_terminal_modernization.sh` warns only when active host defaults resolve to a fallback-only provider state; canonical and host-approved defaults are treated as policy-compliant.
 
 ## Host overrides model (`hosts/desktop`, `hosts/work_laptop`)
 
@@ -68,7 +69,7 @@ Configuration precedence is:
 Use overlays to keep per-machine deltas small:
 
 - `hosts/desktop`: higher visual fidelity/high-refresh-friendly defaults.
-- `hosts/work_laptop`: balanced settings for battery and thermals.
+- `hosts/work_laptop`: balanced settings for battery and thermals, while keeping Ghostty as the default and preferring WezTerm first in compatibility fallback order.
 
 This model ensures you can keep a single operational workflow while still tuning ergonomics per device.
 

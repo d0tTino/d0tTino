@@ -341,8 +341,12 @@ if [[ -f "$terminal_defaults_path" ]]; then
 fi
 
 canonical_provider=""
+provider_policy_state=""
 if [[ -x "$terminal_profile_script" ]]; then
     canonical_provider="$(bash "$terminal_profile_script" --canonical-provider 2>/dev/null || true)"
+    if [[ -n "$active_provider_default" ]]; then
+        provider_policy_state="$(bash "$terminal_profile_script" --policy-state "$active_provider_default" 2>/dev/null || true)"
+    fi
 fi
 
 if [[ -z "$canonical_provider" ]]; then
@@ -350,11 +354,11 @@ if [[ -z "$canonical_provider" ]]; then
 fi
 
 if [[ -z "$active_provider_default" ]]; then
-    record_check "terminal_provider_default_policy" "active host default provider matches canonical provider policy" "warn" "unable to resolve active provider default from terminal defaults/host overrides"
-elif [[ "$active_provider_default" == "$canonical_provider" ]]; then
-    record_check "terminal_provider_default_policy" "active host default provider matches canonical provider policy" "pass" "active_default=$active_provider_default canonical=$canonical_provider host_profile=${active_host_profile:-none}"
+    record_check "terminal_provider_default_policy" "active host default provider matches terminal provider policy" "warn" "unable to resolve active provider default from terminal defaults/host overrides"
+elif [[ "$provider_policy_state" == "canonical" || "$provider_policy_state" == "host-approved" ]]; then
+    record_check "terminal_provider_default_policy" "active host default provider matches terminal provider policy" "pass" "active_default=$active_provider_default policy_state=${provider_policy_state:-unknown} canonical=$canonical_provider host_profile=${active_host_profile:-none}"
 else
-    record_check "terminal_provider_default_policy" "active host default provider matches canonical provider policy" "warn" "active_default=$active_provider_default canonical=$canonical_provider host_profile=${active_host_profile:-none}; non-canonical defaults should be treated as compatibility fallback"
+    record_check "terminal_provider_default_policy" "active host default provider matches terminal provider policy" "warn" "active_default=$active_provider_default policy_state=${provider_policy_state:-fallback} canonical=$canonical_provider host_profile=${active_host_profile:-none}; fallback-only defaults should be treated as policy drift"
 fi
 
 if [[ -f "$powershell_profile_path" ]]; then

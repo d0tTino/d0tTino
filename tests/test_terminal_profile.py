@@ -45,3 +45,16 @@ def test_terminal_profile_preferences_prioritize_canonical_provider(tmp_path: Pa
 def test_windows_terminal_settings_json_is_present() -> None:
     settings_path = Path(__file__).resolve().parents[1] / "windows-terminal" / "settings.json"
     assert settings_path.is_file(), "windows-terminal/settings.json should exist"
+
+
+def test_terminal_profile_policy_state_classifies_wezterm_as_fallback_on_non_windows(tmp_path: Path) -> None:
+    profile = _copy_terminal_profile(tmp_path)
+    result = subprocess.run(["/bin/bash", str(profile), "--policy-state", "wezterm"], capture_output=True, text=True, check=True)
+    assert result.stdout.strip() == "fallback"
+
+
+def test_terminal_profile_host_approved_providers_match_canonical_default(tmp_path: Path) -> None:
+    profile = _copy_terminal_profile(tmp_path)
+    result = subprocess.run(["/bin/bash", str(profile), "--host-approved-providers"], capture_output=True, text=True, check=True)
+    providers = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    assert providers == ["ghostty"]

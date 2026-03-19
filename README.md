@@ -199,7 +199,7 @@ Dotfiles are organized into explicit stow-style packages under `dotfiles/` with 
 - `hosts/desktop` and `hosts/work_laptop` → machine-specific overrides
   - `hosts/desktop/.config/tino/host-overrides.sh` favors richer visuals/high refresh
   - `hosts/work_laptop/.config/tino/host-overrides.sh` keeps effects balanced for battery life
-  - host overlays can also set `TINO_TERMINAL_PROVIDER` (for example, desktop `ghostty` vs. work laptop `wezterm`) and `scripts/install_common.sh` will use that provider when `--terminal` is not provided.
+  - host overlays can also tune terminal policy inputs. In the current tracked profiles, both desktop and work_laptop keep `ghostty` as the default provider, while `hosts/work_laptop` prefers `wezterm` first in fallback order if Ghostty is unavailable. `scripts/install_common.sh` uses the resolved provider when `--terminal` is not provided.
 
 Example:
 

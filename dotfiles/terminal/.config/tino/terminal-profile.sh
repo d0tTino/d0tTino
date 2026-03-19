@@ -62,6 +62,42 @@ terminal_canonical_provider() {
     printf 'ghostty\n'
 }
 
+terminal_host_approved_providers() {
+    local canonical_provider
+    canonical_provider="$(terminal_canonical_provider)"
+    printf '%s\n' "$canonical_provider"
+}
+
+terminal_provider_policy_state() {
+    local provider="$1"
+    local approved_provider=""
+    local canonical_provider
+
+    case "$provider" in
+        ghostty|wezterm|kitty|alacritty|windows-terminal)
+            ;;
+        *)
+            printf 'unsupported\n'
+            return 0
+            ;;
+    esac
+
+    canonical_provider="$(terminal_canonical_provider)"
+    if [[ "$provider" == "$canonical_provider" ]]; then
+        printf 'canonical\n'
+        return 0
+    fi
+
+    while IFS= read -r approved_provider; do
+        if [[ "$provider" == "$approved_provider" ]]; then
+            printf 'host-approved\n'
+            return 0
+        fi
+    done < <(terminal_host_approved_providers)
+
+    printf 'fallback\n'
+}
+
 readonly TINO_TERMINAL_CONTRACT_PROVIDERS=(
     ghostty
     wezterm
@@ -217,6 +253,20 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
 
     if [[ ${1:-} == "--canonical-provider" ]]; then
         terminal_canonical_provider
+        exit 0
+    fi
+
+    if [[ ${1:-} == "--host-approved-providers" ]]; then
+        terminal_host_approved_providers
+        exit 0
+    fi
+
+    if [[ ${1:-} == "--policy-state" ]]; then
+        if [[ $# -ne 2 ]]; then
+            echo "Usage: $(basename "$0") --policy-state <provider>" >&2
+            exit 1
+        fi
+        terminal_provider_policy_state "$2"
         exit 0
     fi
 
