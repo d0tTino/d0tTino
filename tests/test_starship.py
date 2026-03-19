@@ -21,3 +21,13 @@ def test_starship_multiline_format():
     data = load_starship()
     assert data.get('format') == STARSHIP_PROMPT_FORMAT, 'prompt format mismatch'
     assert data.get('add_newline') is False, 'add_newline should be false'
+
+
+def test_starship_python_indicator_is_minimal_and_contextual():
+    data = load_starship()
+    python = data['python']
+    assert python['symbol'] == ' '
+    assert python['style'] == 'fg:green'
+    assert python['format'] == '[$symbol($virtualenv )($version)]($style) '
+    assert '$virtualenv' in python['format']
+    assert '$version' in python['format']

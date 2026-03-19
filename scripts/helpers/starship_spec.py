@@ -48,7 +48,7 @@ STARSHIP_MODULES: list[tuple[str, dict[str, object]]] = [
         "python",
         {
             "symbol": " ",
-            "format": "[$symbol($virtualenv )]($style)",
+            "format": "[$symbol($virtualenv )($version)]($style) ",
             "style": "fg:green",
         },
     ),
