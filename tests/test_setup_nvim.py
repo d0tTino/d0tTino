@@ -16,7 +16,7 @@ def create_exe(path: Path, contents: str = "#!/usr/bin/env bash\n") -> None:
     path.chmod(0o755)
 
 
-def create_fake_nvim(path: Path, *, version: str = "0.9.1", log_path: Path | None = None, startup_ms: str = "3.500") -> None:
+def create_fake_nvim(path: Path, *, version: str = "0.10.0", log_path: Path | None = None, startup_ms: str = "3.500") -> None:
     log_snippet = f"echo \"$@\" >> '{log_path}'\n" if log_path else ""
     create_exe(
         path,
@@ -67,7 +67,7 @@ def test_setup_nvim_clones_lazy_when_missing(tmp_path: Path) -> None:
     assert (lazy_dir / ".git").is_dir()
     assert "clone --filter=blob:none --branch=stable" in git_log.read_text(encoding="utf-8")
     log_text = nvim_log.read_text(encoding="utf-8")
-    assert "+Lazy! sync" in log_text
+    assert "lazy.core.config" in log_text
     expected_servers = " ".join(read_canonical_lsp_servers())
     assert f"+MasonInstall {expected_servers}" in log_text
 
@@ -106,7 +106,7 @@ def test_setup_nvim_exits_on_unsupported_neovim_version(tmp_path: Path) -> None:
     result = subprocess.run(["/bin/bash", str(script_path)], env=env, text=True, capture_output=True)
 
     assert result.returncode == 1
-    assert "Neovim 0.8+ is required" in result.stderr
+    assert "Neovim 0.10+ is required" in result.stderr
 
 
 def test_setup_nvim_runs_startup_benchmark_when_enabled(tmp_path: Path) -> None:

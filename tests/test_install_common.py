@@ -851,7 +851,7 @@ def test_install_common_enables_nvim_benchmark_by_default_for_desktop_host(tmp_p
     (repo / "hosts" / "desktop").mkdir(parents=True)
     (repo / "hosts" / "desktop" / ".config" / "tino").mkdir(parents=True)
     (repo / "hosts" / "desktop" / ".config" / "tino" / "host-overrides.sh").write_text(
-        "export TINO_NVIM_PROFILE_DEFAULT_MAX_STARTUP_MS=\"100\"\n",
+        "export TINO_NVIM_PROFILE_DEFAULT_MAX_STARTUP_MS=\"80\"\n",
         encoding="utf-8",
     )
 
@@ -870,7 +870,7 @@ def test_install_common_enables_nvim_benchmark_by_default_for_desktop_host(tmp_p
 
     subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
 
-    assert setup_nvim_log.read_text(encoding="utf-8").splitlines() == ["1,100"]
+    assert setup_nvim_log.read_text(encoding="utf-8").splitlines() == ["1,80"]
 
 
 def test_install_common_respects_explicit_nvim_benchmark_disable(tmp_path: Path) -> None:
