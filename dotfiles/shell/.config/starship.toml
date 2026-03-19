@@ -77,7 +77,7 @@ stashed = "📦"
 
 [python]
 symbol = " "
-format = "[$symbol($virtualenv )]($style)"
+format = "[$symbol($virtualenv )($version)]($style) "
 style = "fg:green"
 
 [kubernetes]
