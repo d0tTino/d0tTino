@@ -191,7 +191,7 @@ Dotfiles are organized into explicit stow-style packages under `dotfiles/` with 
 - `dotfiles/terminal/.config/tino/ghostty.toml.tmpl` → authored Ghostty template (renderer input)
 - `dotfiles/terminal/.config/tino/renderers/*.sh` → provider renderers that generate concrete config files from the terminal profile contract
 - `scripts/bootstrap-dev-env.sh` → primary declarative bootstrap workflow with auditable stages. It orchestrates dependency install/apply (`scripts/install_common.sh`), `scripts/install_dotfiles.sh`, `scripts/setup-nvim.sh`, `scripts/setup-terminal-provider.sh`, and renderer contract validation. It emits both JSON and human-readable reports (host overlay, provider chosen, versions, skipped steps, dependency install mode/dry-run, default shell policy, and login shell post-check `login_shell_matches_zsh`). `--plan` is the only dry-run path; default apply mode performs real dependency installation.
-- `scripts/install_common.sh` → legacy/compatibility bootstrap script; still available for broader OS-specific automation and optional Windows provisioning flags, and remains the canonical TPM installer/recovery path (`~/.tmux/plugins/tpm/tpm`).
+- `scripts/install_common.sh` → internal dependency/setup primitive used by `scripts/bootstrap-dev-env.sh`; it now focuses on package/tool provisioning and narrow recovery tasks such as TPM/plugin/font installation, and remains the canonical TPM recovery path (`~/.tmux/plugins/tpm/tpm`).
 - `scripts/setup-terminal-provider.sh <provider>` → entry point for provider-specific setup/rendering (`ghostty|wezterm|kitty|alacritty|windows-terminal`) via `~/.config/tino/terminal-profile.sh`
 - `scripts/qa_terminal_modernization.sh` → canonical terminal modernization acceptance gate after config changes (zsh/tmux/starship/nvim/renderer contract checks) with human-readable output + CI JSON report (`.cache/tino/qa-terminal-modernization/report.json`).
 - `scripts/install_dotfiles.sh` → deploys managed dotfiles into the user target (for example `$HOME`) by writing tracked rc files/symlinks; `dotfiles/shell/.zshrc` is the source of truth for plugin sourcing and `starship init`.
@@ -224,7 +224,8 @@ Expected behavior:
 
 | Flow | Purpose | Writes/symlinks in user target (`$HOME`/XDG paths) |
 | --- | --- | --- |
-| `./scripts/install_common.sh` | Bootstrap dependencies + deploy managed dotfiles | Installs tools/assets (e.g. zsh plugins, Neovim/Ghostty assets) and invokes `scripts/install_dotfiles.sh` to create/update managed rc file symlinks. |
+| `./scripts/bootstrap-dev-env.sh` | Canonical end-to-end bootstrap | Orchestrates dependency setup, dotfile deployment, Neovim provisioning, terminal provider rendering, and validation/reporting. |
+| `./scripts/install_common.sh` | Internal dependency/recovery helper | Installs baseline tools/assets and narrow recovery items (for example zsh plugins, TPM, fonts, palettes, hooks, optional Windows helpers) without driving the full bootstrap flow. |
 | `./scripts/install_dotfiles.sh [--host ...]` | Dotfile deployment only | Creates/updates tracked rc/config symlinks from `dotfiles/` (and optional `hosts/`) into the user target. |
 | `./scripts/migrate-shell-config.sh [--force]` | Optional legacy import | Writes `~/.config/zsh/{env,aliases,functions}.zsh` fragments from legacy bash content + backup; does not manage tracked dotfile symlinks. |
 
@@ -234,7 +235,7 @@ Terminal profile values flow through one path:
 
 1. `~/.config/tino/terminal-defaults.sh` provides shared defaults.
 2. `~/.config/tino/host-overrides.sh` applies host-specific overrides.
-3. `TINO_TERMINAL_PROVIDER` is selected from defaults/overrides unless `--terminal` is passed to `scripts/install_common.sh`.
+3. `TINO_TERMINAL_PROVIDER` is selected from defaults/overrides unless `--provider` is passed to `scripts/bootstrap-dev-env.sh` or `--terminal` is passed to the internal `scripts/install_common.sh` helper.
 4. `~/.config/tino/terminal-profile.sh` loads both files and runs a renderer from `~/.config/tino/renderers/*.sh`.
 5. The renderer writes provider output files (for Ghostty: `~/.config/ghostty/ghostty.toml`).
 
@@ -252,7 +253,7 @@ Cloud prompt visibility is decided in `dotfiles/shell/.zshrc` before `starship i
 
 Host overlays in `hosts/*/.config/tino/host-overrides.sh` can opt in cleanly by exporting `STARSHIP_ENABLE_K8S=1` and/or `STARSHIP_ENABLE_AWS=1`.
 
-Standard bootstrap command (repo root):
+Standard bootstrap command (repo root, recommended):
 
 Neovim plugin revisions are pinned in `dotfiles/nvim/.config/nvim/lazy-lock.json`; provisioning is handled by `./scripts/setup-nvim.sh` (headless `Lazy! sync` + explicit Mason LSP installs, requires Neovim >= 0.10) so first interactive startup is deterministic. Baseline 0.10 aligns with the modern Lua/LSP plugin architecture used across this repo and avoids split support paths for legacy APIs. Intentional plugin upgrades should use `./scripts/setup-nvim.sh --refresh-lockfile` (runs `Lazy! update` + `Lazy! lock`, then lock coverage validation) and can be re-checked manually with `python scripts/check-nvim-lockfile.py`. Runtime self-healing is opt-in with `TINO_NVIM_AUTO_BOOTSTRAP=1` (default is disabled/offline-friendly), and `TINO_NVIM_OFFLINE=1` forces warning-only startup behavior. Startup benchmarking is available via `scripts/benchmark_nvim_startup.sh`; `scripts/setup-nvim.sh` runs it only when `TINO_NVIM_BENCHMARK_STARTUP=1` and now auto-passes `TINO_NVIM_MAX_STARTUP_MS` from either explicit env override or host profile defaults (`TINO_NVIM_PROFILE_DEFAULT_MAX_STARTUP_MS`). Current SLO defaults are desktop=80ms and work_laptop=140ms. The desktop budget is intentionally stricter so UI-facing hosts catch startup regressions before they become noticeable in interactive editing.
 
@@ -288,7 +289,7 @@ Expected artifacts are written under `.cache/tino/nvim-startup/`:
 ./scripts/bootstrap-dev-env.sh
 ```
 
-Apply mode is mutating by design: it runs `scripts/install_common.sh` without `--dry-run` during the `dependency-install` stage. `--set-default-shell <prompt|force|skip>` is explicit policy: by default bootstrap chooses `prompt` for interactive local sessions and `skip` for CI/non-interactive contexts.
+Apply mode is mutating by design: it is the only recommended orchestration entrypoint and calls `scripts/install_common.sh` without `--dry-run` during the `dependency-install` stage. `--set-default-shell <prompt|force|skip>` is explicit policy: by default bootstrap chooses `prompt` for interactive local sessions and `skip` for CI/non-interactive contexts.
 
 Canonical recommendation by environment type:
 
@@ -304,7 +305,7 @@ Preview-only plan mode:
 ./scripts/bootstrap-dev-env.sh --plan
 ```
 
-In plan mode, dependency installation is preview-only and always runs `install_common.sh --dry-run --set-default-shell=skip`.
+In plan mode, dependency installation is preview-only and always runs the internal helper as `install_common.sh --dry-run --set-default-shell=skip`.
 
 Terminal modernization acceptance gate (run after shell/tmux/nvim/terminal profile changes):
 

@@ -78,10 +78,10 @@ This model ensures you can keep a single operational workflow while still tuning
 From repository root:
 
 ```bash
-# 1) Common bootstrap entrypoint
-./scripts/install_common.sh
+# 1) Canonical bootstrap entrypoint
+./scripts/bootstrap-dev-env.sh
 
-# 2) Terminal provider setup (explicit provider)
+# 2) Terminal provider recovery or explicit re-render
 ./scripts/setup-terminal-provider.sh ghostty
 
 # 3) Neovim provisioning (plugins + Mason/LSP assets)
@@ -90,9 +90,9 @@ From repository root:
 
 Recommended flow:
 
-1. Run `install_common.sh` for baseline dependencies and managed dotfiles.
-2. Run `setup-terminal-provider.sh <provider>` if you need to switch or re-render provider configs.
-3. Run `setup-nvim.sh` after Neovim/plugin ecosystem changes.
+1. Run `bootstrap-dev-env.sh` for the full staged install flow.
+2. Run `setup-terminal-provider.sh <provider>` only if you need to switch or re-render provider configs after bootstrap.
+3. Run `setup-nvim.sh` after Neovim/plugin ecosystem changes when you are reprovisioning editor assets outside the main bootstrap flow.
 4. Keep Neovim at >= 0.10; this baseline matches the repo's modern Lua/LSP plugin architecture and keeps provisioning/QA behavior consistent.
 
 ## Validation checklist
@@ -177,7 +177,7 @@ Expected QA summary patterns:
 - Confirm Neovim headless setup completed without missing provider/plugin errors.
 
 If any plugin class is missing, re-run the canonical setup scripts above in order.
-For TPM specifically, `./scripts/install_common.sh` is the canonical recovery path.
+For TPM, fonts, palettes, and similar recovery-only setup, `./scripts/install_common.sh` remains the canonical lower-level recovery path.
 
 
 ## Starship prompt modules and cloud-context toggles

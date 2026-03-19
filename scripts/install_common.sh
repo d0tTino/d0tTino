@@ -3,20 +3,10 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 scripts="$repo_root/scripts"
+# shellcheck source=scripts/lib/install-context.sh
+source "$scripts/lib/install-context.sh"
 
-# Determine the platform when OSTYPE is not provided
-if [[ -z "${OSTYPE:-}" ]]; then
-    OSTYPE="$(uname -s)"
-fi
-
-# Normalize Windows variants and lower-case the final value
-case $OSTYPE in
-    CYGWIN*|cygwin*) OSTYPE="cygwin" ;;
-    MINGW*|mingw*|MSYS*|msys*) OSTYPE="msys" ;;
-    Windows_NT*) OSTYPE="windows" ;;
-esac
-
-OSTYPE="${OSTYPE,,}"
+OSTYPE="$(normalize_ostype "${OSTYPE:-}")"
 
 run_cmd() {
     if $dry_run; then
@@ -160,72 +150,6 @@ install_terminal_provider() {
     run_cmd bash "$scripts/setup-terminal-provider.sh" "$provider"
 }
 
-terminal_provider_supported() {
-    local provider="$1"
-    case "$provider" in
-        ghostty|wezterm|kitty|alacritty|windows-terminal)
-            return 0
-            ;;
-        *)
-            return 1
-            ;;
-    esac
-}
-
-resolve_terminal_provider_from_config() {
-    local provider=""
-    local defaults_path="$repo_root/dotfiles/terminal/.config/tino/terminal-defaults.sh"
-    local host_name="$1"
-    local host_override_path=""
-
-    if [[ -f "$defaults_path" ]]; then
-        # shellcheck disable=SC1090
-        source "$defaults_path"
-    fi
-
-    if [[ -n "$host_name" ]]; then
-        host_override_path="$repo_root/hosts/$host_name/.config/tino/host-overrides.sh"
-        if [[ -f "$host_override_path" ]]; then
-            # shellcheck disable=SC1090
-            source "$host_override_path"
-        fi
-    fi
-
-    provider="${TINO_TERMINAL_PROVIDER:-}"
-    if [[ -z "$provider" ]]; then
-        if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == windows* ]]; then
-            provider="windows-terminal"
-        else
-            provider="ghostty"
-        fi
-    fi
-
-    echo "$provider"
-}
-
-resolve_nvim_benchmark_threshold_from_config() {
-    local host_name="$1"
-    local host_override_path=""
-
-    if [[ -n "$host_name" ]]; then
-        host_override_path="$repo_root/hosts/$host_name/.config/tino/host-overrides.sh"
-        if [[ -f "$host_override_path" ]]; then
-            local host_threshold=""
-            local profile_default_threshold=""
-            host_threshold="$({ source "$host_override_path"; printf '%s' "${TINO_NVIM_MAX_STARTUP_MS:-}"; })"
-            profile_default_threshold="$({ source "$host_override_path"; printf '%s' "${TINO_NVIM_PROFILE_DEFAULT_MAX_STARTUP_MS:-}"; })"
-            if [[ -n "$host_threshold" ]]; then
-                echo "$host_threshold"
-                return
-            fi
-            if [[ -n "$profile_default_threshold" ]]; then
-                echo "$profile_default_threshold"
-                return
-            fi
-        fi
-    fi
-}
-
 run_pwsh() {
     local script=$1
     shift
@@ -256,39 +180,6 @@ clone_plugin_if_missing() {
 
     run_cmd mkdir -p "$(dirname "$destination")"
     run_cmd git clone "$repo_url" "$destination"
-}
-
-resolve_host_overlay() {
-    local hosts_root="$1"
-    local raw_host="$2"
-
-    if [[ -z "$raw_host" ]]; then
-        return
-    fi
-
-    local normalized_lower="${raw_host,,}"
-    local normalized_slug
-    normalized_slug="$(printf '%s' "$normalized_lower" | sed -E 's/[^a-z0-9]+/_/g; s/^_+|_+$//g')"
-    local short_host="${normalized_lower%%.*}"
-    local short_slug
-    short_slug="$(printf '%s' "$short_host" | sed -E 's/[^a-z0-9]+/_/g; s/^_+|_+$//g')"
-
-    local -a candidates=(
-        "$raw_host"
-        "$normalized_lower"
-        "$normalized_slug"
-        "$short_host"
-        "$short_slug"
-    )
-
-    local candidate
-    for candidate in "${candidates[@]}"; do
-        [[ -z "$candidate" ]] && continue
-        if [[ -d "$hosts_root/$candidate" ]]; then
-            echo "$candidate"
-            return
-        fi
-    done
 }
 
 get_login_shell() {
@@ -454,11 +345,11 @@ if [[ -n "$host_override" ]]; then
     resolved_host="$host_override"
 else
     detected_host="$(hostname 2>/dev/null || true)"
-    resolved_host="$(resolve_host_overlay "$repo_root/hosts" "$detected_host")"
+    resolved_host="$(resolve_host_overlay "$detected_host")"
 fi
 
 if [[ -z "$terminal_provider" ]]; then
-    terminal_provider="$(resolve_terminal_provider_from_config "$resolved_host")"
+    terminal_provider="$(resolve_terminal_provider "$resolved_host")"
 fi
 
 if ! terminal_provider_supported "$terminal_provider"; then
@@ -478,20 +369,10 @@ else
     clone_plugin_if_missing "$syntax_highlight_repo" "$plugin_root/zsh-syntax-highlighting"
     clone_plugin_if_missing "$tpm_repo" "$tmux_plugin_root/tpm"
 
-    dotfiles_args=()
-    if [[ -n "$host_override" ]]; then
-        if [[ ! -d "$repo_root/hosts/$host_override" ]]; then
-            echo "Error: host overlay '$host_override' does not exist" >&2
-            exit 1
-        fi
-        dotfiles_args+=(--host "$host_override")
-    elif [[ -n "$resolved_host" ]]; then
-        dotfiles_args+=(--host "$resolved_host")
+    if [[ -n "$host_override" && ! -d "$repo_root/hosts/$host_override" ]]; then
+        echo "Error: host overlay '$host_override' does not exist" >&2
+        exit 1
     fi
-    if [[ -f "$scripts/install_dotfiles.sh" ]]; then
-        run_cmd bash "$scripts/install_dotfiles.sh" --conflict=abort "${dotfiles_args[@]}"
-    fi
-
     if [[ -f "$scripts/setup-nvim.sh" ]]; then
         benchmark_env=()
         setup_nvim_host="${host_override:-${resolved_host:-}}"
@@ -508,8 +389,6 @@ else
     fi
 
     set_default_shell "$set_default_shell_mode"
-
-    install_terminal_provider "$terminal_provider"
 
     run_cmd bash "$scripts/setup-hooks.sh"
     run_cmd bash "$scripts/helpers/install_fonts.sh"

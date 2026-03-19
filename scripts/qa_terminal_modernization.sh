@@ -5,39 +5,8 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 report_dir="${TINO_QA_REPORT_DIR:-$repo_root/.cache/tino/qa-terminal-modernization}"
 json_report="${TINO_QA_JSON_REPORT:-$report_dir/report.json}"
 renderer_json_report="${TINO_QA_RENDERER_JSON_REPORT:-$report_dir/renderer-contract.json}"
-
-resolve_host_overlay() {
-    local hosts_root="$1"
-    local raw_host="$2"
-
-    if [[ -z "$raw_host" ]]; then
-        return
-    fi
-
-    local normalized_lower="${raw_host,,}"
-    local normalized_slug
-    normalized_slug="$(printf '%s' "$normalized_lower" | sed -E 's/[^a-z0-9]+/_/g; s/^_+|_+$//g')"
-    local short_host="${normalized_lower%%.*}"
-    local short_slug
-    short_slug="$(printf '%s' "$short_host" | sed -E 's/[^a-z0-9]+/_/g; s/^_+|_+$//g')"
-
-    local -a candidates=(
-        "$raw_host"
-        "$normalized_lower"
-        "$normalized_slug"
-        "$short_host"
-        "$short_slug"
-    )
-
-    local candidate
-    for candidate in "${candidates[@]}"; do
-        [[ -z "$candidate" ]] && continue
-        if [[ -d "$hosts_root/$candidate" ]]; then
-            printf '%s\n' "$candidate"
-            return
-        fi
-    done
-}
+# shellcheck source=scripts/lib/install-context.sh
+source "$repo_root/scripts/lib/install-context.sh"
 
 resolve_benchmark_threshold() {
     local default_threshold="100"
@@ -46,7 +15,7 @@ resolve_benchmark_threshold() {
     if [[ -z "$selected_host" ]]; then
         local detected_host
         detected_host="$(hostname 2>/dev/null || true)"
-        selected_host="$(resolve_host_overlay "$repo_root/hosts" "$detected_host")"
+        selected_host="$(resolve_host_overlay "$detected_host")"
     fi
 
     if [[ -n "$selected_host" ]]; then
@@ -322,7 +291,7 @@ fi
 active_host_profile="${TINO_HOST_PROFILE:-}"
 if [[ -z "$active_host_profile" ]]; then
     detected_host_for_profile="$(hostname 2>/dev/null || true)"
-    active_host_profile="$(resolve_host_overlay "$repo_root/hosts" "$detected_host_for_profile")"
+    active_host_profile="$(resolve_host_overlay "$detected_host_for_profile")"
 fi
 
 active_provider_default=""

@@ -4,11 +4,7 @@ Follow these steps to set up the configuration files on a new system. The
 `install.sh` and `bootstrap.ps1` wrappers now only parse command line options
 and delegate all work to the shared helpers. These helpers detect the
 environment, fix your `PATH`, install fonts, sync color palettes and configure
-Git hooks. After cloning the repository **install `stow`** and run
-`scripts/install_dotfiles.sh` to link the packages. If `stow` is missing the
-script now prints `Error: GNU Stow is required`. Then fetch and run the
-cross-platform installer with a
-single command:
+Git hooks. After cloning the repository, use `scripts/bootstrap-dev-env.sh` as the single orchestration entrypoint. Install `stow` first because bootstrap delegates dotfile deployment to `scripts/install_dotfiles.sh`. If `stow` is missing the script now prints `Error: GNU Stow is required`. Then fetch and run the cross-platform installer with a single command:
 
 
 ```bash
@@ -49,16 +45,14 @@ Stow:
 1. Clone the repository and enter the project directory.
 2. Install `stow` with your package manager if it is not already
    available.
-3. Execute `bash scripts/install_dotfiles.sh` to symlink the packages.
-4. Run `./install.sh` to install fonts, palettes and Git hooks.
-5. Restart your shell to load the new configuration.
+3. Execute `./scripts/bootstrap-dev-env.sh` to install dependencies, deploy dotfiles, provision Neovim, and render the terminal provider configuration.
+4. Restart your shell to load the new configuration.
 
 ```bash
 git clone https://github.com/d0tTino/d0tTino.git
 cd d0tTino
 sudo apt-get install stow   # or brew install stow
-bash scripts/install_dotfiles.sh
-./install.sh
+./scripts/bootstrap-dev-env.sh
 ```
 
 ## Prerequisites
@@ -145,14 +139,7 @@ Update the package with `scoop update tino`.
    run `bash scripts/install_dotfiles.sh` to link the packages with GNU Stow.
    Ensure `stow` is installed first or the script will exit with
    `Error: GNU Stow is required`.
-3. From an elevated PowerShell window, run `bootstrap.ps1` (or call
-   `install.sh` from a regular shell). The wrappers simply forward their
-   arguments to the common installer which cleans up your PATH, installs fonts,
-   syncs palettes and sets up Git hooks. The helper also runs `pre-commit install`
-   automatically. You must run the PowerShell script from an **elevated** window
-   so that it can modify the user PATH. Pass the appropriate flags to install
-   the core tools automatically. The
-   equivalent command using `install.sh` is shown below:
+3. From an elevated PowerShell window, run `bootstrap.ps1` (or call `install.sh` from a regular shell) only when you specifically need the legacy wrapper path. For repository clones, prefer `scripts/bootstrap-dev-env.sh`, which is the canonical orchestration flow and delegates limited dependency/recovery work to `scripts/install_common.sh`. The wrappers simply forward their arguments to the common installer which cleans up your PATH, installs fonts, syncs palettes and sets up Git hooks. The helper also runs `pre-commit install` automatically. You must run the PowerShell script from an **elevated** window so that it can modify the user PATH. Pass the appropriate flags to install the core tools automatically. The equivalent command using `install.sh` is shown below:
    ```bash
    ./install.sh --winget --windows-terminal --install-wsl --setup-wsl
    # PowerShell alternative
@@ -212,10 +199,9 @@ sudo bash scripts/setup-wsl.sh
 2. Run `scripts/install_dotfiles.sh` to link the packages with GNU Stow. Ensure
    `stow` is installed, otherwise the script prints `Error: GNU Stow is required`.
    Pass `--dry-run` to preview the commands or `--target DIR` to change the destination.
-3. Run `install.sh` to clean up your PATH and install the shared resources. This
-   also executes `pre-commit install` so the hooks run automatically:
+3. Run `scripts/bootstrap-dev-env.sh` to execute the full staged bootstrap. Use `install.sh` only when you explicitly want the legacy wrapper path. Bootstrap handles dependency setup, dotfile deployment, Neovim provisioning, terminal provider setup, and reporting. For recovery-only actions such as TPM/fonts/palettes/hooks, `scripts/install_common.sh` remains available as a lower-level helper.
    ```bash
-   ./install.sh
+   ./scripts/bootstrap-dev-env.sh
    ```
    Windows users can run the PowerShell variant from an elevated session:
    ```powershell
@@ -225,13 +211,13 @@ sudo bash scripts/setup-wsl.sh
 
 ### Default shell policy recommendations
 
-Use `scripts/bootstrap-dev-env.sh` when you want auditable staging and an explicit shell-selection policy:
+Use `scripts/bootstrap-dev-env.sh` as the canonical install/bootstrap command. It provides auditable staging and an explicit shell-selection policy:
 
 - **Interactive local development** (recommended): `./scripts/bootstrap-dev-env.sh --set-default-shell=prompt`
 - **CI / non-interactive automation** (recommended): `./scripts/bootstrap-dev-env.sh --set-default-shell=skip`
 - **Unattended workstation provisioning** (optional): `./scripts/bootstrap-dev-env.sh --set-default-shell=force`
 
-If you omit `--set-default-shell`, bootstrap defaults to `prompt` in interactive sessions and `skip` in CI/non-interactive contexts. In non-interactive `prompt` paths, the installer emits a deferred action message with the exact manual command (`chsh -s <zsh-path>`). Bootstrap reports include `login_shell_matches_zsh: true|false` as a dedicated post-check.
+If you omit `--set-default-shell`, bootstrap defaults to `prompt` in interactive sessions and `skip` in CI/non-interactive contexts. In non-interactive `prompt` paths, the installer emits a deferred action message with the exact manual command (`chsh -s <zsh-path>`). Bootstrap reports include `login_shell_matches_zsh: true|false` as a dedicated post-check. Treat `scripts/install_common.sh` as an internal dependency/recovery primitive rather than a parallel top-level workflow.
 
 ### Troubleshooting package managers
 
