@@ -102,6 +102,9 @@ def _toml_literal(value: object) -> str:
         return str(value).lower()
     if isinstance(value, int):
         return str(value)
+    if isinstance(value, (list, tuple)):
+        rendered_items = ", ".join(_toml_literal(item) for item in value)
+        return f"[{rendered_items}]"
     escaped = str(value).replace("\\", "\\\\").replace("\n", "\\n").replace('"', '\\"')
     return f'"{escaped}"'
 

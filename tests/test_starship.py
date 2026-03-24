@@ -31,3 +31,9 @@ def test_starship_python_indicator_is_minimal_and_contextual():
     assert python['format'] == '[$symbol($virtualenv )($version)]($style) '
     assert '$virtualenv' in python['format']
     assert '$version' in python['format']
+
+
+def test_starship_cloud_modules_use_explicit_env_gates():
+    data = load_starship()
+    assert data['kubernetes']['detect_env_vars'] == ['TINO_STARSHIP_SHOW_K8S']
+    assert data['aws']['detect_env_vars'] == ['TINO_STARSHIP_SHOW_AWS']

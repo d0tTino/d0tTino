@@ -85,11 +85,13 @@ symbol = "☸ "
 format = "[$symbol$context( \\($namespace\\))]($style) "
 style = "fg:cyan"
 disabled = false
+detect_env_vars = ["TINO_STARSHIP_SHOW_K8S"]
 
 [aws]
 symbol = "󰸏 "
 format = "[$symbol$profile( \\($region\\))]($style) "
 style = "fg:yellow"
+detect_env_vars = ["TINO_STARSHIP_SHOW_AWS"]
 
 [time]
 disabled = false
