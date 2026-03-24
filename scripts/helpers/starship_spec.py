@@ -59,6 +59,7 @@ STARSHIP_MODULES: list[tuple[str, dict[str, object]]] = [
             "format": "[$symbol$context( \\($namespace\\))]($style) ",
             "style": "fg:cyan",
             "disabled": False,
+            "detect_env_vars": ["TINO_STARSHIP_SHOW_K8S"],
         },
     ),
     (
@@ -67,6 +68,7 @@ STARSHIP_MODULES: list[tuple[str, dict[str, object]]] = [
             "symbol": "󰸏 ",
             "format": "[$symbol$profile( \\($region\\))]($style) ",
             "style": "fg:yellow",
+            "detect_env_vars": ["TINO_STARSHIP_SHOW_AWS"],
         },
     ),
     (

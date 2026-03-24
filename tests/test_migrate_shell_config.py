@@ -324,11 +324,21 @@ def test_zshrc_loads_prompt_critical_env_before_starship_init() -> None:
     env_index = _line_index(lines, 'source_if_readable "$ZSH_CONFIG_DIR/env.zsh"')
     terminal_profile_index = _line_index(lines, 'source_if_readable "$HOME/.config/tino/terminal-defaults.sh"')
     host_profile_index = _line_index(lines, 'source_if_readable "$HOME/.config/tino/host-overrides.sh"')
+    cloud_gate_index = _line_index(lines, "tino_apply_cloud_prompt_gate")
     starship_init_index = _line_index(lines, 'eval "$(starship init zsh)"')
 
     assert env_index < starship_init_index
     assert terminal_profile_index < starship_init_index
     assert host_profile_index < starship_init_index
+    assert cloud_gate_index < starship_init_index
+
+
+def test_zshrc_cloud_prompt_gate_exports_starship_detection_vars() -> None:
+    zshrc = REPO_ROOT / "dotfiles" / "shell" / ".zshrc"
+    zshrc_text = zshrc.read_text(encoding="utf-8")
+
+    assert "export TINO_STARSHIP_SHOW_K8S=1" in zshrc_text
+    assert "export TINO_STARSHIP_SHOW_AWS=1" in zshrc_text
 
 
 def test_zshrc_preserves_interactive_plugin_order_and_defers_zoxide() -> None:
