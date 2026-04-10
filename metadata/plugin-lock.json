@@ -1,0 +1,24 @@
+{
+  "plugins": {
+    "zsh-autosuggestions": {
+      "repo": "https://github.com/zsh-users/zsh-autosuggestions.git",
+      "sha": "85919cd1ffa7d2d5412f6d3fe437ebdbeeec4fc5"
+    },
+    "zsh-syntax-highlighting": {
+      "repo": "https://github.com/zsh-users/zsh-syntax-highlighting.git",
+      "sha": "1d85c692615a25fe2293bdd44b34c217d5d2bf04"
+    },
+    "tpm": {
+      "repo": "https://github.com/tmux-plugins/tpm.git",
+      "sha": "99469c4a9b1ccf77fade25842dc7bafbc8ce9946"
+    },
+    "tmux-resurrect": {
+      "repo": "https://github.com/tmux-plugins/tmux-resurrect.git",
+      "sha": "cff343cf9e81983d3da0c8562b01616f12e8d548"
+    },
+    "tmux-continuum": {
+      "repo": "https://github.com/tmux-plugins/tmux-continuum.git",
+      "sha": "0698e8f4b17d6454c71bf5212895ec055c578da0"
+    }
+  }
+}
