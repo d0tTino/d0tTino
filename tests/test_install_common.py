@@ -14,8 +14,39 @@ def create_exe(path: Path, contents: str = "#!/usr/bin/env bash\n") -> None:
 def create_git_stub(path: Path, log_path: Path) -> None:
     create_exe(
         path,
-        f"#!/usr/bin/env bash\necho \"$@\" >> '{log_path}'\nif [[ $1 == clone ]]; then\n  /bin/mkdir -p \"$3/.git\"\nfi\n",
+        f"#!/usr/bin/env bash\n"
+        f"echo \"$@\" >> '{log_path}'\n"
+        "if [[ $1 == clone ]]; then\n"
+        "  /bin/mkdir -p \"$3/.git\"\n"
+        "  exit 0\n"
+        "fi\n"
+        "if [[ $1 == -C ]]; then\n"
+        "  repo_dir=\"$2\"\n"
+        "  shift 2\n"
+        "  if [[ $1 == fetch ]]; then\n"
+        "    exit 0\n"
+        "  fi\n"
+        "  if [[ $1 == checkout ]]; then\n"
+        "    if [[ $2 == --detach ]]; then\n"
+        "      commit_sha=\"$3\"\n"
+        "      if [[ ${#commit_sha} -ne 40 ]]; then\n"
+        "        echo \"invalid sha: $commit_sha\" >&2\n"
+        "        exit 1\n"
+        "      fi\n"
+        "      /bin/mkdir -p \"$repo_dir/.git\"\n"
+        "      printf '%s\\n' \"$commit_sha\" > \"$repo_dir/.git/LOCKED_SHA\"\n"
+        "      exit 0\n"
+        "    fi\n"
+        "  fi\n"
+        "fi\n"
+        "exit 0\n",
     )
+
+
+def copy_plugin_lock(repo_root: Path, repo: Path) -> None:
+    metadata_dir = repo / "metadata"
+    metadata_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy(repo_root / "metadata" / "plugin-lock.json", metadata_dir / "plugin-lock.json")
 
 
 def test_install_common_runs_without_ostype(tmp_path: Path) -> None:
@@ -28,6 +59,7 @@ def test_install_common_runs_without_ostype(tmp_path: Path) -> None:
     helpers_dir.mkdir(parents=True)
 
     shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+    copy_plugin_lock(repo_root, repo)
 
     log = tmp_path / "install.log"
     (scripts_dir / "setup-hooks.sh").write_text(
@@ -85,6 +117,7 @@ def test_install_common_installs_missing_deps_dnf(tmp_path: Path) -> None:
     helpers_dir.mkdir(parents=True)
 
     shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+    copy_plugin_lock(repo_root, repo)
 
     log = tmp_path / "install.log"
     (scripts_dir / "setup-hooks.sh").write_text(
@@ -138,6 +171,7 @@ def test_install_common_installs_missing_deps_pacman(tmp_path: Path) -> None:
     helpers_dir.mkdir(parents=True)
 
     shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+    copy_plugin_lock(repo_root, repo)
 
     log = tmp_path / "install.log"
     (scripts_dir / "setup-hooks.sh").write_text(
@@ -191,6 +225,7 @@ def test_install_common_setup_flags_linux(tmp_path: Path) -> None:
     helpers_dir.mkdir(parents=True)
 
     shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+    copy_plugin_lock(repo_root, repo)
 
     log = tmp_path / "install.log"
     (scripts_dir / "setup-hooks.sh").write_text(
@@ -265,6 +300,7 @@ def test_install_common_setup_flags_windows(tmp_path: Path) -> None:
     helpers_dir.mkdir(parents=True)
 
     shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+    copy_plugin_lock(repo_root, repo)
 
     log = tmp_path / "install.log"
     (helpers_dir / "install_common.ps1").write_text(
@@ -317,6 +353,7 @@ def test_install_common_installs_zsh_plugins_without_touching_zshrc(tmp_path: Pa
     helpers_dir.mkdir(parents=True)
 
     shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+    copy_plugin_lock(repo_root, repo)
 
     log = tmp_path / "install.log"
     for path, line in [
@@ -368,7 +405,7 @@ def test_install_common_installs_zsh_plugins_without_touching_zshrc(tmp_path: Pa
     assert any("install -y" in line and "zsh" in line for line in apt_lines)
 
     git_lines = git_log.read_text(encoding="utf-8").splitlines()
-    assert sum(1 for line in git_lines if line.startswith("clone ")) == 3
+    assert sum(1 for line in git_lines if line.startswith("clone ")) == 5
 
 
 def test_install_common_does_not_append_plugin_marker_block_to_existing_zshrc(tmp_path: Path) -> None:
@@ -381,6 +418,7 @@ def test_install_common_does_not_append_plugin_marker_block_to_existing_zshrc(tm
     helpers_dir.mkdir(parents=True)
 
     shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+    copy_plugin_lock(repo_root, repo)
 
     for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
         path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
@@ -424,7 +462,7 @@ def test_install_common_does_not_append_plugin_marker_block_to_existing_zshrc(tm
     assert 'eval "$(starship init zsh)"' not in zshrc_content
 
     clone_lines = [line for line in git_log.read_text(encoding="utf-8").splitlines() if line.startswith("clone ")]
-    assert len(clone_lines) == 3
+    assert len(clone_lines) == 5
 
 
 
@@ -439,6 +477,7 @@ def test_install_common_installs_tpm_during_provisioning(tmp_path: Path) -> None
     helpers_dir.mkdir(parents=True)
 
     shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+    copy_plugin_lock(repo_root, repo)
 
     for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
         path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
@@ -477,6 +516,7 @@ def test_install_common_skips_tpm_clone_when_repo_exists(tmp_path: Path) -> None
     helpers_dir.mkdir(parents=True)
 
     shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+    copy_plugin_lock(repo_root, repo)
 
     for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
         path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
@@ -504,6 +544,97 @@ def test_install_common_skips_tpm_clone_when_repo_exists(tmp_path: Path) -> None
     clone_lines = [line for line in git_log.read_text(encoding="utf-8").splitlines() if line.startswith("clone ")]
     assert not any("tmux-plugins/tpm" in line for line in clone_lines)
 
+
+def test_install_common_checks_out_locked_plugin_shas(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / "repo_checkout_locked_shas"
+    repo.mkdir()
+
+    scripts_dir = repo / "scripts"
+    helpers_dir = scripts_dir / "helpers"
+    helpers_dir.mkdir(parents=True)
+
+    shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+    copy_plugin_lock(repo_root, repo)
+
+    for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
+        path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+        path.chmod(0o755)
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    git_log = tmp_path / "git.log"
+
+    for exe in ["curl", "unzip", "zsh", "tmux", "nvim", "cargo", "stow", "rg", "fd"]:
+        create_exe(bin_dir / exe)
+    create_exe(bin_dir / "starship", "#!/usr/bin/env bash\nif [[ $1 == init && $2 == zsh ]]; then\n  echo 'STARSHIP_INIT'\nfi\n")
+    create_git_stub(bin_dir / "git", git_log)
+    (bin_dir / "bash").symlink_to("/bin/bash")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+
+    home_dir = tmp_path / "home"
+    home_dir.mkdir()
+
+    env = os.environ.copy()
+    env.update({"OSTYPE": "linux-gnu", "PATH": f"{bin_dir}:/usr/bin:/bin", "HOME": str(home_dir), "SHELL": "/bin/bash"})
+
+    subprocess.run(["/bin/bash", "scripts/install_common.sh"], cwd=repo, check=True, env=env)
+
+    git_lines = git_log.read_text(encoding="utf-8").splitlines()
+    checkout_lines = [line for line in git_lines if " checkout --detach " in f" {line} "]
+    assert len(checkout_lines) == 5
+    assert any(f"-C {home_dir}/.tmux/plugins/tmux-resurrect checkout --detach " in line for line in git_lines)
+    assert any(f"-C {home_dir}/.tmux/plugins/tmux-continuum checkout --detach " in line for line in git_lines)
+    assert all(len(line.rsplit(" ", 1)[-1]) == 40 for line in checkout_lines)
+
+
+def test_install_common_fails_when_plugin_lock_entry_is_missing(tmp_path: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    repo = tmp_path / "repo_missing_lock_entry"
+    repo.mkdir()
+
+    scripts_dir = repo / "scripts"
+    helpers_dir = scripts_dir / "helpers"
+    helpers_dir.mkdir(parents=True)
+
+    shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+    copy_plugin_lock(repo_root, repo)
+
+    lock_path = repo / "metadata" / "plugin-lock.json"
+    lock_text = lock_path.read_text(encoding="utf-8")
+    lock_path.write_text(lock_text.replace('"tmux-continuum": {', '"tmux-continuum-missing": {'), encoding="utf-8")
+
+    for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
+        path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+        path.chmod(0o755)
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    for exe in ["curl", "unzip", "zsh", "tmux", "nvim", "cargo", "stow", "rg", "fd"]:
+        create_exe(bin_dir / exe)
+    create_exe(bin_dir / "starship", "#!/usr/bin/env bash\nif [[ $1 == init && $2 == zsh ]]; then\n  echo 'STARSHIP_INIT'\nfi\n")
+    create_git_stub(bin_dir / "git", tmp_path / "git.log")
+    (bin_dir / "bash").symlink_to("/bin/bash")
+    (bin_dir / "dirname").symlink_to("/usr/bin/dirname")
+
+    home_dir = tmp_path / "home"
+    home_dir.mkdir()
+
+    env = os.environ.copy()
+    env.update({"OSTYPE": "linux-gnu", "PATH": f"{bin_dir}:/usr/bin:/bin", "HOME": str(home_dir), "SHELL": "/bin/bash"})
+
+    result = subprocess.run(
+        ["/bin/bash", "scripts/install_common.sh"],
+        cwd=repo,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode != 0
+    assert "missing lock entry for plugin 'tmux-continuum'" in result.stderr
+
 def test_install_common_runs_install_dotfiles_with_detected_host(tmp_path: Path) -> None:
     repo_root = Path(__file__).resolve().parents[1]
     repo = tmp_path / "repo_dotfiles"
@@ -514,6 +645,7 @@ def test_install_common_runs_install_dotfiles_with_detected_host(tmp_path: Path)
     helpers_dir.mkdir(parents=True)
 
     shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+    copy_plugin_lock(repo_root, repo)
 
     log = tmp_path / "install.log"
     for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
@@ -564,6 +696,7 @@ def test_install_common_passes_explicit_host_to_install_dotfiles(tmp_path: Path)
     helpers_dir.mkdir(parents=True)
 
     shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+    copy_plugin_lock(repo_root, repo)
 
     for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
         path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
@@ -612,6 +745,7 @@ def test_install_common_normalizes_detected_hostname_for_host_overlay(tmp_path: 
     helpers_dir.mkdir(parents=True)
 
     shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+    copy_plugin_lock(repo_root, repo)
 
     for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
         path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
@@ -657,6 +791,7 @@ def test_install_common_selects_terminal_provider_from_defaults(tmp_path: Path) 
     tino_defaults_dir.mkdir(parents=True)
 
     shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+    copy_plugin_lock(repo_root, repo)
 
     for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
         path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
@@ -706,6 +841,7 @@ def test_install_common_selects_terminal_provider_from_host_override(tmp_path: P
     host_tino_dir.mkdir(parents=True)
 
     shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+    copy_plugin_lock(repo_root, repo)
 
     for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
         path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
@@ -754,6 +890,7 @@ def test_install_common_rejects_unsupported_terminal_provider_from_config(tmp_pa
     tino_defaults_dir.mkdir(parents=True)
 
     shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+    copy_plugin_lock(repo_root, repo)
 
     (scripts_dir / "setup-hooks.sh").write_text("#!/usr/bin/env bash\n", encoding="utf-8")
     (scripts_dir / "setup-hooks.sh").chmod(0o755)
@@ -833,6 +970,7 @@ def test_install_common_enables_nvim_benchmark_by_default_for_desktop_host(tmp_p
     helpers_dir.mkdir(parents=True)
 
     shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+    copy_plugin_lock(repo_root, repo)
 
     for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
         path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
@@ -883,6 +1021,7 @@ def test_install_common_respects_explicit_nvim_benchmark_disable(tmp_path: Path)
     helpers_dir.mkdir(parents=True)
 
     shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+    copy_plugin_lock(repo_root, repo)
 
     for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
         path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")
@@ -935,6 +1074,7 @@ def test_install_common_uses_terminal_provider_entrypoint_for_ghostty(tmp_path: 
     helpers_dir.mkdir(parents=True)
 
     shutil.copy(repo_root / "scripts" / "install_common.sh", scripts_dir / "install_common.sh")
+    copy_plugin_lock(repo_root, repo)
 
     for path in [scripts_dir / "setup-hooks.sh", helpers_dir / "install_fonts.sh", helpers_dir / "sync_palettes.sh"]:
         path.write_text("#!/usr/bin/env bash\n", encoding="utf-8")

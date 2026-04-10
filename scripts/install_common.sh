@@ -161,25 +161,63 @@ run_pwsh() {
 }
 
 plugin_root="$HOME/.local/share/zsh/plugins"
-autosuggest_repo="https://github.com/zsh-users/zsh-autosuggestions"
-syntax_highlight_repo="https://github.com/zsh-users/zsh-syntax-highlighting"
 tmux_plugin_root="$HOME/.tmux/plugins"
-tpm_repo="https://github.com/tmux-plugins/tpm"
+plugin_lock_file="$repo_root/metadata/plugin-lock.json"
 
-clone_plugin_if_missing() {
-    local repo_url=$1
-    local destination=$2
-    if [[ -d "$destination/.git" ]]; then
-        echo "Plugin already installed at $destination"
+lockfile_field_for_plugin() {
+    local plugin_name=$1
+    local field_name=$2
+    local plugin_block
+
+    plugin_block="$(sed -n "/\"$plugin_name\"[[:space:]]*:[[:space:]]*{/,/}/p" "$plugin_lock_file")"
+    if [[ -z "$plugin_block" ]]; then
+        echo ""
         return
     fi
-    if [[ -e "$destination" ]]; then
+
+    printf '%s\n' "$plugin_block" | sed -n "s/.*\"$field_name\"[[:space:]]*:[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p" | head -n1
+}
+
+resolve_locked_plugin() {
+    local plugin_name=$1
+    local repo_url sha
+
+    if [[ ! -f "$plugin_lock_file" ]]; then
+        echo "Error: plugin lock file not found at $plugin_lock_file" >&2
+        exit 1
+    fi
+
+    repo_url="$(lockfile_field_for_plugin "$plugin_name" "repo")"
+    sha="$(lockfile_field_for_plugin "$plugin_name" "sha")"
+    if [[ -z "$repo_url" || -z "$sha" ]]; then
+        echo "Error: missing lock entry for plugin '$plugin_name' in $plugin_lock_file" >&2
+        exit 1
+    fi
+
+    printf '%s\n%s\n' "$repo_url" "$sha"
+}
+
+sync_plugin_to_locked_sha() {
+    local plugin_name=$1
+    local destination=$2
+    local repo_url sha
+
+    mapfile -t plugin_info < <(resolve_locked_plugin "$plugin_name")
+    repo_url="${plugin_info[0]}"
+    sha="${plugin_info[1]}"
+
+    if [[ -d "$destination/.git" ]]; then
+        echo "Updating $plugin_name in $destination"
+    elif [[ -e "$destination" ]]; then
         echo "Skipping $destination because it exists and is not a git checkout" >&2
         return
+    else
+        run_cmd mkdir -p "$(dirname "$destination")"
+        run_cmd git clone "$repo_url" "$destination"
     fi
 
-    run_cmd mkdir -p "$(dirname "$destination")"
-    run_cmd git clone "$repo_url" "$destination"
+    run_cmd git -C "$destination" fetch --all --tags --prune
+    run_cmd git -C "$destination" checkout --detach "$sha"
 }
 
 get_login_shell() {
@@ -365,9 +403,11 @@ if [[ $OSTYPE == msys* || $OSTYPE == cygwin* || $OSTYPE == win32* || $OSTYPE == 
     run_pwsh helpers/install_common.ps1
 else
     ensure_deps zsh starship tmux neovim stow rg fd
-    clone_plugin_if_missing "$autosuggest_repo" "$plugin_root/zsh-autosuggestions"
-    clone_plugin_if_missing "$syntax_highlight_repo" "$plugin_root/zsh-syntax-highlighting"
-    clone_plugin_if_missing "$tpm_repo" "$tmux_plugin_root/tpm"
+    sync_plugin_to_locked_sha "zsh-autosuggestions" "$plugin_root/zsh-autosuggestions"
+    sync_plugin_to_locked_sha "zsh-syntax-highlighting" "$plugin_root/zsh-syntax-highlighting"
+    sync_plugin_to_locked_sha "tpm" "$tmux_plugin_root/tpm"
+    sync_plugin_to_locked_sha "tmux-resurrect" "$tmux_plugin_root/tmux-resurrect"
+    sync_plugin_to_locked_sha "tmux-continuum" "$tmux_plugin_root/tmux-continuum"
 
     if [[ -n "$host_override" && ! -d "$repo_root/hosts/$host_override" ]]; then
         echo "Error: host overlay '$host_override' does not exist" >&2
