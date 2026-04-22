@@ -1,0 +1,70 @@
+{
+  "host_profiles": {
+    "desktop": {
+      "canonical_provider": "ghostty",
+      "approved_providers": ["ghostty"],
+      "provider_probe_order": ["ghostty", "wezterm", "kitty", "alacritty", "windows-terminal"]
+    },
+    "work_laptop": {
+      "canonical_provider": "windows-terminal",
+      "approved_providers": ["windows-terminal"],
+      "provider_probe_order": ["windows-terminal", "wezterm", "ghostty", "kitty", "alacritty"]
+    }
+  },
+  "providers": {
+    "ghostty": {
+      "capabilities": {
+        "TINO_TERMINAL_FPS": "applied",
+        "TINO_TERMINAL_OPACITY": "applied",
+        "TINO_TERMINAL_EFFECTS": "applied"
+      }
+    },
+    "wezterm": {
+      "capabilities": {
+        "TINO_TERMINAL_FPS": "applied",
+        "TINO_TERMINAL_OPACITY": "applied",
+        "TINO_TERMINAL_EFFECTS": "unsupported"
+      }
+    },
+    "kitty": {
+      "capabilities": {
+        "TINO_TERMINAL_FPS": "applied",
+        "TINO_TERMINAL_OPACITY": "applied",
+        "TINO_TERMINAL_EFFECTS": "unsupported"
+      }
+    },
+    "alacritty": {
+      "capabilities": {
+        "TINO_TERMINAL_FPS": "unsupported",
+        "TINO_TERMINAL_OPACITY": "applied",
+        "TINO_TERMINAL_EFFECTS": "unsupported"
+      }
+    },
+    "windows-terminal": {
+      "capabilities": {
+        "TINO_TERMINAL_FPS": "unsupported",
+        "TINO_TERMINAL_OPACITY": "applied",
+        "TINO_TERMINAL_EFFECTS": "applied"
+      }
+    }
+  },
+  "settings": {
+    "TINO_TERMINAL_FPS": {
+      "type": "int",
+      "min": 1,
+      "max": 360,
+      "default": 120
+    },
+    "TINO_TERMINAL_OPACITY": {
+      "type": "float",
+      "min": 0.0,
+      "max": 1.0,
+      "default": 0.92
+    },
+    "TINO_TERMINAL_EFFECTS": {
+      "type": "enum_or_path",
+      "default": "on",
+      "allowed": ["on", "off", "true", "false", "yes", "no", "0", "1", "none"]
+    }
+  }
+}

@@ -6,7 +6,6 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 strict_mode="${TINO_TERMINAL_STRICT:-1}"
 persist_fallback_mode="${TINO_TERMINAL_PERSIST_FALLBACK:-0}"
 selected_provider="$provider"
-readonly TERMINAL_CAPABILITY_PROBE_ORDER=(ghostty wezterm kitty alacritty windows-terminal)
 
 canonical_provider=""
 
@@ -201,7 +200,7 @@ resolve_provider_via_capability_probe() {
     fi
 
     if [[ ${#candidates[@]} -eq 0 ]]; then
-        candidates=("$canonical_provider" "${TERMINAL_CAPABILITY_PROBE_ORDER[@]}")
+        candidates=("$canonical_provider" ghostty wezterm kitty alacritty windows-terminal)
     fi
 
     for candidate in "${candidates[@]}"; do
@@ -329,8 +328,13 @@ if [[ ! -x "$profile_script" ]]; then
 fi
 
 ensure_provider_installed
+policy_snapshot="$("$profile_script" --effective-policy "$selected_provider" 2>/dev/null || true)"
 "$profile_script" --validate-schema "$selected_provider"
 "$profile_script" "$selected_provider" "$repo_root"
+
+if [[ -n "$policy_snapshot" ]]; then
+    echo "Terminal policy snapshot: $policy_snapshot"
+fi
 
 if [[ "$selected_provider" == "windows-terminal" ]]; then
     validate_windows_terminal_inputs
