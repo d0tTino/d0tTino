@@ -5,10 +5,18 @@ from pathlib import Path
 
 def _copy_terminal_profile(tmp_path: Path) -> Path:
     repo_root = Path(__file__).resolve().parents[1]
-    profile_src = repo_root / "dotfiles" / "terminal" / ".config" / "tino" / "terminal-profile.sh"
+    tino_src = repo_root / "dotfiles" / "terminal" / ".config" / "tino"
+    profile_src = tino_src / "terminal-profile.sh"
     profile_dst = tmp_path / "terminal-profile.sh"
     profile_dst.write_text(profile_src.read_text(encoding="utf-8"), encoding="utf-8")
     profile_dst.chmod(0o755)
+    validator_src = tino_src / "validate-terminal-profile-schema.py"
+    validator_dst = tmp_path / "validate-terminal-profile-schema.py"
+    validator_dst.write_text(validator_src.read_text(encoding="utf-8"), encoding="utf-8")
+    validator_dst.chmod(0o755)
+    schema_src = tino_src / "terminal-profile.schema.json"
+    schema_dst = tmp_path / "terminal-profile.schema.json"
+    schema_dst.write_text(schema_src.read_text(encoding="utf-8"), encoding="utf-8")
     return profile_dst
 
 
@@ -58,3 +66,18 @@ def test_terminal_profile_host_approved_providers_match_canonical_default(tmp_pa
     result = subprocess.run(["/bin/bash", str(profile), "--host-approved-providers"], capture_output=True, text=True, check=True)
     providers = [line.strip() for line in result.stdout.splitlines() if line.strip()]
     assert providers == ["ghostty"]
+
+
+def test_terminal_profile_validate_schema_rejects_invalid_opacity(tmp_path: Path) -> None:
+    profile = _copy_terminal_profile(tmp_path)
+    env = os.environ.copy()
+    env.update({"TINO_TERMINAL_OPACITY": "1.2"})
+    result = subprocess.run(
+        ["/bin/bash", str(profile), "--validate-schema", "ghostty"],
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    output = f"{result.stdout}\n{result.stderr}"
+    assert result.returncode != 0
+    assert "field 'opacity'" in output

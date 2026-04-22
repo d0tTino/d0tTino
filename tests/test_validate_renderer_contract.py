@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -64,3 +65,40 @@ def test_wezterm_fallback_matches_baseline_contract() -> None:
     assert "window_background_opacity" in fallback
     assert "window_padding" in fallback
     assert "colors = {" in fallback
+
+
+def test_terminal_profile_schema_validation_rejects_invalid_fields() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    profile_script = repo_root / "dotfiles" / "terminal" / ".config" / "tino" / "terminal-profile.sh"
+    env = os.environ.copy()
+    env.update({"TINO_TERMINAL_OPACITY": "1.5"})
+
+    result = subprocess.run(
+        ["bash", str(profile_script), "--validate-schema", "ghostty"],
+        cwd=repo_root,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+
+    output = f"{result.stdout}\n{result.stderr}"
+    assert result.returncode != 0
+    assert "field 'opacity'" in output
+
+
+def test_terminal_profile_schema_validation_accepts_valid_fields() -> None:
+    repo_root = Path(__file__).resolve().parents[1]
+    profile_script = repo_root / "dotfiles" / "terminal" / ".config" / "tino" / "terminal-profile.sh"
+    env = os.environ.copy()
+    env.update({"TINO_TERMINAL_OPACITY": "0.92", "TINO_TERMINAL_FPS": "120", "TINO_TERMINAL_EFFECTS": "on"})
+
+    result = subprocess.run(
+        ["bash", str(profile_script), "--validate-schema", "ghostty"],
+        cwd=repo_root,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+
+    assert result.stderr == ""

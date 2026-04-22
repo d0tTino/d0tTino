@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/d0ttino/terminal-profile.schema.json",
+  "title": "Tino Terminal Profile Contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "provider",
+    "opacity",
+    "fps",
+    "effects",
+    "palette"
+  ],
+  "properties": {
+    "provider": {
+      "type": "string",
+      "enum": ["ghostty", "wezterm", "kitty", "alacritty", "windows-terminal"]
+    },
+    "opacity": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "fps": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 360
+    },
+    "effects": {
+      "type": "string",
+      "anyOf": [
+        {
+          "enum": ["on", "off", "true", "false", "yes", "no", "0", "1", "none"]
+        },
+        {
+          "pattern": "^(/|\\.|~).+"
+        }
+      ]
+    },
+    "palette": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "background",
+        "foreground",
+        "cursor",
+        "selection",
+        "color_0",
+        "color_1",
+        "color_2",
+        "color_3",
+        "color_4",
+        "color_5",
+        "color_6",
+        "color_7",
+        "color_8",
+        "color_9",
+        "color_10",
+        "color_11",
+        "color_12",
+        "color_13",
+        "color_14",
+        "color_15"
+      ],
+      "properties": {
+        "background": {"$ref": "#/$defs/hexColor"},
+        "foreground": {"$ref": "#/$defs/hexColor"},
+        "cursor": {"$ref": "#/$defs/hexColor"},
+        "selection": {"$ref": "#/$defs/hexColor"},
+        "color_0": {"$ref": "#/$defs/hexColor"},
+        "color_1": {"$ref": "#/$defs/hexColor"},
+        "color_2": {"$ref": "#/$defs/hexColor"},
+        "color_3": {"$ref": "#/$defs/hexColor"},
+        "color_4": {"$ref": "#/$defs/hexColor"},
+        "color_5": {"$ref": "#/$defs/hexColor"},
+        "color_6": {"$ref": "#/$defs/hexColor"},
+        "color_7": {"$ref": "#/$defs/hexColor"},
+        "color_8": {"$ref": "#/$defs/hexColor"},
+        "color_9": {"$ref": "#/$defs/hexColor"},
+        "color_10": {"$ref": "#/$defs/hexColor"},
+        "color_11": {"$ref": "#/$defs/hexColor"},
+        "color_12": {"$ref": "#/$defs/hexColor"},
+        "color_13": {"$ref": "#/$defs/hexColor"},
+        "color_14": {"$ref": "#/$defs/hexColor"},
+        "color_15": {"$ref": "#/$defs/hexColor"}
+      }
+    }
+  },
+  "$defs": {
+    "hexColor": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$"
+    }
+  }
+}
