@@ -12,6 +12,35 @@ source_if_exists() {
     fi
 }
 
+terminal_profile_schema_validator() {
+    local script_dir
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    printf '%s/validate-terminal-profile-schema.py' "$script_dir"
+}
+
+validate_terminal_profile_schema() {
+    local provider="$1"
+    local validator
+    validator="$(terminal_profile_schema_validator)"
+    local python_bin="${PYTHON:-python3}"
+
+    if ! command -v "$python_bin" >/dev/null 2>&1; then
+        python_bin="python"
+    fi
+
+    if ! command -v "$python_bin" >/dev/null 2>&1; then
+        echo "Error: schema validation requires python3 or python in PATH." >&2
+        return 1
+    fi
+
+    if [[ ! -x "$validator" ]]; then
+        echo "Error: missing terminal profile schema validator: $validator" >&2
+        return 1
+    fi
+
+    "$python_bin" "$validator" "$provider"
+}
+
 # Contract fields shared across renderers.
 readonly TINO_TERMINAL_CONTRACT_FIELDS=(
     TINO_TERMINAL_FPS
@@ -221,6 +250,7 @@ render_provider() {
     local repo_root="${2:-}"
 
     load_terminal_profile
+    validate_terminal_profile_schema "$provider"
 
     case "$provider" in
         ghostty)
@@ -246,6 +276,16 @@ render_provider() {
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    if [[ ${1:-} == "--validate-schema" ]]; then
+        if [[ $# -ne 2 ]]; then
+            echo "Usage: $(basename "$0") --validate-schema <provider>" >&2
+            exit 1
+        fi
+        load_terminal_profile
+        validate_terminal_profile_schema "$2"
+        exit 0
+    fi
+
     if [[ ${1:-} == "--provider-preferences" ]]; then
         terminal_provider_preferences
         exit 0

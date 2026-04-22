@@ -55,6 +55,7 @@ providers=("${TINO_TERMINAL_CONTRACT_PROVIDERS[@]}")
 validation_repo_root="$tmp_dir/validation-repo"
 mkdir -p "$validation_repo_root"
 for provider in "${providers[@]}"; do
+    "$XDG_CONFIG_HOME/tino/terminal-profile.sh" --validate-schema "$provider" >/dev/null
     "$XDG_CONFIG_HOME/tino/terminal-profile.sh" "$provider" "$validation_repo_root" >/dev/null
 done
 

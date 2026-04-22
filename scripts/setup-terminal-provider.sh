@@ -329,6 +329,7 @@ if [[ ! -x "$profile_script" ]]; then
 fi
 
 ensure_provider_installed
+"$profile_script" --validate-schema "$selected_provider"
 "$profile_script" "$selected_provider" "$repo_root"
 
 if [[ "$selected_provider" == "windows-terminal" ]]; then
