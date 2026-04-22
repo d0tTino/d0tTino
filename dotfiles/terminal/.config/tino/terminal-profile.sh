@@ -3,6 +3,20 @@ set -euo pipefail
 
 config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
 tino_dir="$config_home/tino"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+policy_module="$script_dir/terminal-policy.sh"
+
+if [[ ! -f "$policy_module" ]]; then
+    policy_module="$tino_dir/terminal-policy.sh"
+fi
+
+if [[ ! -f "$policy_module" ]]; then
+    echo "Error: missing terminal policy module at $policy_module" >&2
+    exit 1
+fi
+
+# shellcheck disable=SC1090
+source "$policy_module"
 
 source_if_exists() {
     local file_path="$1"
@@ -48,25 +62,8 @@ readonly TINO_TERMINAL_CONTRACT_FIELDS=(
     TINO_TERMINAL_EFFECTS
 )
 
-readonly TINO_TERMINAL_PROVIDER_DEFAULT_ORDER=(
-    ghostty
-    wezterm
-    kitty
-    alacritty
-)
-
-terminal_is_windows_host() {
-    case "${OSTYPE:-}" in
-        msys*|cygwin*|win32*)
-            return 0
-            ;;
-    esac
-
-    if [[ "${OS:-}" == "Windows_NT" ]]; then
-        return 0
-    fi
-
-    return 1
+terminal_host_profile() {
+    terminal_policy_detect_host_profile
 }
 
 terminal_canonical_provider() {
@@ -83,18 +80,11 @@ terminal_canonical_provider() {
             ;;
     esac
 
-    if terminal_is_windows_host; then
-        printf 'windows-terminal\n'
-        return 0
-    fi
-
-    printf 'ghostty\n'
+    terminal_policy_canonical_provider "$(terminal_host_profile)"
 }
 
 terminal_host_approved_providers() {
-    local canonical_provider
-    canonical_provider="$(terminal_canonical_provider)"
-    printf '%s\n' "$canonical_provider"
+    terminal_policy_approved_providers "$(terminal_host_profile)"
 }
 
 terminal_provider_policy_state() {
@@ -152,7 +142,8 @@ terminal_provider_preferences() {
         done
     fi
 
-    combined=("$(terminal_canonical_provider)" "${normalized[@]}" "${TINO_TERMINAL_PROVIDER_DEFAULT_ORDER[@]}")
+    mapfile -t policy_probe_order < <(terminal_policy_probe_order "$(terminal_host_profile)")
+    combined=("$(terminal_canonical_provider)" "${normalized[@]}" "${policy_probe_order[@]}")
 
     awk '!seen[$0]++' < <(printf '%s\n' "${combined[@]}")
 }
@@ -161,38 +152,7 @@ terminal_capability_status() {
     local provider="$1"
     local field="$2"
 
-    case "$provider:$field" in
-        ghostty:TINO_TERMINAL_FPS|ghostty:TINO_TERMINAL_OPACITY|ghostty:TINO_TERMINAL_EFFECTS)
-            printf 'applied'
-            ;;
-        wezterm:TINO_TERMINAL_FPS|wezterm:TINO_TERMINAL_OPACITY)
-            printf 'applied'
-            ;;
-        wezterm:TINO_TERMINAL_EFFECTS)
-            printf 'unsupported'
-            ;;
-        kitty:TINO_TERMINAL_FPS|kitty:TINO_TERMINAL_OPACITY)
-            printf 'applied'
-            ;;
-        kitty:TINO_TERMINAL_EFFECTS)
-            printf 'unsupported'
-            ;;
-        alacritty:TINO_TERMINAL_OPACITY)
-            printf 'applied'
-            ;;
-        alacritty:TINO_TERMINAL_FPS|alacritty:TINO_TERMINAL_EFFECTS)
-            printf 'unsupported'
-            ;;
-        windows-terminal:TINO_TERMINAL_OPACITY|windows-terminal:TINO_TERMINAL_EFFECTS)
-            printf 'applied'
-            ;;
-        windows-terminal:TINO_TERMINAL_FPS)
-            printf 'unsupported'
-            ;;
-        *)
-            printf 'unknown'
-            ;;
-    esac
+    terminal_policy_capability_status "$provider" "$field"
 }
 
 load_terminal_profile() {
@@ -226,6 +186,27 @@ load_terminal_profile() {
     export TINO_TERMINAL_COLOR_13="${TINO_TERMINAL_COLOR_13:-#FC17DA}"
     export TINO_TERMINAL_COLOR_14="${TINO_TERMINAL_COLOR_14:-#66fff2}"
     export TINO_TERMINAL_COLOR_15="${TINO_TERMINAL_COLOR_15:-#ffffff}"
+
+    clamp_terminal_policy_values
+}
+
+terminal_effective_policy_json() {
+    local provider="${1:-}"
+    local canonical_provider policy_state
+    canonical_provider="$(terminal_canonical_provider)"
+    policy_state="unknown"
+    if [[ -n "$provider" ]]; then
+        policy_state="$(terminal_provider_policy_state "$provider")"
+    fi
+
+    printf '{'
+    printf '"host_profile":"%s",' "$(terminal_host_profile)"
+    printf '"canonical_provider":"%s",' "$canonical_provider"
+    printf '"provider":"%s",' "$provider"
+    printf '"provider_policy_state":"%s",' "$policy_state"
+    printf '"effective":{"TINO_TERMINAL_FPS":"%s","TINO_TERMINAL_OPACITY":"%s","TINO_TERMINAL_EFFECTS":"%s"}' \
+        "$TINO_TERMINAL_FPS" "$TINO_TERMINAL_OPACITY" "$TINO_TERMINAL_EFFECTS"
+    printf '}\n'
 }
 
 normalize_effects() {
@@ -296,6 +277,11 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
         exit 0
     fi
 
+    if [[ ${1:-} == "--host-profile" ]]; then
+        terminal_host_profile
+        exit 0
+    fi
+
     if [[ ${1:-} == "--host-approved-providers" ]]; then
         terminal_host_approved_providers
         exit 0
@@ -307,6 +293,12 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
             exit 1
         fi
         terminal_provider_policy_state "$2"
+        exit 0
+    fi
+
+    if [[ ${1:-} == "--effective-policy" ]]; then
+        load_terminal_profile
+        terminal_effective_policy_json "${2:-}"
         exit 0
     fi
 
