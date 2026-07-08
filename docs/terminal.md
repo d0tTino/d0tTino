@@ -47,10 +47,10 @@ The terminal experience is composed of four layers:
 
 Provider defaults are policy-driven and deterministic:
 
-- **Non-Windows hosts:** canonical provider is **Ghostty**.
+- **Non-Windows hosts:** canonical provider is **WezTerm**, selected from the approved non-Windows trio of **WezTerm, Kitty, and Alacritty**.
 - **Windows hosts:** canonical provider is **Windows Terminal**.
-- **Host-approved** defaults are resolved by `terminal-profile.sh`; today that is the same as the canonical provider on every tracked host profile, including `hosts/work_laptop`.
-- **WezTerm, Kitty, and Alacritty** are supported as **fallback/compatibility targets** when the canonical provider is unavailable or when explicitly requested. On `hosts/work_laptop`, WezTerm is the preferred compatibility fallback order, not a first-class default.
+- **Host-approved** defaults are resolved by `terminal-profile.sh`; on non-Windows tracked hosts the approved set is the trio: WezTerm, Kitty, and Alacritty.
+- **Kitty and Alacritty** remain approved non-Windows compatibility targets when WezTerm is unavailable or explicitly requested. **Ghostty** remains renderable as a fallback, but it is no longer an approved non-Windows default.
 
 Implementation details:
 
@@ -69,7 +69,7 @@ Configuration precedence is:
 Use overlays to keep per-machine deltas small:
 
 - `hosts/desktop`: higher visual fidelity/high-refresh-friendly defaults.
-- `hosts/work_laptop`: balanced settings for battery and thermals, while keeping Ghostty as the default and preferring WezTerm first in compatibility fallback order.
+- `hosts/work_laptop`: balanced settings for battery and thermals while inheriting the canonical WezTerm provider unless a host-specific deviation is intentional.
 
 This model ensures you can keep a single operational workflow while still tuning ergonomics per device.
 
@@ -82,7 +82,7 @@ From repository root:
 ./scripts/bootstrap-dev-env.sh
 
 # 2) Terminal provider recovery or explicit re-render
-./scripts/setup-terminal-provider.sh ghostty
+./scripts/setup-terminal-provider.sh wezterm
 
 # 3) Neovim provisioning (plugins + Mason/LSP assets)
 ./scripts/setup-nvim.sh

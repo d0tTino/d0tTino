@@ -324,7 +324,30 @@ if [[ -x "$terminal_profile_script" ]]; then
 fi
 
 if [[ -z "$canonical_provider" ]]; then
-    canonical_provider="ghostty"
+    canonical_provider="wezterm"
+fi
+
+approved_non_windows_canonical_providers=(wezterm kitty alacritty)
+if [[ "${active_host_profile:-}" == "windows" ]]; then
+    if [[ "$canonical_provider" == "windows-terminal" ]]; then
+        record_check "terminal_canonical_provider_policy" "canonical provider follows host OS policy" "pass" "host_profile=${active_host_profile:-none} canonical=$canonical_provider"
+    else
+        record_check "terminal_canonical_provider_policy" "canonical provider follows host OS policy" "fail" "host_profile=${active_host_profile:-none} canonical=$canonical_provider; Windows hosts must use windows-terminal"
+    fi
+else
+    canonical_provider_is_approved_trio="0"
+    for approved_non_windows_provider in "${approved_non_windows_canonical_providers[@]}"; do
+        if [[ "$canonical_provider" == "$approved_non_windows_provider" ]]; then
+            canonical_provider_is_approved_trio="1"
+            break
+        fi
+    done
+
+    if [[ "$canonical_provider_is_approved_trio" == "1" ]]; then
+        record_check "terminal_canonical_provider_policy" "canonical provider follows host OS policy" "pass" "host_profile=${active_host_profile:-none} canonical=$canonical_provider approved_non_windows_trio=${approved_non_windows_canonical_providers[*]}"
+    else
+        record_check "terminal_canonical_provider_policy" "canonical provider follows host OS policy" "fail" "host_profile=${active_host_profile:-none} canonical=$canonical_provider; non-Windows canonical provider must be one of: ${approved_non_windows_canonical_providers[*]}"
+    fi
 fi
 
 if [[ -z "$active_provider_default" ]]; then

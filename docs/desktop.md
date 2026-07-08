@@ -24,7 +24,7 @@ Configuration precedence is:
 
 1. `dotfiles/terminal/.config/tino/terminal-defaults.sh`
 2. `hosts/desktop/.config/tino/host-overrides.sh`
-3. Explicit CLI provider overrides such as `--provider ghostty`
+3. Explicit CLI provider overrides such as `--provider kitty`
 
 Because the managed `dotfiles/shell/.zshrc` already loads both
 `~/.config/tino/terminal-defaults.sh` and `~/.config/tino/host-overrides.sh`,
@@ -49,8 +49,7 @@ This is the primary workflow. It runs the dependency/bootstrap stages in order:
 4. `scripts/setup-terminal-provider.sh <resolved-provider>`
 5. terminal renderer contract validation
 
-Use `--provider <name>` if you want to override the provider selected from the
-base defaults plus the desktop overlay.
+Use `--provider <name>` if you want to override the canonical WezTerm provider selected from the base defaults plus the desktop overlay.
 
 ### Option 2: Apply the layers directly with Stow
 
@@ -73,7 +72,6 @@ core packages first, then the host overlay.
 - Shared terminal defaults come from `~/.config/tino/terminal-defaults.sh`.
 - Desktop-only overrides live in `~/.config/tino/host-overrides.sh`.
 - When both files define the same variable, the desktop overlay wins.
-- The desktop overlay can also set `TINO_TERMINAL_PROVIDER`, which is then used
-  unless you explicitly override it with a CLI flag.
+- The desktop overlay inherits the canonical WezTerm provider; set `TINO_TERMINAL_PROVIDER` only when this host intentionally deviates, and CLI flags still take final precedence.
 - Managed `.zshrc` loads the defaults first and the desktop overlay second, so
   shell startup sees the same precedence as the install/bootstrap scripts.

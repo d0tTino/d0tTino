@@ -118,11 +118,17 @@ terminal_provider_policy_state() {
 }
 
 readonly TINO_TERMINAL_CONTRACT_PROVIDERS=(
-    ghostty
     wezterm
     kitty
     alacritty
+    ghostty
     windows-terminal
+)
+
+readonly TINO_TERMINAL_NON_WINDOWS_CANONICAL_CANDIDATES=(
+    wezterm
+    kitty
+    alacritty
 )
 
 terminal_provider_preferences() {
@@ -143,7 +149,7 @@ terminal_provider_preferences() {
     fi
 
     mapfile -t policy_probe_order < <(terminal_policy_probe_order "$(terminal_host_profile)")
-    combined=("$(terminal_canonical_provider)" "${normalized[@]}" "${policy_probe_order[@]}")
+    combined=("$(terminal_canonical_provider)" "${policy_probe_order[@]}" "${normalized[@]}")
 
     awk '!seen[$0]++' < <(printf '%s\n' "${combined[@]}")
 }

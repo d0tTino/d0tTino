@@ -1,14 +1,47 @@
 {
   "host_profiles": {
     "desktop": {
-      "canonical_provider": "ghostty",
-      "approved_providers": ["ghostty"],
-      "provider_probe_order": ["ghostty", "wezterm", "kitty", "alacritty", "windows-terminal"]
+      "canonical_provider": "wezterm",
+      "approved_providers": [
+        "wezterm",
+        "kitty",
+        "alacritty"
+      ],
+      "provider_probe_order": [
+        "wezterm",
+        "kitty",
+        "alacritty",
+        "ghostty",
+        "windows-terminal"
+      ]
     },
     "work_laptop": {
+      "canonical_provider": "wezterm",
+      "approved_providers": [
+        "wezterm",
+        "kitty",
+        "alacritty"
+      ],
+      "provider_probe_order": [
+        "wezterm",
+        "kitty",
+        "alacritty",
+        "ghostty",
+        "windows-terminal"
+      ]
+    },
+    "windows": {
       "canonical_provider": "windows-terminal",
-      "approved_providers": ["windows-terminal"],
-      "provider_probe_order": ["windows-terminal", "wezterm", "ghostty", "kitty", "alacritty"]
+      "approved_providers": [
+        "windows-terminal"
+      ],
+      "provider_probe_order": [
+        "windows-terminal",
+        "wezterm",
+        "kitty",
+        "alacritty",
+        "ghostty"
+      ]
     }
   },
   "providers": {
@@ -64,7 +97,17 @@
     "TINO_TERMINAL_EFFECTS": {
       "type": "enum_or_path",
       "default": "on",
-      "allowed": ["on", "off", "true", "false", "yes", "no", "0", "1", "none"]
+      "allowed": [
+        "on",
+        "off",
+        "true",
+        "false",
+        "yes",
+        "no",
+        "0",
+        "1",
+        "none"
+      ]
     }
   }
 }
