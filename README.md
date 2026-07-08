@@ -186,7 +186,7 @@ Dotfiles are organized into explicit stow-style packages under `dotfiles/` with 
 - `dotfiles/shell` → `.zshrc`, `.bashrc`, and `~/.config/starship.toml`
 - `dotfiles/nvim` → `~/.config/nvim/...`
 - `dotfiles/tmux` → `.tmux.conf`
-- `dotfiles/terminal` → shared terminal defaults in `~/.config/tino/terminal-defaults.sh`
+- `dotfiles/terminal` → shared terminal defaults in `~/.config/tino/terminal-defaults.sh` (WezTerm is the canonical non-Windows default)
 - `dotfiles/terminal/.config/wezterm/wezterm.lua` → optional GPU-accelerated WezTerm profile aligned with shell/tmux colors
 - `dotfiles/terminal/.config/tino/ghostty.toml.tmpl` → authored Ghostty template (renderer input)
 - `dotfiles/terminal/.config/tino/renderers/*.sh` → provider renderers that generate concrete config files from the terminal profile contract
@@ -199,7 +199,7 @@ Dotfiles are organized into explicit stow-style packages under `dotfiles/` with 
 - `hosts/desktop` and `hosts/work_laptop` → machine-specific overrides
   - `hosts/desktop/.config/tino/host-overrides.sh` favors richer visuals/high refresh
   - `hosts/work_laptop/.config/tino/host-overrides.sh` keeps effects balanced for battery life
-  - host overlays can also tune terminal policy inputs. In the current tracked profiles, both desktop and work_laptop keep `ghostty` as the default provider, while `hosts/work_laptop` prefers `wezterm` first in fallback order if Ghostty is unavailable. `scripts/install_common.sh` uses the resolved provider when `--terminal` is not provided.
+  - host overlays can also tune terminal policy inputs. In the current tracked non-Windows profiles, desktop and work_laptop inherit `wezterm` as the canonical provider; overlays should set provider variables only when intentionally deviating to another policy state. `scripts/install_common.sh` uses the resolved provider when `--terminal` is not provided.
 
 Example:
 
@@ -217,7 +217,7 @@ Expected behavior:
 - `dotfiles/terminal` provides shared defaults in `~/.config/tino/terminal-defaults.sh`.
 - Host overlay packages only contain diffs in `~/.config/tino/host-overrides.sh`.
 - On shell startup, `.zshrc` loads defaults first and then host overrides, so host values win when both define the same variable.
-- `TINO_TERMINAL_PROVIDER` follows the same precedence: base default in `terminal-defaults.sh`, optional per-machine override in `host-overrides.sh`, CLI override via `./scripts/install_common.sh --terminal <provider>`.
+- `TINO_TERMINAL_PROVIDER` follows the same precedence: canonical base default in `terminal-defaults.sh`, optional intentional per-machine deviation in `host-overrides.sh`, CLI override via `./scripts/install_common.sh --terminal <provider>`.
 - `scripts/install_dotfiles.sh --host <name>` follows the same order: core packages, then host overlay (`<name>` is `desktop` or `work_laptop` in this repo).
 
 ### What changes in `$HOME`
@@ -237,9 +237,9 @@ Terminal profile values flow through one path:
 2. `~/.config/tino/host-overrides.sh` applies host-specific overrides.
 3. `TINO_TERMINAL_PROVIDER` is selected from defaults/overrides unless `--provider` is passed to `scripts/bootstrap-dev-env.sh` or `--terminal` is passed to the internal `scripts/install_common.sh` helper.
 4. `~/.config/tino/terminal-profile.sh` loads both files and runs a renderer from `~/.config/tino/renderers/*.sh`.
-5. The renderer writes provider output files (for Ghostty: `~/.config/ghostty/ghostty.toml`).
+5. The renderer writes provider output files (for WezTerm: `~/.config/wezterm/wezterm.lua`).
 
-`~/.config/ghostty/ghostty.toml` is generated output and should not be treated as an authored source file.
+Provider output such as `~/.config/wezterm/wezterm.lua` or `~/.config/ghostty/ghostty.toml` is generated output and should not be treated as authored source files.
 
 
 #### Starship cloud toggle normalization

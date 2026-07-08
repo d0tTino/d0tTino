@@ -69,7 +69,7 @@ terminal_policy_python_bin() {
 
 terminal_policy_detect_host_profile() {
     case "${TINO_HOST_PROFILE:-}" in
-        desktop|work_laptop)
+        desktop|work_laptop|windows)
             printf '%s\n' "$TINO_HOST_PROFILE"
             return 0
             ;;
@@ -77,13 +77,13 @@ terminal_policy_detect_host_profile() {
 
     case "${OSTYPE:-}" in
         msys*|cygwin*|win32*)
-            printf 'work_laptop\n'
+            printf 'windows\n'
             return 0
             ;;
     esac
 
     if [[ "${OS:-}" == "Windows_NT" ]]; then
-        printf 'work_laptop\n'
+        printf 'windows\n'
         return 0
     fi
 
